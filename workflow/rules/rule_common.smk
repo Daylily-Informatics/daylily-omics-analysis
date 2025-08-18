@@ -87,6 +87,11 @@ DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].spli
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
+VARN_CHRMS = (
+    []
+    if "varn" not in config
+    else config["varn"][f"{config['genome_build']}_varn_chrms"].split(",")
+)
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
@@ -425,6 +430,21 @@ for i in samples.iterrows():
                 sample_lane_info[val] = True
 
 config["sample_info"] = sample_info
+
+# identify tumor-normal pairs
+TN_PAIRS = {}
+for tsamp, tinfo in sample_info.items():
+    stype = str(tinfo.get("sample_type", "")).lower()
+    if stype in ["tumor", "tumour"]:
+        ext_id = tinfo.get("external_sample_id")
+        if not ext_id:
+            continue
+        for nsamp, ninfo in sample_info.items():
+            if ninfo.get("external_sample_id") == ext_id and str(ninfo.get("sample_type", "")).lower() in ["normal", "blood"]:
+                TN_PAIRS[tsamp] = nsamp
+                break
+
+TN_TUMOR_SAMPS = list(TN_PAIRS.keys())
 
 CRAM_ALIGNERS = list(set(CRAM_ALIGNERS))
 # Aspirationally hoping to adopt PEPs...
