@@ -87,6 +87,7 @@ DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].spli
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
+AIV_CHRMS = config["aiv"][f"{config['genome_build']}_aiv_chrms"].split(",")
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
@@ -531,6 +532,28 @@ for sample in list(get_samp_ids()):
     else:
         SSAMPS[ssamp] = [sample]
 
+# Map tumor samples to their matched normal samples
+TN_MAP = {}
+for pid in samples["external_sample_id"].unique():
+    sub = samples[samples["external_sample_id"] == pid]
+    tumors = sub[sub["sample_type"].str.lower() == "tumor"]["sample"].tolist()
+    normals = sub[sub["sample_type"].str.lower() == "normal"]["sample"].tolist()
+    if len(tumors) == 1 and len(normals) == 1:
+        TN_MAP[tumors[0]] = normals[0]
+
+TN_TUMORS = list(TN_MAP.keys())
+
+def get_normal_sample(wildcards):
+    return TN_MAP[wildcards.sample]
+
+def get_aiv_normal_cram(wildcards):
+    n = get_normal_sample(wildcards)
+    return MDIR + f"{n}/align/{wildcards.alnr}/{n}.{wildcards.alnr}.cram"
+
+def get_aiv_normal_crai(wildcards):
+    n = get_normal_sample(wildcards)
+    return MDIR + f"{n}/align/{wildcards.alnr}/{n}.{wildcards.alnr}.cram.crai"
+
 
 SAMP_SAMPI_INDEX = list(samples.index)  # deprecate
 RR = ["R1", "R2"]
@@ -778,6 +801,30 @@ def get_dvchrm_day(wildcards):
     else:
         raise Exception(
             "deep chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y, 25=MT"
+        )
+
+    return ret_mod_chrm(ret_str)
+
+
+def get_aivchrm_day(wildcards):
+    pchr=""  # prefix handled already
+    ret_str = ""
+    sl = wildcards.aivchrm.replace('chr','').split("-")
+    sl2 = wildcards.aivchrm.replace('chr','').split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.aivchrm
+    elif len(sl) == 1:
+        ret_str = pchr + sl[0]
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        while start <= end:
+            ret_str = str(ret_str) + " " + pchr + str(start)
+            start = start + 1
+    else:
+        raise Exception(
+            "aiv chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y, 25=MT"
         )
 
     return ret_mod_chrm(ret_str)
