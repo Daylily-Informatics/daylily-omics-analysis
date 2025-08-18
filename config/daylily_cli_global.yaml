@@ -1,11 +1,11 @@
 ---
 daylily:
-  git_tag: 0.7.220
-  git_repo: https://github.com/Daylily-Informatics/daylily-omics-analysis.git
-  git_repo_ssh: git@github.com:Daylily-Informatics/daylily-omics-analysis.git
+  git_tag: 0.7.223r
+  git_repo: https://github.com/RCRF/daylily-omics-analysis.git
+  git_repo_ssh: git@github.com:RCRF/daylily-omics-analysis.git
   analysis_root: /fsx/analysis_results/
   daylily_image_cmd: "singularity pull --name /fsx/resources/environments/containers/daylily:0.7.196.simg docker://daylilyinformatics/daylily:0.7.196"
   daylily_image_path: /fsx/resources/environments/containers/daylily:0.7.196.simg
-  sentieon_lic_path: /fsx/data/cached_envs/Life_Sciences_Manufacturing_Corporation_eval.lic
+  sentieon_lic_path: /fsx/data/cached_envs/Rare_Cancer_Research_Foundation_eval.lic
   sentieon_tmpdir: /fsx/scratch/
   sentieon_install_dir: /fsx/data/cached_envs/sentieon-genomics-202503.01.rc1/
