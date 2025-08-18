@@ -179,6 +179,20 @@ deepvariant:
     deepug_conda: "../envs/vanilla_v0.1.yaml"
     deepug_me_container: "docker://google/deepvariant:1.9.0"  #"docker://ultimagenomics/call_variants"
 
+deepsomatic:
+    threads: 7
+    deep_threads: 7
+    env_yaml: "../envs/deepvariant_v0.1.yaml"
+    container: "docker://google/deepsomatic:1.0"
+    partition: "i8"
+    partition_other: "i96,i192,i192"
+    mem_mb: 60000
+    hg38_dvsom_chrms:  "21"
+    hg38_broad_dvsom_chrms:  "21"
+    b37_dvsom_chrms:  "19,21"
+    numa: " OMP_NUM_THREADS=8 OMP_PROC_BIND=close OMP_PLACES=threads OMP_PROC_BIND=TRUE OMP_DYNAMIC=TRUE OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
+    dvsom_conda: "../envs/vanilla_v0.1.yaml"
+
 duphold:
     threads: 7
     env_yaml: "../envs/duphold_v0.1.yaml"

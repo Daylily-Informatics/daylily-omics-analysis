@@ -87,6 +87,7 @@ DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].spli
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
+DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
@@ -531,6 +532,18 @@ for sample in list(get_samp_ids()):
     else:
         SSAMPS[ssamp] = [sample]
 
+# Tumor-normal pairs
+TN_DICT = {}
+for ex_id, grp in samples.groupby("external_sample_id"):
+    tumors = grp[grp["sample_type"].str.lower() == "tumor"]["sample"].tolist()
+    normals = grp[grp["sample_type"].str.lower() == "normal"]["sample"].tolist()
+    if tumors and normals:
+        TN_DICT[tumors[0]] = normals[0]
+TUMOR_SAMPLES = list(TN_DICT.keys())
+
+def get_normal_sample(wildcards):
+    return TN_DICT[wildcards.sample]
+
 
 SAMP_SAMPI_INDEX = list(samples.index)  # deprecate
 RR = ["R1", "R2"]
@@ -778,6 +791,30 @@ def get_dvchrm_day(wildcards):
     else:
         raise Exception(
             "deep chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y, 25=MT"
+        )
+
+    return ret_mod_chrm(ret_str)
+
+
+def get_dvsom_chrm_day(wildcards):
+    pchr=""  # prefix handled already
+    ret_str = ""
+    sl = wildcards.dvsomchrm.replace('chr', '').split("-")
+    sl2 = wildcards.dvsomchrm.replace('chr', '').split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.dvsomchrm
+    elif len(sl) == 1:
+        ret_str = pchr + sl[0]
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        while start <= end:
+            ret_str = str(ret_str) + " " + pchr + str(start)
+            start = start + 1
+    else:
+        raise Exception(
+            "deep somatic chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
         )
 
     return ret_mod_chrm(ret_str)
