@@ -36,9 +36,9 @@ rule dvsom:
         normal_crai=get_dvs_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.{dvsomchrm}.som.log",
+        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.log",
     threads: config['deepsomatic']['threads']
     container:
         config['deepsomatic']['container']
@@ -107,16 +107,16 @@ rule dvsom_sort_index_chunk_vcf:
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
     priority: 46
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.tbi",
     conda:
         config['deepsomatic']['dvsom_conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/log/{sample}.{alnr}.dvsom.{dvsomchrm}.som.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -138,19 +138,19 @@ rule dvsom_concat_index_chunks:
         sample=VARNTUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
             dvsomchrm=DVSOM_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
     threads: 4,
     conda:
         config['deepsomatic']['dvsom_conda'],
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.som.merge.log",
+        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.snv.merge.log",
     params:
         cluster_sample=ret_sample,
     shell:
@@ -167,12 +167,12 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         sample=VARNTUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",
             sample=TUMOR_SAMPLES,
             alnr=ALIGNERS,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
             sample=TUMOR_SAMPLES,
             alnr=ALIGNERS
         ),
