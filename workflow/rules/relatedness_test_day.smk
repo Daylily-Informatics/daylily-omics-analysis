@@ -267,3 +267,12 @@ rule relatedness_report:
     conda: "../envs/relatedness_report_v0.1.yaml"
     script:
         "../scripts/relatedness_report.py"
+
+rule relatedness:
+    """
+    Convenience entry point — call this rule to build the full relatedness
+    report and all required intermediate outputs.
+    """
+    input:
+        "results/relatedness_qc/relatedness_summary.tsv",
+        "results/relatedness_qc/relatedness_report.html"
