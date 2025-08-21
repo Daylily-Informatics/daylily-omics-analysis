@@ -5,25 +5,24 @@ import os
 # ---------------------------
 
 
-
-def get_varn_normal_cram(wildcards):
+def get_dvs_normal_cram(wildcards):
     try:
         nsamp = TN_PAIRS[wildcards.sample]
     except KeyError:
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
     return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
 
-def get_varn_normal_crai(wildcards):
+def get_dvs_normal_crai(wildcards):
     try:
         nsamp = TN_PAIRS[wildcards.sample]
     except KeyError:
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
     return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
 
-def get_varn_tumor_cram(wildcards):
+def get_dvs_tumor_cram(wildcards):
     return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
 
-def get_varn_tumor_crai(wildcards):
+def get_dvs_tumor_crai(wildcards):
     return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
 
 
@@ -31,7 +30,10 @@ rule dvsom:
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
     input:
-
+        tumor_cram=get_dvs_tumor_cram,
+        tumor_crai=get_dvs_tumor_crai,
+        normal_cram=get_dvs_normal_cram,
+        normal_crai=get_dvs_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
         vcf=temp(MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf"),
