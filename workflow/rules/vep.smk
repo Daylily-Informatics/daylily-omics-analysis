@@ -38,21 +38,21 @@ rule vep:
         --vcf \
         --cache {params.vep_cache} \
         --input_file {input.vcfgz} \
-       --fork 64 \
-       --fasta {params.huref} \
-       --species homo_sapiens \
-       --assembly GRCh38 \
-       --output_file {output.ovcfgz} \
-       --force_overwrite --everything \
-       --hgvs \
-       --symbol \
-       --protein \
-       --freq_pop \
-       --terms \
-       --variant_class \
-       --compress_output bgzip >> {log} 2>&1;\
-        """
 
+        --fork 64 \
+        --fasta {params.huref} \
+        --species homo_sapiens \
+        --assembly GRCh38 \
+        --output_file {output.ovcfgz} \
+        --force_overwrite --everything \
+        --hgvs \
+        --symbol \
+        --protein \
+        --freq_pop \
+        --terms \
+        --variant_class \
+        --compress_output bgzip >> {log} 2>&1;\
+        """
 
 localrules:
     produce_vep,
