@@ -691,6 +691,11 @@ calc_coverage_evenness:
     ld_preload: " "
     partition: "i192,i192mem,i128"
 
+calc_coverage_evenness_two:
+    threads: 16
+    ld_preload: " "
+    partition: "i192,i192mem,i128"
+
 produce_fastqs_from_bams:
     threads: 4
     samtools_view_threads: 88
