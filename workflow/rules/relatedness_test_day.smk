@@ -21,7 +21,7 @@ def sample_input(sample):
 # Somalier extract outputs
 SomExtract = expand("results/somalier/extract/{samp}.somalier", samp=SAMPLES)
 
-rule all:
+rule relatedness_all:
     input:
         # Somalier relatedness
         "results/somalier/cohort_pairs.tsv",
