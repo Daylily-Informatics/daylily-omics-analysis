@@ -4,6 +4,7 @@ import os
 ##### deepsomatic
 # ---------------------------
 
+DVS_ALIGNERS=["dvsom"]
 
 def get_dvs_normal_cram(wildcards):
     try:
@@ -224,7 +225,7 @@ rule clear_combined_dvsom_vcf:
         vcf=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
             sample=TUMOR_SAMPLES,
-            alnr=ALIGNERS,
+            alnr=DVS_ALIGNERS,
         ),
     priority: 42
     conda:
@@ -244,12 +245,12 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
             sample=TUMOR_SAMPLES,
-            alnr=ALIGNERS,
+            alnr=DVS_ALIGNERS,
         ),
         vcftbi=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
             sample=TUMOR_SAMPLES,
-            alnr=ALIGNERS
+            alnr=DVS_ALIGNER
         ),
     output:
         "gatheredall.dvsom",
