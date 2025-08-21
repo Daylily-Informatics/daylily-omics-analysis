@@ -6,7 +6,7 @@ def get_samp_concordance_truth_dir(wildcards):
     return cntrl_dir
 
 def get_alt_sample_name(wildcards):
-    return samples[samples['samp'] == wildcards.sample]['external_sample_id'][0]
+    return samples[samples['samp'] == wildcards.sample]['tum_nrm_sampleid_match'][0]
 
 def get_sampn(wildcards):
     return wildcards.sample

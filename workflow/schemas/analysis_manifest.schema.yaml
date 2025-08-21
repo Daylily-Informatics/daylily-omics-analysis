@@ -41,7 +41,7 @@ properties:
         type: string
     merge_single:
         type: string
-    external_sample_id:
+    tum_nrm_sampleid_match:
         type: string
     ultima_cram:
         type: string
@@ -71,4 +71,4 @@ required:
     - is_negative_control
     - sample_type
     - merge_single
-    - external_sample_id
+    - tum_nrm_sampleid_match
