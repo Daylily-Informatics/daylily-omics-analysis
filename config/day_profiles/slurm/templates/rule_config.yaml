@@ -66,6 +66,15 @@ alignstats:
 
 bcftools_vcfstat:
     threads: 16
+bcbio_variation_recall:
+    threads: 32
+    env_yaml: "../envs/bcbio_variation_recall_v0.1.yaml"
+    numpass: 1
+    partition: "i192,i192mem"
+    callers:
+      - deep19
+      - oct
+
 
 
 bcl2fq:

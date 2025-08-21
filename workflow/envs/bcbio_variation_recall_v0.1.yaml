@@ -1,0 +1,7 @@
+name: bcbio_variation_recall
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - bcbio-variation-recall
