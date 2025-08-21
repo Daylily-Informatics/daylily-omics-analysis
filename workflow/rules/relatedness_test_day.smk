@@ -226,8 +226,8 @@ rule conpair_compare_all:
             t=[p[0] for p in tn_pairs()],
             n=[p[1] for p in tn_pairs()]
         )
-        
-rule peddy:
+
+rule peddy_relatedness:
     input:
         vcf=lambda wc: config["peddy"]["joint_vcf"],
         ped=lambda wc: config["peddy"]["ped"]
