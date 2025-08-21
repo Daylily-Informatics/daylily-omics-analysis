@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - r
+  - defaults
+dependencies:
+  - python
+  - pip
+  - pip:
+      - git+https://github.com/VCCRI/VPOT.git

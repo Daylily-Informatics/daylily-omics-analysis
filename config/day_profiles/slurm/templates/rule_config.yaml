@@ -726,3 +726,9 @@ snpeff:
     threads: 16
     partition: "i192,i192mem,i128"
     xmx: "24g"
+vpot:
+    threads: 16
+    env_yaml: "../envs/vpot_v0.1.yaml"
+    partition: "i192,i192mem,i128"
+    mem_mb: 16000
+    extra: ""
