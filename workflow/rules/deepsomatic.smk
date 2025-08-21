@@ -262,7 +262,7 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
     shell:
         """
         for vcf in {input.vcftb}; do
-            bcf="${vcf%.vcf.gz}.bcf";
+            bcf="${{vcf%.vcf.gz}}.bcf";
             bcftools view -O b -o $bcf --threads {threads} $vcf && bcftools index --threads 4 $bcf;
         done;
         touch {output};
