@@ -67,7 +67,7 @@ def generate_analysis_manifest(manifest_file, rows):
         "samp", "sample", "sample_lane", "SQ", "RU", "EX", "LANE", "r1_path", "r2_path",
         "biological_sex", "iddna_uid", "concordance_control_path", "is_positive_control",
         "is_negative_control", "sample_type", "merge_single", "external_sample_id",
-        "instrument", "lib_prep", "bwa_kmer", "subsample_pct"
+        "tum_nrm_sampleid_match", "instrument", "lib_prep", "bwa_kmer", "subsample_pct"
     ]
     with open(manifest_file, "w", newline="") as f:
         writer = csv.writer(f)
