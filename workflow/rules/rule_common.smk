@@ -1,5 +1,7 @@
 from snakemake.utils import min_version
 from snakemake.utils import validate
+from snakemake.exceptions import WorkflowError
+import re
 import os
 import pandas as pd
 import sys
@@ -433,36 +435,46 @@ for i in samples.iterrows():
 
 config["sample_info"] = sample_info
 
-# identify tumor-normal pairs
+
+def _norm(x):
+    return str(x or "").strip().lower()
+
 TN_PAIRS = {}
+
+# Build tumor->normal map
 for tsamp, tinfo in sample_info.items():
-    stype = str(tinfo.get("sample_type", "")).lower()
-    if stype in ["tumor", "tumour"]:
-        pair_id = tinfo.get("tum_nrm_sampleid_match")
-        if not pair_id:
-            continue
+    if _norm(tinfo.get("sample_type")) not in {"tumor", "tumour"}:
+        continue
 
-        # First assume the column holds a shared pairing label
-        nsamp = None
-        for nsamp2, ninfo in sample_info.items():
-            if (
-                ninfo.get("tum_nrm_sampleid_match") == pair_id
-                and str(ninfo.get("sample_type", "")).lower() in ["normal", "blood"]
-            ):
-                nsamp = nsamp2
-                break
+    pair_id = str(tinfo.get("tum_nrm_sampleid_match", "")).strip()
+    if not pair_id:
+        # no pairing label / direct reference; skip (or raise if you prefer)
+        continue
 
-        # If no normal was found with the same label, treat the value as a
-        # direct reference to the normal's sample ID.
-        if nsamp is None:
-            ninfo = sample_info.get(pair_id)
-            if ninfo and str(ninfo.get("sample_type", "")).lower() in ["normal", "blood"]:
-                nsamp = pair_id
+    # 1) Shared-label pairing: find a normal/blood with same label
+    candidates = [
+        nsamp2 for nsamp2, ninfo in sample_info.items()
+        if str(ninfo.get("tum_nrm_sampleid_match", "")).strip() == pair_id
+        and _norm(ninfo.get("sample_type")) in {"normal", "blood"}
+    ]
 
-        if nsamp is not None:
-            TN_PAIRS[tsamp] = nsamp
+    # 2) If none, treat the value as a direct normal sample ID
+    if not candidates:
+        ninfo = sample_info.get(pair_id)
+        if ninfo and _norm(ninfo.get("sample_type")) in {"normal", "blood"}:
+            candidates = [pair_id]
+
+    if len(candidates) == 1:
+        TN_PAIRS[tsamp] = candidates[0]
+    elif len(candidates) > 1:
+        raise WorkflowError(f"Ambiguous normal for tumor '{tsamp}' (pair='{pair_id}') -> {candidates}")
+    else:
+        raise WorkflowError(f"No normal found for tumor '{tsamp}' (pair='{pair_id}')")
 
 TN_TUMOR_SAMPS = list(TN_PAIRS.keys())
+
+# Optional: restrict rules’ sample wildcard to tumors only
+VARNTUMORS_REGEX = "|".join(re.escape(s) for s in TN_TUMOR_SAMPS) or r"^$"
 
 CRAM_ALIGNERS = list(set(CRAM_ALIGNERS))
 # Aspirationally hoping to adopt PEPs...

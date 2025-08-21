@@ -40,11 +40,18 @@ def get_varn_normal_crai(wildcards):
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
     return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
 
+def get_varn_tumor_cram(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+
+def get_varn_tumor_crai(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
 
 rule varn:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
-        tumor_cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        tumor_crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        tumor_cram=get_varn_tumor_cram,
+        tumor_crai=get_varn_tumor_crai,
         normal_cram=get_varn_normal_cram,
         normal_crai=get_varn_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
