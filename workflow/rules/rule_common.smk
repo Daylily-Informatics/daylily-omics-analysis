@@ -87,6 +87,11 @@ DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].spli
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
+VARN_CHRMS = (
+    []
+    if "varn" not in config
+    else config["varn"][f"{config['genome_build']}_varn_chrms"].split(",")
+)
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
@@ -304,17 +309,17 @@ for i in samples.iterrows():
         raise (
             "\n\nMANIFEST ERROR:: "
             + samp + " ... " + sample_lane
-            + f"appears 2+ times in the sample sheet. This should only occur if 'merge' has been specified. {merge_single} has been set. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,instrument,lib_prep,bwa_kmer"
+            + f"appears 2+ times in the sample sheet. This should only occur if 'merge' has been specified. {merge_single} has been set. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
             )
 
     if merge_single in ["single"]:
         raise Exception(
-            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': This feature was implemented, then unusued and has not been vetted to work properly again, so if you wish to run per lane, create a manifest with the sample and sample_lane column having the same id.  merge will create symlinks for each sample_lane pair of fastqs, then use these via process substitution to appear as one file for those tools expecting 1 R1 and 1 R2. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,instrument,lib_prep,bwa_kmer"
+            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': This feature was implemented, then unusued and has not been vetted to work properly again, so if you wish to run per lane, create a manifest with the sample and sample_lane column having the same id.  merge will create symlinks for each sample_lane pair of fastqs, then use these via process substitution to appear as one file for those tools expecting 1 R1 and 1 R2. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
         )
 
     if len(sq_i.split(".")) > 1 or len(sq_i.split("_")) > 1 or len(ru_i.split(".")) > 1 or len(ru_i.split("_")) > 1 or len(ex_i.split(".")) > 1 or len(ex_i.split("_")) > 1 or len(str(lane_i).split(".")) > 1 or len(str(lane_i).split("_")) > 1:
         raise Exception(
-            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: The SQ & RU & EX & LANE cols may not contain a period or '-' in the name.  Please check the sample name and try again. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,instrument,lib_prep,bwa_kmer"
+            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: The SQ & RU & EX & LANE cols may not contain a period or '-' in the name.  Please check the sample name and try again. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
         )
 
     if sample_lane in sample_info or len(sample.split(".")) > 1:
@@ -404,6 +409,8 @@ for i in samples.iterrows():
             sample_info[samp][iix] = val
         elif iix in ["is_negative_control"]:
             sample_info[samp][iix] = val
+        elif iix in ["tum_nrm_sampleid_match"]:
+            sample_info[samp][iix] = val
         elif iix in ["external_sample_id"]:
             sample_info[samp][iix] = val
         elif iix in ["bwa_kmer"]:
@@ -425,6 +432,37 @@ for i in samples.iterrows():
                 sample_lane_info[val] = True
 
 config["sample_info"] = sample_info
+
+# identify tumor-normal pairs
+TN_PAIRS = {}
+for tsamp, tinfo in sample_info.items():
+    stype = str(tinfo.get("sample_type", "")).lower()
+    if stype in ["tumor", "tumour"]:
+        pair_id = tinfo.get("tum_nrm_sampleid_match")
+        if not pair_id:
+            continue
+
+        # First assume the column holds a shared pairing label
+        nsamp = None
+        for nsamp2, ninfo in sample_info.items():
+            if (
+                ninfo.get("tum_nrm_sampleid_match") == pair_id
+                and str(ninfo.get("sample_type", "")).lower() in ["normal", "blood"]
+            ):
+                nsamp = nsamp2
+                break
+
+        # If no normal was found with the same label, treat the value as a
+        # direct reference to the normal's sample ID.
+        if nsamp is None:
+            ninfo = sample_info.get(pair_id)
+            if ninfo and str(ninfo.get("sample_type", "")).lower() in ["normal", "blood"]:
+                nsamp = pair_id
+
+        if nsamp is not None:
+            TN_PAIRS[tsamp] = nsamp
+
+TN_TUMOR_SAMPS = list(TN_PAIRS.keys())
 
 CRAM_ALIGNERS = list(set(CRAM_ALIGNERS))
 # Aspirationally hoping to adopt PEPs...
