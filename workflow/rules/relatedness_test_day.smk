@@ -30,10 +30,12 @@ rule relatedness_all:
         # Picard crosscheck (matrix + metrics)
         "results/picard/crosscheck/metrics.txt",
         "results/picard/crosscheck/matrix.txt",
-        # Conpair for declared tumor/normal pairs (optional – created only for pairs in expected list)
-        expand("results/conpair/{a}__{b}/concordance.tsv",
-               zip, a=[x["samples"][0] for x in config["expected"] if x["relationship"]=="tumor_normal"],
-                    b=[x["samples"][1] for x in config["expected"] if x["relationship"]=="tumor_normal"]),
+        # Conpair for tumor/normal pairs detected from sample IDs
+        expand(
+            "results/conpair/{t}__{n}/concordance.tsv",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        ),
         # Optional peddy
         *( ["results/peddy/peddy.html"] if config.get("peddy", {}).get("enabled", False) else [] ),
         # Final merged report
@@ -122,11 +124,27 @@ rule picard_crosscheck:
         """
 
 #######################################################################
-# CONPAIR (only for declared tumor_normal expected pairs)
+# CONPAIR (for tumor/normal pairs inferred from sample IDs)
 #######################################################################
 
 def tn_pairs():
-    return [x["samples"] for x in config["expected"] if x["relationship"]=="tumor_normal"]
+    """Identify tumor/normal pairs based on sample naming.
+
+    Samples ending with `_T` are assumed to be tumor and paired with a
+    corresponding sample ending with `_N` that shares the same prefix.
+    Only pairs for which both sample IDs exist and their associated files
+    are present on disk are returned.
+    """
+    pairs = []
+    for s in SAMPLES:
+        if s.endswith("_T"):
+            n = f"{s[:-2]}_N"
+            if n in SAMPLES:
+                t_path, _ = sample_input(s)
+                n_path, _ = sample_input(n)
+                if os.path.exists(t_path) and os.path.exists(n_path):
+                    pairs.append((s, n))
+    return pairs
 
 rule conpair_mpileup:
     input:
@@ -256,9 +274,11 @@ rule relatedness_report:
         som_groups="results/somalier/cohort_groups.tsv",
         picard_metrics="results/picard/crosscheck/metrics.txt",
         picard_matrix="results/picard/crosscheck/matrix.txt",
-        conpair=expand("results/conpair/{a}__{b}/concordance.tsv",
-                       zip, a=[x["samples"][0] for x in config["expected"] if x["relationship"]=="tumor_normal"],
-                            b=[x["samples"][1] for x in config["expected"] if x["relationship"]=="tumor_normal"]),
+        conpair=expand(
+            "results/conpair/{t}__{n}/concordance.tsv",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        ),
     output:
         tsv="results/relatedness_qc/relatedness_summary.tsv",
         html="results/relatedness_qc/relatedness_report.html"
