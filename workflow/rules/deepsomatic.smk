@@ -4,7 +4,7 @@ import os
 ##### deepsomatic
 # ---------------------------
 
-DVS_ALIGNERS=["dvsom"]
+DVS_ALIGNER=["dvsom"]
 
 def get_dvs_normal_cram(wildcards):
     try:
