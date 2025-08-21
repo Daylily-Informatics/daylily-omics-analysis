@@ -268,7 +268,7 @@ rule relatedness_report:
     script:
         "../scripts/relatedness_report.py"
 
-rule relatedness:
+rule relatedness:  # TARGET:  relatedness_report
     """
     Convenience entry point — call this rule to build the full relatedness
     report and all required intermediate outputs.
