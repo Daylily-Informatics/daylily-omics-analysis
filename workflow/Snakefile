@@ -299,6 +299,7 @@ include: "rules/strobe_align_sort.smk"
 include: "rules/tiddit.smk"
 include: "rules/vep.smk"
 include: "rules/verifybamid2_contam.smk"
+include: "rules/relatedness_test_day.smk"
 include: "rules/workflow_staging.smk"
 
 

@@ -1,0 +1,8 @@
+name: relatedness-report
+channels: [conda-forge, bioconda]
+dependencies:
+  - python>=3.9
+  - pandas
+  - numpy
+  - jinja2
+  - pyyaml

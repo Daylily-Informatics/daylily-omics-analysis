@@ -1,0 +1,45 @@
+# REQUIRED: reference + resources
+ref_fasta: /path/to/GRCh38.fa
+
+somalier:
+  sites_vcf: /path/to/somalier-sites-hg38.vcf.bgz   # common 0.5-MAF SNP panel (bgzipped + .tbi)
+  # If you only have BAM/CRAMs, Somalier will extract from BAM with --fasta {ref_fasta}
+  # If you have VCFs with germline GTs, Somalier will extract from VCF.
+  genome_build: GRCh38
+
+picard:
+  # HAPLOTYPE_MAP from GATK resource bundle (haplotype map for fingerprinting)
+  haplotype_map: /path/to/haplotype_map_hg38.vcf.gz
+
+conpair:
+  # Conpair site lists (use hg38 bundle)
+  snp_positions_bed: /path/to/Conpair/snp_positions_hg38.bed
+  common_sites_vcf: /path/to/Conpair/common_snps_hg38.vcf.gz
+  min_baseq: 20
+  min_mapq: 10
+
+# INPUTS (either BAM/CRAM or VCF per sample; you can mix)
+samples:
+  # sample_id: {bam: "..."}  OR  {vcf: "..."}
+  HG001_N1: {bam: /data/HG001/normal1.bam}
+  HG001_N2: {bam: /data/HG001/normal2.bam}
+  PT1_T:    {bam: /data/PT1/tumor.bam}
+  PT1_N:    {bam: /data/PT1/normal.bam}
+  FATHER:   {vcf: /data/family/joint.vcf.gz}   # joint or singleton VCF allowed
+  MOTHER:   {vcf: /data/family/joint.vcf.gz}
+  CHILD:    {vcf: /data/family/joint.vcf.gz}
+
+# EXPECTED RELATIONSHIPS (used by final report for assertions)
+# relationship ∈ {identical, duplicate, tumor_normal, parent_child, siblings, unrelated}
+expected:
+  - {relationship: identical,     samples: [HG001_N1, HG001_N2]}
+  - {relationship: tumor_normal,  samples: [PT1_T, PT1_N]}
+  - {relationship: parent_child,  samples: [FATHER, CHILD]}
+  - {relationship: parent_child,  samples: [MOTHER, CHILD]}
+  - {relationship: siblings,      samples: [FATHER, MOTHER], note: "should NOT be siblings -> expect fail"}  # example negative check
+
+# OPTIONAL: run peddy on a joint VCF (pedigree checks)
+peddy:
+  enabled: false
+  joint_vcf: /data/family/joint.vcf.gz
+  ped: /data/family/family.ped
