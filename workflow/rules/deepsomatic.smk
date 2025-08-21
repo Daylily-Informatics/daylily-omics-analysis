@@ -249,7 +249,7 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         vcftbi=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
             sample=TUMOR_SAMPLES,
-            alnr=SO
+            alnr=ALIGNERS
         ),
     output:
         "gatheredall.dvsom",
