@@ -707,7 +707,12 @@ svaba_sort_index:
 
 calc_coverage_evenness:
     threads: 7
-    ld_preload: " "  
+    ld_preload: " "
+    partition: "i8"
+
+calc_coverage_evenness_two:
+    threads: 7
+    ld_preload: " "
     partition: "i8"
 
 produce_fastqs_from_bams:
