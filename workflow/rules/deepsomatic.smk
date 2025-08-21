@@ -205,7 +205,7 @@ rule clear_combined_dvsom_vcf:
         "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 
 
-rule produce_dvsom_vcf:
+rule produce_dvsom_vcf:  # Target: produce deep-somatic
     input:
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
