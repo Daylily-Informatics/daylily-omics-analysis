@@ -77,7 +77,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         class: file_only
         name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/blah.createme.note
     vep:
-      vep_genome_build: 113_GRCh38
+      vep_genome_build: 114_GRCh38
       vep_cache:
         class: file_only
         name: /fsx/data/tool_specific_data/vep/
