@@ -149,6 +149,25 @@ else:
         f"""colr 'SNV Callers:{snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
 
+somatic_snv_CALLERS = []
+if 'snv_callers_somatic' not in config:
+    os.system(
+        f'''colr "...WARNING: No snv_callers_somatic set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+    )
+else:
+    somatic_snv_CALLERS = sorted(
+        set(
+            []
+            if 'snv_callers_somatic' not in config
+            or config['snv_callers_somatic'] is None
+            else config["snv_callers_somatic"]
+        )
+    )
+    ## PRINT INFO
+    os.system(
+        f"""colr 'Somatic SNV Callers:{somatic_snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+    )
+
 sv_CALLERS = []
 if 'sv_callers' not in config:
 
