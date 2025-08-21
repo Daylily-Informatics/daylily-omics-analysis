@@ -54,6 +54,8 @@ def get_in_rtg_tbi(wildcards):
 if len(CONCORDANCE_SAMPLES.keys()) > 0:
 
     rule prep_for_concordance_check:
+        wildcard_constraints:
+            sample=POS_CONTROL_SAMPLES
         input:
             cvcf=get_in_rtg_vcf,
             ctbi=get_in_rtg_tbi,
@@ -170,6 +172,8 @@ else:
     localrules: no_concordance_data,
 
     rule no_concordance_data:
+        wildcard_constraints:
+            sample=POS_CONTROL_SAMPLES
         input:
             MDIR + "{sample}/align/{alnr}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz.tbi",
         output:
@@ -180,6 +184,8 @@ else:
 
 localrules: produce_snv_concordances
 rule produce_snv_concordances:  # TARGET:  produce snv concordances
+    wildcard_constraints:
+        sample=POS_CONTROL_SAMPLES
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/snv/{snv}/concordance/concordance.done",
