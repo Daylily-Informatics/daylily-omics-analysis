@@ -1,5 +1,7 @@
 from snakemake.utils import min_version
 from snakemake.utils import validate
+from snakemake.exceptions import WorkflowError
+import re
 import os
 import pandas as pd
 import sys
@@ -88,6 +90,12 @@ OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(","
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
 DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
+
+VARN_CHRMS = (
+    []
+    if "varn" not in config
+    else config["varn"][f"{config['genome_build']}_varn_chrms"].split(",")
+)
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
@@ -141,6 +149,25 @@ else:
     ## PRINT INFO
     os.system(
         f"""colr 'SNV Callers:{snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+    )
+
+somatic_snv_CALLERS = []
+if 'snv_callers_somatic' not in config:
+    os.system(
+        f'''colr "...WARNING: No snv_callers_somatic set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+    )
+else:
+    somatic_snv_CALLERS = sorted(
+        set(
+            []
+            if 'snv_callers_somatic' not in config
+            or config['snv_callers_somatic'] is None
+            else config["snv_callers_somatic"]
+        )
+    )
+    ## PRINT INFO
+    os.system(
+        f"""colr 'Somatic SNV Callers:{somatic_snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
 
 sv_CALLERS = []
@@ -405,7 +432,9 @@ for i in samples.iterrows():
             sample_info[samp][iix] = val
         elif iix in ["is_negative_control"]:
             sample_info[samp][iix] = val
-        elif iix in ["tum_nrm_sampleid_match", "external_sample_id"]:
+        elif iix in ["tum_nrm_sampleid_match"]:
+            sample_info[samp][iix] = val
+        elif iix in ["external_sample_id"]:
             sample_info[samp][iix] = val
         elif iix in ["bwa_kmer"]:
             sample_info[samp][iix] = val
@@ -426,6 +455,74 @@ for i in samples.iterrows():
                 sample_lane_info[val] = True
 
 config["sample_info"] = sample_info
+
+
+# --- Positive/Negative control sample lists ---------------------------------
+def _truthy(x):
+    return str(x or "").strip().lower() in {"true", "t", "1", "yes", "y"}
+
+POS_CONTROL_SAMPLES = sorted(
+    s for s, info in sample_info.items()
+    if _truthy(info.get("is_positive_control"))
+)
+
+NEG_CONTROL_SAMPLES = sorted(
+    s for s, info in sample_info.items()
+    if _truthy(info.get("is_negative_control"))
+)
+
+# If you want the concordance control path for just the positive controls:
+POS_CONTROL_PATHS = {
+    s: p for s, p in CONCORDANCE_SAMPLES.items() if s in POS_CONTROL_SAMPLES
+}
+
+# Optional sanity check: a sample is marked positive control but has no path
+_missing = [s for s in POS_CONTROL_SAMPLES if s not in CONCORDANCE_SAMPLES]
+if _missing:
+    raise WorkflowError(
+        f"Positive controls missing 'concordance_control_path': {_missing}"
+    )
+
+
+# Build tumor->normal map
+def _norm(x):
+    return str(x or "").strip().lower()
+
+TN_PAIRS = {}
+
+for tsamp, tinfo in sample_info.items():
+    if _norm(tinfo.get("sample_type")) not in {"tumor", "tumour"}:
+        continue
+
+    pair_id = str(tinfo.get("tum_nrm_sampleid_match", "")).strip()
+    if not pair_id:
+        # no pairing label / direct reference; skip (or raise if you prefer)
+        continue
+
+    # 1) Shared-label pairing: find a normal/blood with same label
+    candidates = [
+        nsamp2 for nsamp2, ninfo in sample_info.items()
+        if str(ninfo.get("tum_nrm_sampleid_match", "")).strip() == pair_id
+        and _norm(ninfo.get("sample_type")) in {"normal", "blood"}
+    ]
+
+    # 2) If none, treat the value as a direct normal sample ID
+    if not candidates:
+        ninfo = sample_info.get(pair_id)
+        if ninfo and _norm(ninfo.get("sample_type")) in {"normal", "blood"}:
+            candidates = [pair_id]
+
+    if len(candidates) == 1:
+        TN_PAIRS[tsamp] = candidates[0]
+    elif len(candidates) > 1:
+        raise WorkflowError(f"Ambiguous normal for tumor '{tsamp}' (pair='{pair_id}') -> {candidates}")
+    else:
+        raise WorkflowError(f"No normal found for tumor '{tsamp}' (pair='{pair_id}')")
+
+TN_TUMOR_SAMPS = list(TN_PAIRS.keys())
+
+# Optional: restrict rules’ sample wildcard to tumors only
+VARNTUMORS_REGEX = "|".join(re.escape(s) for s in TN_TUMOR_SAMPS) or r"^$"
 
 CRAM_ALIGNERS = list(set(CRAM_ALIGNERS))
 # Aspirationally hoping to adopt PEPs...

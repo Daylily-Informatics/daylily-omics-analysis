@@ -9,7 +9,8 @@ SEED=7
 mkdir -p "$OUT_DIR"
 
 # Coverage fractions for 5x, 10x, 15x, 20x from 30x input
-declare -A DOWNSAMPLE_MAP=( ["5x"]=0.1667 ["10x"]=0.3333 ["15x"]=0.5 ["20x"]=0.6667 )
+#declare -A DOWNSAMPLE_MAP=( ["5x"]=0.1667 ["10x"]=0.3333 ["15x"]=0.5 ["20x"]=0.6667 )
+declare -A DOWNSAMPLE_MAP=( ["3x"]=0.1 ["1.5x"]=0.05 ["1x"]=0.0333333333 ["0.4x"]=0.0133333333 ["0.1x"]=0.0033333333 )
 
 # Sample loop
 for fq1 in "$INPUT_DIR"/*_30x_R1.fastq.gz; do

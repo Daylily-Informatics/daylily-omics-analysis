@@ -18,5 +18,7 @@ Short/Long Reads Sequencing Data](https://www.biorxiv.org/content/10.1101/2022.0
 bmcbioinformatics.biomedcentral.com
 . This is problematic for reproducibility – years later it may be elusive what exact pipeline was used, especially when researchers simply cite “GATK Best Practices” without detail. Even the GATK developers have acknowledged that many so-called Best Practices workflows in publications diverge from official recommendations, making reproducibility and standardization difficult
 bmcbioinformatics.biomedcentral.com
-.
+
+Best practices for germline variant and DNA methylation analysis of second- and third-generation sequencing data
+ *GATK is not modern*https://humgenomics.biomedcentral.com/articles/10.1186/s40246-024-00684-8#:~:text=Nonetheless%2C%20DeepVariant%20currently%20appears%20to,particular%2C%20for%20GATK%20and%20Octopus.
 
