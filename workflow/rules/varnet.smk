@@ -121,6 +121,8 @@ rule varn:
 
 
 rule varn_sort_index_chunk_vcf:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         vcf=MDIR
         + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
@@ -155,6 +157,8 @@ rule varn_sort_index_chunk_vcf:
 
 
 rule varn_concat_index_chunks:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
             MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz",
@@ -179,6 +183,8 @@ rule varn_concat_index_chunks:
 
 
 rule produce_varn_vcf:  # TARGET: varn vcf
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         vcftb=expand(
             MDIR
@@ -221,6 +227,8 @@ localrules:
 
 
 rule prep_varn_chunkdirs:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
