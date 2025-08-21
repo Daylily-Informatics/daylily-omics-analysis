@@ -225,7 +225,7 @@ rule clear_combined_dvsom_vcf:
         vcf=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
             sample=TUMOR_SAMPLES,
-            alnr=DVS_ALIGNERS,
+            alnr=DVS_ALIGNER,
         ),
     priority: 42
     conda:
@@ -245,7 +245,7 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
             sample=TUMOR_SAMPLES,
-            alnr=DVS_ALIGNERS,
+            alnr=DVS_ALIGNER,
         ),
         vcftbi=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
