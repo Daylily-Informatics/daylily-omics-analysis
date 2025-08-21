@@ -4,12 +4,34 @@ import os
 ##### deepsomatic
 # ---------------------------
 
+
+
+def get_varn_normal_cram(wildcards):
+    try:
+        nsamp = TN_PAIRS[wildcards.sample]
+    except KeyError:
+        raise ValueError(f"No matched normal sample for {wildcards.sample}")
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
+
+def get_varn_normal_crai(wildcards):
+    try:
+        nsamp = TN_PAIRS[wildcards.sample]
+    except KeyError:
+        raise ValueError(f"No matched normal sample for {wildcards.sample}")
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
+
+def get_varn_tumor_cram(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+
+def get_varn_tumor_crai(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
+
+
 rule dvsom:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
-        tumor_cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        tumor_crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-        normal_cram=lambda wildcards: MDIR + f"{TN_DICT[wildcards.sample]}/align/{wildcards.alnr}/{TN_DICT[wildcards.sample]}.{wildcards.alnr}.cram",
-        normal_crai=lambda wildcards: MDIR + f"{TN_DICT[wildcards.sample]}/align/{wildcards.alnr}/{TN_DICT[wildcards.sample]}.{wildcards.alnr}.cram.crai",
+
         d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
         vcf=temp(MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf"),
@@ -80,6 +102,8 @@ rule dvsom:
 
 
 rule dvsom_sort_index_chunk_vcf:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf",
     priority: 46
@@ -108,6 +132,8 @@ rule dvsom_sort_index_chunk_vcf:
 
 
 rule dvsom_concat_fofn:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         chunk_tbi=sorted(
             expand(
@@ -150,6 +176,8 @@ rule dvsom_concat_fofn:
 
 
 rule dvsom_concat_index_chunks:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         fofn=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.concat.vcf.gz.fofn",
         tmp_fofn=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.concat.vcf.gz.fofn.tmp",
@@ -188,6 +216,8 @@ rule dvsom_concat_index_chunks:
 
 
 rule clear_combined_dvsom_vcf:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         vcf=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
@@ -206,6 +236,8 @@ rule clear_combined_dvsom_vcf:
 
 
 rule produce_dvsom_vcf:  # Target: produce deep-somatic
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
@@ -215,7 +247,7 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         vcftbi=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
             sample=TUMOR_SAMPLES,
-            alnr=ALIGNERS,
+            alnr=SO
         ),
     output:
         "gatheredall.dvsom",
@@ -244,6 +276,8 @@ localrules:
 
 
 rule prep_dvsom_chunkdirs:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
     input:
         b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         n=lambda wildcards: MDIR + f"{TN_DICT[wildcards.sample]}/align/{wildcards.alnr}/{TN_DICT[wildcards.sample]}.{wildcards.alnr}.cram",
