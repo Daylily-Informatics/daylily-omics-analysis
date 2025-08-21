@@ -268,7 +268,7 @@ rule relatedness_report:
     script:
         "../scripts/relatedness_report.py"
 
-rule relatedness:  # TARGET:  produce snv concordances
+rule produce_relatedness:  # TARGET:  produce relatedness
     """
     Convenience entry point — call this rule to build the full relatedness
     report and all required intermediate outputs.
