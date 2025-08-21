@@ -235,16 +235,16 @@ rule peddy_relatedness:
         html="results/peddy/peddy.html"
     conda: "../envs/peddy_relatedness_v0.1.yaml"
     threads: 4
-    run:
-        if not config.get("peddy", {}).get("enabled", False):
-            # create a placeholder if disabled
-            os.makedirs("results/peddy", exist_ok=True)
-            with open("results/peddy/peddy.html","w") as f: f.write("<html><body>Peddy disabled</body></html>")
-        else:
-            shell("""
-                mkdir -p results/peddy
-                peddy -p 4 --plot --prefix results/peddy/peddy {input.vcf} {input.ped}
-            """)
+    shell:
+        r"""
+        mkdir -p results/peddy
+        if [ "{config[peddy][enabled]}" = "False" ] || [ -z "{config[peddy][enabled]}" ]; then
+            echo "<html><body>Peddy disabled</body></html>" > {output.html}
+        else
+            peddy -p {threads} --plot --prefix results/peddy/peddy {input.vcf} {input.ped}
+        fi
+        """
+
 
 #######################################################################
 # FINAL MERGED REPORT
