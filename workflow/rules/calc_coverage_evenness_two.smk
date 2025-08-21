@@ -26,3 +26,27 @@ rule calc_coverage_evenness_two:
         {latency_wait};
         ls {output.metrics};
         """
+
+localrules: 
+    produce_coverage_evenness_two,
+
+rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
+    input:
+            expand(MDIR + "{sample}/align/{alnr}/alignqc/coverage_evenness_two/{sample}.{alnr}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS)
+    container: None
+    threads: 8
+    output:
+        mqc=MDIR+"other_reports/coverage_evenness_two_combo_mqc.tsv",
+    shell:
+        """
+        mkdir -p $(dirname {output});
+        single_file=$( find results | grep coverage_evenness_two.tsv | head -n 1);
+        if [[ "$single_file" == "" ]]; then
+            echo "NO DATA FOUND" > {output.mqc};
+        else
+            head -n 1 $single_file > {output.mqc};
+            find results | grep .coverage_evenness_two.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
+        fi;
+        {latency_wait};
+        ls {input};
+        """
