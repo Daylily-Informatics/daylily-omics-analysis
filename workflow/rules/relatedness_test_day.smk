@@ -182,25 +182,51 @@ rule conpair_compare:
         fi
         """
 
-use rule conpair_mpileup as conpair_mpileup_all with:
-    wildcards:
-        t=[p[0] for p in tn_pairs()],
-        n=[p[1] for p in tn_pairs()]
 
-use rule conpair_parse as conpair_parse_all with:
-    wildcards:
-        t=[p[0] for p in tn_pairs()],
-        n=[p[1] for p in tn_pairs()]
 
-use rule conpair_compare as conpair_compare_all with:
-    wildcards:
-        t=[p[0] for p in tn_pairs()],
-        n=[p[1] for p in tn_pairs()]
 
 #######################################################################
 # PEDDY (optional; requires a joint VCF)
 #######################################################################
+rule conpair_mpileup_all:
+    input:
+        expand(
+            "results/conpair/{t}__{n}/tumor.mpileup",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        ),
+        expand(
+            "results/conpair/{t}__{n}/normal.mpileup",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        )
 
+rule conpair_parse_all:
+    input:
+        expand(
+            "results/conpair/{t}__{n}/tumor.parsed",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        ),
+        expand(
+            "results/conpair/{t}__{n}/normal.parsed",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        )
+
+rule conpair_compare_all:
+    input:
+        expand(
+            "results/conpair/{t}__{n}/concordance.tsv",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        ),
+        expand(
+            "results/conpair/{t}__{n}/summary.txt",
+            t=[p[0] for p in tn_pairs()],
+            n=[p[1] for p in tn_pairs()]
+        )
+        
 rule peddy:
     input:
         vcf=lambda wc: config["peddy"]["joint_vcf"],
