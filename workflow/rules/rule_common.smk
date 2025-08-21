@@ -436,12 +436,39 @@ for i in samples.iterrows():
 config["sample_info"] = sample_info
 
 
+# --- Positive/Negative control sample lists ---------------------------------
+def _truthy(x):
+    return str(x or "").strip().lower() in {"true", "t", "1", "yes", "y"}
+
+POS_CONTROL_SAMPLES = sorted(
+    s for s, info in sample_info.items()
+    if _truthy(info.get("is_positive_control"))
+)
+
+NEG_CONTROL_SAMPLES = sorted(
+    s for s, info in sample_info.items()
+    if _truthy(info.get("is_negative_control"))
+)
+
+# If you want the concordance control path for just the positive controls:
+POS_CONTROL_PATHS = {
+    s: p for s, p in CONCORDANCE_SAMPLES.items() if s in POS_CONTROL_SAMPLES
+}
+
+# Optional sanity check: a sample is marked positive control but has no path
+_missing = [s for s in POS_CONTROL_SAMPLES if s not in CONCORDANCE_SAMPLES]
+if _missing:
+    raise WorkflowError(
+        f"Positive controls missing 'concordance_control_path': {_missing}"
+    )
+
+
+# Build tumor->normal map
 def _norm(x):
     return str(x or "").strip().lower()
 
 TN_PAIRS = {}
 
-# Build tumor->normal map
 for tsamp, tinfo in sample_info.items():
     if _norm(tinfo.get("sample_type")) not in {"tumor", "tumour"}:
         continue
