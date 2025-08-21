@@ -15,7 +15,7 @@ The manifest should be saved in the config dirwith the follwing name: 'analysis_
   * 8 Required columns which may have null(na) values
   *  supported columns, 16 of which must be present and at leaset have an 'na' entry (no empty string fields are permittted in any colum found in the manifest.) :
 
-sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,remote_bam_file_path,rclone_handle
+sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,tum_nrm_sampleid_match,remote_bam_file_path,rclone_handle
   - _the columns should be in this order as well_
 
   - The last 2 columns are specifically for fetching BAM files which your user can access with a pre-configured backend handle (ie: if rclone ls someS3Acct:/abucket/and/a/path/to/a/sample.bam returns the ls info for the bam, then it can be fetched w/DAY by enterining `someS3Acct:` in the `rclone_handle` column, and in teh remote_bam_fiqle_path you would enter `/abucket/and/a/path/to/a/sample.bam`.  If these fields are populated, you will also be expected to provice on the command line the path to your crclone config file via ` --config rclone_config_file=/full/path/to/rclone/rclone.conf ` as part of the call to mod-run.
