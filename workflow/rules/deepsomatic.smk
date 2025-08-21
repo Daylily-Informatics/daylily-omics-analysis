@@ -36,7 +36,7 @@ rule dvsom:
         normal_crai=get_dvs_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf"),
+        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.vcf",
     log:
         MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.{dvsomchrm}.som.log",
     threads: config['deepsomatic']['threads']
@@ -133,110 +133,35 @@ rule dvsom_sort_index_chunk_vcf:
         """
 
 
-rule dvsom_concat_fofn:
-    wildcard_constraints:
-        sample=VARNTUMORS_REGEX
-    input:
-        chunk_tbi=sorted(
-            expand(
-                MDIR + "{{sample}}/align/{{alnr}}/snv/dvsom/vcfs/{dchrm}/{{sample}}.{{alnr}}.dvsom.{dchrm}.som.sort.vcf.gz.tbi",
-                dchrm=DVSOM_CHRMS,
-            ),
-            key=lambda x: float(
-                str(x.replace("~", ".").replace(":", "."))
-                .split("vcfs/")[1]
-                .split("/")[0]
-                .split("-")[0]
-            ),
-        ),
-    priority: 44
-    output:
-        fin_fofn=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.concat.vcf.gz.fofn.tmp",
-    threads: 2
-    resources:
-        vcpu=2,
-        threads=2,
-        partition="i192,i192mem",
-    params:
-        cluster_sample=ret_sample,
-        fn_stub="{sample}.{alnr}.dvsom.",
-    benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.dvsom.concat.fofn.bench.tsv"
-    conda:
-        config['deepsomatic']['dvsom_conda']
-    log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.concat.fofn.log",
-    shell:
-        """
-        for i in {input.chunk_tbi}; do
-            ii=$(echo $i | perl -pe 's/\.tbi$//g');
-            echo $ii >> {output.tmp_fofn};
-        done;
-        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.dvsom. {output.fin_fofn}) >> {log} 2>&1;
-        """
-
-
 rule dvsom_concat_index_chunks:
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
     input:
-        fofn=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.concat.vcf.gz.fofn.tmp",
-    output:
-        vcfgz=touch(MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz"),
-        vcfgztemp=temp(MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.temp.vcf.gz"),
-        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi"),
-    threads: 4
-    resources:
-        vcpu=4,
-        threads=4,
-        partition=config['deepsomatic']['partition_other'],
-    priority: 47
-    params:
-        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        cluster_sample=ret_sample,
-    resources:
-        attempt_n=lambda wildcards, attempt: (attempt + 0)
-    benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.dvsom.merge.bench.tsv"
-    conda:
-        config['deepsomatic']['dvsom_conda']
-    log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.som.merge.sort.gatherered.log",
-    shell:
-        """
-        touch {log};
-        mkdir -p $(dirname {log});
-        bcftools concat -a -d all --threads {threads} -f {input.fofn} -O z -o {output.vcfgztemp} >> {log} 2>&1;
-        export oldname=$(bcftools query -l {output.vcfgztemp} | head -n1) >> {log} 2>&1;
-        echo -e "${oldname}\t{params.cluster_sample}" > {output.vcfgz}.rename.txt
-        bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
-        bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
-        rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
-        """
-
-
-rule clear_combined_dvsom_vcf:
-    wildcard_constraints:
-        sample=VARNTUMORS_REGEX
-    input:
-        vcf=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
-            sample=TUMOR_SAMPLES,
-            alnr=ALIGNERS,
+        vcfs=lambda wildcards: expand(
+            MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.som.sort.vcf.gz",
+            sample=wildcards.sample,
+            alnr=wildcards.alnr,
+            dvsomchrm=DVSOM_CHRMS,
         ),
-    priority: 42
+    output:
+        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.som.sort.vcf.gz.tbi",
+    threads: 4,
     conda:
-        config['deepsomatic']['dvsom_conda']
-    resources:
-        vcpu=2,
-        threads=2,
-        partition="i192,i192mem",
+        config['deepsomatic']['dvsom_conda'],
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.som.merge.log",
+    params:
+        cluster_sample=ret_sample,
     shell:
-        "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
-
-
+        """
+        bcftools concat -a -d all --threads {threads} -O z -o {output.vcfgz}.tmp {input.vcfs} >> {log} 2>&1;
+        oldname=$(bcftools query -l {output.vcfgz}.tmp | head -n1) >> {log} 2>&1;
+        echo -e "${oldname}	{params.cluster_sample}" > {output.vcfgz}.rename.txt;
+        bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgz}.tmp >> {log} 2>&1;
+        bcftools index -f -t --threads {threads} {output.vcfgz} >> {log} 2>&1;
+        rm -f {output.vcfgz}.tmp {output.vcfgz}.rename.txt;
+        """
 rule produce_dvsom_vcf:  # Target: produce deep-somatic
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
