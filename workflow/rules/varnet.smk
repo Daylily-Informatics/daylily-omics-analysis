@@ -85,14 +85,7 @@ rule varn:
         mito_code="MT" if "b37" == config['genome_build'] else "M",
     shell:
         """
-        TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
-        itype=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
-        echo "INSTANCE TYPE: $itype" > {log};
-
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
-
-        start_time=$(date +%s);
-        echo "Start-Time-sec:$itype\t0" >> {log} 2>&1;
 
         vchr=$(echo {params.cpre}{params.vchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' );
 
@@ -113,10 +106,6 @@ rule varn:
         --threads {threads} \
         --out_vcf {output.vcf} >> {log} 2>&1;
 
-        end_time=$(date +%s);
-        elapsed_time=$((($end_time - $start_time) / 60));
-
-        echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
         """
 
 
