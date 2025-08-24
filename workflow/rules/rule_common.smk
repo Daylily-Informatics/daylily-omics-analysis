@@ -96,6 +96,11 @@ VARN_CHRMS = (
     if "varn" not in config
     else config["varn"][f"{config['genome_build']}_varn_chrms"].split(",")
 )
+AIV_CHRMS = (
+    []
+    if "aiv" not in config
+    else config["aiv"][f"{config['genome_build']}_aiv_chrms"].split(",")
+)
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
