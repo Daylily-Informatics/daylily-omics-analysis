@@ -23,6 +23,72 @@ def get_aiv_chrom(wildcards):
         )
     return ret_mod_chrm(ret_str)
 
+
+rule aiv_bams:
+    wildcard_constraints:
+        sample=TUMORS_REGEX
+    input:
+        tumor_cram=get_somcall_tumor_cram,
+        tumor_crai=get_somcall_tumor_crai,
+        normal_cram=get_somcall_normal_cram,
+        normal_crai=get_somcall_normal_crai,
+        ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
+    output:
+        region_bed=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.region.bed"),
+        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam"),
+        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam.bai"),
+        normal_bam=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam"),
+        normal_bai=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai"),
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.aiv.{aivchrm}.bamify.log",
+    threads: config['aiv']['threads'],
+    conda: "../envs/vanilla_v0.1.yaml"
+    params:
+        vchrm=get_aiv_chrom,
+        cpre="" if "b37" == config['genome_build'] else "chr",
+        mito_code="MT" if "b37" == config['genome_build'] else "M",
+    shell:
+        r"""
+        set -euo pipefail
+        ulimit -n 65536 || true
+
+        mkdir -p "$(dirname {output.tumor_bam})"
+
+        # Resolve region from wildcard (supports: 1 | 1~start~end | 23->X | 24->Y | 25->M/MT)
+        vchr=$(echo {params.cpre}{params.vchrm} \
+              | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
+        vchr=${{vchr%:}}
+        IFS=':' read -r vcontig vstart vend <<< "$vchr"
+
+        # Ensure FASTA index exists
+        if [ ! -s {input.ref_fai} ]; then
+            samtools faidx {input.ref_fa} >> {log} 2>&1
+        fi
+
+        if [ -z "${{vend:-}}" ]; then
+            vstart=0
+            vend=$(awk -v c="$vcontig" '$1==c{{print $2; exit}}' {input.ref_fai})
+            vreg="$vcontig"
+        else
+            vreg="$vcontig:$vstart-$vend"
+        fi
+
+        # Emit BED (aivet uses --region_bed)
+        printf "%s\t%s\t%s\n" "$vcontig" "$vstart" "$vend" > {output.region_bed}
+        echo "Region: $vreg ; BED: $(cat {output.region_bed})" >> {log} 2>&1
+
+        # Slice CRAMs to per-region, coord-sorted BAMs (forces the correct reference with -T)
+        samtools view -@ {threads} -T {input.ref_fa} -b {input.tumor_cram}  "$vreg" \
+          | samtools sort -@ {threads} -o {output.tumor_bam} -           >> {log} 2>&1
+        samtools index -@ {threads} {output.tumor_bam}                    >> {log} 2>&1
+
+        samtools view -@ {threads} -T {input.ref_fa} -b {input.normal_cram} "$vreg" \
+          | samtools sort -@ {threads} -o {output.normal_bam} -          >> {log} 2>&1
+        samtools index -@ {threads} {output.normal_bam}                   >> {log} 2>&1
+        """
+
+
 rule aiv:
     wildcard_constraints:
         sample=TUMORS_REGEX
@@ -80,14 +146,18 @@ rule aiv:
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
         echo "VCHRM: $vchr" >> {log} 2>&1;
 
-        {params.numa} \
-        aivariant \
-        --ref {params.huref} \
-        --tumor {input.tumor_cram} \
-        --normal {input.normal_cram} \
-        --regions $vchr \
-        --threads {threads} \
-        --out_vcf {output.vcf} >> {log} 2>&1;
+
+        cd /opt/AIVariant/AIVariant/ >> {log};
+        
+        bash run.sh \
+        -i input_env \
+        -e eval_env \
+        -t {input.tumor_bam} \
+        -n {input.normal_bam} \
+        -r {input.ref_fasta} \
+        -g {params.genome_build} \
+        -d {params.dbsnp} \
+        -o {output.dir} >> {log} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
