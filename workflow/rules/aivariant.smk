@@ -166,12 +166,12 @@ rule aiv:
         bash run.sh \
         -i input_env \
         -e eval_env \
-        -t {input.tumor_bam} \
-        -n {input.normal_bam} \
+        -t $(realpath {input.tumor_bam}) \
+        -n $(realpath {input.normal_bam}) \
         -r {params.huref} \
         -g {params.genome_build} \
         -d {params.depth} \
-        -o ${{out_wdir}} >> ${{log_wdir}} 2>&1;
+        -o $(realpath {output.vcf}) >> $(realpath {log}) 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
