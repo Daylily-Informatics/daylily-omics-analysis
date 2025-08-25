@@ -197,7 +197,7 @@ rule prep_dvsom_chunkdirs:
         sample=VARNTUMORS_REGEX
     input:
         b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        n=lambda wildcards: MDIR + f"{TN_DICT[wildcards.sample]}/align/{wildcards.alnr}/{TN_DICT[wildcards.sample]}.{wildcards.alnr}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/snv/dvsom/vcfs/{dvsomchrm}/{{sample}}.ready",
