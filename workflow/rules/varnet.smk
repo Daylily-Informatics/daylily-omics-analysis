@@ -66,7 +66,7 @@ rule varn_bams:
     log:
         MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.bamify.log",
     threads: config['varn']['threads'],
-    container: config['varn']['varn_container']  # assumes samtools is in this image
+    conda: "../envs/vanilla_v0.1.yaml"
     params:
         vchrm=get_varn_chrom,
         cpre="" if "b37" == config['genome_build'] else "chr",
