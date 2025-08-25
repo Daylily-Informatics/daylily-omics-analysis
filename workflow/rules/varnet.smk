@@ -169,6 +169,7 @@ rule varn:
           --output_dir "$outbase_dir" \
           --reference  {params.huref} \
           --region_bed {input.region_bed} \
+          -indel \
           -snv >> {log} 2>&1
 
         {params.numa} python /VarNet/predict.py \
@@ -178,7 +179,7 @@ rule varn:
           --processes  {threads} \
           --output_dir "$outbase_dir" \
           --reference  {params.huref} \
-          --region_bed {input.region_bed} \
+          -indel \
           -snv >> {log} 2>&1
 
         src_vcf="$outbase_dir/$sname/$sname.vcf"
