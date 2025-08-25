@@ -23,39 +23,14 @@ def get_aiv_chrom(wildcards):
         )
     return ret_mod_chrm(ret_str)
 
-
-def get_aiv_normal_cram(wildcards):
-    try:
-        nsamp = TN_PAIRS[wildcards.sample]
-    except KeyError:
-        raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
-
-
-def get_aiv_normal_crai(wildcards):
-    try:
-        nsamp = TN_PAIRS[wildcards.sample]
-    except KeyError:
-        raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
-
-
-def get_aiv_tumor_cram(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
-
-
-def get_aiv_tumor_crai(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
-
-
 rule aiv:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        tumor_cram=get_aiv_tumor_cram,
-        tumor_crai=get_aiv_tumor_crai,
-        normal_cram=get_aiv_normal_cram,
-        normal_crai=get_aiv_normal_crai,
+        tumor_cram=get_somcall_tumor_cram,
+        tumor_crai=get_somcall_tumor_crai,
+        normal_cram=get_somcall_normal_cram,
+        normal_crai=get_somcall_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.ready",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
