@@ -66,14 +66,7 @@ rule dvsom:
         normal=get_normal_sample,
     shell:
         """
-        TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
-        itype=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
-        echo "INSTANCE TYPE: $itype" > {log};
-
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
-
-        start_time=$(date +%s);
-        echo "Start-Time-sec:$itype\t0" >> {log} 2>&1;
 
         dchr=$(echo {params.cpre}{params.dchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/');
 
@@ -96,10 +89,6 @@ rule dvsom:
         --logging_dir=$(dirname {log}) \
         --dry_run=false >> {log} 2>&1;
 
-        end_time=$(date +%s);
-        elapsed_time=$((($end_time - $start_time) / 60));
-
-        echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
         """
 
 
@@ -162,6 +151,8 @@ rule dvsom_concat_index_chunks:
         bcftools index -f -t --threads {threads} {output.vcfgz} >> {log} 2>&1;
         rm -f {output.vcfgz}.tmp {output.vcfgz}.rename.txt;
         """
+
+        
 rule produce_dvsom_vcf:  # Target: produce deep-somatic
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
