@@ -147,6 +147,7 @@ rule aiv:
         timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
 
         mkdir -p $(dirname {output.vcf}) >> {log} 2>&1;
+        touch {output.vcf};
 
         export TMPDIR=/dev/shm/aiv_tmp_$timestamp;
         mkdir -p $TMPDIR;
@@ -166,8 +167,6 @@ rule aiv:
         -g {params.genome_build} \
         -d {params.depth} \
         -o $(dirname {output.vcf}) >> {log} 2>&1;
-
-        touch {output.vcf};
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
