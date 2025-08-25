@@ -167,6 +167,8 @@ rule aiv:
         -d {params.depth} \
         -o $(dirname {output.vcf}) >> {log} 2>&1;
 
+        touch {output.vcf};
+
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
 
