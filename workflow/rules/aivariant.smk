@@ -168,7 +168,7 @@ rule aiv:
         -r {params.huref} \
         -g {params.genome_build} \
         -d {params.depth} \
-        -o $(dirname {output.vcf}) >> {log} 2>&1;
+        -o $(dirname {output.vcf});
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
