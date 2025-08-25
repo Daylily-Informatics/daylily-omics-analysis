@@ -93,10 +93,10 @@ rule aiv:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam",
-        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam.bai",
-        normal_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam",
-        normal_bai=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai",
+        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam",
+        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam.bai",
+        normal_bam=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam",
+        normal_bai=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai",
         d=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.ready",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
