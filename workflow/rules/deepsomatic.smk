@@ -158,7 +158,7 @@ rule dvsom_concat_index_chunks:
         """
         bcftools concat -a -d all --threads {threads} -O z -o {output.vcfgz}.tmp {input.vcfs} >> {log} 2>&1;
         oldname=$(bcftools query -l {output.vcfgz}.tmp | head -n1) >> {log} 2>&1;
-        echo -e "${oldname}	{params.cluster_sample}" > {output.vcfgz}.rename.txt;
+        echo -e "${{oldname}}	{params.cluster_sample}" > {output.vcfgz}.rename.txt;
         bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgz}.tmp >> {log} 2>&1;
         bcftools index -f -t --threads {threads} {output.vcfgz} >> {log} 2>&1;
         rm -f {output.vcfgz}.tmp {output.vcfgz}.rename.txt;
