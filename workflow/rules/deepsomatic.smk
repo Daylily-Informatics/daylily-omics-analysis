@@ -71,12 +71,12 @@ rule dvsom:
         ulimit -n 65536 || true
 
         dchr=$(echo {params.cpre}{params.dchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
-        dchr=${dchr%:}
+        dchr=${{dchr%:}}
 
         IFS=':' read -r dcontig dstart dend <<< "$dchr"
-        if [ -z "${dend:-}" ]; then
+        if [ -z "${{dend:-}}" ]; then
             dstart=0
-            dend=$(awk -v c="$dcontig" '$1==c{print $2; exit}' {params.huref}.fai)
+            dend=$(awk -v c="$dcontig" '$1==c{{print $2; exit}}' {params.huref}.fai)
         fi
         region="$dcontig:$dstart-$dend"
 
