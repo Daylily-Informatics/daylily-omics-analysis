@@ -56,6 +56,101 @@ rule varn:
         normal_crai=get_varn_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
     output:
+        vcf=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.snv.log",
+    threads: config['varn']['threads'],
+    container: config['varn']['varn_container'],
+    priority: 45,
+    resources:
+        vcpu=config['varn']['threads'],
+        threads=config['varn']['threads'],
+        partition=config['varn']['partition'],
+        mem_mb=config['varn']['mem_mb'],
+    benchmark:
+        repeat(
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.varn.{varnchrm}.bench.tsv",
+            0 if 'bench_repeat' not in config.get('varn', {}) else config['varn']['bench_repeat'],
+        ),
+    params:
+        vchrm=get_varn_chrom,
+        cluster_sample=ret_sample,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        mdir=MDIR,
+        mem_mb=config['varn']['mem_mb'],
+        numa=config['varn']['numa'],   # e.g., "numactl --interleave=all" or ""
+        cpre="" if "b37" == config['genome_build'] else "chr",
+        mito_code="MT" if "b37" == config['genome_build'] else "M",
+    shell:
+        r"""
+        set -euo pipefail
+        ulimit -n 65536 || true
+
+        # Map wildcard to contig/region (supports whole-chr or chr:start:end with '~' separators)
+        vchr=$(echo {params.cpre}{params.vchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
+        vchr=${{vchr%:}}  # drop trailing ":" if present
+
+        IFS=':' read -r vcontig vstart vend <<< "$vchr"
+        if [ -z "${{vend:-}}" ]; then
+            vstart=0
+            vend=$(awk -v c="$vcontig" '$1==c{{print $2; exit}}' {params.huref}.fai)
+        fi
+
+        timestamp=$(date +%Y%m%d%H%M%S)_$(head -c 12 /dev/urandom | tr -dc 'a-zA-Z0-9')
+        export TMPDIR=/dev/shm/varnet_tmp_$timestamp
+        mkdir -p "$TMPDIR"
+        export APPTAINER_HOME="$TMPDIR"
+        trap 'rm -rf "$TMPDIR" || true' EXIT
+
+        bed="$TMPDIR/region.bed"
+        printf "%s\t%s\t%s\n" "$vcontig" "$vstart" "$vend" > "$bed"
+        echo "Region BED: $(cat "$bed")" >> {log} 2>&1
+
+        # Unique sample_name per shard to avoid collisions
+        sname="{wildcards.sample}.{wildcards.alnr}.varn.{wildcards.varnchrm}.snv"
+        sname=$(echo "$sname" | tr ':~' '__')
+
+        # Work dir isolated per-job; final VCF copied to Snakemake's expected path
+        outbase_dir="$TMPDIR/varnet_out"
+
+        # VarNet filter (candidate scan)
+        {params.numa} python /VarNet/filter.py \
+            --sample_name "$sname" \
+            --normal_bam {input.normal_cram} \
+            --tumor_bam {input.tumor_cram} \
+            --processes {threads} \
+            --output_dir "$outbase_dir" \
+            --reference {params.huref} \
+            --region_bed "$bed" \
+            -snv >> {log} 2>&1
+
+        # VarNet predict (produces VCF at outbase_dir/$sname/$sname.vcf)
+        {params.numa} python /VarNet/predict.py \
+            --sample_name "$sname" \
+            --normal_bam {input.normal_cram} \
+            --tumor_bam {input.tumor_cram} \
+            --processes {threads} \
+            --output_dir "$outbase_dir" \
+            --reference {params.huref} \
+            --region_bed "$bed" \
+            -snv >> {log} 2>&1
+
+        src_vcf="$outbase_dir/$sname/$sname.vcf"
+        test -s "$src_vcf"
+        mkdir -p "$(dirname {output.vcf})"
+        cp -f "$src_vcf" {output.vcf}
+        """
+
+rule varnold:
+    wildcard_constraints:
+        sample=VARNTUMORS_REGEX
+    input:
+        tumor_cram=get_varn_tumor_cram,
+        tumor_crai=get_varn_tumor_crai,
+        normal_cram=get_varn_normal_cram,
+        normal_crai=get_varn_normal_crai,
+        d=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
+    output:
         vcf=MDIR
         + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
     log:
