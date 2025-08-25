@@ -152,19 +152,18 @@ rule dvsom_concat_index_chunks:
         rm -f {output.vcfgz}.tmp {output.vcfgz}.rename.txt;
         """
 
-        
+
 rule produce_dvsom_vcf:  # Target: produce deep-somatic
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",
-            sample=TUMOR_SAMPLES,
+            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",           sample=TN_TUMOR_SAMPS
             alnr=ALIGNERS,
         ),
         vcftbi=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
-            sample=TUMOR_SAMPLES,
+            sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS
         ),
     output:
