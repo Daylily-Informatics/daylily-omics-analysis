@@ -34,6 +34,8 @@ rule dvsom:
         tumor_crai=get_somcall_tumor_crai,
         normal_cram=get_somcall_normal_cram,
         normal_crai=get_somcall_normal_crai,      
+        ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
         d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",

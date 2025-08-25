@@ -25,27 +25,6 @@ def get_varn_chrom(wildcards):
     return ret_mod_chrm(ret_str)
 
 
-def get_varn_normal_cram(wildcards):
-    try:
-        nsamp = TN_PAIRS[wildcards.sample]
-    except KeyError:
-        raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
-
-
-def get_varn_normal_crai(wildcards):
-    try:
-        nsamp = TN_PAIRS[wildcards.sample]
-    except KeyError:
-        raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
-
-def get_varn_tumor_cram(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
-
-def get_varn_tumor_crai(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
-
 # --- produce per-region temporary BAMs from CRAMs for VarNet ---
 rule varn_bams:
     wildcard_constraints:
