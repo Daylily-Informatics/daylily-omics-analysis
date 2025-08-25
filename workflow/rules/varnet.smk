@@ -54,6 +54,8 @@ rule varn:
         tumor_crai=get_varn_tumor_crai,
         normal_cram=get_varn_normal_cram,
         normal_crai=get_varn_normal_crai,
+        ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
         d=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
@@ -74,11 +76,8 @@ rule varn:
         ),
     params:
         vchrm=get_varn_chrom,
-        cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        mdir=MDIR,
-        mem_mb=config['varn']['mem_mb'],
-        numa=config['varn']['numa'],   # e.g., "numactl --interleave=all" or ""
+        numa=config['varn']['numa'],
         cpre="" if "b37" == config['genome_build'] else "chr",
         mito_code="MT" if "b37" == config['genome_build'] else "M",
     shell:
@@ -86,61 +85,89 @@ rule varn:
         set -euo pipefail
         ulimit -n 65536 || true
 
-        # Map wildcard to contig/region (supports whole-chr or chr:start:end with '~' separators)
+        # Resolve region from wildcard (supports 1, 1~start~end, 23->X, 24->Y, 25->M/MT)
         vchr=$(echo {params.cpre}{params.vchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
-        vchr=${{vchr%:}}  # drop trailing ":" if present
-
+        vchr=${{vchr%:}}
         IFS=':' read -r vcontig vstart vend <<< "$vchr"
         if [ -z "${{vend:-}}" ]; then
+            vend=$(awk -v c="$vcontig" '$1==c{{print $2; exit}}' {input.ref_fai})
+            vreg="$vcontig"
             vstart=0
-            vend=$(awk -v c="$vcontig" '$1==c{{print $2; exit}}' {params.huref}.fai)
+        else
+            vreg="$vcontig:$vstart-$vend"
         fi
 
-        timestamp=$(date +%Y%m%d%H%M%S)_$(head -c 12 /dev/urandom | tr -dc 'a-zA-Z0-9')
+        timestamp=$(date +%Y%m%d%H%M%S)_$(head -c 8 /dev/urandom | tr -dc 'a-zA-Z0-9')
         export TMPDIR=/dev/shm/varnet_tmp_$timestamp
         mkdir -p "$TMPDIR"
-        export APPTAINER_HOME="$TMPDIR"
-        #trap 'rm -rf "$TMPDIR" || true' EXIT
+        trap 'rm -rf "$TMPDIR" || true' EXIT
 
         bed="$TMPDIR/region.bed"
         printf "%s\t%s\t%s\n" "$vcontig" "$vstart" "$vend" > "$bed"
-        echo "Region BED: $(cat "$bed")" >> {log} 2>&1
 
-        # Unique sample_name per shard to avoid collisions
+        echo "Preflight: listing ref and fai" >> {log} 2>&1
+        ls -l {input.ref_fa} {input.ref_fai} >> {log} 2>&1 || true
+
+        # Quick CRAM sanity from INSIDE the container with the provided FASTA
+        set +e
+        samtools view -T {input.ref_fa} -c {input.tumor_cram} "$vreg" >> {log} 2>&1
+        rc_t=$?
+        samtools view -T {input.ref_fa} -c {input.normal_cram} "$vreg" >> {log} 2>&1
+        rc_n=$?
+        set -e
+
         sname="{wildcards.sample}.{wildcards.alnr}.varn.{wildcards.varnchrm}.snv"
         sname=$(echo "$sname" | tr ':~' '__')
-
-        # Work dir isolated per-job; final VCF copied to Snakemake's expected path
         outbase_dir="$TMPDIR/varnet_out"
 
-        # VarNet filter (candidate scan)
-        {params.numa} python /VarNet/filter.py \
-            --sample_name "$sname" \
-            --normal_bam {input.normal_cram} \
-            --tumor_bam {input.tumor_cram} \
-            --processes {threads} \
-            --output_dir "$outbase_dir" \
-            --reference {params.huref} \
-            --region_bed "$bed" \
-            -snv >> {log} 2>&1
+        run_varnet () {{
+            {params.numa} python /VarNet/filter.py \
+              --sample_name "$sname" \
+              --normal_bam "$1" \
+              --tumor_bam  "$2" \
+              --processes  {threads} \
+              --output_dir "$outbase_dir" \
+              --reference  {input.ref_fa} \
+              --region_bed "$bed" \
+              -snv >> {log} 2>&1
 
-        # VarNet predict (produces VCF at outbase_dir/$sname/$sname.vcf)
-        {params.numa} python /VarNet/predict.py \
-            --sample_name "$sname" \
-            --normal_bam {input.normal_cram} \
-            --tumor_bam {input.tumor_cram} \
-            --processes {threads} \
-            --output_dir "$outbase_dir" \
-            --reference {params.huref} \
-            --region_bed "$bed" \
-            -snv >> {log} 2>&1
+            {params.numa} python /VarNet/predict.py \
+              --sample_name "$sname" \
+              --normal_bam "$1" \
+              --tumor_bam  "$2" \
+              --processes  {threads} \
+              --output_dir "$outbase_dir" \
+              --reference  {input.ref_fa} \
+              --region_bed "$bed" \
+              -snv >> {log} 2>&1
+        }}
+
+        if [ $rc_t -eq 0 ] && [ $rc_n -eq 0 ]; then
+            echo "CRAM decode OK with provided FASTA; running VarNet directly on CRAMs." >> {log} 2>&1
+            run_varnet "{input.normal_cram}" "{input.tumor_cram}"
+        else
+            echo "CRAM decode failed (rc_t=$rc_t rc_n=$rc_n). Falling back to CRAM→BAM for region $vreg." >> {log} 2>&1
+
+            # Force htslib to use the supplied FASTA while slicing
+            t_bam="$TMPDIR/tumor.$timestamp.bam"
+            n_bam="$TMPDIR/normal.$timestamp.bam"
+
+            samtools view -@ {threads} -T {input.ref_fa} -b {input.tumor_cram} "$vreg" | \
+              samtools sort -@ {threads} -o "$t_bam" -  >> {log} 2>&1
+            samtools index -@ {threads} "$t_bam"       >> {log} 2>&1
+
+            samtools view -@ {threads} -T {input.ref_fa} -b {input.normal_cram} "$vreg" | \
+              samtools sort -@ {threads} -o "$n_bam" -  >> {log} 2>&1
+            samtools index -@ {threads} "$n_bam"       >> {log} 2>&1
+
+            run_varnet "$n_bam" "$t_bam"
+        fi
 
         src_vcf="$outbase_dir/$sname/$sname.vcf"
         test -s "$src_vcf"
         mkdir -p "$(dirname {output.vcf})"
         cp -f "$src_vcf" {output.vcf}
         """
-
 
 rule varn_sort_index_chunk_vcf:
     wildcard_constraints:
