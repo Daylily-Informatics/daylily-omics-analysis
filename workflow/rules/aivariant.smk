@@ -160,18 +160,18 @@ rule aiv:
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
         echo "VCHRM: $vchr" >> {log} 2>&1;
 
-
+        opwd=${{PWD}};
         cd /opt/AIVariant/AIVariant/ >> {log} 2>&1;
         
         bash run.sh \
         -i input_env \
         -e eval_env \
-        -t $(realpath {input.tumor_bam}) \
-        -n $(realpath {input.normal_bam}) \
+        -t ${{opwd}}/{input.tumor_bam} \
+        -n ${{opwd}}/{input.normal_bam} \
         -r {params.huref} \
         -g {params.genome_build} \
         -d {params.depth} \
-        -o $(realpath {output.vcf}) >> $(realpath {log}) 2>&1;
+        -o ${{opwd}}/{output.vcf} >> ${{opwd}}/{log} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
