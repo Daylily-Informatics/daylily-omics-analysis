@@ -141,68 +141,6 @@ rule varn:
         cp -f "$src_vcf" {output.vcf}
         """
 
-rule varnold:
-    wildcard_constraints:
-        sample=VARNTUMORS_REGEX
-    input:
-        tumor_cram=get_varn_tumor_cram,
-        tumor_crai=get_varn_tumor_crai,
-        normal_cram=get_varn_normal_cram,
-        normal_crai=get_varn_normal_crai,
-        d=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
-    output:
-        vcf=MDIR
-        + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
-    log:
-        MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.snv.log",
-    threads: config['varn']['threads'],
-    container:
-        config['varn']['varn_container'],
-    priority: 45,
-    resources:
-        vcpu=config['varn']['threads'],
-        threads=config['varn']['threads'],
-        partition=config['varn']['partition'],
-        mem_mb=config['varn']['mem_mb'],
-    benchmark:
-        repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.varn.{varnchrm}.bench.tsv",
-            0 if 'bench_repeat' not in config.get('varn', {}) else config['varn']['bench_repeat'],
-        ),
-    params:
-        vchrm=get_varn_chrom,
-        cluster_sample=ret_sample,
-        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        mdir=MDIR,
-        mem_mb=config['varn']['mem_mb'],
-        numa=config['varn']['numa'],
-        cpre="" if "b37" == config['genome_build'] else "chr",
-        mito_code="MT" if "b37" == config['genome_build'] else "M",
-    shell:
-        """
-        ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
-
-        vchr=$(echo {params.cpre}{params.vchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' );
-
-        timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
-
-        export TMPDIR=/dev/shm/varnet_tmp_$timestamp;
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
-        echo "VCHRM: $vchr" >> {log} 2>&1;
-
-        {params.numa} \
-        varnet \
-        --ref {params.huref} \
-        --tumor {input.tumor_cram} \
-        --normal {input.normal_cram} \
-        --regions $vchr \
-        --threads {threads} \
-        --out_vcf {output.vcf} >> {log} 2>&1;
-
-        """
-
 
 rule varn_sort_index_chunk_vcf:
     wildcard_constraints:
