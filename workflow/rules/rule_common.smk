@@ -944,3 +944,29 @@ def instrument(wildcards):
     
 OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS))
+
+
+
+
+
+
+def get_somcall_normal_cram(wildcards):
+    try:
+        nsamp = TN_PAIRS[wildcards.sample]
+    except KeyError:
+        raise ValueError(f"No matched normal sample for {wildcards.sample}")
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
+
+
+def get_somcall_normal_crai(wildcards):
+    try:
+        nsamp = TN_PAIRS[wildcards.sample]
+    except KeyError:
+        raise ValueError(f"No matched normal sample for {wildcards.sample}")
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
+
+def get_somcall_tumor_cram(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+
+def get_somcall_tumor_crai(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"

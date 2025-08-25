@@ -51,10 +51,10 @@ rule varn_bams:
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
     input:
-        tumor_cram=get_varn_tumor_cram,
-        tumor_crai=get_varn_tumor_crai,
-        normal_cram=get_varn_normal_cram,
-        normal_crai=get_varn_normal_crai,
+        tumor_cram=get_somcall_tumor_cram,
+        tumor_crai=get_somcall_tumor_crai,
+        normal_cram=get_somcall_normal_cram,
+        normal_crai=get_somcall_normal_crai,
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
