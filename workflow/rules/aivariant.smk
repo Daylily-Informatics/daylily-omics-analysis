@@ -146,6 +146,8 @@ rule aiv:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
 
+        mkdir -p $(dirname {output.vcf}) >> {log} 2>&1;
+
         export TMPDIR=/dev/shm/aiv_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
@@ -163,7 +165,7 @@ rule aiv:
         -r {params.huref} \
         -g {params.genome_build} \
         -d {params.depth} \
-        -o {output.dir} >> {log} 2>&1;
+        -o $(dirname {output.vcf}) >> {log} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
