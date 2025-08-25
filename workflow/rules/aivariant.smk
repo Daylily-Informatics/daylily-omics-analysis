@@ -147,6 +147,8 @@ rule aiv:
         timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
 
         mkdir -p $(dirname {output.vcf}) >> {log} 2>&1;
+        mkdir -p $(dirname {log}) ;
+        touch {log};
         touch {output.vcf};
 
         export TMPDIR=/dev/shm/aiv_tmp_$timestamp;
