@@ -28,7 +28,7 @@ def get_dvs_tumor_crai(wildcards):
 
 rule dvsom:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         tumor_cram=get_somcall_tumor_cram,
         tumor_crai=get_somcall_tumor_crai,
@@ -105,7 +105,7 @@ rule dvsom:
 
 rule dvsom_sort_index_chunk_vcf:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
     priority: 46
@@ -135,7 +135,7 @@ rule dvsom_sort_index_chunk_vcf:
 
 rule dvsom_concat_index_chunks:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
@@ -166,7 +166,7 @@ rule dvsom_concat_index_chunks:
 
 rule produce_dvsom_vcf:  # Target: produce deep-somatic
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",           sample=TN_TUMOR_SAMPS,
@@ -205,7 +205,7 @@ localrules:
 
 rule prep_dvsom_chunkdirs:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",

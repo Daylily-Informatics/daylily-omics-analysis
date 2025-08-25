@@ -527,7 +527,7 @@ for tsamp, tinfo in sample_info.items():
 TN_TUMOR_SAMPS = list(TN_PAIRS.keys())
 
 # Optional: restrict rules’ sample wildcard to tumors only
-VARNTUMORS_REGEX = "|".join(re.escape(s) for s in TN_TUMOR_SAMPS) or r"^$"
+TUMORS_REGEX = "|".join(re.escape(s) for s in TN_TUMOR_SAMPS) or r"^$"
 
 CRAM_ALIGNERS = list(set(CRAM_ALIGNERS))
 # Aspirationally hoping to adopt PEPs...

@@ -49,7 +49,7 @@ def get_varn_tumor_crai(wildcards):
 # --- produce per-region temporary BAMs from CRAMs for VarNet ---
 rule varn_bams:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         tumor_cram=get_somcall_tumor_cram,
         tumor_crai=get_somcall_tumor_crai,
@@ -115,7 +115,7 @@ rule varn_bams:
 # --- run VarNet on the temporary BAMs ---
 rule varn:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         region_bed=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.region.bed",
         tumor_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam",
@@ -192,7 +192,7 @@ rule varn:
 
 rule varn_sort_index_chunk_vcf:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcf=MDIR
         + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
@@ -228,7 +228,7 @@ rule varn_sort_index_chunk_vcf:
 
 rule varn_concat_index_chunks:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
             MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz",
@@ -254,7 +254,7 @@ rule varn_concat_index_chunks:
 
 rule produce_varn_vcf:  # TARGET: varn vcf
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcftb=expand(
             MDIR
@@ -298,7 +298,7 @@ localrules:
 
 rule prep_varn_chunkdirs:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
