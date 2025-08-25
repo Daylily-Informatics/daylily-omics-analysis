@@ -124,6 +124,7 @@ rule aiv:
         mem_mb=config['aiv']['mem_mb'],
         numa=config['aiv']['numa'],
         cpre="" if "b37" == config['genome_build'] else "chr",
+        genome_build=config['genome_build'],
         mito_code="MT" if "b37" == config['genome_build'] else "M",
     shell:
         """
