@@ -65,7 +65,6 @@ rule dvsom:
         deep_threads=config['deepsomatic']['deep_threads'],
         mito_code="MT" if "b37" == config['genome_build'] else "M",
         deep_model=get_deep_model,
-        normal=get_normal_sample,
     shell:
         r"""
         set -euo pipefail
