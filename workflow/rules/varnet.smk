@@ -48,6 +48,7 @@ rule varn_bams:
     conda: "../envs/vanilla_v0.1.yaml"
     params:
         vchrm=get_varn_chrom,
+        cluster_sample=ret_sample,
         cpre="" if "b37" == config['genome_build'] else "chr",
         mito_code="MT" if "b37" == config['genome_build'] else "M",
     shell:
@@ -121,6 +122,7 @@ rule varn:
         ),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        cluster_sample=ret_sample,
         numa=config['varn']['numa'],   # e.g., "numactl --interleave=all" or ""
     shell:
         r"""

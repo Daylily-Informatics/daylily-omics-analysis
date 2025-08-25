@@ -46,6 +46,7 @@ rule aiv_bams:
     conda: "../envs/vanilla_v0.1.yaml"
     params:
         vchrm=get_aiv_chrom,
+        cluster_sample=ret_sample,
         cpre="" if "b37" == config['genome_build'] else "chr",
         mito_code="MT" if "b37" == config['genome_build'] else "M",
     shell:
