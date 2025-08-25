@@ -171,7 +171,7 @@ rule aiv:
         -r {params.huref} \
         -g {params.genome_build} \
         -d {params.depth} \
-        -o ${{opwd}}/{output.vcf} >> ${{opwd}}/{log} 2>&1;
+        -o $(dirname ${{opwd}}/{output.vcf}) >> ${{opwd}}/{log} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
