@@ -151,8 +151,8 @@ rule aiv:
         touch {log};
         touch {output.vcf};
 
-        log_wdir = ${{PWD}}/{log};
-        out_wdir = ${{PWD}}/$(dirname {output.vcf});
+        log_wdir=${{PWD}}/{log};
+        out_wdir=${{PWD}}/$(dirname {output.vcf});
 
         export TMPDIR=/dev/shm/aiv_tmp_$timestamp;
         mkdir -p $TMPDIR;
