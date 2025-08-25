@@ -222,6 +222,8 @@ rule varn_concat_index_chunks:
         vcfgztbi=MDIR
         + "{sample}/align/{alnr}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz.tbi",
     threads: 4,
+    params:
+        cluster_sample=ret_sample,
     conda:
         config['varn']['conda'],
     log:
@@ -257,6 +259,8 @@ rule produce_varn_vcf:  # TARGET: varn vcf
         "gatheredall.varn.log",
     conda:
         "../envs/vanilla_v0.1.yaml",
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         for vcf in {input.vcftb}; do
@@ -291,6 +295,8 @@ rule prep_varn_chunkdirs:
     threads: 1,
     log:
         MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.chunkdirs.log",
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         ( echo {output} ;

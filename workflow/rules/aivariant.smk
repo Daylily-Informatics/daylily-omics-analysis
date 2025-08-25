@@ -255,7 +255,6 @@ rule aiv_sort_index_chunk_vcf:
         tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
         """
 
-
 rule aiv_concat_index_chunks:
     wildcard_constraints:
         sample=TUMORS_REGEX
@@ -272,6 +271,8 @@ rule aiv_concat_index_chunks:
     threads: 4,
     conda:
         config['aiv']['conda'],
+    params:
+        cluster_sample=ret_sample,
     log:
         MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.aiv.som.merge.log",
     shell:
@@ -303,6 +304,8 @@ rule produce_aiv_vcf:  # TARGET: aiv vcf
         "gatheredall.aiv.log",
     conda:
         "../envs/vanilla_v0.1.yaml",
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         for vcf in {input.vcftb}; do
@@ -335,6 +338,8 @@ rule prep_aiv_chunkdirs:
             aivchrm=AIV_CHRMS,
         ),
     threads: 1,
+    params:
+        cluster_sample=ret_sample,
     log:
         MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.chunkdirs.log",
     shell:

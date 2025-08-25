@@ -184,6 +184,8 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
     priority: 48
     log:
         "gatheredall.dvsom.log",
+    params:
+        cluster_sample=ret_sample,
     conda:
         config['deepsomatic']['dvsom_conda']
     shell:
@@ -216,6 +218,8 @@ rule prep_dvsom_chunkdirs:
             dvsomchrm=DVSOM_CHRMS,
         ),
     threads: 1
+    params:
+        cluster_sample=ret_sample,
     log:
         MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.chunkdirs.log",
     shell:
