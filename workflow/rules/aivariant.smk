@@ -154,7 +154,7 @@ rule aiv:
         -e eval_env \
         -t {input.tumor_bam} \
         -n {input.normal_bam} \
-        -r {input.ref_fasta} \
+        -r {params.huref} \
         -g {params.genome_build} \
         -d {params.dbsnp} \
         -o {output.dir} >> {log} 2>&1;
