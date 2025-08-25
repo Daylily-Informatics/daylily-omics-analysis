@@ -185,7 +185,7 @@ deepsomatic:
     threads: 42
     deep_threads: 42
     env_yaml: "../envs/deepvariant_v0.1.yaml"
-    container: "docker://google/deepsomatic:1.0"
+    container: "docker://google/deepsomatic:1.9.0"
     partition: "i192,i128,i192mem"
     partition_other: "i192,i128,i192mem"
     mem_mb: 85000
