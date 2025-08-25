@@ -89,6 +89,10 @@ rule aiv_bams:
         """
 
 
+def approximated_bam_depth(wildcards):
+    return 30  # Placeholder value
+
+
 rule aiv:
     wildcard_constraints:
         sample=TUMORS_REGEX
@@ -121,6 +125,7 @@ rule aiv:
         cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         mdir=MDIR,
+        depth=approximated_bam_depth,
         mem_mb=config['aiv']['mem_mb'],
         numa=config['aiv']['numa'],
         cpre="" if "b37" == config['genome_build'] else "chr",
@@ -157,7 +162,7 @@ rule aiv:
         -n {input.normal_bam} \
         -r {params.huref} \
         -g {params.genome_build} \
-        -d {params.dbsnp} \
+        -d {params.depth} \
         -o {output.dir} >> {log} 2>&1;
 
         end_time=$(date +%s);
