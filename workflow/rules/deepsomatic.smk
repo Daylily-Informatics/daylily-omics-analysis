@@ -90,7 +90,7 @@ rule dvsom:
         out_vcf="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.dvsom.{wildcards.dvsomchrm}.snv.vcf"
         mkdir -p "$(dirname {output.vcf})"
 
-        {params.numa} /opt/deepsomatic/bin/run_deepsomatic \
+        {params.numa} run_deepsomatic \
             --model_type={params.deep_model} --ref={params.huref} \
             --reads_tumor={input.tumor_cram} \
             --reads_normal={input.normal_cram} \
