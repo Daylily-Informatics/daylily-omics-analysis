@@ -30,10 +30,10 @@ rule dvsom:
     wildcard_constraints:
         sample=VARNTUMORS_REGEX
     input:
-        tumor_cram=get_dvs_tumor_cram,
-        tumor_crai=get_dvs_tumor_crai,
-        normal_cram=get_dvs_normal_cram,
-        normal_crai=get_dvs_normal_crai,
+        tumor_cram=get_varn_tumor_cram,
+        tumor_crai=get_varn_tumor_crai,
+        normal_cram=get_varn_normal_cram,
+        normal_crai=get_varn_normal_crai,        
         d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
