@@ -65,30 +65,41 @@ rule dvsom:
         deep_model=get_deep_model,
         normal=get_normal_sample,
     shell:
-        """
-        ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
+        r"""
+        set -euo pipefail
+        ulimit -n 65536 || true
 
-        dchr=$(echo {params.cpre}{params.dchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/');
+        dchr=$(echo {params.cpre}{params.dchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
+        dchr=${dchr%:}
 
-        timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
+        IFS=':' read -r dcontig dstart dend <<< "$dchr"
+        if [ -z "${dend:-}" ]; then
+            dstart=0
+            dend=$(awk -v c="$dcontig" '$1==c{print $2; exit}' {params.huref}.fai)
+        fi
+        region="$dcontig:$dstart-$dend"
 
-        export TMPDIR=/dev/shm/deepsomatic_tmp_$timestamp;
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
-        echo "DCHRM: $dchr" >> {log} 2>&1;
+        timestamp=$(date +%Y%m%d%H%M%S)_$(head -c 12 /dev/urandom | tr -dc 'a-zA-Z0-9')
 
-        {params.numa} \
-        /opt/deepsomatic/bin/run_deepsomatic \
-        --model_type={params.deep_model} --ref={params.huref} \
-        --reads_tumor={input.tumor_cram} \
-        --reads_normal={input.normal_cram} \
-        --regions=$dchr \
-        --output_vcf={output.vcf} \
-        --num_shards={params.deep_threads} \
-        --logging_dir=$(dirname {log}) \
-        --dry_run=false >> {log} 2>&1;
+        export TMPDIR=/dev/shm/deepsomatic_tmp_$timestamp
+        mkdir -p "$TMPDIR"
+        export APPTAINER_HOME="$TMPDIR"
+        trap 'rm -rf "$TMPDIR" || true' EXIT
 
+        out_vcf="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.dvsom.{wildcards.dvsomchrm}.snv.vcf"
+        mkdir -p "$(dirname {output.vcf})"
+
+        {params.numa} /opt/deepsomatic/bin/run_deepsomatic \
+            --model_type={params.deep_model} --ref={params.huref} \
+            --reads_tumor={input.tumor_cram} \
+            --reads_normal={input.normal_cram} \
+            --regions "$region" \
+            --output_vcf "$out_vcf" \
+            --num_shards={params.deep_threads} \
+            --logging_dir=$(dirname {log}) \
+            --dry_run=false >> {log} 2>&1
+
+        cp -f "$out_vcf" {output.vcf}
         """
 
 
