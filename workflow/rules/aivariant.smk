@@ -1,6 +1,10 @@
 ##### AIVariant
 # ---------------------------
 
+import subprocess
+import shlex
+
+
 def get_aiv_chrom(wildcards):
     pchr = ""
     ret_str = ""
@@ -89,8 +93,48 @@ rule aiv_bams:
         """
 
 
-def approximated_bam_depth(wildcards):
-    return 30  # Placeholder value
+def approximated_bam_depth(wildcards, input):
+    """Estimate average depth of the normal BAM.
+
+    This uses ``samtools idxstats`` to obtain the total number of mapped
+    reads and genome length from the BAM index and samples the first 1000
+    alignments to approximate the read length.  The resulting depth is
+    returned as an integer number of fold coverage.
+    """
+
+    bam = input.normal_bam
+
+    try:
+        # Summarise mapped reads and contig lengths from the BAM index.
+        idxstats_out = subprocess.check_output(
+            ["samtools", "idxstats", bam], text=True
+        ).strip().splitlines()
+        genome_size = 0
+        mapped_reads = 0
+        for line in idxstats_out:
+            chrom, length, mapped, _ = line.split("\t")
+            if chrom != "*":
+                genome_size += int(length)
+                mapped_reads += int(mapped)
+
+        if genome_size == 0 or mapped_reads == 0:
+            return 0
+
+        # Estimate the average read length by sampling the first 1000 reads.
+        view_cmd = f"samtools view {shlex.quote(bam)} | head -n 1000"
+        read_lines = subprocess.check_output(
+            view_cmd, shell=True, text=True
+        ).strip().splitlines()
+        if not read_lines:
+            return 0
+
+        read_len = sum(len(line.split("\t")[9]) for line in read_lines) / len(read_lines)
+
+        depth = (mapped_reads * read_len) / genome_size
+        return int(round(depth))
+    except Exception:
+        # Fall back to 0 if anything goes wrong.
+        return 0
 
 
 rule aiv:
