@@ -151,6 +151,9 @@ rule aiv:
         touch {log};
         touch {output.vcf};
 
+        log_wdir = ${{PWD}}/{log};
+        out_wdir = ${{PWD}}/$(dirname {output.vcf});
+
         export TMPDIR=/dev/shm/aiv_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
@@ -168,7 +171,7 @@ rule aiv:
         -r {params.huref} \
         -g {params.genome_build} \
         -d {params.depth} \
-        -o $(dirname {output.vcf});
+        -o ${{out_wdir}} >> ${{log_wdir}} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
