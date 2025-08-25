@@ -93,10 +93,10 @@ rule aiv:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        tumor_cram=get_somcall_tumor_cram,
-        tumor_crai=get_somcall_tumor_crai,
-        normal_cram=get_somcall_normal_cram,
-        normal_crai=get_somcall_normal_crai,
+        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam",
+        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam.bai",
+        normal_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam",
+        normal_bai=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai",
         d=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.ready",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
@@ -147,7 +147,7 @@ rule aiv:
         echo "VCHRM: $vchr" >> {log} 2>&1;
 
 
-        cd /opt/AIVariant/AIVariant/ >> {log};
+        cd /opt/AIVariant/AIVariant/ >> {log} 2>&1;
         
         bash run.sh \
         -i input_env \

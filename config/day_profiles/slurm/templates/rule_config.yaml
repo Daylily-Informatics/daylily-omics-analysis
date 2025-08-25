@@ -292,7 +292,7 @@ aiv:
     b37_aiv_chrms: "1-24"
     numa: "" 
     conda: "../envs/vanilla_v0.1.yaml"
-    aiv_container: "docker://genome4me/aivariant:latest" 
+    aiv_container: "docker://daylilyinformatics/aivariant:0.15"
 
 varn:
     threads: 32
