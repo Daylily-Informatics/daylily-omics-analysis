@@ -100,7 +100,7 @@ rule varn:
         export TMPDIR=/dev/shm/varnet_tmp_$timestamp
         mkdir -p "$TMPDIR"
         export APPTAINER_HOME="$TMPDIR"
-        trap 'rm -rf "$TMPDIR" || true' EXIT
+        #trap 'rm -rf "$TMPDIR" || true' EXIT
 
         bed="$TMPDIR/region.bed"
         printf "%s\t%s\t%s\n" "$vcontig" "$vstart" "$vend" > "$bed"
