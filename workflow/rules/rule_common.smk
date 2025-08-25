@@ -946,10 +946,6 @@ OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS))
 
 
-
-
-
-
 def get_somcall_normal_cram(wildcards):
     try:
         nsamp = TN_PAIRS[wildcards.sample]
