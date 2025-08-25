@@ -158,7 +158,7 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         sample=VARNTUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",           sample=TN_TUMOR_SAMPS
+            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",           sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
         ),
         vcftbi=expand(
