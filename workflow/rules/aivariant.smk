@@ -50,7 +50,7 @@ def get_aiv_tumor_crai(wildcards):
 
 rule aiv:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         tumor_cram=get_aiv_tumor_cram,
         tumor_crai=get_aiv_tumor_crai,
@@ -123,7 +123,7 @@ rule aiv:
 
 rule aiv_sort_index_chunk_vcf:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcf=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
     priority: 46,
@@ -154,7 +154,7 @@ rule aiv_sort_index_chunk_vcf:
 
 rule aiv_concat_index_chunks:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
             MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz",
@@ -179,7 +179,7 @@ rule aiv_concat_index_chunks:
 
 rule produce_aiv_vcf:  # TARGET: aiv vcf
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz",
@@ -221,7 +221,7 @@ localrules:
 
 rule prep_aiv_chunkdirs:
     wildcard_constraints:
-        sample=VARNTUMORS_REGEX
+        sample=TUMORS_REGEX
     input:
         b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
