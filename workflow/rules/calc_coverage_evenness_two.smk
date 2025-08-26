@@ -1,5 +1,3 @@
-import os
-
 rule calc_coverage_evenness_two:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
@@ -21,64 +19,50 @@ rule calc_coverage_evenness_two:
         cluster_sample=ret_sample,
     shell:
         """
+        set -euo pipefail;
         mkdir -p $(dirname {output.metrics}) $(dirname {log});
-        python - {params.window} {input.cram} {output.metrics} <<'PY' &> {log}
-import math
-import statistics
-import subprocess
-import sys
-from pathlib import Path
-
-window = int(sys.argv[1])
-bam = Path(sys.argv[2])
-outfile = Path(sys.argv[3])
-
-
-def process_window(chrom, start, depths, out):
-    if not depths:
-        return
-    n = len(depths)
-    mean = sum(depths) / n
-    median = statistics.median(depths)
-    stdev = statistics.pstdev(depths)
-    cv = stdev / mean if mean else 0.0
-    even = math.exp(-cv)
-    thr20 = 0.2 * mean
-    thr50 = 0.5 * mean
-    pct20 = sum(d >= thr20 for d in depths) / n * 100.0
-    pct50 = sum(d >= thr50 for d in depths) / n * 100.0
-    end = start + n
-    out.write(
-        f"{{chrom}}\t{{start}}\t{{end}}\t{{mean:.4f}}\t{{median:.4f}}\t{{stdev:.4f}}\t{{cv:.4f}}\t{{even:.4f}}\t{{pct20:.2f}}\t{{pct50:.2f}}\n"
-    )
-
-
-cmd = ["samtools", "depth", "-a", str(bam)]
-proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
-current_chr = None
-start_pos = None
-depths = []
-with outfile.open("w") as out:
-    out.write("chrom\tstart\tend\tmean\tmedian\tstdev\tcv\tevenness\tpct_gt_0.2xmean\tpct_gt_0.5xmean\n")
-    for line in proc.stdout:
-        chrom, pos, depth = line.strip().split("\t")
-        pos = int(pos)
-        depth = int(depth)
-        if current_chr is None:
-            current_chr = chrom
-            start_pos = pos
-        if chrom != current_chr or len(depths) >= window:
-            process_window(current_chr, start_pos, depths, out)
-            depths = []
-            current_chr = chrom
-            start_pos = pos
-        depths.append(depth)
-    process_window(current_chr, start_pos, depths, out)
-proc.stdout.close()
-retcode = proc.wait()
-if retcode != 0:
-    raise RuntimeError(f"samtools depth failed with return code {{retcode}}")
-PY
+        samtools depth -a {input.cram} 2> {log} | \
+        awk -v W={params.window} '
+        BEGIN{{
+            OFS="\t";
+            print "chrom","start","end","mean","median","stdev","cv","evenness","pct_gt_0.2xmean","pct_gt_0.5xmean"
+        }}
+        function process(chrom,start,count,    i,sum,sumsq,mean,median,sd,cv,even,thr20,thr50,gt20,gt50,sorted,end,pct20,pct50){{
+            if(count==0) return;
+            sum=0;
+            for(i=0;i<count;i++) sum+=depths[i];
+            mean=sum/count;
+            asort(depths,sorted);
+            if(count%2){{median=sorted[(count+1)/2];}} else {{median=(sorted[count/2]+sorted[count/2+1])/2;}}
+            sumsq=0;
+            for(i=0;i<count;i++) sumsq+=(depths[i]-mean)^2;
+            sd=sqrt(sumsq/count);
+            cv=(mean>0)?sd/mean:0;
+            even=exp(-cv);
+            thr20=0.2*mean;
+            thr50=0.5*mean;
+            gt20=gt50=0;
+            for(i=0;i<count;i++){{if(depths[i]>=thr20) gt20++; if(depths[i]>=thr50) gt50++;}}
+            pct20=gt20/count*100;
+            pct50=gt50/count*100;
+            end=start+count;
+            printf "%s\t%d\t%d\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.2f\t%.2f\n", chrom,start,end,mean,median,sd,cv,even,pct20,pct50;
+        }}
+        {{
+            chrom=$1; pos=$2; depth=$3;
+            if(cchrom==""){{cchrom=chrom; start=pos;}}
+            if(chrom!=cchrom || count>=W){{
+                process(cchrom,start,count);
+                for(i in depths) delete depths[i];
+                count=0;
+                cchrom=chrom;
+                start=pos;
+            }}
+            depths[count]=depth;
+            count++;
+        }}
+        END{{process(cchrom,start,count);}}
+        ' > {output.metrics};
         {latency_wait};
         ls {output.metrics};
         """
