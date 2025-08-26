@@ -2,36 +2,31 @@
 # Adapted from
 # # https://github.com/cbrueffer/snakemake-aws-parallelcluster-slurm 
 cluster:
-  mkdir -p "logs/slurm/{rule}/" &&
+  mkdir -p logs/slurm/{rule}/ &&
   sbatch
     --parsable
     --cpus-per-task={threads}
     --time={resources.time}
-    --job-name="smk.{rule}{params.cluster_suffix}"
-    --output="logs/slurm/{rule}/{rule}{params.cluster_suffix}.{jobid}.out"
-    --error="logs/slurm/{rule}/{rule}{params.cluster_suffix}.{jobid}.err"
+    --job-name="{rule}-{params.cluster_sample}"
+    --output=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out
+    --error=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err
     --partition={resources.partition}
-    --chdir="$PWD"
+    --chdir=$PWD
     --mem={resources.mem_mb}
     --comment="${DAY_PROJECT:-}"
-    --distribution={resources.distribution}
-    {resources.constraint}
-    {resources.exclude}
-    {resources.include}
-    {resources.exclusive}
-    {jobscript}
-
-default-resources:
+    --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include} {resources.exclusive} 
+default-resources:  
   - disk_mb=1000
-  - mem_mb=3000
+  - mem_mb=3000 # This should be total for the job, and the amount avail will be 0.95*published mem for instance type.
+  - threads=1
   - time=5440
   - partition=i192,i128,i192mem
+  - vcpu=1
   - distribution=block
   - exclusive=''
   - constraint=''
   - exclude=''
   - include=''
-
 jobs: 300
 cores: 4608  # SET TO AWS QUOTA LIMIT minus HEADNODE and other running ec2 spot instances
 latency-wait: 100
