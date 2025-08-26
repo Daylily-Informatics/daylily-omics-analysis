@@ -18,6 +18,26 @@ def sample_input(sample):
     else:
         raise ValueError(f"Sample {sample} must have 'bam' or 'vcf' path.")
 
+# Identify tumor/normal pairs from sample IDs
+def tn_pairs():
+    """Identify tumor/normal pairs based on sample naming.
+
+    Samples ending with `_T` are assumed to be tumor and paired with a
+    corresponding sample ending with `_N` that shares the same prefix.
+    Only pairs for which both sample IDs exist and their associated files
+    are present on disk are returned.
+    """
+    pairs = []
+    for s in SAMPLES:
+        if s.endswith("_T"):
+            n = f"{s[:-2]}_N"
+            if n in SAMPLES:
+                t_path, _ = sample_input(s)
+                n_path, _ = sample_input(n)
+                if os.path.exists(t_path) and os.path.exists(n_path):
+                    pairs.append((s, n))
+    return pairs
+
 # Somalier extract outputs
 SomExtract = expand("results/somalier/extract/{samp}.somalier", samp=SAMPLES)
 
@@ -126,25 +146,6 @@ rule picard_crosscheck:
 #######################################################################
 # CONPAIR (for tumor/normal pairs inferred from sample IDs)
 #######################################################################
-
-def tn_pairs():
-    """Identify tumor/normal pairs based on sample naming.
-
-    Samples ending with `_T` are assumed to be tumor and paired with a
-    corresponding sample ending with `_N` that shares the same prefix.
-    Only pairs for which both sample IDs exist and their associated files
-    are present on disk are returned.
-    """
-    pairs = []
-    for s in SAMPLES:
-        if s.endswith("_T"):
-            n = f"{s[:-2]}_N"
-            if n in SAMPLES:
-                t_path, _ = sample_input(s)
-                n_path, _ = sample_input(n)
-                if os.path.exists(t_path) and os.path.exists(n_path):
-                    pairs.append((s, n))
-    return pairs
 
 rule conpair_mpileup:
     input:
