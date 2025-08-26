@@ -22,42 +22,7 @@ rule calc_coverage_evenness_two:
         set -euo pipefail;
         mkdir -p $(dirname {output.metrics}) $(dirname {log});
         samtools depth -a {input.cram} 2> {log} | \
-        gawk -v W={params.window} '
-        BEGIN{{
-            OFS="\t";
-            print "chrom","start","end","mean","median","stdev","cv","evenness","pct_gt_0.2xmean","pct_gt_0.5xmean"
-        }}
-        function process(chrom,start,count,   i,sum,sumsq,mean,median,sd,cv,even,thr20,thr50,gt20,gt50,sorted,end,pct20,pct50){{
-            if (count==0) return;
-            sum=0; for(i=1;i<=count;i++) sum+=depths[i];
-            mean=sum/count;
-            n=asort(depths,sorted);
-            if (n%2)  median=sorted[(n+1)/2];
-            else      median=(sorted[n/2]+sorted[n/2+1])/2;
-            sumsq=0; for(i=1;i<=count;i++) sumsq+=(depths[i]-mean)^2;
-            sd=(count>0)?sqrt(sumsq/count):0;   # population stdev; use (count-1) for sample stdev
-            cv=(mean>0)?sd/mean:0;
-            even=exp(-cv);
-            thr20=0.2*mean; thr50=0.5*mean;
-            gt20=gt50=0;
-            for(i=1;i<=count;i++){{ if (depths[i]>=thr20) gt20++; if (depths[i]>=thr50) gt50++; }}
-            pct20=100*gt20/count; pct50=100*gt50/count;
-            end=start+count-1;
-            printf "%s\t%d\t%d\t%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%.2f\t%.2f\n",
-                chrom,start,end,mean,median,sd,cv,even,pct20,pct50;
-        }}
-        {{
-            chrom=$1; pos=$2; depth=$3+0;
-            if (cchrom=="") {{ cchrom=chrom; start=pos; }}
-            # flush on chrom change, full window, or a position gap
-            if (chrom!=cchrom || count>=W || pos>start+count) {{
-                process(cchrom,start,count);
-                delete depths; count=0; cchrom=chrom; start=pos;
-            }}
-            depths[++count]=depth;
-        }}
-        END{{ process(cchrom,start,count); }}
-        ' > {output.metrics};
+            bin/calc_coverage_evenness_two.py --window {params.window} > {output.metrics};
         {latency_wait};
         ls {output.metrics};
     """
