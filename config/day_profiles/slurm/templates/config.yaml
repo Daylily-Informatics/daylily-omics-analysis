@@ -7,13 +7,13 @@ cluster:
     --parsable
     --cpus-per-task={threads}
     --time={resources.time}
-    --job-name={rule}-{params.cluster_sample}
-    --output=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out
+    --job-name="{rule}-{params.cluster_sample}
+    --output=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out"
     --error=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err
     --partition={resources.partition}
     --chdir=$PWD
     --mem={resources.mem_mb}
-    --comment="$DAY_PROJECT"
+    --comment "$DAY_PROJECT"
     --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include} {resources.exclusive} 
 default-resources:  
   - disk_mb=1000
