@@ -1,7 +1,17 @@
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
+  - anaconda
+  - r
   - defaults
 dependencies:
-  - samtools
+  - parallel=20210822
+  - samtools=1.21
+  - pigz
+  - bcftools
+  - isa-l==2.31.0
+  - htslib
+  - bedtools
+  - perl
+  - tabix
   - gawk
