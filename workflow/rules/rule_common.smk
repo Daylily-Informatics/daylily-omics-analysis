@@ -500,8 +500,8 @@ for tsamp, tinfo in sample_info.items():
         continue
 
     pair_id = str(tinfo.get("tum_nrm_sampleid_match", "")).strip()
-    if not pair_id:
-        # no pairing label / direct reference; skip (or raise if you prefer)
+    if pair_id.lower() in {"", "na", "nan"}:
+        # no pairing label / direct reference; skip
         continue
 
     # 1) Shared-label pairing: find a normal/blood with same label
@@ -637,10 +637,21 @@ for sample in list(get_samp_ids()):
 # Tumor-normal pairs
 TN_DICT = {}
 for match_id, grp in samples.groupby("tum_nrm_sampleid_match"):
+    _match = "" if pd.isna(match_id) else str(match_id).strip().lower()
+    if _match in {"", "na"}:
+        # skip unpaired entries
+        continue
+    if len(grp) != 2:
+        raise WorkflowError(
+            f"tum_nrm_sampleid_match '{match_id}' has {len(grp)} entries; expected exactly 2"
+        )
     tumors = grp[grp["sample_type"].str.lower() == "tumor"]["sample"].tolist()
     normals = grp[grp["sample_type"].str.lower() == "normal"]["sample"].tolist()
-    if tumors and normals:
-        TN_DICT[tumors[0]] = normals[0]
+    if len(tumors) != 1 or len(normals) != 1:
+        raise WorkflowError(
+            f"tum_nrm_sampleid_match '{match_id}' requires one tumor and one normal but found {len(tumors)} tumor(s) and {len(normals)} normal(s)"
+        )
+    TN_DICT[tumors[0]] = normals[0]
 TUMOR_SAMPLES = list(TN_DICT.keys())
 
 def get_normal_sample(wildcards):
