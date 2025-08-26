@@ -340,6 +340,18 @@ varn:
     conda: "../envs/vanilla_v0.1.yaml"
     varn_container: "docker://kiranchari/varnet:latest"
 
+senttn:
+    threads: 4
+    partition: "i8"
+    partition_other: "i8"
+    mem_mb: 8000
+    hg38_senttn_chrms: "21,22"
+    hg38_broad_senttn_chrms: "21,22"
+    b37_senttn_chrms: "21,22"
+    numa: ""
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    conda: "../envs/vanilla_v0.1.yaml"
+
 
 multiqc:
     config_yaml:  "config/external_tools/multiqc.yaml"

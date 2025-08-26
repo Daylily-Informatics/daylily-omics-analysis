@@ -306,6 +306,18 @@ varn:
     conda: "../envs/vanilla_v0.1.yaml"
     varn_container: "docker://kiranchari/varnet:latest"
 
+senttn:
+    threads: 42
+    partition: "i192,i128,i192mem"
+    partition_other: "i192,i128,i192mem"
+    mem_mb: 85000
+    hg38_senttn_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    hg38_broad_senttn_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    b37_senttn_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    numa: " OMP_THREADS=64 OMP_PROC_BIND=close OMP_PLACES=threads  OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    conda: "../envs/vanilla_v0.1.yaml"
+
 
 manta_sort_and_index:
     threads: 8
