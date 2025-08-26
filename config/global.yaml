@@ -2,6 +2,9 @@
 pizzazz: "off"  # on or off
 profile_name: "global"  # this is over-ridden when profile specific config is included
 
+snv_callers_somatic:
+  - "senttn"
+
 
 logs:
     operational:

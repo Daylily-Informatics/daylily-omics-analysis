@@ -1,5 +1,7 @@
 from snakemake.utils import min_version
 from snakemake.utils import validate
+from snakemake.exceptions import WorkflowError
+import re
 import os
 import pandas as pd
 import sys
@@ -87,6 +89,19 @@ DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].spli
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
+DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
+SENTTN_CHRMS = config["senttn"][f"{config['genome_build']}_senttn_chrms"].split(",")
+
+VARN_CHRMS = (
+    []
+    if "varn" not in config
+    else config["varn"][f"{config['genome_build']}_varn_chrms"].split(",")
+)
+AIV_CHRMS = (
+    []
+    if "aiv" not in config
+    else config["aiv"][f"{config['genome_build']}_aiv_chrms"].split(",")
+)
 SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].split(",")
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
@@ -140,6 +155,25 @@ else:
     ## PRINT INFO
     os.system(
         f"""colr 'SNV Callers:{snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+    )
+
+somatic_snv_CALLERS = []
+if 'snv_callers_somatic' not in config:
+    os.system(
+        f'''colr "...WARNING: No snv_callers_somatic set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+    )
+else:
+    somatic_snv_CALLERS = sorted(
+        set(
+            []
+            if 'snv_callers_somatic' not in config
+            or config['snv_callers_somatic'] is None
+            else config["snv_callers_somatic"]
+        )
+    )
+    ## PRINT INFO
+    os.system(
+        f"""colr 'Somatic SNV Callers:{somatic_snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
 
 sv_CALLERS = []
@@ -210,6 +244,16 @@ os.system(
 samples = pd.read_table(analysis_manifest, ",").set_index(
     ["sample", "sample_lane"], drop=False
 )
+
+# Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
+if "tum_nrm_sampleid_match" in samples.columns:
+    samples["tum_nrm_sampleid_match"] = samples["tum_nrm_sampleid_match"].apply(
+        lambda x: "na"
+        if pd.isna(x) or str(x).strip().lower() in {"", "na"}
+        else str(x).strip()
+    )
+else:
+    samples["tum_nrm_sampleid_match"] = "na"
 
 # validate the analysis_manifest.csv with the appropriate yaml schema
 validate(samples, schema="../schemas/analysis_manifest.schema.yaml")
@@ -304,17 +348,17 @@ for i in samples.iterrows():
         raise (
             "\n\nMANIFEST ERROR:: "
             + samp + " ... " + sample_lane
-            + f"appears 2+ times in the sample sheet. This should only occur if 'merge' has been specified. {merge_single} has been set. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,instrument,lib_prep,bwa_kmer"
+            + f"appears 2+ times in the sample sheet. This should only occur if 'merge' has been specified. {merge_single} has been set. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
             )
 
     if merge_single in ["single"]:
         raise Exception(
-            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': This feature was implemented, then unusued and has not been vetted to work properly again, so if you wish to run per lane, create a manifest with the sample and sample_lane column having the same id.  merge will create symlinks for each sample_lane pair of fastqs, then use these via process substitution to appear as one file for those tools expecting 1 R1 and 1 R2. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,instrument,lib_prep,bwa_kmer"
+            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': This feature was implemented, then unusued and has not been vetted to work properly again, so if you wish to run per lane, create a manifest with the sample and sample_lane column having the same id.  merge will create symlinks for each sample_lane pair of fastqs, then use these via process substitution to appear as one file for those tools expecting 1 R1 and 1 R2. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
         )
 
     if len(sq_i.split(".")) > 1 or len(sq_i.split("_")) > 1 or len(ru_i.split(".")) > 1 or len(ru_i.split("_")) > 1 or len(ex_i.split(".")) > 1 or len(ex_i.split("_")) > 1 or len(str(lane_i).split(".")) > 1 or len(str(lane_i).split("_")) > 1:
         raise Exception(
-            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: The SQ & RU & EX & LANE cols may not contain a period or '-' in the name.  Please check the sample name and try again. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,external_sample_id,instrument,lib_prep,bwa_kmer"
+            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: The SQ & RU & EX & LANE cols may not contain a period or '-' in the name.  Please check the sample name and try again. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
         )
 
     if sample_lane in sample_info or len(sample.split(".")) > 1:
@@ -404,6 +448,8 @@ for i in samples.iterrows():
             sample_info[samp][iix] = val
         elif iix in ["is_negative_control"]:
             sample_info[samp][iix] = val
+        elif iix in ["tum_nrm_sampleid_match"]:
+            sample_info[samp][iix] = val
         elif iix in ["external_sample_id"]:
             sample_info[samp][iix] = val
         elif iix in ["bwa_kmer"]:
@@ -425,6 +471,74 @@ for i in samples.iterrows():
                 sample_lane_info[val] = True
 
 config["sample_info"] = sample_info
+
+
+# --- Positive/Negative control sample lists ---------------------------------
+def _truthy(x):
+    return str(x or "").strip().lower() in {"true", "t", "1", "yes", "y"}
+
+POS_CONTROL_SAMPLES = sorted(
+    s for s, info in sample_info.items()
+    if _truthy(info.get("is_positive_control"))
+)
+
+NEG_CONTROL_SAMPLES = sorted(
+    s for s, info in sample_info.items()
+    if _truthy(info.get("is_negative_control"))
+)
+
+# If you want the concordance control path for just the positive controls:
+POS_CONTROL_PATHS = {
+    s: p for s, p in CONCORDANCE_SAMPLES.items() if s in POS_CONTROL_SAMPLES
+}
+
+# Optional sanity check: a sample is marked positive control but has no path
+_missing = [s for s in POS_CONTROL_SAMPLES if s not in CONCORDANCE_SAMPLES]
+if _missing:
+    raise WorkflowError(
+        f"Positive controls missing 'concordance_control_path': {_missing}"
+    )
+
+
+# Build tumor->normal map
+def _norm(x):
+    return str(x or "").strip().lower()
+
+TN_PAIRS = {}
+
+for tsamp, tinfo in sample_info.items():
+    if _norm(tinfo.get("sample_type")) not in {"tumor", "tumour"}:
+        continue
+
+    pair_id = str(tinfo.get("tum_nrm_sampleid_match", "")).strip()
+    if pair_id.lower() in {"", "na", "nan"}:
+        # no pairing label / direct reference; skip
+        continue
+
+    # 1) Shared-label pairing: find a normal/blood with same label
+    candidates = [
+        nsamp2 for nsamp2, ninfo in sample_info.items()
+        if str(ninfo.get("tum_nrm_sampleid_match", "")).strip() == pair_id
+        and _norm(ninfo.get("sample_type")) in {"normal", "blood"}
+    ]
+
+    # 2) If none, treat the value as a direct normal sample ID
+    if not candidates:
+        ninfo = sample_info.get(pair_id)
+        if ninfo and _norm(ninfo.get("sample_type")) in {"normal", "blood"}:
+            candidates = [pair_id]
+
+    if len(candidates) == 1:
+        TN_PAIRS[tsamp] = candidates[0]
+    elif len(candidates) > 1:
+        raise WorkflowError(f"Ambiguous normal for tumor '{tsamp}' (pair='{pair_id}') -> {candidates}")
+    else:
+        raise WorkflowError(f"No normal found for tumor '{tsamp}' (pair='{pair_id}')")
+
+TN_TUMOR_SAMPS = list(TN_PAIRS.keys())
+
+# Optional: restrict rules’ sample wildcard to tumors only
+TUMORS_REGEX = "|".join(re.escape(s) for s in TN_TUMOR_SAMPS) or r"^$"
 
 CRAM_ALIGNERS = list(set(CRAM_ALIGNERS))
 # Aspirationally hoping to adopt PEPs...
@@ -531,6 +645,29 @@ for sample in list(get_samp_ids()):
     else:
         SSAMPS[ssamp] = [sample]
 
+# Tumor-normal pairs
+TN_DICT = {}
+for match_id, grp in samples.groupby("tum_nrm_sampleid_match"):
+    _match = "" if pd.isna(match_id) else str(match_id).strip().lower()
+    if _match in {"", "na"}:
+        # skip unpaired entries
+        continue
+    if len(grp) != 2:
+        raise WorkflowError(
+            f"tum_nrm_sampleid_match '{match_id}' has {len(grp)} entries; expected exactly 2"
+        )
+    tumors = grp[grp["sample_type"].str.lower() == "tumor"]["sample"].tolist()
+    normals = grp[grp["sample_type"].str.lower() == "normal"]["sample"].tolist()
+    if len(tumors) != 1 or len(normals) != 1:
+        raise WorkflowError(
+            f"tum_nrm_sampleid_match '{match_id}' requires one tumor and one normal but found {len(tumors)} tumor(s) and {len(normals)} normal(s)"
+        )
+    TN_DICT[tumors[0]] = normals[0]
+TUMOR_SAMPLES = list(TN_DICT.keys())
+
+def get_normal_sample(wildcards):
+    return TN_DICT[wildcards.sample]
+
 
 SAMP_SAMPI_INDEX = list(samples.index)  # deprecate
 RR = ["R1", "R2"]
@@ -577,11 +714,11 @@ def getR1sS(wildcards):
 # Call from params block to get sample ID back, without() wildcards (and others ) are added automatically if no () is included.
 def ret_sample(wildcards):
     if "sample" in wildcards.keys():
-        return wildcards.sample
+        return wildcards.sample if len(str(wildcards.sample).split(" ")) < 1 else "sample-len-zero"
     elif "sx" in wildcards.keys():
-        return wildcards.sx
+        return wildcards.sx if len(str(wildcards.sx).split(" ")) < 1 else "sample-len-zero"
     else:
-        return "get sample ERROR"
+        return "get-sample-ERROR"
 
 def ret_sample_sentD(wildcards):
     return wildcards.sample
@@ -783,6 +920,54 @@ def get_dvchrm_day(wildcards):
     return ret_mod_chrm(ret_str)
 
 
+def get_dvsom_chrm_day(wildcards):
+    pchr=""  # prefix handled already
+    ret_str = ""
+    sl = wildcards.dvsomchrm.replace('chr', '').split("-")
+    sl2 = wildcards.dvsomchrm.replace('chr', '').split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.dvsomchrm
+    elif len(sl) == 1:
+        ret_str = pchr + sl[0]
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        while start <= end:
+            ret_str = str(ret_str) + " " + pchr + str(start)
+            start = start + 1
+    else:
+        raise Exception(
+            "deep somatic chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
+        )
+
+    return ret_mod_chrm(ret_str)
+
+
+def get_senttn_chrm_day(wildcards):
+    pchr=""  # prefix handled already
+    ret_str = ""
+    sl = wildcards.senttnchrm.replace('chr', '').split("-")
+    sl2 = wildcards.senttnchrm.replace('chr', '').split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.senttnchrm
+    elif len(sl) == 1:
+        ret_str = pchr + sl[0]
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        while start <= end:
+            ret_str = str(ret_str) + " " + pchr + str(start)
+            start = start + 1
+    else:
+        raise Exception(
+            "senttn chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
+        )
+
+    return ret_mod_chrm(ret_str)
+
+
 def get_deep_model(wildcards):
     deep_model="WGS"
 
@@ -805,3 +990,25 @@ def instrument(wildcards):
     
 OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS))
+
+
+def get_somcall_normal_cram(wildcards):
+    try:
+        nsamp = TN_PAIRS[wildcards.sample]
+    except KeyError:
+        raise ValueError(f"No matched normal sample for {wildcards.sample}")
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
+
+
+def get_somcall_normal_crai(wildcards):
+    try:
+        nsamp = TN_PAIRS[wildcards.sample]
+    except KeyError:
+        raise ValueError(f"No matched normal sample for {wildcards.sample}")
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
+
+def get_somcall_tumor_cram(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+
+def get_somcall_tumor_crai(wildcards):
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"

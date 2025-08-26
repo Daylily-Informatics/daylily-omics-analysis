@@ -7,14 +7,14 @@ cluster:
     --parsable
     --cpus-per-task={threads}
     --time={resources.time}
-    --job-name={rule}-{params.cluster_sample}
-    --output=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out
+    --job-name="{rule}-{params.cluster_sample}
+    --output=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out"
     --error=logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err
     --partition={resources.partition}
     --chdir=$PWD
     --mem={resources.mem_mb}
-    --comment $DAY_PROJECT 
-    --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include}
+    --comment "$DAY_PROJECT"
+    --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include} {resources.exclusive} 
 default-resources:  
   - disk_mb=1000
   - mem_mb=3000 # This should be total for the job, and the amount avail will be 0.95*published mem for instance type.

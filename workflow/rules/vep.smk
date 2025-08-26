@@ -38,6 +38,7 @@ rule vep:
         --vcf \
         --cache {params.vep_cache} \
         --input_file {input.vcfgz} \
+
         --fork 64 \
         --fasta {params.huref} \
         --species homo_sapiens \
