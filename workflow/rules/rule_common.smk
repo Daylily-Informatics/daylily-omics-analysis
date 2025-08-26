@@ -90,6 +90,7 @@ OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(","
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
 DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
+SENTTN_CHRMS = config["senttn"][f"{config['genome_build']}_senttn_chrms"].split(",")
 
 VARN_CHRMS = (
     []
@@ -938,6 +939,30 @@ def get_dvsom_chrm_day(wildcards):
     else:
         raise Exception(
             "deep somatic chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
+        )
+
+    return ret_mod_chrm(ret_str)
+
+
+def get_senttn_chrm_day(wildcards):
+    pchr=""  # prefix handled already
+    ret_str = ""
+    sl = wildcards.senttnchrm.replace('chr', '').split("-")
+    sl2 = wildcards.senttnchrm.replace('chr', '').split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.senttnchrm
+    elif len(sl) == 1:
+        ret_str = pchr + sl[0]
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        while start <= end:
+            ret_str = str(ret_str) + " " + pchr + str(start)
+            start = start + 1
+    else:
+        raise Exception(
+            "senttn chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
         )
 
     return ret_mod_chrm(ret_str)
