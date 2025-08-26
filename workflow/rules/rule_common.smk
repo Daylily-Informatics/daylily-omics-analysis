@@ -241,9 +241,36 @@ os.system(
 )
 
 # IMPORTANT: initialize the samples dataframe from the analysis_manifest.csv
-samples = pd.read_table(analysis_manifest, ",").set_index(
-    ["sample", "sample_lane"], drop=False
-)
+samples = pd.read_table(analysis_manifest, ",")
+
+# Derive sample_lane and sample identifiers if they are not provided.
+required_cols = {"RU", "EX", "SQ", "LANE"}
+missing = required_cols - set(samples.columns)
+if missing:
+    raise WorkflowError(f"Missing required columns in analysis manifest: {missing}")
+
+samples["LANE"] = samples["LANE"].astype(int)
+
+if "sample_lane" not in samples.columns:
+    samples["sample_lane"] = (
+        samples["RU"].astype(str)
+        + "_"
+        + samples["EX"].astype(str)
+        + "_"
+        + samples["SQ"].astype(str)
+        + "_"
+        + samples["LANE"].astype(str)
+    )
+
+if "sample" not in samples.columns:
+    samples["sample"] = samples.apply(
+        lambda r: f"{r['RU']}_{r['EX']}_{r['SQ']}_0"
+        if str(r.get("merge_single", "")).lower() == "merge"
+        else r["sample_lane"],
+        axis=1,
+    )
+
+samples = samples.set_index(["sample", "sample_lane"], drop=False)
 
 # Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
 if "tum_nrm_sampleid_match" in samples.columns:
