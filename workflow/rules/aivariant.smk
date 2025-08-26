@@ -280,7 +280,7 @@ rule aiv_concat_index_chunks:
     params:
         cluster_sample=ret_sample,
     resources:
-	vcpu=4,
+        vcpu=4,
         threads=4,
         partition=config['aiv'].get('partition_other', config['aiv']['partition']),
         mem_mb=config['aiv']['mem_mb'],
@@ -309,7 +309,7 @@ rule produce_aiv_vcf:  # TARGET: aiv vcf
         ),
     output:
         "gatheredall.aiv",
-    resources
+    resources:
         vcpu=4,
         threads=4,
         partition=config['aiv'].get('partition_other', config['aiv']['partition']),
