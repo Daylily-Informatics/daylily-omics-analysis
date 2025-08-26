@@ -148,6 +148,11 @@ rule dvsom_concat_index_chunks:
         vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",
         vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
     threads: 4,
+    resources:
+        vcpu=4,
+        threads=4,
+        partition=config['deepsomatic']['partition'],
+        mem_mb=config['deepsomatic']['mem_mb'],
     conda:
         config['deepsomatic']['dvsom_conda'],
     log:
@@ -188,6 +193,11 @@ rule produce_dvsom_vcf:  # Target: produce deep-somatic
         cluster_sample=ret_sample,
     conda:
         config['deepsomatic']['dvsom_conda']
+    resources:
+        vcpu=4,
+        threads=4,
+        partition=config['deepsomatic']['partition'],
+        mem_mb=config['deepsomatic']['mem_mb'],
     shell:
         """
         for vcf in {input.vcftb}; do

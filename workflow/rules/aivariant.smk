@@ -53,6 +53,11 @@ rule aiv_bams:
         cluster_sample=ret_sample,
         cpre="" if "b37" == config['genome_build'] else "chr",
         mito_code="MT" if "b37" == config['genome_build'] else "M",
+    resources:
+        vcpu=config['aiv']['threads'],
+        threads=config['aiv']['threads'],
+        partition=config['aiv']['partition'],
+        mem_mb=config['aiv']['mem_mb'],
     shell:
         r"""
         set -euo pipefail
@@ -243,6 +248,7 @@ rule aiv_sort_index_chunk_vcf:
         vcpu=4,
         threads=4,
         partition=config['aiv'].get('partition_other', config['aiv']['partition']),
+        mem_mb=config['aiv']['mem_mb'],
     params:
         cluster_sample=ret_sample,
     threads: 4,
@@ -273,6 +279,11 @@ rule aiv_concat_index_chunks:
         config['aiv']['conda'],
     params:
         cluster_sample=ret_sample,
+    resources:
+	vcpu=4,
+        threads=4,
+        partition=config['aiv'].get('partition_other', config['aiv']['partition']),
+        mem_mb=config['aiv']['mem_mb'],
     log:
         MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.aiv.som.merge.log",
     shell:
@@ -298,6 +309,11 @@ rule produce_aiv_vcf:  # TARGET: aiv vcf
         ),
     output:
         "gatheredall.aiv",
+    resources
+        vcpu=4,
+        threads=4,
+        partition=config['aiv'].get('partition_other', config['aiv']['partition']),
+        mem_mb=config['aiv']['mem_mb'],
     threads: 4,
     priority: 48,
     log:
