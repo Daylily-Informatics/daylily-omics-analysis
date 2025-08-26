@@ -22,7 +22,63 @@ rule calc_coverage_evenness_two:
     shell:
         """
         mkdir -p $(dirname {output.metrics}) $(dirname {log});
-        python workflow/scripts/coverage_evenness_two.py --window {params.window} {input.cram} {output.metrics} &> {log}
+        python - {params.window} {input.cram} {output.metrics} <<'PY' &> {log}
+import math
+import statistics
+import subprocess
+import sys
+from pathlib import Path
+
+window = int(sys.argv[1])
+bam = Path(sys.argv[2])
+outfile = Path(sys.argv[3])
+
+
+def process_window(chrom, start, depths, out):
+    if not depths:
+        return
+    n = len(depths)
+    mean = sum(depths) / n
+    median = statistics.median(depths)
+    stdev = statistics.pstdev(depths)
+    cv = stdev / mean if mean else 0.0
+    even = math.exp(-cv)
+    thr20 = 0.2 * mean
+    thr50 = 0.5 * mean
+    pct20 = sum(d >= thr20 for d in depths) / n * 100.0
+    pct50 = sum(d >= thr50 for d in depths) / n * 100.0
+    end = start + n
+    out.write(
+        f"{{chrom}}\t{{start}}\t{{end}}\t{{mean:.4f}}\t{{median:.4f}}\t{{stdev:.4f}}\t{{cv:.4f}}\t{{even:.4f}}\t{{pct20:.2f}}\t{{pct50:.2f}}\n"
+    )
+
+
+cmd = ["samtools", "depth", "-a", str(bam)]
+proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+current_chr = None
+start_pos = None
+depths = []
+with outfile.open("w") as out:
+    out.write("chrom\tstart\tend\tmean\tmedian\tstdev\tcv\tevenness\tpct_gt_0.2xmean\tpct_gt_0.5xmean\n")
+    for line in proc.stdout:
+        chrom, pos, depth = line.strip().split("\t")
+        pos = int(pos)
+        depth = int(depth)
+        if current_chr is None:
+            current_chr = chrom
+            start_pos = pos
+        if chrom != current_chr or len(depths) >= window:
+            process_window(current_chr, start_pos, depths, out)
+            depths = []
+            current_chr = chrom
+            start_pos = pos
+        depths.append(depth)
+    process_window(current_chr, start_pos, depths, out)
+proc.stdout.close()
+retcode = proc.wait()
+if retcode != 0:
+    raise RuntimeError(f"samtools depth failed with return code {{retcode}}")
+PY
         {latency_wait};
         ls {output.metrics};
         """
