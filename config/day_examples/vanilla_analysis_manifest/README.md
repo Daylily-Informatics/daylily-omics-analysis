@@ -13,7 +13,7 @@ The manifest should be saved in the config dirwith the follwing name: 'analysis_
 
   * 9 Required colmns which must have non-null values
   * 8 Required columns which may have null(na) values
-  *  supported columns, 16 of which must be present and at leaset have an 'na' entry (no empty string fields are permittted in any colum found in the manifest.) :
+  *  supported columns, 15 of which must be present and at leaset have an 'na' entry (no empty string fields are permittted in any colum found in the manifest.) The `tum_nrm_sampleid_match` column is optional; if omitted or left blank, it is treated as `na`.
 
 sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,remote_bam_file_path,rclone_handle
   - _the columns should be in this order as well_

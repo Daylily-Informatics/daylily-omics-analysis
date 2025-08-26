@@ -244,6 +244,16 @@ samples = pd.read_table(analysis_manifest, ",").set_index(
     ["sample", "sample_lane"], drop=False
 )
 
+# Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
+if "tum_nrm_sampleid_match" in samples.columns:
+    samples["tum_nrm_sampleid_match"] = samples["tum_nrm_sampleid_match"].apply(
+        lambda x: "na"
+        if pd.isna(x) or str(x).strip().lower() in {"", "na"}
+        else str(x).strip()
+    )
+else:
+    samples["tum_nrm_sampleid_match"] = "na"
+
 # validate the analysis_manifest.csv with the appropriate yaml schema
 validate(samples, schema="../schemas/analysis_manifest.schema.yaml")
 
