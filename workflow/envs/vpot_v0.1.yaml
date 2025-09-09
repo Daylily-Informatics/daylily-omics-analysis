@@ -1,11 +1,7 @@
 channels:
   - conda-forge
   - bioconda
-  - anaconda
-  - r
-  - defaults
 dependencies:
-  - python
+  - python=3.9
+  - numpy
   - pip
-  - pip:
-      - git+https://github.com/VCCRI/VPOT.git
