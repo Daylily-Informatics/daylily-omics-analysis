@@ -15,7 +15,7 @@ valid_biome: AWSPC
 
 # ###### Tool Selection CONFIG ----------------------------------------
 
-# these may be set on the command line as --config genome_build=hg38 aligners=['bwa2a','sent','strobe']  dedupers=['dppl']  snv_callers=['oct','clair3','deep','sentd','lfq2'] sv_callers=['manta','tiddit','dysgu']
+# these may be set on the command line as --config genome_build=hg38 aligners=['bwa2a','sent','strobe']  dedupers=['dppl']  snv_callers=['oct','clair3','deep','sentd','lfq2','strelka2'] sv_callers=['manta','tiddit','dysgu']
 # and will override these defaults
 
 # Or you can set them here
@@ -195,6 +195,16 @@ deepsomatic:
     b37_dvsom_chrms:  "21,22"
     numa: " OMP_NUM_THREADS=8 OMP_PROC_BIND=close OMP_PLACES=threads OMP_PROC_BIND=TRUE OMP_DYNAMIC=TRUE OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
     dvsom_conda: "../envs/vanilla_v0.1.yaml"
+
+strelka2:
+    threads: 7
+    container: "docker://mgibio/strelka-cwl:2.9.9"
+    partition: "i8"
+    mem_mb: 60000
+    numa: " "
+    hg38_strelka2_chrms:  "21"
+    hg38_broad_strelka2_chrms:  "21"
+    b37_strelka2_chrms:  "19,21"
 
 duphold:
     threads: 7
