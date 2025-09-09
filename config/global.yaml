@@ -4,6 +4,7 @@ profile_name: "global"  # this is over-ridden when profile specific config is in
 
 snv_callers_somatic:
   - "senttn"
+  - "facets"
 
 
 logs:

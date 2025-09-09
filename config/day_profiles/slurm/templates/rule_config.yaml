@@ -195,6 +195,13 @@ deepsomatic:
     numa: " OMP_THREADS=64 OMP_PROC_BIND=close OMP_PLACES=threads  OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
     dvsom_conda: "../envs/vanilla_v0.1.yaml"
 
+facets:
+    threads: 8
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    container: "docker://mskcc/facets-suite:2.2.1"
+    partition: "i192,i128,i192mem"
+    mem_mb: 16000
+
 
 
 duphold:
