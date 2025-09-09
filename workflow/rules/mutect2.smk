@@ -111,9 +111,6 @@ rule mutect2_bams:
         mv "{output.normal_bam}.smfix" "{output.normal_bam}"
         samtools index -@ {threads} "{output.normal_bam}"                   >> {log} 2>&1
 
-        # Sanity log
-        gatk GetSampleName -I {output.tumor_bam} 2>>{log} | sed "s/^/Tumor SM: /"   >> {log}
-        gatk GetSampleName -I {output.normal_bam} 2>>{log} | sed "s/^/Normal SM: /" >> {log}
         """
 
 
