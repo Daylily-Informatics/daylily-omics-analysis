@@ -97,6 +97,11 @@ VARN_CHRMS = (
     if "varn" not in config
     else config["varn"][f"{config['genome_build']}_varn_chrms"].split(",")
 )
+VARSCAN_CHRMS = (
+    []
+    if "varscan2" not in config
+    else config["varscan2"][f"{config['genome_build']}_varscan2_chrms"].split(",")
+)
 AIV_CHRMS = (
     []
     if "aiv" not in config
