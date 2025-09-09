@@ -3,6 +3,9 @@ import os
 
 ##### sentieon TNscope - somatic SNV and INDEL caller
 # ---------------------------
+# This rule runs Sentieon's TNscope algorithm for somatic calling on
+# tumour/normal pairs.  The structure mirrors the sentieon_dnascope rule
+# to keep behaviour consistent across callers.
 
 rule sent_TNscope:
     wildcard_constraints:
@@ -14,7 +17,7 @@ rule sent_TNscope:
         normal_crai=get_somcall_normal_crai,
         d=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf",
+        vcf=temp(MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf"),
     log:
         MDIR + "{sample}/align/{alnr}/snv/senttn/log/{sample}.{alnr}.senttn.{senttnchrm}.snv.log",
     threads: config['senttn']['threads']
@@ -90,9 +93,9 @@ rule sent_TNscope_sort_index_chunk_vcf:
         vcf=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf",
     priority: 46
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.tbi",
+        vcfsort=touch(MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf"),
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz"),
+        vcftbi=touch(MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.tbi"),
     conda:
         config['senttn']['conda']
     log:
@@ -124,8 +127,8 @@ rule sent_TNscope_concat_index_chunks:
             senttnchrm=SENTTN_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz.tbi",
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz"),
+        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz.tbi"),
     threads: 4
     conda:
         config['senttn']['conda']
