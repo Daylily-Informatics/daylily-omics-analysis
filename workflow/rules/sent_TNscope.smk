@@ -179,3 +179,29 @@ rule produce_sent_TNscope_vcf:
         {latency_wait};
         ls {output} >> {log} 2>&1;
         """
+
+
+
+localrules:
+    prep_sentTN_chunkdirs,
+
+
+rule prep_sentTN_chunkdirs:
+    input:
+        c=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+    output:
+        expand(
+            MDIR + "{{sample}}/align/{{alnr}}/snv/senttn/vcfs/{dchrm}/{{sample}}.ready",
+            dchrm=SENTD_CHRMS,
+        ),
+    threads: 1
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/senttn/logs/{sample}.{alnr}.chunkdirs.log",
+    shell:
+        """
+        ( echo {output}  ;
+        mkdir -p $(dirname {output} );
+        touch {output};
+        ls {output}; ) > {log} 2>&1;
+        """
