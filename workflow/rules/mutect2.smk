@@ -104,7 +104,7 @@ rule mutect2_bams:
         nrm_sample=$(echo "{input.normal_cram}" | sed -E 's#.*/([^/]+)/align/.*#\1#')
 
         echo "Tumor Sample: $tum_sample"   >> {log} 2>&1
-        echo "Normal Sample: $nrm_sample"  >> {log} 2>&
+        echo "Normal Sample: $nrm_sample"  >> {log} 2>&1
         T_SM="${{tum_sample}}"
         N_SM="${{nrm_sample}}"
 
