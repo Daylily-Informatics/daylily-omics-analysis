@@ -86,17 +86,14 @@ rule mutect2_bams:
           outbam=$2
           sm=$3
           tmphdr=$(mktemp)
-          OFS="\t"
           samtools view -H "$inbam" \
-            | awk -v sm="$sm" 'BEGIN{OFS="\t"}
-                /^@RG/ {
-                  hasSM=0
-                  for (i=1;i<=NF;i++){
-                    if ($i ~ /^SM:/) { $i="SM:" sm; hasSM=1 }
-                  }
-                  if (!hasSM){ $0 = $0 OFS "SM:" sm }
-                }
-                { print }
+            | awk -v sm="$sm" 'BEGIN{{FS=OFS="\t"}}
+                /^@RG/ {{
+                  found=0
+                  for (i=1;i<=NF;i++) if ($i ~ /^SM:/) {{ $i="SM:" sm; found=1 }}
+                  if (!found) {{ $0 = $0 OFS "SM:" sm }}
+                }}
+                {{ print }}
               ' > "$tmphdr"
           # Reheader and replace atomically
           samtools reheader "$tmphdr" "$inbam" > "$outbam"
