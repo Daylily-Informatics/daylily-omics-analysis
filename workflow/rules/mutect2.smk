@@ -4,7 +4,7 @@ import os
 ##### mutect2
 # ---------------------------
 
-rule mutect2:
+rule mutect2_bams:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
@@ -12,6 +12,63 @@ rule mutect2:
         tumor_crai=get_somcall_tumor_crai,
         normal_cram=get_somcall_normal_cram,
         normal_crai=get_somcall_normal_crai,
+        ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
+    output:
+        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam"),
+        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam.bai"),
+        normal_bam=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam"),
+        normal_bai=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai"),
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/mutect2/log/{sample}.{alnr}.mutect2.{m2chrm}.bamify.log",
+    threads: config['mutect2']['threads']
+    conda: "../envs/vanilla_v0.1.yaml"
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        cpre="" if "b37" == config['genome_build'] else "chr",
+        mito_code="MT" if "b37" == config['genome_build'] else "M",
+        chrm=get_mutect2_chrm_day,
+        cluster_sample=ret_sample,
+    resources:
+        vcpu=config['mutect2']['threads'],
+        threads=config['mutect2']['threads'],
+        partition=config['mutect2']['partition'],
+        mem_mb=config['mutect2']['mem_mb'],
+    shell:
+        r"""
+        set -euo pipefail
+        ulimit -n 65536 || true
+
+        mkdir -p "$(dirname {output.tumor_bam})"
+
+        tchr=$(echo {params.cpre}{params.chrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
+        tchr=${{tchr%:}}
+        IFS=':' read -r tcontig tstart tend <<< "$tchr"
+        if [ -z "${{tend:-}}" ]; then
+            tstart=0
+            tend=$(awk -v c="$tcontig" '$1==c{{print $2; exit}}' {input.ref_fai})
+            region="$tcontig"
+        else
+            region="$tcontig:$tstart-$tend"
+        fi
+
+        samtools view -@ {threads} -T {input.ref_fa} -b {input.tumor_cram} "$region" \
+            | samtools sort -@ {threads} -o {output.tumor_bam} -           >> {log} 2>&1
+        samtools index -@ {threads} {output.tumor_bam}                      >> {log} 2>&1
+
+        samtools view -@ {threads} -T {input.ref_fa} -b {input.normal_cram} "$region" \
+            | samtools sort -@ {threads} -o {output.normal_bam} -          >> {log} 2>&1
+        samtools index -@ {threads} {output.normal_bam}                     >> {log} 2>&1
+        """
+
+rule mutect2:
+    wildcard_constraints:
+        sample=TUMORS_REGEX
+    input:
+        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam",
+        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam.bai",
+        normal_bam=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam",
+        normal_bai=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai",
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
         d=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.ready",
@@ -57,8 +114,8 @@ rule mutect2:
 
         gatk --java-options "-Xmx{resources.mem_mb}M" Mutect2 \
             -R {params.huref} \
-            -I {input.tumor_cram} -tumor {params.tumor_sample} \
-            -I {input.normal_cram} -normal {params.normal_sample} \
+            -I {input.tumor_bam} -tumor {params.tumor_sample} \
+            -I {input.normal_bam} -normal {params.normal_sample} \
             -L $region \
             -O {output.vcf} >> {log} 2>&1
         """
