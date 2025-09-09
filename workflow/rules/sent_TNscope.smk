@@ -142,7 +142,6 @@ rule sent_TNscope_concat_index_chunks:
         bcftools index -f -t {output.vcfgz} >> {log} 2>&1;
         """
 
-
 rule produce_sent_TNscope_vcf:
     wildcard_constraints:
         sample=TUMORS_REGEX
@@ -170,7 +169,7 @@ rule produce_sent_TNscope_vcf:
     shell:
         """
         for vcf in {input.vcftb}; do
-            bcf="${vcf%.vcf.gz}.bcf";
+            bcf="${{vcf%.vcf.gz}}.bcf";
             bcftools view -O b -o $bcf --threads {threads} $vcf && bcftools index --threads 4 $bcf;
         done;
         touch {output};
