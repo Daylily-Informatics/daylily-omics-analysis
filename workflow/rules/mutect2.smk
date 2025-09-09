@@ -100,11 +100,14 @@ rule mutect2_bams:
         samtools index -@ {threads} "$outbam" >/dev/null 2>&1 || true
         }}
 
-        sample=$(echo "{log}" | sed -E 's#.*/([^/]+)/align/.*#\1#')
-        echo "Sample: $sample" >> {log} 2>&1
-        T_SM="${{sample}}"
-        N_SM="${{sample}}"
-        
+        tum_sample=$(echo "{input.tumor_cram}" | sed -E 's#.*/([^/]+)/align/.*#\1#')
+        nrm_sample=$(echo "{input.normal_cram}" | sed -E 's#.*/([^/]+)/align/.*#\1#')
+
+        echo "Tumor Sample: $tum_sample"   >> {log} 2>&1
+        echo "Normal Sample: $nrm_sample"  >> {log} 2>&
+        T_SM="${{tum_sample}}"
+        N_SM="${{nrm_sample}}"
+
 
         fix_sm "{output.tumor_bam}"  "{output.tumor_bam}.smfix" "$T_SM"
         mv "{output.tumor_bam}.smfix" "{output.tumor_bam}"
