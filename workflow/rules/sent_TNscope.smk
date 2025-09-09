@@ -193,7 +193,7 @@ rule prep_sentTN_chunkdirs:
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/snv/senttn/vcfs/{dchrm}/{{sample}}.ready",
-            dchrm=SENTD_CHRMS,
+            dchrm=SENTTN_CHRMS,
         ),
     threads: 1
     log:
