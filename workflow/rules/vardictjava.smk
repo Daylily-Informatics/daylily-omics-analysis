@@ -79,7 +79,7 @@ rule vardictjava:
         ulimit -n 65536 || true
 
         region=$(echo {params.cpre}{params.vchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
-        region=${region%:}
+        region=${{region%:}}
 
         mkdir -p "$(dirname {output.vcf})"
 
@@ -150,7 +150,7 @@ rule vardictjava_concat_index_chunks:
         """
         bcftools concat -a -d all --threads {threads} -O z -o {output.vcfgz}.tmp {input.vcfs} >> {log} 2>&1;
         oldname=$(bcftools query -l {output.vcfgz}.tmp | head -n1) >> {log} 2>&1;
-        echo -e "${oldname}\t{params.cluster_sample}" > {output.vcfgz}.rename.txt;
+        echo -e "${{oldname}}\t{params.cluster_sample}" > {output.vcfgz}.rename.txt;
         bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgz}.tmp >> {log} 2>&1;
         bcftools index -f -t --threads {threads} {output.vcfgz} >> {log} 2>&1;
         rm -f {output.vcfgz}.tmp {output.vcfgz}.rename.txt;
@@ -189,7 +189,7 @@ rule produce_vardictjava_vcf:  # Target: produce VarDictJava
     shell:
         """
         for vcf in {input.vcftb}; do
-            bcf="${vcf%.vcf.gz}.bcf";
+            bcf="${{vcf%.vcf.gz}}.bcf";
             bcftools view -O b -o $bcf --threads {threads} $vcf && bcftools index --threads 4 $bcf;
         done;
         touch {output};
