@@ -90,6 +90,7 @@ OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(","
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
 DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
+NEUSOM_CHRMS = config["neusomatic"][f"{config['genome_build']}_neusom_chrms"].split(",")
 SENTTN_CHRMS = config["senttn"][f"{config['genome_build']}_senttn_chrms"].split(",")
 
 VARN_CHRMS = (

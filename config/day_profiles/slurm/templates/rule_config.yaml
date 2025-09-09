@@ -195,6 +195,17 @@ deepsomatic:
     numa: " OMP_THREADS=64 OMP_PROC_BIND=close OMP_PLACES=threads  OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
     dvsom_conda: "../envs/vanilla_v0.1.yaml"
 
+neusomatic:
+    threads: 42
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    container: "docker://bioinform/neusomatic:0.2.1"
+    partition: "i192,i128,i192mem"
+    mem_mb: 85000
+    hg38_neusom_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    hg38_broad_neusom_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    b37_neusom_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    numa: ""
+
 
 
 duphold:
