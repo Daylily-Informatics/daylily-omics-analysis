@@ -61,7 +61,7 @@ rule strelka2_germline:
         fi
         echo -e "$vcontig\t$vstart\t$vend" > {params.run_dir}/region.bed
 
-        configureStrelkaGermlineWorkflow.py \
+        /opt/strelka/bin/configureStrelkaGermlineWorkflow.py \
             --bam {input.cram} \
             --referenceFasta {input.ref_fa} \
             --callRegions {params.run_dir}/region.bed \
@@ -170,7 +170,7 @@ rule strelka2_somatic:
         fi
         echo -e "$vcontig\t$vstart\t$vend" > {params.run_dir}/region.bed
 
-        configureStrelkaSomaticWorkflow.py \
+        /opt/strelka/bin/configureStrelkaSomaticWorkflow.py \
             --tumorBam {input.tumor_cram} \
             --normalBam {input.normal_cram} \
             --referenceFasta {input.ref_fa} \
