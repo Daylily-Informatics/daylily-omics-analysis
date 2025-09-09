@@ -1,0 +1,11 @@
+name: conpair
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.9
+  - samtools
+  - pysam
+  - pandas
+  - numpy
+  - pip
+  - pip:
+      - git+https://github.com/nygenome/Conpair.git

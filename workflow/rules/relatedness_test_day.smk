@@ -199,51 +199,24 @@ rule conpair_compare:
             cp results/conpair/{wildcards.t}__{wildcards.n}/res_concordance_details.txt {output.conctsv}
         fi
         """
-
-
-
-
 #######################################################################
 # PEDDY (optional; requires a joint VCF)
 #######################################################################
-rule conpair_mpileup_all:
-    input:
-        expand(
-            "results/conpair/{t}__{n}/tumor.mpileup",
-            t=[p[0] for p in tn_pairs()],
-            n=[p[1] for p in tn_pairs()]
-        ),
-        expand(
-            "results/conpair/{t}__{n}/normal.mpileup",
-            t=[p[0] for p in tn_pairs()],
-            n=[p[1] for p in tn_pairs()]
-        )
 
-rule conpair_parse_all:
-    input:
-        expand(
-            "results/conpair/{t}__{n}/tumor.parsed",
-            t=[p[0] for p in tn_pairs()],
-            n=[p[1] for p in tn_pairs()]
-        ),
-        expand(
-            "results/conpair/{t}__{n}/normal.parsed",
-            t=[p[0] for p in tn_pairs()],
-            n=[p[1] for p in tn_pairs()]
-        )
+use rule conpair_mpileup as conpair_mpileup_all with:
+    wildcards:
+        t=[p[0] for p in tn_pairs()],
+        n=[p[1] for p in tn_pairs()]
 
-rule conpair_compare_all:
-    input:
-        expand(
-            "results/conpair/{t}__{n}/concordance.tsv",
-            t=[p[0] for p in tn_pairs()],
-            n=[p[1] for p in tn_pairs()]
-        ),
-        expand(
-            "results/conpair/{t}__{n}/summary.txt",
-            t=[p[0] for p in tn_pairs()],
-            n=[p[1] for p in tn_pairs()]
-        )
+use rule conpair_parse as conpair_parse_all with:
+    wildcards:
+        t=[p[0] for p in tn_pairs()],
+        n=[p[1] for p in tn_pairs()]
+
+use rule conpair_compare as conpair_compare_all with:
+    wildcards:
+        t=[p[0] for p in tn_pairs()],
+        n=[p[1] for p in tn_pairs()]
 
 rule peddy_relatedness:
     input:

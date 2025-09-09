@@ -1,0 +1,7 @@
+name: peddy
+channels: [conda-forge, bioconda]
+dependencies:
+  - peddy
+  - cython
+  - pandas
+  - python>=3.9
