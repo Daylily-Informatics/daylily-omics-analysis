@@ -201,6 +201,9 @@ strelka2:
     partition: "i192,i128,i192mem"
     mem_mb: 85000
     numa: " OMP_THREADS=64 OMP_PROC_BIND=close OMP_PLACES=threads  OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
+    hg38_strelka2_chrms:  "21"
+    hg38_broad_strelka2_chrms:  "21"
+    b37_strelka2_chrms:  "19,21"
 
 
 
