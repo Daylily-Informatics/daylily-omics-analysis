@@ -92,6 +92,7 @@ LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split
 DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
 M2_CHRMS = config["mutect2"][f"{config['genome_build']}_mutect2_chrms"].split(",")
 SENTTN_CHRMS = config["senttn"][f"{config['genome_build']}_senttn_chrms"].split(",")
+STRELKA2_CHRMS = config["strelka2"][f"{config['genome_build']}_strelka2_chrms"].split(",")
 
 VARN_CHRMS = (
     []
@@ -242,9 +243,36 @@ os.system(
 )
 
 # IMPORTANT: initialize the samples dataframe from the analysis_manifest.csv
-samples = pd.read_table(analysis_manifest, ",").set_index(
-    ["sample", "sample_lane"], drop=False
-)
+samples = pd.read_table(analysis_manifest, ",")
+
+# Derive sample_lane and sample identifiers if they are not provided.
+required_cols = {"RU", "EX", "SQ", "LANE"}
+missing = required_cols - set(samples.columns)
+if missing:
+    raise WorkflowError(f"Missing required columns in analysis manifest: {missing}")
+
+samples["LANE"] = samples["LANE"].astype(int)
+
+if "sample_lane" not in samples.columns:
+    samples["sample_lane"] = (
+        samples["RU"].astype(str)
+        + "_"
+        + samples["EX"].astype(str)
+        + "_"
+        + samples["SQ"].astype(str)
+        + "_"
+        + samples["LANE"].astype(str)
+    )
+
+if "sample" not in samples.columns:
+    samples["sample"] = samples.apply(
+        lambda r: f"{r['RU']}_{r['EX']}_{r['SQ']}_0"
+        if str(r.get("merge_single", "")).lower() == "merge"
+        else r["sample_lane"],
+        axis=1,
+    )
+
+samples = samples.set_index(["sample", "sample_lane"], drop=False)
 
 # Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
 if "tum_nrm_sampleid_match" in samples.columns:
@@ -953,6 +981,7 @@ def get_mutect2_chrm_day(wildcards):
 
     if len(sl2) == 2:
         ret_str = pchr + wildcards.m2chrm
+
     elif len(sl) == 1:
         ret_str = pchr + sl[0]
     elif len(sl) == 2:
@@ -964,6 +993,7 @@ def get_mutect2_chrm_day(wildcards):
     else:
         raise Exception(
             "mutect2 chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
+
         )
 
     return ret_mod_chrm(ret_str)

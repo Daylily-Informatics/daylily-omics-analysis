@@ -15,7 +15,7 @@ valid_biome: AWSPC
 
 # ###### Tool Selection CONFIG ----------------------------------------
 
-# these may be set on the command line as --config genome_build=hg38 aligners=['bwa2a','sent','strobe']  dedupers=['dppl']  snv_callers=['oct','clair3','deep','sentd','lfq2'] sv_callers=['manta','tiddit','dysgu']
+# these may be set on the command line as --config genome_build=hg38 aligners=['bwa2a','sent','strobe']  dedupers=['dppl']  snv_callers=['oct','clair3','deep','sentd','lfq2','strelka2'] sv_callers=['manta','tiddit','dysgu']
 # and will override these defaults
 
 # Or you can set them here
@@ -196,6 +196,7 @@ deepsomatic:
     numa: " OMP_NUM_THREADS=8 OMP_PROC_BIND=close OMP_PLACES=threads OMP_PROC_BIND=TRUE OMP_DYNAMIC=TRUE OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
     dvsom_conda: "../envs/vanilla_v0.1.yaml"
 
+
 mutect2:
     threads: 7
     container: "docker://broadinstitute/gatk:4.5.0.0"
@@ -207,6 +208,7 @@ mutect2:
     b37_mutect2_chrms: "21,22"
     numa: ""
     conda: "../envs/vanilla_v0.1.yaml"
+
 
 duphold:
     threads: 7
