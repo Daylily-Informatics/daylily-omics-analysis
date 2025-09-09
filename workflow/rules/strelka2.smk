@@ -22,11 +22,44 @@ rule strelka2_germline_chunkdirs:
         """
 
 
+rule strelka2_germline_region_bed:
+    input:
+        ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+    output:
+        bed=MDIR + "{sample}/align/{alnr}/snv/slk2g/work/{sample}.germline.{strelkachrm}/region.bed.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/snv/slk2g/work/{sample}.germline.{strelkachrm}/region.bed.gz.tbi",
+    threads: 1
+    conda: "../envs/vanilla_v0.1.yaml"
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/log/{sample}.{alnr}.strelka2.{strelkachrm}.regionbed.log",
+    params:
+        schrm=get_strelka_chrm_day,
+        cpre="" if "b37" == config['genome_build'] else "chr",
+        mito_code="MT" if "b37" == config['genome_build'] else "M",
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.bed}) >> {log} 2>&1
+
+        vchr=$(echo {params.cpre}{params.schrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' )
+        vchr=${vchr%:}
+        IFS=':' read -r vcontig vstart vend <<< "$vchr"
+        if [ -z "${vend:-}" ]; then
+            vstart=0
+            vend=$(awk -v c="$vcontig" '$1==c{print $2; exit}' {input.ref_fa}.fai)
+        fi
+        echo -e "$vcontig\t$vstart\t$vend" | bgzip -c 2>> {log} > {output.bed}
+        tabix -f -p bed {output.bed} >> {log} 2>&1
+        """
+
+
 rule strelka2_germline:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        region=MDIR + "{sample}/align/{alnr}/snv/slk2g/work/{sample}.germline.{strelkachrm}/region.bed.gz",
+        region_tbi=MDIR + "{sample}/align/{alnr}/snv/slk2g/work/{sample}.germline.{strelkachrm}/region.bed.gz.tbi",
         d=MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/{sample}.ready",
     output:
         vcfgz=MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz",
@@ -52,19 +85,10 @@ rule strelka2_germline:
         set -euo pipefail
         mkdir -p {params.run_dir}
 
-        vchr=$(echo {params.cpre}{params.schrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' )
-        vchr=${{vchr%:}}
-        IFS=':' read -r vcontig vstart vend <<< "$vchr"
-        if [ -z "${{vend:-}}" ]; then
-            vstart=0
-            vend=$(awk -v c="$vcontig" '$1==c{{print $2; exit}}' {input.ref_fa}.fai)
-        fi
-        echo -e "$vcontig\t$vstart\t$vend" > {params.run_dir}/region.bed
-
         /opt/strelka/bin/configureStrelkaGermlineWorkflow.py \
             --bam {input.cram} \
             --referenceFasta {input.ref_fa} \
-            --callRegions {params.run_dir}/region.bed \
+            --callRegions {input.region} \
             --runDir {params.run_dir} >> {log} 2>&1
         {params.run_dir}/runWorkflow.py -m local -j {threads} >> {log} 2>&1
         cp {params.run_dir}/results/variants/variants.vcf.gz {output.vcfgz}
@@ -125,6 +149,39 @@ rule strelka2_somatic_chunkdirs:
         """
 
 
+rule strelka2_somatic_region_bed:
+    wildcard_constraints:
+        sample=TUMORS_REGEX
+    input:
+        ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+    output:
+        bed=MDIR + "{sample}/align/{alnr}/snv/slk2s/work/{sample}.somatic.{strelkachrm}/region.bed.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/snv/slk2s/work/{sample}.somatic.{strelkachrm}/region.bed.gz.tbi",
+    threads: 1
+    conda: "../envs/vanilla_v0.1.yaml"
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/log/{sample}.{alnr}.strelka2.{strelkachrm}.regionbed.log",
+    params:
+        schrm=get_strelka_chrm_day,
+        cpre="" if "b37" == config['genome_build'] else "chr",
+        mito_code="MT" if "b37" == config['genome_build'] else "M",
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.bed}) >> {log} 2>&1
+
+        vchr=$(echo {params.cpre}{params.schrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' )
+        vchr=${vchr%:}
+        IFS=':' read -r vcontig vstart vend <<< "$vchr"
+        if [ -z "${vend:-}" ]; then
+            vstart=0
+            vend=$(awk -v c="$vcontig" '$1==c{print $2; exit}' {input.ref_fa}.fai)
+        fi
+        echo -e "$vcontig\t$vstart\t$vend" | bgzip -c 2>> {log} > {output.bed}
+        tabix -f -p bed {output.bed} >> {log} 2>&1
+        """
+
+
 rule strelka2_somatic:
     wildcard_constraints:
         sample=TUMORS_REGEX
@@ -134,6 +191,8 @@ rule strelka2_somatic:
         normal_cram=get_somcall_normal_cram,
         normal_crai=get_somcall_normal_crai,
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        region=MDIR + "{sample}/align/{alnr}/snv/slk2s/work/{sample}.somatic.{strelkachrm}/region.bed.gz",
+        region_tbi=MDIR + "{sample}/align/{alnr}/snv/slk2s/work/{sample}.somatic.{strelkachrm}/region.bed.gz.tbi",
         d=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.ready",
     output:
         snv=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz",
@@ -161,20 +220,11 @@ rule strelka2_somatic:
         set -euo pipefail
         mkdir -p {params.run_dir}
 
-        vchr=$(echo {params.cpre}{params.schrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' )
-        vchr=${{vchr%:}}
-        IFS=':' read -r vcontig vstart vend <<< "$vchr"
-        if [ -z "${{vend:-}}" ]; then
-            vstart=0
-            vend=$(awk -v c="$vcontig" '$1==c{{print $2; exit}}' {input.ref_fa}.fai)
-        fi
-        echo -e "$vcontig\t$vstart\t$vend" > {params.run_dir}/region.bed
-
         /opt/strelka/bin/configureStrelkaSomaticWorkflow.py \
             --tumorBam {input.tumor_cram} \
             --normalBam {input.normal_cram} \
             --referenceFasta {input.ref_fa} \
-            --callRegions {params.run_dir}/region.bed \
+            --callRegions {input.region} \
             --runDir {params.run_dir} >> {log} 2>&1
         {params.run_dir}/runWorkflow.py -m local -j {threads} >> {log} 2>&1
         cp {params.run_dir}/results/variants/somatic.snvs.vcf.gz {output.snv}
