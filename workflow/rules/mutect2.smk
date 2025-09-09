@@ -148,7 +148,7 @@ rule produce_mutect2_vcf:  # Target: produce mutect2
     shell:
         """
         for vcf in {input.vcftb}; do
-            bcf="${vcf%.vcf.gz}.bcf";
+            bcf="${{vcf%.vcf.gz}}.bcf";
             bcftools view -O b -o $bcf --threads {threads} $vcf && bcftools index --threads 4 $bcf;
         done;
         touch {output};
@@ -156,4 +156,25 @@ rule produce_mutect2_vcf:  # Target: produce mutect2
         ls {output} >> {log} 2>&1;
         {latency_wait};
         ls {output} >> {log} 2>&1;
+        """
+
+rule prep_mutect2_chunkdirs:
+    input:
+        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+    output:
+        expand(
+            MDIR + "{{sample}}/align/{{alnr}}/snv/mutect2/vcfs/{dvchrm}/{{sample}}.ready",
+            dvchrm=M2_CHRMS,
+        ),
+    threads: 1
+    log:
+        MDIR + "{sample}/align/{alnr}/snv/mutect2/log/{sample}.{alnr}.chunkdirs.log",
+
+    shell:
+        """
+        ( echo {output}  ;
+        mkdir -p $(dirname {output} );
+        touch {output};
+        ls {output}; ) > {log} 2>&1;
         """
