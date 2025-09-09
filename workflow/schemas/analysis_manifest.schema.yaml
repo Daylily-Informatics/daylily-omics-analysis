@@ -5,10 +5,16 @@ description: Analysis Samples Manifest Validator.  See README in config section 
 properties:
     sample:
         type: string
-        description: format RU#_EX_SQ#_LANE where LANE leading zeros removed, and if merged lane =0
+        description: >
+            Combination of RU, EX, SQ and lane used internally by the
+            workflow. If omitted, it will be generated automatically from
+            other fields.
     sample_lane:
         type: string
-        description: RU#_EX_SQ#_LANE with no lane substitution. Identifes the sub patterns to merge to create sample if merging is enabled.  if merge_single=single then sample==sample_lane. if merge, then sample_lane is unique, sample is the aggregation pattern, which may be 1 to 1, but if set to merge should be 1(sample) pattern to >1(sample_lane) patterns.<--- this was implemented, then scaled back, and now is largely only really working for merging.
+        description: >
+            Fully qualified sample identifier including lane. When not
+            provided, it will be derived automatically from RU, EX, SQ and
+            LANE.
     SQ:
         type: string
         description: Sample Type
@@ -58,8 +64,6 @@ properties:
     ont_cram_snv_caller:
         type: string
 required:
-    - sample
-    - sample_lane
     - SQ
     - RU
     - EX
