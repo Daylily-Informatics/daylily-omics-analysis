@@ -92,6 +92,12 @@ LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split
 DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
 SENTTN_CHRMS = config["senttn"][f"{config['genome_build']}_senttn_chrms"].split(",")
 
+VARDICT_CHRMS = (
+    []
+    if "vardictjava" not in config
+    else config["vardictjava"][f"{config['genome_build']}_vardict_chrms"].split(",")
+)
+
 VARN_CHRMS = (
     []
     if "varn" not in config
