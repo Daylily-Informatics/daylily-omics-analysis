@@ -38,85 +38,84 @@ rule mutect2_bams:
         r"""
         set -euo pipefail
         ulimit -n 65536 || true
-        
-        mkdir -p "$(dirname {output.tumor_bam}"
+
+        mkdir -p "$(dirname {output.tumor_bam})"
 
         # Build interval token; map 23→X, 24→Y, 25→{params.mito_code}; strip trailing colon.
         tchr=$(echo {params.cpre}{params.chrm} \
         | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
-        tchr=${{tchr}}
+        tchr=${{tchr%:}}
 
         IFS=':' read -r tcontig tstart tend <<< "$tchr"
 
         # Look up contig length early
         contig_len=$(awk -v c="$tcontig" '$1==c{{print $2; exit}}' {input.ref_fai})
         if [ -z "${{contig_len}}" ]; then
-          echo "ERROR: Contig '$tcontig' not found in {input.ref_fai}" >&2
-          exit 1
+        echo "ERROR: Contig '$tcontig' not found in {input.ref_fai}" >&2
+        exit 1
         fi
 
-        if [ -z "${{tend}}" ]; then
-          # Whole contig
-          region="$tcontig"
+        if [ -z "${{tend:-}}" ]; then
+        # Whole contig
+        region="$tcontig"
         else
-          # Normalize to 1-based inclusive and clamp to [1, contig_len]
-          if [ -z "${{tstart}}" ] || [ "$tstart" -lt 1 ]; then tstart=1; fi
-          if [ "$tend" -gt "$contig_len" ]; then tend="$contig_len"; fi
-          if [ "$tstart" -gt "$tend" ]; then
+        # Normalize to 1-based inclusive and clamp to [1, contig_len]
+        : "${{tstart:=1}}"
+        if [ "$tstart" -lt 1 ]; then tstart=1; fi
+        if [ "$tend" -gt "$contig_len" ]; then tend="$contig_len"; fi
+        if [ "$tstart" -gt "$tend" ]; then
             echo "ERROR: Empty/invalid interval after normalization: $tcontig:$tstart-$tend" >&2
             exit 1
-          fi
-          region="$tcontig:$tstart-$tend"
         fi
-        
+        region="$tcontig:$tstart-$tend"
+        fi
+
         # Tumor
         samtools view -@ {threads} -T {input.ref_fa} -b {input.tumor_cram} "$region" \
-          | samtools sort -@ {threads} -o {output.tumor_bam} -           >> {log} 2>&1
-        samtools index -@ {threads} {output.tumor_bam}                    >> {log} 2>&1
-        
+        | samtools sort -@ {threads} -o {output.tumor_bam} -                >> {log} 2>&1
+        samtools index -@ {threads} {output.tumor_bam}                         >> {log} 2>&1
+
         # Normal
         samtools view -@ {threads} -T {input.ref_fa} -b {input.normal_cram} "$region" \
-          | samtools sort -@ {threads} -o {output.normal_bam} -          >> {log} 2>&1
-        samtools index -@ {threads} {output.normal_bam}                   >> {log} 2>&1
+        | samtools sort -@ {threads} -o {output.normal_bam} -               >> {log} 2>&1
+        samtools index -@ {threads} {output.normal_bam}                        >> {log} 2>&1
 
-
-        # ---- Fix SM in headers (preserve all other @RG fields) ----
+        # ---- Fix SM in headers (preserve other @RG fields) ----
         fix_sm () {{
-          inbam=$1
-          outbam=$2
-          sm=$3
-          tmphdr=$(mktemp)
-          samtools view -H "$inbam" \
+        inbam=$1
+        outbam=$2
+        sm=$3
+        tmphdr=$(mktemp)
+        samtools view -H "$inbam" \
             | awk -v sm="$sm" 'BEGIN{{FS=OFS="\t"}}
                 /^@RG/ {{
-                  found=0
-                  for (i=1;i<=NF;i++) if ($i ~ /^SM:/) {{ $i="SM:" sm; found=1 }}
-                  if (!found) {{ $0 = $0 OFS "SM:" sm }}
+                found=0
+                for (i=1;i<=NF;i++) if ($i ~ /^SM:/) {{ $i="SM:" sm; found=1 }}
+                if (!found) {{ $0 = $0 OFS "SM:" sm }}
                 }}
                 {{ print }}
-              ' > "$tmphdr"
-          # Reheader and replace atomically
-          samtools reheader "$tmphdr" "$inbam" > "$outbam"
-          rm -f "$tmphdr"
-          samtools index -@ {threads} "$outbam" >/dev/null 2>&1 || true
+            ' > "$tmphdr"
+        samtools reheader "$tmphdr" "$inbam" > "$outbam"
+        rm -f "$tmphdr"
+        samtools index -@ {threads} "$outbam" >/dev/null 2>&1 || true
         }}
-        
-        # Distinct names for tumor/normal (required by Mutect2)
+
         T_SM="{params.cluster_sample}-T"
         N_SM="{params.cluster_sample}-N"
-        
+
         fix_sm "{output.tumor_bam}"  "{output.tumor_bam}.smfix" "$T_SM"
         mv "{output.tumor_bam}.smfix" "{output.tumor_bam}"
-        samtools index -@ {threads} -f "{output.tumor_bam}"                     >> {log} 2>&1
-        
+        samtools index -@ {threads} -f "{output.tumor_bam}"                    >> {log} 2>&1
+
         fix_sm "{output.normal_bam}" "{output.normal_bam}.smfix" "$N_SM"
         mv "{output.normal_bam}.smfix" "{output.normal_bam}"
-        samtools index -@ {threads} -f "{output.normal_bam}"                    >> {log} 2>&1
-        
-        # Optional: log the final names for sanity  
-        gatk GetSampleName -I {output.tumor_bam} 2>>{log} | sed "s/^/Tumor SM: /"  >> {log}
+        samtools index -@ {threads} -f "{output.normal_bam}"                   >> {log} 2>&1
+
+        # Sanity log
+        gatk GetSampleName -I {output.tumor_bam} 2>>{log} | sed "s/^/Tumor SM: /"   >> {log}
         gatk GetSampleName -I {output.normal_bam} 2>>{log} | sed "s/^/Normal SM: /" >> {log}
         """
+
 
 rule mutect2:
     wildcard_constraints:
