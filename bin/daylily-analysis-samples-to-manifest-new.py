@@ -193,11 +193,25 @@ def parse_and_validate_tsv(input_file, stage_target):
     log_info(f"Manifest created: {manifest_file}")
     log_info(f"Use this manifest: \n\tcp {manifest_file} config/analysis_manifest.csv")
 
+
+def check_aws_credentials():
+
+    if os.environ.get('AWS_PROFILE','unset') == 'unset':
+        log_error("AWS_PROFILE must be set to a value matching entries in the ~/.aws/config and credentials files")
+
+    try:
+        boto3.client("s3").list_buckets()
+    except NoCredentialsError:
+        log_error("AWS credentials not configured.")
+
+
 # Add the following main function to handle command-line arguments and invoke parsing
 def main():
     if len(sys.argv) != 3:
         log_error("Usage: script.py <input_tsv> <stage_target>")
 
+    check_aws_credentials()
+    
     input_file = sys.argv[1]
     stage_target = sys.argv[2]
 
