@@ -197,12 +197,12 @@ def parse_and_validate_tsv(input_file, stage_target):
 def check_aws_credentials():
 
     if os.environ.get('AWS_PROFILE','unset') == 'unset':
-        log_error("AWS_PROFILE must be set to a value matching entries in the ~/.aws/config and credentials files")
+        log_error("AWS_PROFILE must be set to a value matching entries in the ~/.aws/config and credentials files.\n\n -- Have you run 'aws configure --profile <your-profile>' ?\n\n")
 
     try:
         boto3.client("s3").list_buckets()
     except NoCredentialsError:
-        log_error("AWS credentials not configured.")
+        log_error("AWS credentials not configured.\n\n -- Have you run 'aws configure --profile <your-profile>' ?\n\n")
 
 
 # Add the following main function to handle command-line arguments and invoke parsing
