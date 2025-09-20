@@ -154,7 +154,7 @@ If there is no `~/projects/daylily` directory, or the `dyinit` command is not fo
 From your remote terminal that you created the cluster with, run the following commands to complete the headnode configuration.
 
 ```bash
-conda activate DAYCLI
+conda activate DAYEC
 
 ./bin/daylily-cfg-headnode $PATH_TO_PEM $CLUSTER_AWS_REGION $AWS_PROFILE
 ```
@@ -195,7 +195,7 @@ bash
 cd /fsx/analysis_results/ubuntu/first_analysis/daylily
 
 ```
-  > *note*: if you have an active DAY conda env, begina fresh bash shell from your new analysis dir, `bash`.
+  > *note*: if you have an active DAYOA conda env, begina fresh bash shell from your new analysis dir, `bash`.
 
 #### Next, init daylily and, set genome, stage an analysis_manigest.csv and run a test workflow.
 

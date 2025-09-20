@@ -16,7 +16,7 @@ usage() {
     echo ""
     echo "This script deactivates the Daylily environment by:"
     echo "  - Clearing the DAY_ROOT, DAY_PROFILE, and DAY_BIOME and other dyinit set environment variables."
-    echo "  - Attempting to deactivate any active DAY conda environments."
+    echo "  - Attempting to deactivate any active DAYOA conda environments."
     echo "  - Restoring the original PATH and PS1 if they were modified."
     echo "  - Unaliasing Daylily CLI commands."
     echo ""

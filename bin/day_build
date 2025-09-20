@@ -18,9 +18,9 @@ if [[ "$1" == "BUILD" ]]; then
         return 1
     fi
     # Source the environment installer
-    source config/day/day_env_installer.sh DAY
+    source config/day/day_env_installer.sh DAYOA
     if [[ "$?" != "0" ]]; then
-        echo "Error: Failed to install the DAY environment."
+        echo "Error: Failed to install the DAYOA environment."
         return 1
     else
 
@@ -36,8 +36,8 @@ if [[ "$1" == "BUILD" ]]; then
 else
     if [[ "$1" =~ ^(-h|--help|help)$ ]]; then
         echo "Usage: day-build [BUILD]"
-        echo "This script builds the DAY conda environment (only needed once per working environment)."
-        echo "Run 'day-build BUILD' to install conda and the DAY environment."
+        echo "This script builds the DAYOA conda environment (only needed once per working environment)."
+        echo "Run 'day-build BUILD' to install conda and the DAYOA environment."
         return 0
     fi
 fi

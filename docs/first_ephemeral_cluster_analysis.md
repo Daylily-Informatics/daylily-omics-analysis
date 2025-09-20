@@ -48,7 +48,7 @@ cd daylily
 
 cp .test/
 
-# initialize the DAY conda env + other helpful tools
+# initialize the DAYOA conda env + other helpful tools
 . dyinit  # you can speciy --project AWSBUDGETNAME to change from the default region specific budget. New budgets created in AWS must also be added to the allowed ubuntu projects in /opt/slurm/etc/projects_list.conf to be recognized by the cluster. jobs will not launch if the budget is not recognized.
 
 # move an analysis manifest into place, which haas a tiny toy dataset.
