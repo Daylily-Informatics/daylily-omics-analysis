@@ -106,7 +106,7 @@ mg-a local
 rclone -L --config config/day_example_analysis_manifests/rclone_xxx_local_example.conf cat localxxx:/fsx/data/external_data/research_experiments/ManualRuns/EX3636/b37/wgs_data/SQ42092_LS1585266_RE2698_G3/Lib_for_SequenceIndex_SQ42092.aligned.deduped.sort.bam | samtools view -H
 ```
 
-  - This should return the header from the BAM being referenced.  If this works for you, and it should if your DAY env built, then the BAM manifest features should work.
+  - This should return the header from the BAM being referenced.  If this works for you, and it should if your DAYOA env built, then the BAM manifest features should work.
   - You can initialize new rclone remote handles by running `rclone config`.  The entry for the local is simply:
 
   ```
