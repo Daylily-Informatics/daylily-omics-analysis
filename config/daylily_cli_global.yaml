@@ -1,8 +1,8 @@
 ---
 daylily:
-  git_tag: 0.7.331
-  git_repo: https://github.com/RCRF/daylily-omics-analysis.git
-  git_repo_ssh: git@github.com:RCRF/daylily-omics-analysis.git
+  git_tag: 0.7.333
+  git_repo: https://github.com:/Daylily-Informatics/daylily-omics-analysis.git
+  git_repo_ssh: git@github.com:Daylily-Informatics/daylily-omics-analysis.git
   analysis_root: /fsx/analysis_results/
   daylily_image_cmd: "singularity pull --name /fsx/resources/environments/containers/daylily:0.7.196.simg docker://daylilyinformatics/daylily:0.7.196"
   daylily_image_path: /fsx/resources/environments/containers/daylily:0.7.196.simg
