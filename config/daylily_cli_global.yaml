@@ -1,6 +1,6 @@
 ---
 daylily:
-  git_tag: 0.7.223r
+  git_tag: 0.7.331
   git_repo: https://github.com/RCRF/daylily-omics-analysis.git
   git_repo_ssh: git@github.com:RCRF/daylily-omics-analysis.git
   analysis_root: /fsx/analysis_results/
