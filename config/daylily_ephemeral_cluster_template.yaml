@@ -1,0 +1,45 @@
+defaults:
+  auto_delete_fsx: Delete
+  budget_amount: "200"
+  budget_email: user@example.com
+  cluster_name: daylily-ephemeral-cluster
+  cluster_template_yaml: config/day_cluster/prod_cluster.yaml
+  delete_local_root: "true"
+  enable_detailed_monitoring: "false"
+  enforce_budget: skip
+  fsx_fs_size: "4800"
+  global_allowed_budget_users: ubuntu
+  global_budget_amount: "200"
+  headnode_instance_type: r7i.2xlarge
+  heartbeat_email: daylily-heartbeats@example.com
+  heartbeat_schedule: "0 12 * * *"
+  iam_policy_arn: arn:aws:iam::123456789012:policy/daylily-service-cluster-policy
+  max_count_8I: "1"
+  max_count_128I: "12"
+  max_count_192I: "16"
+  private_subnet_id: subnet-0123456789abcdef0
+  public_subnet_id: subnet-0fedcba9876543210
+  s3_bucket_name: daylily-ephemeral-results
+  spot_instance_allocation_strategy: price-capacity-optimized
+  ssh_key_name: daylily-ephemeral-ssh-key
+  allowed_budget_users: ubuntu
+  CONFIG_HEADNODE_INSTANCE_TYPE: r7i.2xlarge
+  CONFIG_HEADNOD_INSTANCE_TYPE: r7i.2xlarge
+  CONFIG_HEARTBEAT_EMAIL: daylily-heartbeats@example.com
+  CONFIG_HEARTBEAT_SCHEDULE: "0 12 * * *"
+prompts:
+  auto_delete_fsx: "Choose how the FSx filesystem should be handled when the cluster is deleted"
+  enforce_budget: "Enforce the AWS budget during cluster lifecycle?"
+  spot_instance_allocation_strategy: "Select the spot allocation strategy"
+  heartbeat_schedule: "Cron schedule for the cluster heartbeat (UTC)"
+choices:
+  auto_delete_fsx:
+    - Delete
+    - Retain
+  enforce_budget:
+    - enforce
+    - skip
+  spot_instance_allocation_strategy:
+    - price-capacity-optimized
+    - capacity-optimized
+    - lowest-price

@@ -1,0 +1,408 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CONFIG_FILE="config/daylily_ephemeral_cluster.yaml"
+TEMPLATE_FILE="config/daylily_ephemeral_cluster_template.yaml"
+ASSUME_YES=false
+PROMPT_MODE="interactive"
+
+usage() {
+    cat <<'USAGE'
+Usage: daylily-create-ephemeral-cluster [options]
+
+Options:
+  --config <path>       Path to the cluster configuration YAML file.
+  --template <path>     Path to the template defaults YAML file.
+  -y, --yes             Assume yes for all confirmations (non-interactive).
+  --non-interactive     Alias for --yes.
+  -h, --help            Show this help message.
+USAGE
+}
+
+ensure_yq() {
+    if ! command -v yq >/dev/null 2>&1; then
+        echo "❌ yq is required but was not found on PATH." >&2
+        return 1
+    fi
+    return 0
+}
+
+declare -A DEFAULTS
+declare -A PROMPTS
+declare -A CHOICES
+declare -A PATHS
+declare -a KEY_ORDER
+declare -A KEY_SEEN
+
+declare -A CONFIG_VALUES
+declare -A EFFECTIVE_VALUES
+
+declare -A KEY_ALIASES=(
+    [CONFIG_HEADNODE_INSTANCE_TYPE]=headnode_instance_type
+    [CONFIG_HEADNOD_INSTANCE_TYPE]=headnode_instance_type
+    [CONFIG_HEARTBEAT_EMAIL]=heartbeat_email
+    [CONFIG_HEARTBEAT_SCHEDULE]=heartbeat_schedule
+)
+
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --config)
+                CONFIG_FILE="$2"
+                shift 2
+                ;;
+            --template)
+                TEMPLATE_FILE="$2"
+                shift 2
+                ;;
+            -y|--yes|--non-interactive)
+                ASSUME_YES=true
+                PROMPT_MODE="non-interactive"
+                shift
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                usage
+                exit 2
+                ;;
+        esac
+    done
+}
+
+load_template_defaults() {
+    local template_path="$1"
+
+    if [[ ! -f "$template_path" ]]; then
+        echo "❌ Template file not found: $template_path" >&2
+        return 1
+    fi
+
+    local python_output
+    if ! python_output=$(yq -o=json '.' "$template_path" | python3 - <<'PYTHON'
+import json
+import sys
+from collections import OrderedDict
+
+
+def flatten_defaults(data):
+    result = OrderedDict()
+    if isinstance(data, dict) and any(k in data for k in ("defaults", "prompts", "choices")):
+        defaults = data.get("defaults") or {}
+        prompts = data.get("prompts") or {}
+        choices = data.get("choices") or {}
+        keys = list(dict.fromkeys(list(defaults.keys()) + list(prompts.keys()) + list(choices.keys())))
+        for key in keys:
+            entry = result.setdefault(key, {"default": None, "prompt": None, "choices": None})
+            if isinstance(defaults, dict) and key in defaults:
+                entry["default"] = defaults[key]
+            if isinstance(prompts, dict) and key in prompts:
+                entry["prompt"] = prompts[key]
+            if isinstance(choices, dict) and key in choices:
+                entry["choices"] = choices[key]
+        return result
+
+    def recurse(node, prefix=""):
+        if isinstance(node, dict):
+            has_meta = any(key in node for key in ("default", "prompt", "choices", "options", "values"))
+            if has_meta:
+                entry = result.setdefault(prefix, {"default": None, "prompt": None, "choices": None})
+                if "default" in node:
+                    entry["default"] = node["default"]
+                if "prompt" in node:
+                    entry["prompt"] = node["prompt"]
+                if "choices" in node:
+                    entry["choices"] = node["choices"]
+                elif "options" in node:
+                    entry["choices"] = node["options"]
+                elif "values" in node:
+                    entry["choices"] = node["values"]
+                for key, value in node.items():
+                    if key in {"default", "prompt", "choices", "options", "values"}:
+                        continue
+                    next_prefix = f"{prefix}.{key}" if prefix else key
+                    recurse(value, next_prefix)
+            else:
+                for key, value in node.items():
+                    next_prefix = f"{prefix}.{key}" if prefix else key
+                    recurse(value, next_prefix)
+        else:
+            entry = result.setdefault(prefix, {"default": None, "prompt": None, "choices": None})
+            entry["default"] = node
+
+    recurse(data)
+    return result
+
+
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError as exc:
+    raise SystemExit(f"Failed to parse template JSON: {exc}")
+
+for path, entry in flatten_defaults(data).items():
+    display = path.split('.')[-1] if path else path
+    default = entry.get("default")
+    prompt = entry.get("prompt")
+    choices = entry.get("choices")
+    if isinstance(choices, list):
+        choices_str = "|".join(str(item) for item in choices)
+    elif choices is None:
+        choices_str = ""
+    else:
+        choices_str = str(choices)
+    default_str = "" if default is None else str(default)
+    prompt_str = "" if prompt is None else str(prompt)
+    print(f"{path}\t{display}\t{default_str}\t{prompt_str}\t{choices_str}")
+PYTHON
+    ); then
+        echo "❌ Failed to parse template defaults from $template_path" >&2
+        return 1
+    fi
+
+    while IFS=$'\t' read -r full_path display_key default_value prompt_text choices_text; do
+        [[ -z "$display_key" ]] && continue
+        if [[ -z "${KEY_SEEN[$display_key]:-}" ]]; then
+            KEY_ORDER+=("$display_key")
+            KEY_SEEN[$display_key]=1
+        fi
+        DEFAULTS[$display_key]="$default_value"
+        PATHS[$display_key]="$full_path"
+        if [[ -n "$prompt_text" ]]; then
+            PROMPTS[$display_key]="$prompt_text"
+        fi
+        if [[ -n "$choices_text" ]]; then
+            CHOICES[$display_key]="$choices_text"
+        fi
+    done <<<"$python_output"
+
+    return 0
+}
+
+flatten_config_section() {
+    local file_path="$1"
+    local query="$2"
+
+    if [[ ! -f "$file_path" ]]; then
+        return 0
+    fi
+
+    yq -o=json "$query" "$file_path" 2>/dev/null | python3 - <<'PYTHON'
+import json
+import sys
+from collections import OrderedDict
+
+
+def flatten(node, prefix="", result=None):
+    if result is None:
+        result = OrderedDict()
+    if isinstance(node, dict):
+        for key, value in node.items():
+            next_prefix = f"{prefix}.{key}" if prefix else key
+            flatten(value, next_prefix, result)
+    else:
+        result[prefix] = node
+    return result
+
+
+try:
+    data = json.load(sys.stdin)
+except json.JSONDecodeError:
+    sys.exit(0)
+
+flat = flatten(data)
+for path, value in flat.items():
+    display = path.split('.')[-1]
+    print(f"{path}\t{display}\t{value}")
+PYTHON
+}
+
+load_existing_config() {
+    local config_path="$1"
+
+    if [[ ! -f "$config_path" ]]; then
+        return 0
+    fi
+
+    while IFS=$'\t' read -r full_path display_key value; do
+        [[ -z "$display_key" ]] && continue
+        CONFIG_VALUES[$display_key]="$value"
+        PATHS[$display_key]="$full_path"
+        if [[ -z "${KEY_SEEN[$display_key]:-}" ]]; then
+            KEY_ORDER+=("$display_key")
+            KEY_SEEN[$display_key]=1
+        fi
+    done < <(flatten_config_section "$config_path" '.ephemeral_cluster.config')
+
+    return 0
+}
+
+apply_aliases() {
+    local alias base
+    for alias in "${!KEY_ALIASES[@]}"; do
+        base="${KEY_ALIASES[$alias]}"
+        if [[ -z "${KEY_SEEN[$alias]:-}" ]]; then
+            KEY_ORDER+=("$alias")
+            KEY_SEEN[$alias]=1
+        fi
+        if [[ -n "${DEFAULTS[$base]:-}" ]]; then
+            DEFAULTS[$alias]="${DEFAULTS[$base]}"
+        fi
+        if [[ -z "${PROMPTS[$alias]:-}" && -n "${PROMPTS[$base]:-}" ]]; then
+            PROMPTS[$alias]="${PROMPTS[$base]}"
+        fi
+        if [[ -z "${CHOICES[$alias]:-}" && -n "${CHOICES[$base]:-}" ]]; then
+            CHOICES[$alias]="${CHOICES[$base]}"
+        fi
+        if [[ -z "${CONFIG_VALUES[$alias]:-}" && -n "${CONFIG_VALUES[$base]:-}" ]]; then
+            CONFIG_VALUES[$alias]="${CONFIG_VALUES[$base]}"
+        fi
+    done
+}
+
+display_configuration() {
+    local template_path="$1"
+
+    echo "Loading configuration from $template_path"
+    echo "$template_path configuration values:"
+
+    local key value default
+    for key in "${KEY_ORDER[@]}"; do
+        default="${DEFAULTS[$key]:-PROMPTUSER}"
+        value="${CONFIG_VALUES[$key]:-}"
+        if [[ -z "$value" || "$value" == "PROMPTUSER" ]]; then
+            value="$default"
+        fi
+        EFFECTIVE_VALUES[$key]="$value"
+        printf '  %s: %s\n' "$key" "$value"
+    done
+    echo ""
+}
+
+confirm_defaults() {
+    if [[ "$ASSUME_YES" == true ]]; then
+        return 0
+    fi
+    echo "If you wish to override the above values, please edit the template or configuration file appropriately."
+    echo "These defaults are suitable for a low quota account; adjust the max_count values if you have higher spot quotas."
+    read -r -p "please confirm these values are correct and press Enter to continue, or any other key to exit. " response || true
+    if [[ -n "$response" ]]; then
+        echo "Exiting..."
+        exit 3
+    fi
+}
+
+prompt_for_key() {
+    local key="$1"
+    local default="${DEFAULTS[$key]:-}"
+    local prompt_text="${PROMPTS[$key]:-Enter a value for $key}"
+    local choice_blob="${CHOICES[$key]:-}"
+    local value="${CONFIG_VALUES[$key]:-}"
+
+    if [[ -z "$value" || "$value" == "PROMPTUSER" ]]; then
+        value="$default"
+    fi
+
+    if [[ "$PROMPT_MODE" == "non-interactive" ]]; then
+        CONFIG_VALUES[$key]="$value"
+        EFFECTIVE_VALUES[$key]="$value"
+        return 0
+    fi
+
+    if [[ -n "$choice_blob" ]]; then
+        IFS='|' read -r -a options <<<"$choice_blob"
+        local selection
+        while true; do
+            echo "$prompt_text"
+            local idx=1
+            for option in "${options[@]}"; do
+                if [[ "$option" == "$value" ]]; then
+                    printf '  %d) %s (default)\n' "$idx" "$option"
+                else
+                    printf '  %d) %s\n' "$idx" "$option"
+                fi
+                ((idx++))
+            done
+            if [[ -n "$value" ]]; then
+                printf 'Selection [%s]: ' "$value"
+            else
+                printf 'Selection: '
+            fi
+            read -r user_choice || true
+            if [[ -z "$user_choice" ]]; then
+                selection="$value"
+                break
+            fi
+            if [[ "$user_choice" =~ ^[0-9]+$ ]]; then
+                local numeric=$((user_choice))
+                if (( numeric >= 1 && numeric <= ${#options[@]} )); then
+                    selection="${options[$((numeric-1))]}"
+                    break
+                fi
+            fi
+            for option in "${options[@]}"; do
+                if [[ "$user_choice" == "$option" ]]; then
+                    selection="$option"
+                    break 2
+                fi
+            done
+            echo "Invalid selection. Please choose one of the listed options or press Enter to accept the default."
+        done
+        value="$selection"
+    else
+        local decorated_prompt="$prompt_text"
+        if [[ -n "$value" ]]; then
+            decorated_prompt+=" [$value]"
+        fi
+        decorated_prompt+=" : "
+        read -r -p "$decorated_prompt" user_input || true
+        if [[ -n "$user_input" ]]; then
+            value="$user_input"
+        fi
+    fi
+
+    CONFIG_VALUES[$key]="$value"
+    EFFECTIVE_VALUES[$key]="$value"
+    return 0
+}
+
+prompt_for_missing_values() {
+    local key
+    for key in "${KEY_ORDER[@]}"; do
+        local value="${CONFIG_VALUES[$key]:-}"
+        if [[ -z "$value" || "$value" == "PROMPTUSER" ]]; then
+            prompt_for_key "$key"
+        else
+            EFFECTIVE_VALUES[$key]="$value"
+        fi
+    done
+}
+
+summarise_effective_configuration() {
+    echo "Effective configuration values:"
+    local key
+    for key in "${KEY_ORDER[@]}"; do
+        printf '  %s: %s\n' "$key" "${EFFECTIVE_VALUES[$key]:-}"
+    done
+}
+
+main() {
+    parse_args "$@"
+    ensure_yq
+
+    echo "yq is installed, proceeding."
+
+    load_template_defaults "$TEMPLATE_FILE"
+    load_existing_config "$CONFIG_FILE"
+    apply_aliases
+
+    display_configuration "$TEMPLATE_FILE"
+    confirm_defaults
+    prompt_for_missing_values
+    summarise_effective_configuration
+}
+
+main "$@"
