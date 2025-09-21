@@ -27,7 +27,7 @@ _analysis results being processed_
 - WGS analysis should only cost ~ $3-4 per sample, everything daylily is doing was possible *4* years ago.
 - Daylily was initially designed for tool interaction benchmarking (so, all aligners by all dedupers by all variant callers by all sv callers), and it still serves this purpose admirably.
 - Compute hardware reporducibility is MUCH more of a factor when choosing to run pipelines vs. the workflow orchestrators. Yet, the orchestrators is where most attention goes.  Why? Distraction, etc.
-- Workflows are largely working via snakemake. *HOWEVER* the compute framework us slurm based, and any orchestrator which can use slurm can run just as easily. *Cromwell* is working in a very rudimentary fashion, and was quick to get working. Nextflow, etc can be plugged in with minimal fuss.
+- Workflows are largely working via snakemake. *HOWEVER* the compute framework us slurm based, and any orchestrator which can use slurm can run just as easily. Independent analysis repositories can provide whichever executor they prefer (Nextflow, etc) with minimal fuss.
 - When presenting information about analysis pipelines, there should be full transparency on:
 -   - user run time
     - accuracy of final results
