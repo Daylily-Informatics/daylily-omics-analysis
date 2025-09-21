@@ -23,13 +23,6 @@ if [[ "$1" == "BUILD" ]]; then
         echo "Error: Failed to install the DAYOA environment."
         return 1
     else
-
-        if [[ "$?" != "0" ]]; then
-            echo "Error: Failed to copy the day-clone script."
-            return 1
-        fi
-        echo "day-clone script copied successfully."
-
         return 0
     fi
 
