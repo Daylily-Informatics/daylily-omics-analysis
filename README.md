@@ -1,180 +1,86 @@
-MIGRATING THE ANALYSIS SPECIFIC BITS FROM 'daylily' here, and the AWS infra stuff to `daylily-ephemeral-cluster`
-
 # Daylily Omics Analysis
-_(stable tagged release to use --> 0.7.229 ... use main at own risk)_
 
-**beta release**
+Daylily Omics Analysis provides the Snakemake-based workflows that power the Daylily whole genome sequencing (WGS) platform.  The pipelines support short-read, long-read and hybrid analyses, deliver concordance and QC reporting, and surface cost telemetry so that analytical performance can be evaluated alongside runtime and spend.  The repository previously lived alongside the infrastructure automation in a monorepo; it now focuses exclusively on analysis.  Cluster lifecycle management is handled by the companion project [daylily-ephemeral-cluster](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).
 
-  > `daylily-omics-analysis` are a set of bioinformatics analyses worflows which run on several short read and long read sequencing data, as well as hybrid combinations of these. It's primary objective is to enhance the reproducibility and predictability of bioinformatics compute performance, and importantly, cost. It leverages [daylily-ephemeral-cluster](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) in order to meet this objective.
+> **Beta notice:** tagged releases are the preferred entry point for production use (for example `0.7.229`).  The `main` branch is used for active development and may change without notice.
 
+## Relationship to `daylily-ephemeral-cluster`
 
-<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+This repository does not create or manage compute infrastructure.  To run the workflows at scale you will first need to provision an ephemeral AWS ParallelCluster environment by following the instructions in [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).  The high level split between the projects is:
 
-# Intention
+| Project | Purpose |
+| --- | --- |
+| [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) | Creates and operates the transient AWS infrastructure (VPC, ParallelCluster, FSx, PCUI, etc.). |
+| `daylily-omics-analysis` | Houses Snakemake workflows, CLI tooling, manifests, and analysis documentation. |
 
-  > The goal of daylily is to enable more rigorous comparisons of informatics tools by formalizing their compute environments and establishing hardware profiles that reproduce each tool’s accuracy and runtime/cost performance. This approach is general, not tied to a single toolset; while AWS is involved, nothing prevents deployment elsewhere. AWS simply offers a standardized hardware environment accessible to anyone with an account. By “compute environment,” I mean more than a container—containers alone don’t guarantee hardware performance, and cost/runtime considerations demand reproducibility on specific hardware. Though daylily uses containers and conda, it remains agnostic about the tools themselves. I have three main aims:
+The remainder of this document assumes you already have an ephemeral cluster available or are running locally with compatible dependencies.
 
-## Shift Focus
-  Move away from unhelpful debates over “the best” tool and toward evidence-based evaluations. Real use cases dictate tool choice, so let’s make sure relevant data and clear methodologies are accessible—or at least ensure enough detail is published to make meaningful comparisons. Specifically, I wish to move away from scant and overly reductive metrics which fail to describe our tools in as rich detail as they can be. ie:
+## Highlights
 
-  > If I am looking for the best possible `recall` in SNV calling, initial data suggestes I might look towards [`sentieon bwa`+`sentieon DNAscope`](https://www.sentieon.com/) ... and interestingly, if I wanted the best possible `precision`, it would be worth investigating [`strobealigner`](https://github.com/ksahlin/strobealign) + `deepvariant` ([REF DATA](https://github.com/Daylily-Informatics/daylily_giab_analyses/blob/main/results/us_west_2d/all/concordance/pvr/hg38_usw2d-all__All_zoom.png)). `Fscore` would not be as informative for these more sepcific cases.
+* **Reproducible WGS workflows.** Short-read, long-read and hybrid pipelines covering alignment, deduplication, variant discovery (SNV/SV), QC aggregation (MultiQC), concordance reporting, and more.
+* **Cost-aware benchmarking.** Built-in helpers to export task-level runtime and cost data so accuracy can be interpreted alongside spend.
+* **Reference curation.** Re-usable manifests, GIAB sample sheets, and tooling to stage the shared reference buckets used by the cluster environment.
+* **Configurable execution.** Profiles for local execution and Slurm-backed cluster execution, including containerised and Conda-based environments.
+* **Transparent data products.** Results are organised per genome build under `results/day/<build>/` with concordance and QC artefacts grouped for inspection.
 
-## Raise the Bar 
-  Demand better metrics and documentation in tool publications: thorough cost data, specific and reproducible hardware details, more nuanced concordance metrics, and expansive QC reporting. Half-measures shouldn’t pass as “sufficient.”
+A broader motivation for the project, including why the pipelines emphasise FAIR bioinformatics practices, reproducible hardware profiles, and transparent cost reporting, is captured in the [Intention](#intention) section below.
 
-## Escape Outdated ‘Best Practices’
-  They were helpful at first, but our field is stuck in 2012. We need shareable frameworks that capture both accuracy and cost/runtime for truly reproducible pipeline performance—so we can finally move forward.
+## Quick Start
 
-  > [The daylily GIAB analyses repository contains (work in progress)](https://github.com/Daylily-Informatics/daylily_giab_analyses) results from the first stable daylily release, run on seven GIAB samples.
+The fastest way to experience the workflows is to run the built-in smoke test using the GIAB 0.01× HG002 dataset.  The steps below assume you have cloned this repository onto the head node of an ephemeral cluster created with `daylily-ephemeral-cluster`.  The same commands can also run locally provided the dependencies defined in [setup.py](setup.py) are installed.
 
+1. **Clone the repository.**
+   ```bash
+   git clone https://github.com/Daylily-Informatics/daylily-omics-analysis.git
+   cd daylily-omics-analysis
+   ```
 
+2. **Initialise the Daylily CLI and activate a profile.**
+   ```bash
+   # from the repository root
+   bash               # start a clean shell session if connecting via SSH
+   . dyinit           # configures the DAYOA conda env and CLI helpers
+   dy-a local hg38    # or `dy-a slurm hg38` to target the cluster profile
+   ```
 
+3. **Stage a sample manifest.**
+   ```bash
+   cp .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv config/analysis_manifest.csv
+   ```
 
+4. **Dry-run the workflow.**
+   ```bash
+   dy-r seqqc -j 1 -p -k -n
+   ```
 
+5. **Execute the workflow.**
+   ```bash
+   dy-r seqqc -j 1 -p -k
+   ```
 
-> The [daylily GIAB analyses](https://github.com/Daylily-Informatics/daylily_giab_analyses) repo will holds the (_WIP_) analsis from reuslts of the first stable release of `daylily` running on 7 GIAB samples. 
+   Results will be written under `results/day/hg38/` and logs will collect in `logs/`.
 
----
+6. **Scale out on the cluster (optional).**
+   ```bash
+   dy-a slurm hg38
+   dy-r produce_snv_concordances -p -k -j 6 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep']
+   ```
 
-# [Whitepaper In Progress](https://github.com/Daylily-Informatics/daylily_giab_analyses/blob/main/docs/whitepaper_draft.md)
+For instructions on crafting custom manifests, enabling additional tools (e.g. DeepVariant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
 
-Drafting in progress, with the intention of publishing the results in [f1000-research](https://f1000research.com/).
+## Documentation Roadmap
 
-In order to demonstrate the capabilities of daylily, I am processing the 7 GIAB datasets vs: 3 aligners, 1 deduper, 5 SNV callers and 3 SV callers (plus generating concordance results and a variety of qc data), for both `b37` and `hg38`, which yields:
-> - 41 BAMs
-> -  210 SNV vcfs
-> - 129 SV vcfs
-> -  2 multiqc reports (per reference)
-> -   many qc data files
-> -   COST reporting for every task
+| Document | Purpose |
+| --- | --- |
+| [`docs/quickest_start.md`](docs/quickest_start.md) | Checklist for new users that links infrastructure bootstrapping with the minimal analysis steps in this repository. |
+| [`docs/first_ephemeral_cluster_analysis.md`](docs/first_ephemeral_cluster_analysis.md) | Detailed walkthrough for cloning the repo on a head node, preparing manifests, and running both local and Slurm-backed jobs. |
+| [`docs/advanced/`](docs/advanced) | Deep dives on specialised workflows, benchmarking, and operations. |
+| [`docs/reports/`](docs/reports) | Example concordance and QC outputs from previous Daylily runs. |
+| [`docs/whitepaper/`](docs/whitepaper) | Background material for the forthcoming Daylily whitepaper. |
 
-I will be assessing:
-> - Infrastructure management aspects of daylily.
-> - Impact on accuracy and cost of all the combinations of above tools.
->   - costs (spoiler:  best performance  is in the $3-4/sample is reasonably to assume) of compute, data transfer, data storage & long term data storage.
->   - fscore (spoiler: as expected performance acheivable of 0.998+)
-> - Globally, raising questions about bfx analysis reproducibility, best practices vs. best performance/accuracy, ...
-
-
-> Would you like to lend a hand?  [contact me](mailto:john@daylilyinformatics.com)
-
-
-# What's It All About?
-
-## BFAIR: Bioinformatics [FAIR](https://www.go-fair.org/fair-principles/) Principles 
-_this is a title rough idea! - not likely final, but is the gist of it_
-
-## Comprehensive Cost Transparency & Predictability [(wip: interactive cost calculator is available here)](https://day.dyly.bio)
-
-> 30x FASTQ->VCF, in 1hr, for <img src="docs/images/000000.png" valign="bottom" width=2 >~$3 - $4<img src="docs/images/000000.png" valign="bottom" width=2 > @ F-score 0.99xx
-
-> Be up and running in a few hours from reading this sentence. 
-> - Have your first GIAB 30x Fastq->VCF (both snv and sv) ~60min later. 
-> - The (_onetime_) cost of staging data is ~$20, analysis will be ` ~$3.00 to $5.00 ` (pricing is established dynamically at cluster creation, and you can inspect the max bound on spot prices which are possible, this sets your upper bound... as does complexity of pipeline, but more on that latter).
-
-**Time to result, Cost of analysis, Accuracy && Integrated Concordance/Comparison**: These are key elements required in making solid analysis decisions, and in setting the stage for analysis decisions which can improve in tandem as the field advances. 
-
-**Cost Optimization & Predictability**:  With benchmarked, reproducible analysis on stable and reproducible computing platforms, it is possible to optimze for the most beneficial compute locale && to predict expected (and bound highest) per-sample cost to analyze.
-
-**Cost Transparency & Management**:  IRT views into what is being spent, and where.  Not just compute, but data transfer, sroage, and other _ALL_ other costs. No specialized hardware investment needed, no contracts, pay for what you use. 
-
-**Pro Open Source**: All out of the box functionality here is open source, and does not require any investment in software liscneces, etc. This is important for both future proof reproducibility and ongoing cost management. This said, daylily is not hostile to s/w that requires liscences (if selection of closed s/w is made understanding tradeoffs, if any, in long term reproducibility), but you will need to purchase those separately.
-
-- https://github.com/aws/aws-parallelcluster makes the cluster creation/management possible.
-- snakemake
-- all the tools!
-
-<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff00ff><img src="docs/images/000000.png" valign="bottom" ></a></p>
-
-<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
-
-# Self Funded Science
-
-> Daylily development has been under development for a number of years & is self-funded work (both time, and AWS costs).
-> - [I am available for consulting](https://www.dyly.bio) engagements if you are interested in extending the work here. My areas of expertise also include cllical diagnostics operations, regulatory and compliance.
-
-<hr>
-
-
-# Installation of Daylily Ephemeral Cluster
-
-- [See instructions in the daylily-ephemeral-cluster repo](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).
-
-## IT IS ASSUMED YOU HAVE A RUNNING EPHEMERAL CLUSTER AND KNOW HOW TO SSH INTO IT (via a terminal, the PCUI shell, or EC2 console SSM)
-
-- [See instructions in the daylily-ephemeral-cluster repo](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).
-
-
-# Running A Test Analysis Workflow
-
-## SSH Into Cluster Headnode
-
-##### Basic
-
-From your local shell, you can ssh into the head node of the cluster using the following command.
-
-```bash
-ssh -i $pem_file ubuntu@$cluster_ip_address 
-```
-
-##### Facilitated
-
-```bash
-export AWS_PROFILE=<profile_name>
-bin/daylily-ssh-into-headnode 
-```
-
-
-<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
-
-# From The Epheemeral Cluster Headnode
-
-## Confirm Headnode Configuration Is Complete
-
-**Is `daylily` CLI Available & Working**
-
-```bash
-cd ~/projects/daylily
-. dyinit # inisitalizes the daylily cli
-dy-a local hg38 # activates the local config using reference hg38, the other build available is b37
+## Repository Layout
 
 ```
-
-> if `. dyinit` works, but `dy-a local` fails, try `dy-b BUILD`
-
-
-
-This should produce a magenta `WORKFLOW SUCCESS` message and `RETURN CODE: 0` at the end of the output.  If so, you are set. If not, see the next section.
-
-### (if) Headnode Confiugration Incomplete
-
-If there is no `~/projects/daylily` directory, or the `dyinit` command is not found, the headnode configuration is incomplete. 
-
-**Attempt To Complete Headnode Configuration**
-From your remote terminal that you created the cluster with, run the following commands to complete the headnode configuration.
-
-```bash
-conda activate DAYEC
-
-./bin/daylily-cfg-headnode $PATH_TO_PEM $CLUSTER_AWS_REGION $AWS_PROFILE
-```
-
-> If the problem persists, ssh into the headnode, and attempt to run the commands as the ubuntu user which are being attempted by the `daylily-cfg-headnode` script.
-
-### Confirm Headnode /fsx/ Directory Structure
-
-**Confirm `/fsx/` directories are present**
-
-```bash
-ls -lth /fsx/
-
-total 130K
-drwxrwxrwx 3 root root 33K Sep 26 09:22 environments
-drwxr-xr-x 5 root root 33K Sep 26 08:58 data
-drwxrwxrwx 5 root root 33K Sep 26 08:35 analysis_results
-drwxrwxrwx 3 root root 33K Sep 26 08:35 resources
-```
-
 ### Run A Local Test Workflow
 
 #### First, clone this repository into a new analysis directory.
@@ -581,295 +487,40 @@ See the secion on [shared Fsx filesystem](#shared-fsx-filesystem) for more on ho
 
 ```text
 .
-├── cluster_boot_config  # used to configure the head and compute nodes in the ephemeral cluster, is not mounted to cluster nodes
-└── data # this directory is mounted to the head and compute nodes under /fsx/data as READ-ONLY. Data added to the S3 bucket will become available to the fsx mount, but can not be written to via FSX
-    ├── cached_envs
-    │   ├── conda
-    │   └── containers
-    ├── genomic_data
-    │   ├── organism_annotations
-    │   │   └── H_sapiens
-    │   │       ├── b37
-    │   │       └── hg38
-    │   ├── organism_reads
-    │   │   └── H_sapiens
-    │   │       └── giab
-    │   └── organism_references
-    │       └── H_sapiens
-    │           ├── b37
-    │           └── hg38
-    └── tool_specific_resources
-        └── verifybam2
-            ├── exome
-            └── test
+├── bin/                # helper scripts used by the CLI and workflows
+├── config/             # Snakemake profiles, tool configuration, and manifests
+├── docs/               # user guides, whitepaper drafts, metrics and demos
+├── resources/          # supporting resources staged on the cluster FSx volume
+├── workflow/           # Snakemake rules, environments and shared logic
+└── .test_data/         # small data bundles for smoke testing
 ```
 
+## Intention
 
-# Fsx Filesystem
+> The goal of daylily is to enable more rigorous comparisons of informatics tools by formalising their compute environments and establishing hardware profiles that reproduce each tool’s accuracy and runtime/cost performance. This approach is general and not tied to a single toolset; while AWS is involved, nothing prevents deployment elsewhere. AWS simply offers a standardised hardware environment accessible to anyone with an account. By “compute environment,” I mean more than a container—containers alone don’t guarantee hardware performance, and cost/runtime considerations demand reproducibility on specific hardware. Though daylily uses containers and conda, it remains agnostic about the tools themselves. I have three main aims:
 
-Are region specific, and may only intereact with `S3` buckets in the same region as the filesystem. There are region specific quotas to be aware of.
+### Shift Focus
 
-- Fsx filesystems are extraordinarily fast, massively scallable (both in IO operations as well as number of connections supported -- you will be hard pressed to stress this thing out until you have 10s of thousands of concurrent connected instances).  It is also a pay-to-play product, and is only cost effective to run while in active use.
-- Daylily uses a `scratch` type instance, which auto-mounts the region specific `s3://PREFIX-omics-analysis-REGION/data` directory to the fsx filesystem as `/fsx/data`.  `/fsx` is available to the head node and all compute nodes.  
-- When you delete a cluster, the attached `Fsx Lustre` filesystem will be deleted as well.  
-- > **BE SURE YOU REFLECT ANALYSIS REUSLTS BACK TO S3 BEFORE DELETING YOUR EPHEMERAL CLUSTER** ... do this via the Fsx dashboard and create a data export task to the same s3 bucket you used to seed the fsx filesystem ( you will probably wish to define exporting `analysis_results`, which will export back to `s3://PREFIX-omics-analysis-REGION/FSX-export-DATETIME/` everything in `/fsx/analysis_results` to this new FSX-export directory.  **do not export the entire `/fsx` mount, this is not tested and might try to duplicate your reference data as well!** ).  This can take 10+ min to complete, and you can monitor the progress in the fsx dashboard & delete your cluster once the export is complete.
-- Fsx can only mount one s3 bucket at a time, the analysis_results data moved back to S3 via the export should be moved again to a final destination (w/in the same region ideally) for longer term storage.  
-- All of this handling of data is amendable to being automated, and if someone would like to add a cluster delete check which blocks deletion if there is unexported data still on /fsx, that would be awesome.
-- Further, you may write to any path in `/fsx` from any instance it is mounted to, except `/fsx/data` which is read only and will only update if data mounted from the `s3://PREFIX-omics-analysis-REGION/data` is added/deleted/updated (not advised).
+Move away from unhelpful debates over “the best” tool and toward evidence-based evaluations. Real use cases dictate tool choice, so let’s make sure relevant data and clear methodologies are accessible—or at least ensure enough detail is published to make meaningful comparisons. Specifically, this means moving beyond limited summary metrics that fail to describe our tools in sufficient detail.
 
-## Fsx Directory Structure
+### Raise the Bar
 
-The following directories are created and accessible via `/fsx` on the headnode and compute nodes.
+Demand better metrics and documentation in tool publications: thorough cost data, specific and reproducible hardware details, more nuanced concordance metrics, and expansive QC reporting. Half-measures shouldn’t pass as “sufficient.”
 
-```text
+### Escape Outdated “Best Practices”
 
-/fsx/
-├── analysis_results
-│   ├── cromwell_executions  ## in development
-│   ├── daylily   ## deprecated
-│   └── ubuntu  ## <<<< run all analyses here <<<<
-├── data  ## mounted to the s3 bucket PREFIX-omics-analysis-REGION/data
-│   ├── cached_envs
-│   ├── genomic_data
-│   └── tool_specific_resources
-├── miners  ## experimental & disabled by default
-├── resources
-│   └── environments  ## location of cached conda envs and docker images. so they are only created/pulled once per cluster lifetime.
-├── scratch  ## scratch space for high IO tools
-└── tmp ## tmp used by slurm by default
-```
+The field is stuck relying on practices that were sufficient a decade ago. We need shareable frameworks that capture both accuracy and cost/runtime for truly reproducible pipeline performance—so we can finally move forward.
 
+The [Daylily GIAB analyses repository](https://github.com/Daylily-Informatics/daylily_giab_analyses) contains (work in progress) results from the first stable Daylily release, run on seven GIAB samples.  Draft whitepaper content is tracked in [`docs/whitepaper`](docs/whitepaper).
 
-<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
+## Community & Support
 
+Daylily development is self-funded.  If you would like to collaborate, extend the workflows, or discuss benchmarking results, please reach out via [john@daylilyinformatics.com](mailto:john@daylilyinformatics.com).  Consulting engagements are available through [https://www.dyly.bio](https://www.dyly.bio).
 
-# In Progress // Future Development
+## Contributing
 
-## Re-enable Sentieon Workflows & Include in Benchmarking
+Contributions that improve reproducibility, expand workflow coverage, or enhance documentation are very welcome.  See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details on the preferred workflow, coding standards, and how to propose changes.
 
-- I have a demo lisc, and old working workflows (but they are ~2yrs out of date at this point).  I will be updating these workflows and including them in the benchmarking results.
+## License
 
-## Add Strobe Aligner To Benchmarking
-
-- The aligner is already included, but I have not been running it as my $ resources are v. limited.
-
-## Using Data From Benchmarking Experiments, Complete The Comprehensive Cost Caclulator
-
-- Rough draft script is running already, with best guesses for things like compute time per-x coverage, etc.
-
-## Break Daylily Into 2 Parts: 1) Ephermal Cluster Manager 2) Analysis Pipeline
-
-- The `daylily` repo grew from an analysis pipeline, and has co-mingled the ephmeral cluster infrastructure (which is not tied to any particular pipeline orchestrator). Breaking it into 2 parts will make things more modular and easier to maintain.
-
-## Update Analysis Pipeline To Run With Snakemake v8.*
-
-- A branch has been started for this work, which is reasonably straightforward. Tasks include:
--  The AWS parallel cluster slurm snakemake executor, [pcluster-slurm](https://github.com/Daylily-Informatics/snakemake-executor-plugin-pcluster-slurm)  is written, but needs some additional features and to be tested at scale.
--  Migrate from the current `daylily` `analysis_manifest.csv` to the snakemake `v8.*` `config/samples/units` format (which is much cleaner than the current manifest).
--  The actual workflow files should need very little tweaking.
-
-## Cromwell & WDL's
-
-- Running Cromwell WDL's is in early stages, and preliminary & still lightly documented work can be found [here](config/CROMWELL/immuno/workflow.sh) ( using the https://github.com/wustl-oncology as starting workflows ).
-
-
-
-<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
-
-
-# General Components Overview
-
-> Before getting into the cool informatics business going on, there is a boatload of complex ops systems running to manage EC2 spot instances, navigate spot markets, as well as mechanisms to monitor and observe all aspects of this framework. [AWS ParallelCluster](https://docs.aws.amazon.com/parallelcluster/latest/ug/what-is-aws-parallelcluster.html) is the glue holding everything together, and deserves special thanks.
-  
-![DEC_components_v2](https://user-images.githubusercontent.com/4713659/236144817-d9b26d68-f50b-423b-8e46-410b05911b12.png)
-
-# Managed Genomics Analysis Services
-
-The system is designed to be robust, secure, auditable, and should only take a matter of days to stand up. [Please contact me for further details](https://us21.list-manage.com/contact-form?u=434d42174af0051b1571c6dce&form_id=23d28c274008c0829e07aff8d5ea2e91).
-
-
-![daylily_managed_service](https://user-images.githubusercontent.com/4713659/236186668-6ea2ec81-9fe4-4549-8ed0-6fcbd4256dd4.png)
-
-
-<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
-
-
-
-## Some Bioinformatics Bits, Big Picture
-
-### The DAG For 1 Sample Running Through The `BWA-MEM2ert+Doppelmark+Deepvariant+Manta+TIDDIT+Dysgu+Svaba+QCforDays` Pipeline
-
-NOTE: *each* node in the below DAG is run as a self-contained job. Each job/n
-ode/rule is distributed to a suitable EC2 spot(or on demand if you prefer) instance to run. Each node is a packaged/containerized unit of work. This dag represents jobs running across sometimes thousands of instances at a time. Slurm and Snakemake manage all of the scaling, teardown, scheduling, recovery and general orchestration: cherry on top: killer observability & per project resource cost reporting and budget controls!
-   
-   ![](docs/images/assets/ks_rg.png)
-   
-   - The above is actually a compressed view of the jobs managed for a sample moving through this pipeline. This view is of the dag which properly reflects parallelized jobs.
-   
-     ![](docs/images/assets/ks_dag.png)
-
-
-
-
-### Daylily Framework, Cont.
-
-#### [Batch QC HTML Summary Report](http://daylilyinformatics.com:8082/reports/DAY_final_multiqc.html)
-
-> The batch is comprised of google-brain Novaseq 30x HG002 fastqs, and again downsampling to: 25,20,15,10,5x.     
-[Example report](http://daylilyinformatics.com:8082/reports/DAY_final_multiqc.html).
-
-
-![](docs/images/assets/day_qc_1.png)
-
-![](docs/images/assets/day_qc_2.png)
-    
-    
-### [Consistent + Easy To Navigate Results Directory & File Structure](/docs/ops/dir_and_file_scheme.md)
-   
-- A visualization of just the directories (minus log dirs) created by daylily _b37 shown, hg38 is supported as well_
-
-![](docs/images/assets/tree_structure/tree.md)
-
-- [with files](docs/ops/tree_full.md   
-    
-### [Automated Concordance Analysis Table](http://daylilyinformatics.com:8081/components/daylily_qc_reports/other_reports/giabhcr_concordance_mqc.tsv)
-  > Reported faceted by: SNPts, SNPtv, INS>0-<51, DEL>0-51, Indel>0-<51.
-  > Generated when the correct info is set in the analysis_manifest.
-
-
-#### [Performance Monitoring Reports]()
-
-  > Picture and  list of tools
-
-#### [Observability w/CloudWatch Dashboard](https://us-east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#)
-
-  > ![](docs/images/assets/cloudwatch.png)
-  > ![](/docs/images/assets.cloudwatch_2.png)
-  > ![](/docs/images/assets.cloudwatch3.png)
-
-#### [Cost Tracking and Budget Enforcement](https://aws.amazon.com/blogs/compute/using-cost-allocation-tags-with-aws-parallelcluster/)
-
-  > ![](https://d2908q01vomqb2.cloudfront.net/1b6453892473a467d07372d45eb05abc2031647a/2020/07/23/Billing-console-projects-grouping.png)
-  - ![](docs/images/assets/costs1.png)
-  - ![](docs/images/assets/costs2.png)
-  
-  
-<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/000000.png" valign="bottom" ></a></p>
-
-
-
-# Metrics Required To Make Informed Decisions About Choosing An Analysis Pipeline
-
-To make informed decisions about choosing an analysis pipeline, there are four key metrics to consider: accuracy(as generally measured via Fscore), user run time, cost of analysis and reproducibility. Further consideration should then be given to the longevity of results (how results are stored, costs associated with storage, and the ease of access to results). All of these can not be optimized simultaneously, and trade-offs must be made. Making these tradeoffs with intention is the primary goal of the daylily framework.
-
-## Accuracy / Precision / Recall / Fscore
-
-- what is the pipelines perofrmance?
-
-## User Run Time
-
-- how long does it take to run the pipeline?
-
-## Cost Of Analysis
-
-### Init Cost
-- is
-### Compute Cost
-- is
-### Storage Cost (for computation)
-- is
-### Other Costs (ie: data transfer)
-- is
-
-## Cost of Storage
-- is
-
-## Reproducibility
-- what is the asserted reproducibility of the pipeline? For 1 month? 1 year? 5 years? 20 years?
-- And how is this tested?
-
-## Longevity of Results
-- how are results stored? What are the costs and access mechanisms for these results?
-
-# Sentieon Tools & License
-To activate sentieon bwa and sentieon DNA scope, edit the `config/day_profiles/{local,slurm}/templates/rule_config.yaml` file to uncomment the following:
-
-```yaml
-active_snv_callers:
-    - deep
-#    - sentd
-
-active_aligners:
-    - bwa2a:
-        mkdup: dppl
-#    - sent:  # uncomment to run aligner (same deduper must be used presently in all aligner outputs, unless bundled into the align rule)
-#        mkdup: dppl  # One ddup'r per analysis run.  dppl and sent currently are active
-#    - strobe:
-
-```
-
-- This will enable running these two tools.  You will also need a liscence file from sentieon in order to run these tools.  
-- Please [contact them](https://www.sentieon.com/company/) to obtain a valid liscense . 
-- Once you have a lisence file, edit the `dyinit` file to include the */fsx/* relative path to this file where `export SENTIEON_LICENSE=` is found.  
-- Save the liscence file in the each region specific S3 reference bucket, ie: `s3://PREFIX-omics-analysis-REGION/data/cached_envs/`. When this bucket is mounted to the fsx filesystem, the liscence file will be available to all instances at `/fsx/data/cached_envs/`.
-
-
-
-# Contributing
-
-[Contributing Guidelines](CONTRIBUTING.md)
-
-# Versioning
-
-Daylily uses [Semantic Versioning](https://semver.org/). For the versions available, see the [tags on this repository](https://github.com/Daylily-Informatics/daylily/tags).
-
-# Known Issues
-
-## _Fsx Mount Times Out During Headnode Creation & Causes Pcluster `build-cluster` To Fail_
-
-If the `S3` bucket mounted to the FSX filesystem is too large (the default bucket is close to too large), this can cause Fsx to fail to create in time for pcluster, and pcluster time out fails.  The wait time for pcluster is configured to be much longer than default, but this can still be a difficult to identify reason for cluster creation failure. Probability for failure increases with S3 bucket size, and also if the imported directories are being changed during pcluster creation. Try again, try with a longer timeount, and try with a smaller bucket (ie: remove one of the human reference build data sets, or move to a different location in the bucket not imported by Fsx)
-
-## Cloudstack Formation Fails When Creating Clusters In >1 AZ A Region (must be manually sorted ATM)
-
-The command `bin/init_cloudstackformation.sh ./config/day_cluster/pcluster_env.yml "$res_prefix" "$region_az" "$region" $AWS_PROFILE` does not yet gracefully handle being run >1x per region.  The yaml can be edited to create the correct scoped resources for running in >1 AZ in a region (this all works fine when running in 1AZ in >1 regions), or you can manually create the pub/private subnets, etc for running in multiple AZs in a region. The fix is not difficult, but is not yet automated.
-
-
-# Compliance / Data Security
-
-Is largely in your hands. AWS Parallel Cluster is as secure or insecure as you set it up to be. https://docs.aws.amazon.com/parallelcluster/v2/ug/security-compliance-validation.html
-
-
-# Detailed Docs
-
-> **[daylib](docs/daylib/README.md)**: python library code.
-> **and**: ...
-
-<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/000000.png" valign="bottom" ></a></p>
-
-<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
-
-# [DAY](https://en.wikipedia.org/wiki/Margaret_Oakley_Dayhoff)![](https://placehold.co/60x35/ff03f3/fcf2fb?text=LILLY)
-
-_named in honor of Margaret Oakley Dahoff_ 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-Z
-a
-A
- 
- 
- 
- 
- 
- 
- 
+This project is released under the terms of the [MIT License](LICENSE).
