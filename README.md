@@ -177,25 +177,18 @@ drwxrwxrwx 3 root root 33K Sep 26 08:35 resources
 
 ### Run A Local Test Workflow
 
-#### First, clone a new daylily repo with `day-clone`.
+#### First, clone this repository into a new analysis directory.
 
-`day-clone` will be available on your path as long as conda is activated. This script will create a new named analysis directory in `/fsx/analysis_results/ubuntu/` named the string specified in the `-d` flag. It will use defaults to clone this repo into the new analysis dir (_to override defaults, run with `-h`_).
+Create a directory for your analysis under `/fsx/analysis_results/ubuntu/` and clone this repository into it using git.
 
 ```bash
-day-clone --help
-
-# create new analysis dir and clone daylily into it
-day-clone -d first_analysis
-echo "TO MOVE TO YOUR NEW ANALYSIS DIRECTORY, run:"
-echo  "        bash"
-echo  "        cd /fsx/analysis_results/ubuntu/fist_analysis/daylily"
-
-# move to your new analysis dir
-bash
-cd /fsx/analysis_results/ubuntu/first_analysis/daylily
+mkdir -p /fsx/analysis_results/ubuntu/first_analysis
+cd /fsx/analysis_results/ubuntu/first_analysis
+git clone <repository-url> daylily
+cd daylily
 
 ```
-  > *note*: if you have an active DAYOA conda env, begina fresh bash shell from your new analysis dir, `bash`.
+  > *note*: if you have an active DAYOA conda env, begin a fresh bash shell from your new analysis dir, `bash`.
 
 #### Next, init daylily and, set genome, stage an analysis_manigest.csv and run a test workflow.
 
@@ -257,10 +250,10 @@ First, create a working directory on the `/fsx/` filesystem.
 
 ```bash
 # create a working analysis directory & clone daylily
-day-clone -d first_analysis
-
-bash
-cd /fsx/analysis_results/first_analysis/daylily # this command is provided from day-clone
+mkdir -p /fsx/analysis_results/first_analysis
+cd /fsx/analysis_results/first_analysis
+git clone <repository-url> daylily
+cd daylily
 
 #  prepare to run the test
 tmux new -s slurm_test
@@ -320,10 +313,11 @@ You may repeat the above, and use the pre-existing analysis_manifest.csv templat
 ```bash
 tmux new -s slurm_test_30x_single
 
-# Create new analyiss dir
-day-clone -d slurmtest
-bash
-cd /fsx/analysis_results/slurmtest/daylily # this command is provided from day-clone
+# Create new analysis dir
+mkdir -p /fsx/analysis_results/slurmtest
+cd /fsx/analysis_results/slurmtest
+git clone <repository-url> daylily
+cd daylily
 
 
 . dyinit  --project PROJECT 
@@ -346,10 +340,11 @@ dy-r produce_snv_concordances -p -k -j 10  --config genome_build=hg38 aligners=[
 
 tmux new -s slurm_test_30x_multi
 
-# Create new analyiss dir
-day-clone -d fulltest
-bash
-cd /fsx/analysis_results/fulltest/daylily # this command is provided from day-clone
+# Create new analysis dir
+mkdir -p /fsx/analysis_results/fulltest
+cd /fsx/analysis_results/fulltest
+git clone <repository-url> daylily
+cd daylily
 
 
 . dyinit  --project PROJECT 
