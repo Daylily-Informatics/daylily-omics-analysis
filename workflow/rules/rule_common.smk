@@ -40,6 +40,10 @@ config["failed_samples"] = {}  ### USE SAMPLE SHEET FOR THIS
 # ##### Safety sort of the yaml defined crms
 config["glimpse"] = {"impute_chrms": "2"}
 
+def first_val(df, col):
+    if df.empty:
+        return None
+    return df.iloc[0].get(col)
 
 # ####  PARSE SUPPORTING DATA FILES/DIRS INTO CONFIG
 # -----------------------------------
@@ -801,12 +805,11 @@ if "remove_samples" in config:
         print(f"SAMPLE REMOVED: {rs}")
 
 SSAMPS = {}
-for sample in list(get_samp_ids()):
-    ssamp = samples[samples["sample"] == sample]["analysis_unit_uid"][0]
-    if ssamp in SSAMPS:
-        SSAMPS[ssamp].append(sample)
-    else:
-        SSAMPS[ssamp] = [sample]
+for sample in samples["sample"].unique():
+    row = samples[samples["sample"] == sample]
+    ss = first_val(row, "analysis_unit_uid")
+    SSAMPS.setdefault(ss, []).append(sample)
+
 
 # Tumor-normal pairs
 TN_DICT = {}
@@ -932,42 +935,22 @@ def ret_mod_chrm(ret_str):
 
 ## Method to wrap the bwa fastq reader with seqtk to subsample
 # if a subsample_pct column is present in the sample sheet, return the back end of the process substitution
-# whcih will do the subsampling
+# which will do the subsampling
 def get_subsample_head_tail(sample_id):
-    ss_head = ""
-    ss_tail = ""
-    raisable = False
+    ss_head = ss_tail = ""
+    row = samples[samples["samp"] == sample_id]
+    ss_pct = (first_val(row, "subsample_pct") or "").strip()
+    if ss_pct in {"", "na", "None", "0", "0.0", 0, 100, "100", "100.0", 100.0}:
+        return ("", "")
     try:
-        ss_pct = samples.loc[(sample_id), "subsample_pct"][0]
-        if ss_pct in ["", "na", 0,"0.0",100,100.0,"100","100.0", "0", None, "None"]:
-            pass  # no subsampling requested
-        else:
-            ss_pct_float = 1000.1
-            try:
-                ss_pct_float = float(ss_pct)
-            except Exception as e:
-                raisable = True
-                raise (e)
-
-            if ss_pct_float > 1.0 or ss_pct_float < 0.0:
-                raisable = True
-                raise Exception(
-                    "ERROR:::: NO SUBSAMPLING WILL BE EXECUTED::: you must specify a float from 0.0-1.0"
-                )
-            else:
-                ss_head = f" <( seqkit sample -j 16 --line-width=0 --quiet --rand-seed=7  --seq-type=dna --proportion={ss_pct_float}  "
-                ss_tail = " ) "
-
+        f = float(ss_pct)
     except Exception as e:
-        if raisable:
-            print(
-                "Samplesheet Error with subsample_pct column ---- \n\n", file=sys.stderr
-            )
-            raise (e)
-        else:
-            pass
+        raise WorkflowError(f"subsample_pct must be a float in (0.0,1.0]; got '{ss_pct}'") from e
+    if not (0.0 < f <= 1.0):
+        raise WorkflowError(f"subsample_pct must be in (0.0,1.0]; got {f}")
+    return (f" <( seqkit sample -j 16 --line-width=0 --quiet --rand-seed=7 --seq-type=dna --proportion={f} ",
+            " ) ")
 
-    return (ss_head, ss_tail)
 
 
 def get_subsample_head(wildcards):
