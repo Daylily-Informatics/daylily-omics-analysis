@@ -429,6 +429,49 @@ metadata.loc[
 
 samples = metadata.set_index(["sample", "sample_lane"], drop=False)
 
+analysis_units = metadata.set_index("analysis_unit_uid", drop=False)
+
+ANALYSIS_UNITS = list(analysis_units.index)
+
+
+def _build_analysis_unit_sample_map():
+    return analysis_units["sample"].to_dict()
+
+
+ANALYSIS_UNIT_TO_SAMPLE = _build_analysis_unit_sample_map()
+
+
+def get_sample_for_analysis_unit(analysis_unit):
+    try:
+        return ANALYSIS_UNIT_TO_SAMPLE[analysis_unit]
+    except KeyError as exc:
+        raise WorkflowError(
+            f"Unknown analysis unit '{analysis_unit}'. Available analysis units: {sorted(ANALYSIS_UNIT_TO_SAMPLE.keys())}"
+        ) from exc
+
+
+def get_analysis_unit_record(analysis_unit):
+    try:
+        return analysis_units.loc[analysis_unit]
+    except KeyError as exc:
+        raise WorkflowError(
+            f"Unable to locate manifest entry for analysis unit '{analysis_unit}'."
+        ) from exc
+
+
+def validate_analysis_unit(sample, analysis_unit):
+    record = get_analysis_unit_record(analysis_unit)
+    if record["sample"] != sample:
+        raise WorkflowError(
+            f"Analysis unit '{analysis_unit}' does not belong to sample '{sample}'."
+        )
+    return record
+
+
+def iter_analysis_units():
+    for analysis_unit in ANALYSIS_UNITS:
+        yield ANALYSIS_UNIT_TO_SAMPLE[analysis_unit], analysis_unit
+
 for col, default in {
     "biological_sex": "na",
     "iddna_uid": "na",
@@ -940,6 +983,9 @@ def getR1sS(wildcards):
 
 # Call from params block to get sample ID back, without() wildcards (and others ) are added automatically if no () is included.
 def ret_sample(wildcards):
+    if "analysis_unit" in wildcards.keys():
+        sample_id = get_sample_for_analysis_unit(wildcards.analysis_unit)
+        return sample_id if len(str(sample_id).split(" ")) < 1 else "sample-len-zero"
     if "sample" in wildcards.keys():
         return wildcards.sample if len(str(wildcards.sample).split(" ")) < 1 else "sample-len-zero"
     elif "sx" in wildcards.keys():
@@ -952,15 +998,30 @@ def ret_sample_sentD(wildcards):
 
 
 def ret_sample_sv(wildcards):
-    return f"{wildcards.sample}_{wildcards.s_v_caller}"
+    base_sample = (
+        get_sample_for_analysis_unit(wildcards.analysis_unit)
+        if "analysis_unit" in wildcards.keys()
+        else wildcards.sample
+    )
+    return f"{base_sample}_{wildcards.s_v_caller}"
 
 
 def ret_sample_snv(wildcards):
-    return f"{wildcards.sample}_{wildcards.snv}"
+    base_sample = (
+        get_sample_for_analysis_unit(wildcards.analysis_unit)
+        if "analysis_unit" in wildcards.keys()
+        else wildcards.sample
+    )
+    return f"{base_sample}_{wildcards.snv}"
 
 
 def ret_sample_alnr(wildcards):
-    return f"{wildcards.sample}_{wildcards.alnr}"
+    base_sample = (
+        get_sample_for_analysis_unit(wildcards.analysis_unit)
+        if "analysis_unit" in wildcards.keys()
+        else wildcards.sample
+    )
+    return f"{base_sample}_{wildcards.alnr}"
 
 
 def get_bwa_kmer_size(wildcards):

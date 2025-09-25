@@ -39,11 +39,11 @@ rule setup_ILMN_data:
     input:
         "logs/supporting_data_staging.done",
         "logs/workflow_staging.done",
-        MDIR + "{sample}/{sample_lane}.{RR}.fastq.gz",
+        MDIR + "{sample}/{analysis_unit}.{RR}.fastq.gz",
     output:
-        MDIR + "{sample}/logs/{sample_lane}.{RR}.ilmn_prep.done",
+        MDIR + "{sample}/logs/{analysis_unit}.{RR}.ilmn_prep.done",
     log:
-        MDIR + "{sample}/logs/{sample_lane}.{RR}.fastq.log",
+        MDIR + "{sample}/logs/{analysis_unit}.{RR}.fastq.log",
     params:
         cluster_sample=f"wildcards.sample",
     conda:
@@ -161,15 +161,15 @@ else:
             input:
                 MDIR + "{sample}/align/{sample}.bamheader.txt",
             output:
-                pr1=MDIR + "{sample}/{sample_lane}.R1.fastq.gz",
-                pr2=MDIR + "{sample}/{sample_lane}.R2.fastq.gz",
-                ur1=MDIR + "{sample}/{sample_lane}.unpair.R1.fastq.gz",
-                ur2=MDIR + "{sample}/{sample_lane}.unpair.R2.fastq.gz",
-                singletons=MDIR + "{sample}/{sample_lane}.singletons.fastq.gz",
+                pr1=MDIR + "{sample}/{analysis_unit}.R1.fastq.gz",
+                pr2=MDIR + "{sample}/{analysis_unit}.R2.fastq.gz",
+                ur1=MDIR + "{sample}/{analysis_unit}.unpair.R1.fastq.gz",
+                ur2=MDIR + "{sample}/{analysis_unit}.unpair.R2.fastq.gz",
+                singletons=MDIR + "{sample}/{analysis_unit}.singletons.fastq.gz",
             conda:
                 "../envs/biobambam2_v0.1.yaml" if 'conda_env' not in config['produce_fastqs_from_bams'] else config['produce_fastqs_from_bams']['conda_env']
             benchmark:
-                MDIR + "{sample}/benchmarks/{sample_lane}.bench.tsv"
+                MDIR + "{sample}/benchmarks/{analysis_unit}.bench.tsv"
             params:
                 cluster_sample=ret_sample,
                 rc_config=config['rclone_conf_file'],
@@ -178,7 +178,7 @@ else:
                 samtools_view_threads=config['produce_fastqs_from_bams']['samtools_view_threads']
             threads: config['produce_fastqs_from_bams']['threads']
             log:
-                MDIR+"{sample}/logs/{sample_lane}.biobambam2_to_fastq.log"
+                MDIR+"{sample}/logs/{analysis_unit}.biobambam2_to_fastq.log"
             shell:
                 """
                 ( rm -rf {output} || echo okToProceed ;
@@ -322,8 +322,8 @@ else:
             input:
                 MDIR + "{sample}/align/{sample}.remote.fq.ready"
             output:
-                or1=MDIR + "{sample}/{sample_lane}.R1.fastq.gz",
-                or2=MDIR + "{sample}/{sample_lane}.R2.fastq.gz",
+                or1=MDIR + "{sample}/{analysis_unit}.R1.fastq.gz",
+                or2=MDIR + "{sample}/{analysis_unit}.R2.fastq.gz",
             conda:
                 "../envs/biobambam2_v0.1.yaml"
             params:
@@ -345,9 +345,9 @@ else:
         # Fetch and stage our input data, but only as links. deal with fastqs seperately until BAM creation
 
         def get_fqs(wildcards):
-            r1=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['r1_path'][0]) #os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r1_path"])
-            r2=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['r2_path'][0])
-            #r2=os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r2_path"])
+            record = validate_analysis_unit(wildcards.sample, wildcards.analysis_unit)
+            r1 = os.path.abspath(record["r1_path"])
+            r2 = os.path.abspath(record["r2_path"])
             return [r1, r2]
 
         localrules:
@@ -357,8 +357,8 @@ else:
             input:
                 get_fqs,
             output:
-                or1=MDIR + "{sample}/{sample_lane}.R1.fastq.gz",
-                or2=MDIR + "{sample}/{sample_lane}.R2.fastq.gz",
+                or1=MDIR + "{sample}/{analysis_unit}.R1.fastq.gz",
+                or2=MDIR + "{sample}/{analysis_unit}.R2.fastq.gz",
             params:
                 c=config["prep_input_sample_files"]["source_read_method"],
             shell:
@@ -385,9 +385,10 @@ else:
 def get_ont_cramsx(wildcards):
     crams = []
 
-    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ont_cram'][0])
+    record = validate_analysis_unit(wildcards.sample, wildcards.analysis_unit)
+    cram = os.path.abspath(record["ont_cram"])
     crai=f"{cram}.crai"
-    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ont_cram_aligner'][0]
+    cram_aligner = record["ont_cram_aligner"]
     if cram_aligner in ['na','',None,'None']:
         return []
     elif cram_aligner in ['ont']:
@@ -414,9 +415,10 @@ def get_ont_cramsx(wildcards):
 def get_ultima_cramsx(wildcards):
     crams = []
 
-    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ultima_cram'][0])
+    record = validate_analysis_unit(wildcards.sample, wildcards.analysis_unit)
+    cram = os.path.abspath(record["ultima_cram"])
     crai=f"{cram}.crai"
-    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ultima_cram_aligner'][0]
+    cram_aligner = record["ultima_cram_aligner"]
     if cram_aligner in ['na','',None,'None']:
         print(f"WARNING, ultima_cram set to  '{cram_aligner}'",file=sys.stderr)
         return []
@@ -492,8 +494,8 @@ rule pre_prep_ultima_cram:
     input:
         get_ultima_cramsx,
     output:
-        cram=MDIR + "{sample}/align/ug/{sample_lane}.cram",
-        crai=MDIR + "{sample}/align/ug/{sample_lane}.cram.crai",
+        cram=MDIR + "{sample}/align/ug/{analysis_unit}.cram",
+        crai=MDIR + "{sample}/align/ug/{analysis_unit}.cram.crai",
     resources:
         partition=config['prep_input_sample_files']['partition'],
         threads=config['prep_input_sample_files']['threads'],
@@ -507,7 +509,7 @@ rule pre_prep_ultima_cram:
         use_threads=config["prep_input_sample_files"]["use_threads"],
     threads: config["prep_input_sample_files"]["threads"],
     log:
-        MDIR + "{sample}/align/ug/logs/{sample_lane}.cram.log",
+        MDIR + "{sample}/align/ug/logs/{analysis_unit}.cram.log",
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -537,8 +539,8 @@ rule pre_prep_ont_cram:
     input:
         get_ont_cramsx,
     output:
-        cram=MDIR + "{sample}/align/ont/{sample_lane}.cram",
-        crai=MDIR + "{sample}/align/ont/{sample_lane}.cram.crai",
+        cram=MDIR + "{sample}/align/ont/{analysis_unit}.cram",
+        crai=MDIR + "{sample}/align/ont/{analysis_unit}.cram.crai",
     threads: config["prep_input_sample_files"]["threads"],
     resources:
         partition=config['prep_input_sample_files']['partition'],
@@ -552,7 +554,7 @@ rule pre_prep_ont_cram:
         cluster_sample=ret_sample,
         use_threads=config["prep_input_sample_files"]["use_threads"],
     log:
-        MDIR + "{sample}/align/ont/logs/{sample_lane}.cram.log",
+        MDIR + "{sample}/align/ont/logs/{analysis_unit}.cram.log",
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -582,10 +584,16 @@ localrules: prep_cram_inputs,
 
 rule prep_cram_inputs:  # TARGET: Just Pre
     input:
-        ##cram=MDIR + "{sample}/{sample_lane}.cram",
-        #crai=MDIR + "{sample}/{sample_lane}.cram.crai",
-        cram=expand(MDIR + "{sample}/align/{alnr}/{sample_lane}.cram",sample=SAMPS, sample_lane=SAMPS, alnr=CRAM_ALIGNERS),
-        crai=expand(MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.crai",sample=SAMPS, sample_lane=SAMPS,alnr=CRAM_ALIGNERS)
+        cram=[
+            MDIR + f"{sample}/align/{alnr}/{analysis_unit}.cram"
+            for sample, analysis_unit in iter_analysis_units()
+            for alnr in CRAM_ALIGNERS
+        ],
+        crai=[
+            MDIR + f"{sample}/align/{alnr}/{analysis_unit}.cram.crai"
+            for sample, analysis_unit in iter_analysis_units()
+            for alnr in CRAM_ALIGNERS
+        ]
     output:
         "crams_staged",
     shell:
@@ -598,9 +606,10 @@ rule prep_cram_inputs:  # TARGET: Just Pre
 def get_pb_cram(wildcards):
     crams = []
 
-    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['pb_bam'][0])
+    record = validate_analysis_unit(wildcards.sample, wildcards.analysis_unit)
+    cram = os.path.abspath(record["pb_bam"])
     crai=f"{cram}.crai"
-    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['pb_bam_aligner'][0]
+    cram_aligner = record["pb_bam_aligner"]
     if cram_aligner in ['na','',None,'None']:
         return []
     elif cram_aligner in ['pb']:
@@ -631,12 +640,12 @@ rule pre_prep_pb_cram:
     input:
         get_pb_cram,
     output:
-        cram=MDIR + "{sample}/align/pb/{sample_lane}.cram",
-        crai=MDIR + "{sample}/align/pb/{sample_lane}.cram.crai",
+        cram=MDIR + "{sample}/align/pb/{analysis_unit}.cram",
+        crai=MDIR + "{sample}/align/pb/{analysis_unit}.cram.crai",
     params:
         c=config["prep_input_sample_files"]["source_read_method"],
     log:
-        MDIR + "{sample}/align/pb/logs/{sample_lane}.cram.log",
+        MDIR + "{sample}/align/pb/logs/{analysis_unit}.cram.log",
     shell:
         "(mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;"
         "{params.c} {input[0]} {output.cram} >> {log} 2>&1;"

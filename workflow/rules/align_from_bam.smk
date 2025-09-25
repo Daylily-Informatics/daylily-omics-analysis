@@ -88,15 +88,15 @@ if True:
             input:
                 MDIR + "{sample}/align/{sample}.bamheader.txt",
             output:
-                pr1=MDIR + "{sample}/{sample_lane}.R1.fastq.gz",
-                pr2=MDIR + "{sample}/{sample_lane}.R2.fastq.gz",
-                ur1=MDIR + "{sample}/{sample_lane}.unpair.R1.fastq.gz",
-                ur2=MDIR + "{sample}/{sample_lane}.unpair.R2.fastq.gz",
-                singletons=MDIR + "{sample}/{sample_lane}.singletons.fastq.gz",
+                pr1=MDIR + "{sample}/{analysis_unit}.R1.fastq.gz",
+                pr2=MDIR + "{sample}/{analysis_unit}.R2.fastq.gz",
+                ur1=MDIR + "{sample}/{analysis_unit}.unpair.R1.fastq.gz",
+                ur2=MDIR + "{sample}/{analysis_unit}.unpair.R2.fastq.gz",
+                singletons=MDIR + "{sample}/{analysis_unit}.singletons.fastq.gz",
             conda:
                 "../envs/biobambam2_v0.1.yaml" if 'conda_env' not in config['produce_fastqs_from_bams'] else config['produce_fastqs_from_bams']['conda_env']
             benchmark:
-                MDIR + "{sample}/benchmarks/{sample_lane}.bench.tsv"
+                MDIR + "{sample}/benchmarks/{analysis_unit}.bench.tsv"
             params:
                 cluster_sample=ret_sample,
                 rc_config=config['rclone_conf_file'],
@@ -105,7 +105,7 @@ if True:
                 samtools_view_threads=config['produce_fastqs_from_bams']['samtools_view_threads']
             threads: config['produce_fastqs_from_bams']['threads']
             log:
-                MDIR+"{sample}/logs/{sample_lane}.biobambam2_to_fastq.log"
+                MDIR+"{sample}/logs/{analysis_unit}.biobambam2_to_fastq.log"
             shell:
                 """
                 ( rm -rf {output} || echo okToProceed ;
@@ -249,8 +249,8 @@ if True:
             input:
                 MDIR + "{sample}/align/{sample}.remote.fq.ready"
             output:
-                or1=MDIR + "{sample}/{sample_lane}.R1.fastq.gz",
-                or2=MDIR + "{sample}/{sample_lane}.R2.fastq.gz",
+                or1=MDIR + "{sample}/{analysis_unit}.R1.fastq.gz",
+                or2=MDIR + "{sample}/{analysis_unit}.R2.fastq.gz",
             conda:
                 "../envs/biobambam2_v0.1.yaml"
             params:
@@ -272,9 +272,9 @@ if True:
         # Fetch and stage our input data, but only as links. deal with fastqs seperately until BAM creation
 
         def get_fqs(wildcards):
-            r1=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['r1_path'][0]) #os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r1_path"])
-            r2=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['r2_path'][0])
-            #r2=os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r2_path"])
+            record = validate_analysis_unit(wildcards.sample, wildcards.analysis_unit)
+            r1 = os.path.abspath(record["r1_path"])
+            r2 = os.path.abspath(record["r2_path"])
             return [r1, r2]
 
         localrules:
@@ -284,8 +284,8 @@ if True:
             input:
                 get_fqs,
             output:
-                or1=MDIR + "{sample}/{sample_lane}.R1.fastq.gz",
-                or2=MDIR + "{sample}/{sample_lane}.R2.fastq.gz",
+                or1=MDIR + "{sample}/{analysis_unit}.R1.fastq.gz",
+                or2=MDIR + "{sample}/{analysis_unit}.R2.fastq.gz",
             params:
                 c=config["prep_input_sample_files"]["source_read_method"],
             shell:
