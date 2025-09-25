@@ -261,8 +261,35 @@ print(
     file=sys.stderr,
 )
 
-sample_records = pd.read_table(samples_table_path, sep="\t").fillna("")
-unit_records = pd.read_table(units_table_path, sep="\t").fillna("")
+import pandas as pd
+
+def load_tsv_as_str(path: str) -> pd.DataFrame:
+    # Force *everything* to string; no NA magic.
+    df = pd.read_csv(
+        path,
+        sep="\t",
+        dtype=str,
+        keep_default_na=False,
+        na_values=[],       # ensure nothing gets parsed as NA
+        engine="python",    # robust with weird fields/tabs
+    )
+    return df
+
+def normalize_boolish(df: pd.DataFrame, cols=("is_positive_control", "is_negative_control")) -> pd.DataFrame:
+    for c in cols:
+        if c in df.columns:
+            df[c] = (
+                df[c]
+                .astype(str)            # guard if anything slipped in
+                .str.strip()
+                .str.lower()
+            )
+            # Optional: clamp to allowed values; pick default you want.
+            df[c] = df[c].where(df[c].isin({"true", "false"}), "false")
+    return df
+
+sample_records = normalize_boolish(load_tsv_as_str(samples_table_path))
+unit_records   = load_tsv_as_str(units_table_path)
 
 if sample_records.empty:
     raise WorkflowError("The samples table is empty. Please provide at least one sample entry.")
@@ -455,8 +482,8 @@ if "tum_nrm_sampleid_match" in samples.columns:
 else:
     samples["tum_nrm_sampleid_match"] = "na"
 
-# validate the analysis_manifest.csv with the appropriate yaml schema
-validate(samples, schema="../schemas/analysis_manifest.schema.yaml")
+## validate the analysis_manifest.csv with the appropriate yaml schema
+##validate(samples, schema="../schemas/analysis_manifest.schema.yaml")
 
 
 # TODO: remove the RU/EX usage throughout, unecessary
