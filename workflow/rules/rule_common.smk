@@ -358,15 +358,14 @@ def _build_analysis_unit(row):
         _clean_component(row["RunID"]),
         _clean_component(row["SampleID"]),
         _clean_component(row["ExperimentID"]),
+	_clean_component(row["BarcodeID"]),
         _clean_component(row["LaneID"]),
     ]
-    barcode = _clean_component(row.get("BarcodeID", ""))
-    if barcode:
-        parts.append(barcode)
+
     parts = [p for p in parts if p]
     if not parts:
         raise WorkflowError(
-            "Unable to construct analysis unit identifier; missing RunID/SampleID/ExperimentID/LaneID."
+            "Unable to construct analysis unit identifier; missing RunID/SampleID/ExperimentID/BarcodeID/LaneID."
         )
     return "_".join(parts)
 
