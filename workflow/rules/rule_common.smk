@@ -403,7 +403,7 @@ if "merge_single" not in metadata.columns:
 metadata.loc[metadata["merge_single"].isin(["", None]), "merge_single"] = "merge"
 
 metadata["sample"] = metadata["analysis_unit_uid"]
-metadata["samp"] = metadata["analysis_unit_uid"]
+#metadata["samp"] = metadata["analysis_unit_uid"]
 metadata["sample_lane"] = metadata["analysis_unit_uid"]
 metadata["RU"] = metadata["RunID"]
 metadata["EX"] = metadata["SampleID"]
@@ -444,32 +444,6 @@ for col, default in {
     if col not in samples.columns:
         samples[col] = default
     samples[col] = samples[col].replace({None: default, "": default})
-
-column_order = [
-    "samp",
-    "sample",
-    "sample_lane",
-    "SQ",
-    "RU",
-    "EX",
-    "LANE",
-    "r1_path",
-    "r2_path",
-    "biological_sex",
-    "iddna_uid",
-    "concordance_control_path",
-    "is_positive_control",
-    "is_negative_control",
-    "sample_type",
-    "merge_single",
-    "tum_nrm_sampleid_match",
-    "external_sample_id",
-    "instrument",
-    "lib_prep",
-    "bwa_kmer",
-]
-existing = [c for c in column_order if c in samples.columns]
-samples = samples[existing + [c for c in samples.columns if c not in existing]]
 
 # Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
 if "tum_nrm_sampleid_match" in samples.columns:
@@ -521,7 +495,6 @@ for s in samples["sample"]:
 # added to cluster name to uniquely identify sets of jobs from the same snakemake execution
 ri2 = random.randint(0, 999)
 
-
 sub_user = config["sub_user"]
 config["sub_host"] = (
     str(os.environ.get("HOSTNAME"))
@@ -540,161 +513,128 @@ if "ipython" in config:
     del config["ipython"]
 
 
-# TODO: DEPRECATE
-# Set the BATCH id for the cluster
-try:
-    cluster_config[
-        "batch_id"
-    ] = f"{samples['Run'][0]}_{samples['EX'][0]}_{config['githash']}"
-except Exception as e:
-    del e
 cluster_config["profile_name"] = config["profile_name"]
 cluster_config["cwd"] = os.environ.get("PWD", "./")
 cluster_config["sub_user"] = os.environ.get("USER", "na")
 
 
-### TO DO: CHANGE THIS TO USE COLUMN HEADERS AND NOT IMPLICIT ORDER!!!!
 
-# Set info for concordance calculations
+
+# --- Refactored: use explicit column names, no positional access ---
+
 CONCORDANCE_SAMPLES = {}
 CRAM_ALIGNERS = []
 sample_info = {}
-sample_lane_info = {}
-for i in samples.iterrows():
-    samp = i[0]
-    sample = i[1][0]
-    dat = dict(i[1])
-    sq_i= i[1][3]
-    ru_i= i[1][4]
-    ex_i= i[1][5]
-    lane_i= i[1][6]
-    sample_lane = i[1][1]
-    merge_single = i[1][14]
-    if samp in sample_info and merge_single in ["single"]:
-        raise (
-            "\n\nMANIFEST ERROR:: "
-            + samp + " ... " + sample_lane
-            + f"appears 2+ times in the sample sheet. This should only occur if 'merge' has been specified. {merge_single} has been set. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
-            )
+sample_lane_seen = set()
 
-    if merge_single in ["single"]:
-        raise Exception(
-            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': This feature was implemented, then unusued and has not been vetted to work properly again, so if you wish to run per lane, create a manifest with the sample and sample_lane column having the same id.  merge will create symlinks for each sample_lane pair of fastqs, then use these via process substitution to appear as one file for those tools expecting 1 R1 and 1 R2. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
+# Columns we will read (existence assumed earlier in your pipeline)
+#   samp, sample, sample_lane, SQ, RU, EX, LANE, merge_single, biological_sex,
+#   ultima_cram, ont_cram, ultima_cram_aligner, ont_cram_aligner, pb_bam_aligner,
+#   deep_model, ultima_cram_snv_caller, ont_cram_snv_caller,
+#   concordance_control_path, sample_type, is_positive_control, is_negative_control,
+#   tum_nrm_sampleid_match, external_sample_id, bwa_kmer, iddna_uid, instrument, lib_prep
+
+for _, row in samples.iterrows():
+    # Keys from named columns
+    samp_id       = row.get("analysis_unit_uid", "")
+    sample        = row.get("sample", "")
+    sample_lane   = row.get("sample_lane", "")
+    sq_id         = str(row.get("SQ", ""))
+    ru_id         = str(row.get("RU", ""))
+    ex_id         = str(row.get("EX", ""))
+    lane_id       = str(row.get("LANE", ""))
+    merge_single  = str(row.get("merge_single", "merge")).strip().lower()
+
+    # Uniqueness / unsupported mode checks (kept from your original intent)
+    if samp_id in sample_info and merge_single == "single":
+        raise WorkflowError(
+            f"\n\nMANIFEST ERROR:: {samp_id} ... {sample_lane} appears 2+ times in the sample sheet. "
+            f"This should only occur if 'merge' has been specified. merge_single is '{merge_single}'."
         )
 
-    if len(sq_i.split(".")) > 1 or len(sq_i.split("_")) > 1 or len(ru_i.split(".")) > 1 or len(ru_i.split("_")) > 1 or len(ex_i.split(".")) > 1 or len(ex_i.split("_")) > 1 or len(str(lane_i).split(".")) > 1 or len(str(lane_i).split("_")) > 1:
-        raise Exception(
-            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: The SQ & RU & EX & LANE cols may not contain a period or '-' in the name.  Please check the sample name and try again. Also.. column order is sadly important: samp,sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concordance_control_path,is_positive_control,is_negative_control,sample_type,merge_single,tum_nrm_sampleid_match,external_sample_id,instrument,lib_prep,bwa_kmer"
+    if merge_single == "single":
+        raise WorkflowError(
+            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': per-lane ('single') mode is currently unsupported. "
+            f"Use merged behavior or construct per-lane manifests explicitly."
         )
 
-    if sample_lane in sample_info or len(sample.split(".")) > 1:
-        raise Exception(
-            f'\n\nMANIFEST ERROR  {sample} ... {sample_lane}: It is not allowed for the sample entry to be present in the sample_lane column and vice versa.  sample can be any string, excluding containing a period or "-", and does not need to be unique w/in the sample column. it may not end in "_[1-9]+", howevr, it may end in "_0"'
+    # Legacy constraint about characters (kept; now based on named cols)
+    def _bad_token(x: str) -> bool:
+        x = str(x)
+        return ("." in x) or ("_" in x)
+
+    if any(_bad_token(t) for t in (sq_id, ru_id, ex_id, lane_id)):
+        raise WorkflowError(
+            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: SQ/RU/EX/LANE may not contain '.' or '_' per current constraints."
         )
 
-    
-    
+    # Prevent 'sample_lane' collisions and sample-in-lane name leakage (legacy behavior)
+    if sample_lane in sample_lane_seen or ("." in sample):
+        raise WorkflowError(
+            f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: 'sample_lane' must be unique; "
+            f"'sample' must not contain a '.' and must not duplicate 'sample_lane'."
+        )
+    sample_lane_seen.add(sample_lane)
 
-    samp = samp[0]
-    if samp not in sample_info:
-        sample_info[samp] = {}
+    # Ensure dict presence
+    if samp_id not in sample_info:
+        sample_info[samp_id] = {}
 
-    for iix in dat:
-        val = dat[iix]
-        if iix in ["biological_sex"]:
-            val = val.lower()
+    # Copy through selected fields with normalization where you did it before
+    # biological_sex normalization
+    bsex = str(row.get("biological_sex", "na")).strip().lower()
+    if bsex.startswith("m"):
+        bsex = "male"
+    elif bsex.startswith("f"):
+        bsex = "female"
+    else:
+        bsex = "na"
+    sample_info[samp_id]["biological_sex"] = bsex
 
-            if val.startswith("m"):
-                val = "male"
-            elif val.startswith("f"):
-                val = "female"
-            else:
-                val = "na"
-            sample_info[samp][iix] = val
-        elif iix in ["ultima_cram"]:
-            sample_info[samp][iix] = val
-        elif iix in ["ont_cram"]:
-            sample_info[samp][iix] = val
-        elif iix in ["ultima_cram_aligner"]:
-            sample_info[samp][iix] = val
-            if val not in CRAM_ALIGNERS:
-                if val in ['','na',None,'None','hyb']:
-                    pass
-                else: 
-                    CRAM_ALIGNERS.append(val)
-        elif iix in ["ont_cram_aligner"]:
-            sample_info[samp][iix] = val
-            if val not in CRAM_ALIGNERS:
-                if val in ['','na',None,'None']:
-                    pass
-                else: 
-                    CRAM_ALIGNERS.append(val)
-        elif iix in ["pb_bam_aligner"]:
-            sample_info[samp][iix] = val
-            if val not in CRAM_ALIGNERS:
-                if val in ['','na',None,'None']:
-                    pass
-                else: 
-                    CRAM_ALIGNERS.append(val)
-        elif iix in ["deep_model"]:
-            """supported models
-                WGS: Whole-genome sequencing data, typically for human genomes sequenced to around 30x coverage.
-                WES: Whole-exome sequencing data.
-                PACBIO: Long-read PacBio data.
-                HYBRID_PACBIO_ILLUMINA: Hybrid PacBio and Illumina data.
-                ONT_R104: Oxford Nanopore Technologies data (model optimized for R10.4 chemistry).
-                ONT_R941: Oxford Nanopore Technologies data (model optimized for R9.4.1 chemistry).
-            """
-            deep_models = [
-                "WGS",
-                "WES",
-                "PACBIO",
-                "HYBRID_PACBIO_ILLUMINA",
-                "ONT_R104",
-                "ONT_R941",
-            ]
-            if val not in deep_models:
-                print(
-                    f"\n\n\tWARNING::: The model {val} is not in the supported set of {deep_models} .  WGS will be selected!!!\n\n\n",file=sys.stderr
-                )
-                sample_info[samp][iix] = "WGS"
-            else:
-                sample_info[samp][iix] = val
-        elif iix in ["ultima_cram_snv_caller"]:
-            sample_info[samp][iix] = val
-        elif iix in ["ont_cram_snv_caller"]:
-            sample_info[samp][iix] = val
-        elif iix in ["concordance_control_path"]:
-            sample_info[samp][iix] = val
-            if val not in ["na", "NA", "", None, "None"]:
-                CONCORDANCE_SAMPLES[samp] = val
-        elif iix in ["sample_type"]:
-            sample_info[samp][iix] = val
-        elif iix in ["is_positive_control"]:
-            sample_info[samp][iix] = val
-        elif iix in ["is_negative_control"]:
-            sample_info[samp][iix] = val
-        elif iix in ["tum_nrm_sampleid_match"]:
-            sample_info[samp][iix] = val
-        elif iix in ["external_sample_id"]:
-            sample_info[samp][iix] = val
-        elif iix in ["bwa_kmer"]:
-            sample_info[samp][iix] = val
-        elif iix in ["iddna_uid"]:
-            val = val.split(":")
-            sample_info[samp][iix] = val
-        elif iix in ["instrument"]:
-            sample_info[samp][iix] = val
-        elif iix in ["lib_prep"]:
-            sample_info[samp][iix] = val
-        elif iix in ["sample_lane"]:
-            if val in sample_lane_info:
-                raise Exception(
-                    "The sample+lane entry, 'sample_lane' must be unique in the sample sheet, but this entry was seen 2x in the column {val}.  You may find sample sheet specs in the docs, and can run 'marion the sample sheets. gold-run yo_samps' to just run the yaml validators.",
-                    val,
-                )
-            else:
-                sample_lane_info[val] = True
+    # Simple passthroughs
+    for k in [
+        "ultima_cram", "ont_cram",
+        "ultima_cram_snv_caller", "ont_cram_snv_caller",
+        "sample_type", "is_positive_control", "is_negative_control",
+        "tum_nrm_sampleid_match", "external_sample_id",
+        "bwa_kmer", "instrument", "lib_prep",
+    ]:
+        sample_info[samp_id][k] = row.get(k, "")
+
+    # iddna_uid split (legacy behavior)
+    iddna_uid_val = row.get("iddna_uid", "")
+    if iddna_uid_val not in (None, "", "na", "NA", "None"):
+        sample_info[samp_id]["iddna_uid"] = str(iddna_uid_val).split(":")
+    else:
+        sample_info[samp_id]["iddna_uid"] = iddna_uid_val
+
+    # deep_model validation
+    deep_models_ok = {
+        "WGS", "WES", "PACBIO", "HYBRID_PACBIO_ILLUMINA", "ONT_R104", "ONT_R941"
+    }
+    dm = str(row.get("deep_model", "") or "").strip().upper()
+    if dm not in deep_models_ok:
+        print(
+            f"\nWARNING::: deep_model '{dm or 'NA'}' not in {sorted(deep_models_ok)}. Using 'WGS'.\n",
+            file=sys.stderr,
+        )
+        dm = "WGS"
+    sample_info[samp_id]["deep_model"] = dm
+
+    # Concordance control path
+    cpath = row.get("concordance_control_path", "")
+    sample_info[samp_id]["concordance_control_path"] = cpath
+    if cpath not in ["na", "NA", "", None, "None"]:
+        CONCORDANCE_SAMPLES[samp_id] = cpath
+
+    # Track CRAM aligners (non-empty values only)
+    for aligner_col in ("ultima_cram_aligner", "ont_cram_aligner", "pb_bam_aligner"):
+        aval = str(row.get(aligner_col, "") or "").strip()
+        if aval and aval.lower() not in {"na", "none", "hyb"}:
+            CRAM_ALIGNERS.append(aval)
+
+# De-duplicate CRAM aligners
+CRAM_ALIGNERS = sorted(set(CRAM_ALIGNERS))
 
 config["sample_info"] = sample_info
 
@@ -851,9 +791,6 @@ for ix in samples.index:
     SAMP_SAMPI.append(sample_x)
 
 
-for si in samples.iterrows():
-    stup = (si[1][0], si[1][1])
-
 SSI = SAMP_SAMPI  # deprecate
 SAMPS = list(get_samp_ids())
 
@@ -865,7 +802,7 @@ if "remove_samples" in config:
 
 SSAMPS = {}
 for sample in list(get_samp_ids()):
-    ssamp = samples[samples["sample"] == sample]["samp"][0]
+    ssamp = samples[samples["sample"] == sample]["analysis_unit_uid"][0]
     if ssamp in SSAMPS:
         SSAMPS[ssamp].append(sample)
     else:
@@ -925,14 +862,14 @@ def getCRAMs(wildcards):
 
 def getR2sS(wildcards):
     fr2s = []
-    for r2 in samples[samples["samp"] == wildcards.sample]["r2_path"]:
+    for r2 in samples[samples["analysis_unit_uid"] == wildcards.sample]["r2_path"]:
         fr2s.append(r2)
     return sorted(fr2s)
 
 
 def getR1sS(wildcards):
     fr1s = []
-    for r1 in samples[samples["samp"] == wildcards.sample]["r1_path"]:
+    for r1 in samples[samples["analysis_unit_uid"] == wildcards.sample]["r1_path"]:
         fr1s.append(r1)
     return sorted(fr1s)
 
@@ -1044,14 +981,14 @@ def get_samp_name(wildcards):
 
 
 def get_instrument(wildcards):
-    return samples[samples["samp"] == wildcards.sample]["instrument"][0]
+    return samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0]
 
 
 def get_diploid_bed_arg(wildcards):
 
     diploid_bed = ""
     try:
-        sample_bsex = samples[samples["samp"] == wildcards.sample]["biological_sex"][0].lower()
+        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["biological_sex"][0].lower()
 
         if "male" == sample_bsex:
             diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
@@ -1073,7 +1010,7 @@ def get_haploid_bed_arg(wildcards):
     haploid_bed = " "
 
     try:
-        sample_bsex = samples[samples["samp"] == wildcards.sample]["biological_sex"][0].lower()
+        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["biological_sex"][0].lower()
 
         if "male" == sample_bsex:
             haploid_bed = f' --haploid_bed {config["supporting_files"]["files"]["huref"]["male_haploid"]["name"]} '
@@ -1224,7 +1161,7 @@ def get_deep_model(wildcards):
     deep_model="WGS"
     print(f"DM: {deep_model}")
     try:
-        deep_model = samples[samples["samp"] == wildcards.sample]["deep_model"][0]
+        deep_model = samples[samples["analysis_unit_uid"] == wildcards.sample]["deep_model"][0]
 	print(f"DM2: {deep_model}")
     except Exception as e:
         print(f"'deep_model' key not found" + str(e), file=sys.stderr)
@@ -1235,7 +1172,7 @@ def get_deep_model(wildcards):
 def instrument(wildcards):
     instrument = "na"
     try:
-        instrument = samples[samples["samp"] == wildcards.sample]["instrument"][0].lower()
+        instrument = samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0].lower()
     except Exception as e:
         instrument = "na"
     return instrument
