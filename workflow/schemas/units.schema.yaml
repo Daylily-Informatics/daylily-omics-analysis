@@ -1,0 +1,45 @@
+---
+$schema: http://json-schema.org/draft-04/schema#
+
+description: Daylily sequencing unit table (one row per run/lane/library).
+properties:
+    RunID:
+        type: string
+    SampleID:
+        type: string
+    ExperimentID:
+        type: string
+    LaneID:
+        type: string
+    BarcodeID:
+        type: string
+    LibPrep:
+        type: string
+    SeqPlatform:
+        type: string
+    ILMN_R1_path:
+        type: string
+    ILMN_R2_path:
+        type: string
+    PacBio_R1_path:
+        type: string
+    PacBio_R2_path:
+        type: string
+    ONT_R1_path:
+        type: string
+    ONT_R2_path:
+        type: string
+    UG_R1_path:
+        type: string
+    UG_R2_path:
+        type: string
+    subsample_pct:
+        type: string
+required:
+    - RunID
+    - SampleID
+    - ExperimentID
+    - LaneID
+    - BarcodeID
+    - LibPrep
+    - SeqPlatform

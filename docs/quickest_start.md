@@ -64,7 +64,8 @@ bash
 # local execution profile targets the head node
 dy-a local hg38
 
-cp .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv config/analysis_manifest.csv
+cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
 dy-r seqqc -j 1 -p -k -n   # dry-run
 

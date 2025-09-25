@@ -201,78 +201,249 @@ else:
 
 
 
-if "analysis_manifest" in config:
-    os.system(
-        """colr  '     _____ COMMAND LINE ANALYSIS MANIFEST SET. This will be copied to config/analysis_manifest.csv, and this copy used' "$DY_WT0" "$DY_WB0" "$DY_WS1"  """
-    )
-    if os.path.exists("config/analysis_manifest.csv"):
-        raise Exception(
-            "\n\n A file exists in config/analysis_manifest.csv, you must remove it to use the command line specified manifest.\n\n"
-        )
-    else:
-        user_analysis_manifest = config["analysis_manifest"]
-        if os.path.exists(user_analysis_manifest):
-            os.system(f"cp {user_analysis_manifest} config/analysis_manifest.csv")
-            os.system(f"echo '{str(dtm.datetime.now())}\t{user_analysis_manifest}' >> config/analysis_manifest.log")
-        else:
-            raise Exception(
-                f"\n\nERROR::: The user specified analysis manifest file was not found at {user_analysis_manifest}.  Please check the path and try again."
+def _resolve_table(override_key, default_key, target_filename):
+    """Resolve the path to a tabular sample metadata file."""
+
+    override_path = config.get(override_key, "")
+    if override_path not in ["", None, "None"]:
+        override_path = os.path.abspath(str(override_path))
+        if not os.path.exists(override_path):
+            raise WorkflowError(
+                f"The file specified via --config {override_key}={override_path} was not found."
             )
-else:
-    default_analysis_manifest = config[f"{config['genome_build']}_analysis_manifest"]
-    if os.path.exists("config/analysis_manifest.csv"):
-        os.system(
-            f"""colr '     _____ EXISTING ANALYSIS MANIFEST FILE DETECTED: config/analysis_manifest.csv --  this will be used' "$DY_WT0" "$DY_WB0" "$DY_WS1" >&2 """
-        )
-        os.system('sleep 1')
-    elif os.path.exists(default_analysis_manifest):
-        os.system(f"cp {default_analysis_manifest} config/analysis_manifest.csv")
-        os.system(f"echo '{str(dtm.datetime.now())}\t{default_analysis_manifest}' >> config/analysis_manifest.log")
+        return override_path
 
-    else:
-        raise Exception(
-            f"\n\nERROR::: The default analysis manifest file was not found at {default_analysis_manifest}.  Please check the path and try again, was the genome_build specified?"
+    dest_path = os.path.abspath(os.path.join("config", target_filename))
+    if os.path.exists(dest_path):
+        return dest_path
+
+    default_path = config.get(default_key, "")
+    if default_path in ["", None, "None"]:
+        raise WorkflowError(
+            f"No {target_filename} provided. Create config/{target_filename} or set the --config {override_key}=/path/to/{target_filename}."
         )
 
-config["analysis_manifest"] = "config/analysis_manifest.csv"
-analysis_manifest = config["analysis_manifest"]
+    default_path = os.path.abspath(str(default_path))
+    if not os.path.exists(default_path):
+        raise WorkflowError(
+            f"The default {target_filename} configured at {default_path} could not be found."
+        )
 
-# Alert is analysis manifest is not found
-os.system(
-    f"""(colr "A    N   A   L  Y S I S    MANIFEST FILE DETECTED FOR USE ::: {analysis_manifest}" "$DY_ET1" "$DY_EB1" "$DY_ES1" 1>&2; sleep {config["warn_err_sleep"]}) || (colr "~~~ANALYSIS MANIFEST DETECTIONFAILED!!~~~~ " "$DY_ET0" "$DY_EB0" "$DY_ES0" 1>&2; sleep {config["warn_err_sleep"]}; exit 33;)"""
+    os.makedirs("config", exist_ok=True)
+    shutil.copy(default_path, dest_path)
+    print(
+        f"     _____ DEFAULT {target_filename} copied to {dest_path}",
+        file=sys.stderr,
+    )
+    return dest_path
+
+
+samples_table_path = _resolve_table(
+    "samples_table",
+    f"{config['genome_build']}_samples_table",
+    "samples.tsv",
+)
+units_table_path = _resolve_table(
+    "units_table",
+    f"{config['genome_build']}_units_table",
+    "units.tsv",
 )
 
-# IMPORTANT: initialize the samples dataframe from the analysis_manifest.csv
-samples = pd.read_table(analysis_manifest, ",")
+config["samples_table"] = samples_table_path
+config["units_table"] = units_table_path
 
-# Derive sample_lane and sample identifiers if they are not provided.
-required_cols = {"RU", "EX", "SQ", "LANE"}
-missing = required_cols - set(samples.columns)
-if missing:
-    raise WorkflowError(f"Missing required columns in analysis manifest: {missing}")
+print(
+    f"A    N   A   L  Y S I S    SAMPLE TABLE DETECTED ::: {samples_table_path}",
+    file=sys.stderr,
+)
+print(
+    f"A    N   A   L  Y S I S    UNIT TABLE DETECTED ::: {units_table_path}",
+    file=sys.stderr,
+)
 
-samples["LANE"] = samples["LANE"].astype(int)
+sample_records = pd.read_table(samples_table_path, sep="\t").fillna("")
+unit_records = pd.read_table(units_table_path, sep="\t").fillna("")
 
-if "sample_lane" not in samples.columns:
-    samples["sample_lane"] = (
-        samples["RU"].astype(str)
-        + "_"
-        + samples["EX"].astype(str)
-        + "_"
-        + samples["SQ"].astype(str)
-        + "_"
-        + samples["LANE"].astype(str)
+if sample_records.empty:
+    raise WorkflowError("The samples table is empty. Please provide at least one sample entry.")
+
+if unit_records.empty:
+    raise WorkflowError("The units table is empty. Please provide at least one sequencing unit entry.")
+
+validate(sample_records, schema="../schemas/samples.schema.yaml")
+validate(unit_records, schema="../schemas/units.schema.yaml")
+
+required_unit_columns = {
+    "RunID",
+    "SampleID",
+    "ExperimentID",
+    "LaneID",
+    "BarcodeID",
+    "LibPrep",
+    "SeqPlatform",
+}
+missing_unit_columns = required_unit_columns - set(unit_records.columns)
+if missing_unit_columns:
+    raise WorkflowError(
+        f"Missing required columns in units table: {sorted(missing_unit_columns)}"
     )
 
-if "sample" not in samples.columns:
-    samples["sample"] = samples.apply(
-        lambda r: f"{r['RU']}_{r['EX']}_{r['SQ']}_0"
-        if str(r.get("merge_single", "")).lower() == "merge"
-        else r["sample_lane"],
-        axis=1,
+for opt_col in [
+    "ILMN_R1_path",
+    "ILMN_R2_path",
+    "PacBio_R1_path",
+    "PacBio_R2_path",
+    "ONT_R1_path",
+    "ONT_R2_path",
+    "UG_R1_path",
+    "UG_R2_path",
+    "subsample_pct",
+]:
+    if opt_col not in unit_records.columns:
+        unit_records[opt_col] = ""
+
+if "SampleID" not in sample_records.columns:
+    raise WorkflowError("The samples table must contain a 'SampleID' column.")
+
+metadata = unit_records.merge(
+    sample_records,
+    on="SampleID",
+    how="left",
+    validate="many_to_one",
+)
+
+if metadata["SampleSource"].isna().any():
+    missing_samples = metadata[metadata["SampleSource"].isna()]["SampleID"].unique()
+    raise WorkflowError(
+        "The following SampleID entries are missing from samples.tsv: "
+        + ", ".join(sorted(missing_samples))
     )
 
-samples = samples.set_index(["sample", "sample_lane"], drop=False)
+def _clean_component(value):
+    value = str(value or "").strip()
+    if value.lower() in {"", "na", "none"}:
+        return ""
+    return re.sub(r"\s+", "", value)
+
+
+def _build_analysis_unit(row):
+    parts = [
+        _clean_component(row["RunID"]),
+        _clean_component(row["SampleID"]),
+        _clean_component(row["ExperimentID"]),
+        _clean_component(row["LaneID"]),
+    ]
+    barcode = _clean_component(row.get("BarcodeID", ""))
+    if barcode:
+        parts.append(barcode)
+    parts = [p for p in parts if p]
+    if not parts:
+        raise WorkflowError(
+            "Unable to construct analysis unit identifier; missing RunID/SampleID/ExperimentID/LaneID."
+        )
+    return "_".join(parts)
+
+
+metadata["analysis_unit_uid"] = metadata.apply(_build_analysis_unit, axis=1)
+
+if metadata["analysis_unit_uid"].duplicated().any():
+    dupes = metadata[metadata["analysis_unit_uid"].duplicated()]["analysis_unit_uid"].tolist()
+    raise WorkflowError(
+        f"Duplicate analysis unit identifiers detected: {sorted(set(dupes))}"
+    )
+
+def _select_reads(row):
+    for r1, r2 in [
+        ("ILMN_R1_path", "ILMN_R2_path"),
+        ("PacBio_R1_path", "PacBio_R2_path"),
+        ("ONT_R1_path", "ONT_R2_path"),
+        ("UG_R1_path", "UG_R2_path"),
+    ]:
+        r1_path = _clean_component(row.get(r1, ""))
+        r2_path = _clean_component(row.get(r2, ""))
+        if r1_path:
+            return r1_path, r2_path if r2_path else "na"
+    raise WorkflowError(
+        f"No read pairs specified for analysis unit {row['analysis_unit_uid']}."
+    )
+
+
+metadata["r1_path"], metadata["r2_path"] = zip(*metadata.apply(_select_reads, axis=1))
+metadata["lib_prep"] = metadata.get("LibPrep", "").replace("", "na")
+metadata["instrument"] = metadata.get("SeqPlatform", "").replace("", "na")
+
+if "merge_single" not in metadata.columns:
+    metadata["merge_single"] = "merge"
+metadata.loc[metadata["merge_single"].isin(["", None]), "merge_single"] = "merge"
+
+metadata["sample"] = metadata["SampleID"]
+metadata["samp"] = metadata["SampleID"]
+metadata["sample_lane"] = metadata["analysis_unit_uid"]
+metadata["RU"] = metadata["RunID"]
+metadata["EX"] = metadata["SampleID"]
+metadata["SQ"] = metadata["ExperimentID"]
+metadata["LANE"] = metadata["LaneID"]
+
+def _safe_int(x):
+    try:
+        return int(str(x))
+    except Exception:
+        return x
+
+
+metadata["LANE"] = metadata["LANE"].apply(_safe_int)
+
+if "tum_nrm_sampleid_match" not in metadata.columns:
+    metadata["tum_nrm_sampleid_match"] = "na"
+metadata.loc[
+    metadata["tum_nrm_sampleid_match"].isin(["", None, "None"]),
+    "tum_nrm_sampleid_match",
+] = "na"
+
+samples = metadata.set_index(["sample", "sample_lane"], drop=False)
+
+for col, default in {
+    "biological_sex": "na",
+    "iddna_uid": "na",
+    "concordance_control_path": "na",
+    "is_positive_control": "false",
+    "is_negative_control": "false",
+    "sample_type": "na",
+    "merge_single": "merge",
+    "external_sample_id": "na",
+    "instrument": "na",
+    "lib_prep": "na",
+    "bwa_kmer": str(config.get("bwa_mem2a_aln_sort", {}).get("k", "19")),
+}.items():
+    if col not in samples.columns:
+        samples[col] = default
+    samples[col] = samples[col].replace({None: default, "": default})
+
+column_order = [
+    "samp",
+    "sample",
+    "sample_lane",
+    "SQ",
+    "RU",
+    "EX",
+    "LANE",
+    "r1_path",
+    "r2_path",
+    "biological_sex",
+    "iddna_uid",
+    "concordance_control_path",
+    "is_positive_control",
+    "is_negative_control",
+    "sample_type",
+    "merge_single",
+    "tum_nrm_sampleid_match",
+    "external_sample_id",
+    "instrument",
+    "lib_prep",
+    "bwa_kmer",
+]
+existing = [c for c in column_order if c in samples.columns]
+samples = samples[existing + [c for c in samples.columns if c not in existing]]
 
 # Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
 if "tum_nrm_sampleid_match" in samples.columns:
