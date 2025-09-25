@@ -407,7 +407,6 @@ if "merge_single" not in metadata.columns:
 metadata.loc[metadata["merge_single"].isin(["", None]), "merge_single"] = "merge"
 
 metadata["sample"] = metadata["analysis_unit_uid"]
-#metadata["samp"] = metadata["analysis_unit_uid"]
 metadata["sample_lane"] = metadata["analysis_unit_uid"]
 metadata["RU"] = metadata["RunID"]
 metadata["EX"] = metadata["SampleID"]
@@ -938,7 +937,7 @@ def ret_mod_chrm(ret_str):
 # which will do the subsampling
 def get_subsample_head_tail(sample_id):
     ss_head = ss_tail = ""
-    row = samples[samples["samp"] == sample_id]
+    row = samples[samples["sample"] == sample_id]
     ss_pct = (first_val(row, "subsample_pct") or "").strip()
     if ss_pct in {"", "na", "None", "0", "0.0", 0, 100, "100", "100.0", 100.0}:
         return ("", "")

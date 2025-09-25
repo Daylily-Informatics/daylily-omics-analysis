@@ -7,16 +7,16 @@ import os
   
 def get_merge_samp(wildcards):
     ret_files = []
-    for sample in samples[samples['samp'] == wildcards.sample ]['sample_lane']:
+    for sample in samples[samples['sample'] == wildcards.sample ]['sample_lane']:
         ret_files.append( MDIR + f"{sample}/align/{wildcards.alnr}/{sample}.{wildcards.alnr}.sort.bam")
     return ret_files
 
  
 def get_lane_from_samp(wildcards):
-    if len( samples[samples['samp'] == wildcards.sample]) in [0,'0']:
-        raise Exception(f"LEN ZERO 0 :: {samples[samples['samp'] == wildcards.sample]}")
+    if len( samples[samples['sample'] == wildcards.sample]) in [0,'0']:
+        raise Exception(f"LEN ZERO 0 :: {samples[samples['sample'] == wildcards.sample]}")
         
-    return len(samples[samples['samp'] == wildcards.sample])
+    return len(samples[samples['sample'] == wildcards.sample])
     
     
 rule merge_bam:

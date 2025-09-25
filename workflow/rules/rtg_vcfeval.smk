@@ -2,11 +2,11 @@ import os
 import sys
 
 def get_samp_concordance_truth_dir(wildcards):
-    cntrl_dir = samples[samples['samp'] == wildcards.sample]["concordance_control_path"][0]
+    cntrl_dir = samples[samples['sample'] == wildcards.sample]["concordance_control_path"][0]
     return cntrl_dir
 
 def get_alt_sample_name(wildcards):
-    return samples[samples['samp'] == wildcards.sample]['external_sample_id'][0]
+    return samples[samples['sample'] == wildcards.sample]['external_sample_id'][0]
 
 def get_sampn(wildcards):
     return wildcards.sample
