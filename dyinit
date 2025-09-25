@@ -317,7 +317,8 @@ echo -e "\n"
 echo -e "\t\tdy-a slurm hg38 # or hg38_broad or b37\n"
 
 echo -e "\t(example): RUN ALIGNMENT\n"
-echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv config/analysis_manifest.csv\n"
+echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv\n"
+echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv\n"
 
 echo -e "\t\texport DAY_CONTAINERIZED=true # true to use pre-built container of all analysis envs. false will create each conda env as needed\n"
 

@@ -19,7 +19,7 @@ def sample_input(sample):
         raise ValueError(f"Sample {sample} must have 'bam' or 'vcf' path.")
 
 # Somalier extract outputs
-SomExtract = expand("results/somalier/extract/{samp}.somalier", samp=SAMPLES)
+SomExtract = expand("results/somalier/extract/{sample}.somalier", sample=SAMPLES)
 
 rule relatedness_all:
     input:
@@ -50,7 +50,7 @@ rule somalier_extract:
     """
     Build per-sample fingerprint from BAM/CRAM (preferred) or VCF.
     """
-    output: "results/somalier/extract/{samp}.somalier"
+    output: "results/somalier/extract/{sample}.somalier"
     params:
         sites=SOM_SITES,
         build=GENOME_BUILD
@@ -63,13 +63,13 @@ rule somalier_extract:
               --sites {params.sites} \
               --fasta {REF} \
               --genome-build {params.build} \
-              -o results/somalier/extract/{wildcards.samp} \
+              -o results/somalier/extract/{wildcards.sample} \
               {sample_input(wildcards.samp)[0]}
         else
             somalier extract \
               --sites {params.sites} \
               --genome-build {params.build} \
-              -o results/somalier/extract/{wildcards.samp} \
+              -o results/somalier/extract/{wildcards.sample} \
               {sample_input(wildcards.samp)[0]} \
               --unknown   # treat missing as hom-ref when VCF lacks some sites
         fi

@@ -43,9 +43,10 @@ The fastest way to experience the workflows is to run the built-in smoke test us
    dy-a local hg38    # or `dy-a slurm hg38` to target the cluster profile
    ```
 
-3. **Stage a sample manifest.**
+3. **Stage sample metadata tables.**
    ```bash
-   cp .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv config/analysis_manifest.csv
+   cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+   cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
    ```
 
 4. **Dry-run the workflow.**
@@ -66,7 +67,7 @@ The fastest way to experience the workflows is to run the built-in smoke test us
    dy-r produce_snv_concordances -p -k -j 6 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep']
    ```
 
-For instructions on crafting custom manifests, enabling additional tools (e.g. DeepVariant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
+For instructions on crafting custom sample/unit tables, enabling additional tools (e.g. DeepVariant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
 
 ## Documentation Roadmap
 
@@ -96,14 +97,17 @@ cd daylily
 ```
   > *note*: if you have an active DAYOA conda env, begin a fresh bash shell from your new analysis dir, `bash`.
 
-#### Next, init daylily and, set genome, stage an analysis_manigest.csv and run a test workflow.
+#### Next, init daylily, set the genome, stage sample/unit tables and run a test workflow.
 
 ```bash
 . dyinit  --project PROJECT
 
 dy-a local hg38 # the other option: b37 ( or set via config command line below)
 
-head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.csv
+cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
+
+head -n 2 config/units.tsv
 
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
@@ -115,7 +119,7 @@ dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa
 
 The `-j` flag specified in `dy-r` limits the number of jobs submitted to slurm. For out of the box settings, the advised range for `-j` is 1 to 10. You may omit this flag, and allow submitting all potnetial jobs to slurm, which slurm, /fsx, and the instances can handle growing to the 10s or even 100 thousands of instances... however, various quotas will begin causing problems before then.  The `local` defauly is set to `-j 1` and `slurm` is set to `-j 10`, `-j` may be set to any int > 0.
 
-This will produce a job plan, and then begin executing. The sample manifest can be found in `.test_data/data/0.01x_3_wgs_HG002.samplesheet.csv` (i am aware this is not a `.tsv` :-P ). Runtime on the default small test data runnin locally on the default headnode instance type should be ~5min.
+This will produce a job plan, and then begin executing. The bundled multi-sample tables live in `.test_data/data/0.01x_3_wgs_HG002_hg38.samples.tsv` and `.test_data/data/0.01x_3_wgs_HG002_hg38.units.tsv`. Runtime on the default small test data running locally on the default headnode instance type should be ~5min.
 
 ```text
 NOTE! NOTE !! NOTE !!! ---- The Undetermined Sample Is Excluded. Set --config keep_undetermined=1 to process it.
@@ -166,12 +170,13 @@ tmux new -s slurm_test
 . dyinit 
 dy-a slurm hg38 # the other options being b37
 
-# create a test manifest for one giab sample only, which will run on the 0.01x test dataset
-head -n 2 .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv > config/analysis_manifest.csv
+# create a test sample/unit pair for one giab sample only, which will run on the 0.01x test dataset
+cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
-# run the test, which will auto detect the analysis_manifest.csv file & will run this all via slurm
+# run the test, which will auto detect the sample/unit tables & will run this all via slurm
 dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
 ```
 
@@ -210,11 +215,11 @@ _note2:_ The first time a cold cluster requests spot instances, can take some ti
 
 #### (RUN ON A FULL 30x WGS DATA SET)
 
-**ALERT** The `analysis_manifest.csv` is being re-worked to be more user friendly. The following will continue to work, but will be repleaced with a less touchy method soon.
+**ALERT** The legacy `analysis_manifest.csv` workflow has been replaced by paired `samples.tsv` and `units.tsv` tables. The commands below reference both files when staging data.
 
 ##### Specify A Single Sample Manifest
 
-You may repeat the above, and use the pre-existing analysis_manifest.csv template `.test_data/data/giab_30x_hg38_analysis_manifest.csv`.
+You may repeat the above, and use the pre-existing sample/unit templates `.test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv` and `.test_data/data/giab_30x_hg38_analysis_manifest.units.tsv`.
 
 ```bash
 tmux new -s slurm_test_30x_single
@@ -230,7 +235,8 @@ cd daylily
 dy-a slurm hg38 # the other option being b37
 
 # TO create a single sample manifest
-head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.csv > config/analysis_manifest.csv
+head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv > config/samples.tsv
+head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv > config/units.tsv
 
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
@@ -256,8 +262,9 @@ cd daylily
 . dyinit  --project PROJECT 
 dy-a slurm hg38 # the other options being b37
 
-# copy full 30x giab sample template to config/analysis_manifest.csv
-cp .test_data/data/giab_30x_hg38_analysis_manifest.csv  config/analysis_manifest.csv
+# copy full 30x giab sample templates into config/
+cp .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv  config/samples.tsv
+cp .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv  config/units.tsv
 
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
@@ -274,9 +281,9 @@ max_snakemake_tasks_active_at_a_time=2 # for local headnode, maybe 400 for a ful
 dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_kat produce_multiqc_final_wgs -p -k -j $max_snakemake_tasks_active_at_a_time --config genome_build=hg38 aligners=['strobe','bwa2a','sent'] dedupers=['dppl'] snv_callers=['oct','sentd','deep','clair3','lfq2'] sv_callers=['tiddit','manta','dysgu'] -n
 ```
 
-## To Create Your Own `config/analysis_manifest.csv` File From Your Own `analysis_samples.tsv` File
+## To Create Your Own `config/samples.tsv` and `config/units.tsv`
 
-The `analysis_manifest.csv` file is required to run the daylily pipeline. It should only be created via the helper script `./bin/daylily-analysis-samples-to-manifest-new`.
+The paired tables are required to run the daylily pipeline. They should be created by following the column layout shown in the smoke-test examples under `.test_data/data/`. Updated helpers for generating the tables from lab manifests are in progress; for legacy workflows you may still use `./bin/daylily-analysis-samples-to-manifest-new` and then convert the output into the new structure.
 
 **this script is still in development, more docs to come**, run with `-h` for now and see the example [etc/analysis_samples.tsv template](etc/analysis_samples.tsv) file for the format of the `analysis_samples.tsv` file. You also need to have a valid ephemeral cluster available.
 
@@ -524,3 +531,4 @@ Contributions that improve reproducibility, expand workflow coverage, or enhance
 ## License
 
 This project is released under the terms of the [MIT License](LICENSE).
+X
