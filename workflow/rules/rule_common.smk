@@ -403,8 +403,8 @@ if "merge_single" not in metadata.columns:
     metadata["merge_single"] = "merge"
 metadata.loc[metadata["merge_single"].isin(["", None]), "merge_single"] = "merge"
 
-metadata["sample"] = metadata["SampleID"]
-metadata["samp"] = metadata["SampleID"]
+metadata["sample"] = metadata["analysis_unit_uid"]
+metadata["samp"] = metadata["analysis_unit_uid"]
 metadata["sample_lane"] = metadata["analysis_unit_uid"]
 metadata["RU"] = metadata["RunID"]
 metadata["EX"] = metadata["SampleID"]
