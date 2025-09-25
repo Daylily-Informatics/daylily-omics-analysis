@@ -1141,13 +1141,12 @@ def get_senttn_chrm_day(wildcards):
 
 def get_deep_model(wildcards):
     deep_model="WGS"
-    print(f"DM: {deep_model}")
+
     try:
         deep_model = samples[samples["analysis_unit_uid"] == wildcards.sample]["deep_model"][0]
-	print(f"DM2: {deep_model}")
     except Exception as e:
         print(f"'deep_model' key not found" + str(e), file=sys.stderr)
-    print(f"DM3: {deep_model}")
+    
     return deep_model if deep_model not in ["na","",None,"None"] else 'WGS'
 
 
