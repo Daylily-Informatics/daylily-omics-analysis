@@ -1,6 +1,6 @@
 ######### GATK CONTAMINATION SCREEN
 # - Uses GATK GetPileupSummaries + CalculateContamination
-# - Parallelizes pileups across chromosomes, then merges
+# - Simplified to a single GetPileupSummaries invocation
 # - Emits a VerifyBamID2-like selfSM/tsv for compatibility
 
 rule gatk_contam:
@@ -26,65 +26,42 @@ rule gatk_contam:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.gatk_contam.bench.tsv"
     conda:
-        config["gatk_contam"]["env_yaml"]   # env must provide gatk, parallel, coreutils, awk
+        config["gatk_contam"]["env_yaml"]   # env must provide gatk and coreutils
     threads: config["gatk_contam"]["threads"]
     resources:
         vcpu = config["gatk_contam"]["threads"],
         partition = config["gatk_contam"]["partition"]
     params:
         cluster_sample = ret_sample,
-        alnr = get_alnr,
-        chrm_prefix = GENOME_CHR_PREFIX,   # e.g., "" or "chr"
-        # editable chromosome list; X only here, add Y/M if needed
-        chroms = lambda w: " ".join([f"{GENOME_CHR_PREFIX}{c}" for c in list(range(1,23)) + ["X"]]),
-        tmpdir = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/tmp"
+        alnr = get_alnr
     shell:
         r"""
         set -euo pipefail;
 
-        mkdir -p "$(dirname {output.pile_merged})"/logs {params.tmpdir};
+        mkdir -p "$(dirname {output.pile_merged})"/logs;
 
-        printf "%s\n" {params.chroms} | parallel -j {threads} --halt soon,fail=1 '
-            gatk GetPileupSummaries \
-              -I {input.cram} \
-              -V {input.sites_vcf} \
-              -R {input.ref_fa} \
-              -L {input.sites_vcf} \
-              -L {{}} \
-              -O {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.{{}}.pileups.table \
-              > {log}.{{}} 2>&1
-        ';
-
-
-        first_tbl="$(ls -1 {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.*.pileups.table | head -n1)";
-        if [[ -z "${{first_tbl:-}}" ]]; then
-            echo "No pileup tables produced" >&2;
-            exit 2;
-        fi
-        head -n 1 "${{first_tbl}}" > {output.pile_merged};
-
-        for f in {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.*.pileups.table; do
-            tail -n +2 "${{f}}" \
-              | awk -v s="{params.cluster_sample}.{params.alnr}" 'BEGIN{{FS=OFS="\t"}} NR>0{{ sub(/^SAMPLE=.*/,"SAMPLE=" s, $1); print }}' \
-              >> {output.pile_merged};
-        done
+        gatk GetPileupSummaries \
+          -I {input.cram} \
+          -V {input.sites_vcf} \
+          -R {input.ref_fa} \
+          -L {input.sites_vcf} \
+          -O {output.pile_merged} \
+          >> {log} 2>&1;
 
         gatk CalculateContamination \
           -I {output.pile_merged} \
-          -O {output.contam} >> {log} 2>&1;
+          -O {output.contam} \
+          >> {log} 2>&1;
 
-        contam_val="$(awk 'NR==2 {{print $2}}' {output.contam})";
+        contam_val="$(awk 'NR==2 {print $2}' {output.contam})";
 
         printf "SEQ_ID\tRG\tCHIP_ID\t#SNPS\t#READS\tAVG_DP\tFREEMIX\tFREELK1\tFREELK0\tFREE_RH\tFREE_RA\tCHIPMIX\tCHIPLK1\tCHIPLK0\tCHIP_RH\tCHIP_RA\tDPREF\tRDPHET\tRDPALT\n" > {output.selfSM};
-        printf "{params.cluster_sample}.{params.alnr}\tNA\tNA\tNA\tNA\tNA\t%s\t-1\t-1\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\n" "${{contam_val:-NA}}" >> {output.selfSM};
+        printf "{params.cluster_sample}.{params.alnr}\tNA\tNA\tNA\tNA\tNA\t%s\t-1\t-1\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\n" "${contam_val:-NA}" >> {output.selfSM};
 
         cp {output.selfSM} {output.tsv};
         cp {output.selfSM} {output.mqc};
         touch {output.stamp};
-
-        rm -f {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.*.pileups.table;
         """
-
 
 
 localrules:
