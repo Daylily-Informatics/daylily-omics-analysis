@@ -1,0 +1,10 @@
+name: somalier
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - somalier=0.2*
+  - htslib
+  - bcftools
+  - samtools
+  - python>=3.9
