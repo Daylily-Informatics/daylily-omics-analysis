@@ -37,7 +37,7 @@ rule verifybamid2_contam:
         set -euo pipefail
 
         outdir=$(dirname {output.vb_tsv})
-        mkdir -p "${outdir}" "${outdir}/logs"
+        mkdir -p "${{outdir}}" "${{outdir}}/logs"
 
         rm -f {output.vb_prefix}.selfSM {output.vb_prefix}.selfRG {output.vb_prefix}.depthSM \
             {output.vb_tsv} {output.selfSM} {output.mqc} {output.contam}
