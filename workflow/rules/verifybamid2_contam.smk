@@ -50,7 +50,7 @@ rule verifybamid2_contam:
             --RefVCF {params.site_vcf} \
             --NumThread {threads} \
             --Reference {params.huref} \
-            --min-BQ 20 --min-MQ 20 --adjust-MQ 50 --max-depth 10000 \
+            --min-BQ 20 --min-MQ 20 --adjust-MQ 50 --max-depth 500 \
             > {log} 2>&1
 
         cp {output.selfSM} {output.vb_tsv}
