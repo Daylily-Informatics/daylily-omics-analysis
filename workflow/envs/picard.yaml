@@ -1,0 +1,7 @@
+name: picard
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - picard=3.*
+  - openjdk=17
