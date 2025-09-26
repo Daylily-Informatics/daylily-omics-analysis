@@ -1,5 +1,3 @@
-import os
-
 ######### CONTAMINATION SCREEN
 # ----------------------------
 # This is a population agnostic contamination screening tool that can
@@ -13,10 +11,10 @@ import os
 rule verifybamid2_contam:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
     output:
         vb_prefix=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2",
         vb_tsv=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
-        tmppile=temp(MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.tmp.pileups.table"),
         contam=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.contam.tsv",
         selfSM=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.selfSM",
         mqc=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2_mqc.tsv",
@@ -31,51 +29,35 @@ rule verifybamid2_contam:
         vcpu=config["verifybamid2_contam"]["threads"],
         partition=config["verifybamid2_contam"]["partition"],
     params:
-        cluster_sample=ret_sample,
-        alnr=get_alnr,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         db_prefix=config["supporting_files"]["files"]["verifybam2"]["dat_files"]["name"],
-        chrm_prefix=GENOME_CHR_PREFIX,
+        site_vcf=config["supporting_files"]["files"]["verifybam2"]["oneM_snps_vcf"]["name"],
     shell:
-        """
-        set +euo pipefail;
-        rm -rf $(dirname {output.vb_tsv} ) || echo rmVerifyBAMfailed;
-        mkdir -p $(dirname {output.vb_tsv} )/logs;
+        r"""
+        set -euo pipefail
 
-        #verifybamid2 --WithinAncestry --BamFile {input.cram} --Output {output.vb_prefix} --DisableSanityCheck \
-        #    --SVDPrefix {params.db_prefix}  --NumThread  {threads} --Reference {params.huref}  >> {log} 2>&1 ;
-                    
-        for chr in {params.chrm_prefix}{{1..22}} {params.chrm_prefix}X; do echo $chr; done | parallel -j {threads} '
-            gatk GetPileupSummaries \
-            -I {input.cram} \
-            -V {params.db_prefix} \
-            --reference {params.huref} \
-            -O  {output.tmppile}.{{}}.pileups.table.tmp \
-            --interval-set-rule INTERSECTION \
-            -L {params.db_prefix} \
-            -L {{}} > {log}.{{}} 2>&1 ;
-        ';
+        outdir=$(dirname {output.vb_tsv})
+        mkdir -p "${outdir}" "${outdir}/logs"
 
+        rm -f {output.vb_prefix}.selfSM {output.vb_prefix}.selfRG {output.vb_prefix}.depthSM \
+            {output.vb_tsv} {output.selfSM} {output.mqc} {output.contam}
 
-        touch {output.tmppile};
-        head -n 2 $(ls $(dirname {output.tmppile} )/*.tmp | head -n 1) > {output.tmppile};
-        perl -pi -e 's/(^.*SAMPLE\=)(.*$)/$1{params.cluster_sample}.{params.alnr}/g;' {output.tmppile};
-        tail -n +2 -q your_sample.{params.chrm_prefix}*.pileups.table >> {output.tmppile};
+        verifybamid2 \
+            --WithinAncestry \
+            --BamFile {input.cram} \
+            --Output {output.vb_prefix} \
+            --DisableSanityCheck \
+            --SiteVCF {params.site_vcf} \
+            --SVDPrefix {params.db_prefix} \
+            --NumThread {threads} \
+            --Reference {params.huref} \
+            > {log} 2>&1
 
-        gatk CalculateContamination \
-        -I {output.tmppile} \
-        -O {output.contam}
+        cp {output.selfSM} {output.vb_tsv}
+        cp {output.selfSM} {output.mqc}
+        touch {output.vb_prefix}
 
-        export contam=$(awk 'NR==2 {{print $2}}' {output.contam});
-
-        echo -e "SEQ_ID\tRG\tCHIP_ID\t#SNPS\t#READS\tAVG_DP\tFREEMIX\tFREELK1\tFREELK0\tFREE_RH\tFREE_RA\tCHIPMIX\tCHIPLK1\tCHIPLK0\tCHIP_RH\tCHIP_RA\tDPREF\tRDPHET\tRDPALT" > {output.selfSM};
-        echo -e "{params.cluster_sample}.{params.alnr}\tNA\tNA\tNA\tNA\tNA\t$contam\t-1\t-1\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA" >> {output.selfSM};
-        cp {output.selfSM} {output.vb_tsv};
-        cp {output.selfSM} {output.mqc};
-        touch {output.vb_prefix};
-
-        rm  $(dirname {output.tmppile} )/*.tmp
-
+        awk 'NR<=2 {{print}}' {output.selfSM} > {output.contam}
         """
 
 localrules:
