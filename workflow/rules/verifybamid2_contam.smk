@@ -47,9 +47,10 @@ rule verifybamid2_contam:
             --BamFile {input.cram} \
             --Output {output.vb_prefix} \
             --DisableSanityCheck \
-            --SVDPrefix {params.db_prefix} \
+            --RefVCF {params.site_vcf} \
             --NumThread {threads} \
             --Reference {params.huref} \
+            --min-BQ 20 --min-MQ 20 --adjust-MQ 50 --max-depth 10000 \
             > {log} 2>&1
 
         cp {output.selfSM} {output.vb_tsv}
