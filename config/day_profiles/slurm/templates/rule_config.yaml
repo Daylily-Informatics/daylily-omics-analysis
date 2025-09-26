@@ -728,7 +728,13 @@ vanilla:
 
 verifybamid2_contam:
     env_yaml: "../envs/verifybamid2_v0.1.yaml"
-    threads: 4
+    threads: 8
+    ld_preload: " "
+    partition: "i192,i192mem,i128"
+
+gatk_contam:
+    env_yaml: "../envs/gatkcontam_v0.1.yaml"
+    threads: 24
     ld_preload: " "
     partition: "i192,i192mem,i128"
 

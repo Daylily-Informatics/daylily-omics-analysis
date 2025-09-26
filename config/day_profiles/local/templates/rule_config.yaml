@@ -722,6 +722,12 @@ verifybamid2_contam:
     ld_preload: "  "
     partition: "i8"
 
+gatk_contam:
+    env_yaml: "../envs/gatkcontam_v0.1.yaml"
+    threads: 4
+    ld_preload: "  "
+    partition: "i8"
+
 gen_samstats:
     threads: 8
     run_threadsa: 6
