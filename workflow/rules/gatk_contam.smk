@@ -44,8 +44,6 @@ rule gatk_contam:
 
         mkdir -p "$(dirname {output.pile_merged})"/logs {params.tmpdir};
 
-        # 1) Pileups per chromosome (parallel)
-        #    Note: GetPileupSummaries isn't multithreaded; we fan out by chrom.
         printf "%s\n" {params.chroms} | parallel -j {threads} --halt soon,fail=1 '
             gatk GetPileupSummaries \
               -I {input.cram} \
@@ -57,27 +55,24 @@ rule gatk_contam:
               > {log}.{{}} 2>&1
         ';
 
-        # 2) Merge per-chrom tables: keep header from the first, then append bodies
+
         first_tbl="$(ls -1 {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.*.pileups.table | head -n1)";
         if [[ -z "${{first_tbl:-}}" ]]; then
             echo "No pileup tables produced" >&2;
             exit 2;
         fi
         head -n 1 "${{first_tbl}}" > {output.pile_merged};
-        # normalize SAMPLE field to sample.alnr for consistency
+
         for f in {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.*.pileups.table; do
             tail -n +2 "${{f}}" \
               | awk -v s="{params.cluster_sample}.{params.alnr}" 'BEGIN{{FS=OFS="\t"}} NR>0{{ sub(/^SAMPLE=.*/,"SAMPLE=" s, $1); print }}' \
               >> {output.pile_merged};
         done
 
-        # 3) Calculate contamination
         gatk CalculateContamination \
           -I {output.pile_merged} \
           -O {output.contam} >> {log} 2>&1;
 
-        # 4) Emit VerifyBamID2-like selfSM & copies for compatibility
-        #    FREEMIX is col2 on the 2nd line of the .contam output
         contam_val="$(awk 'NR==2 {{print $2}}' {output.contam})";
 
         printf "SEQ_ID\tRG\tCHIP_ID\t#SNPS\t#READS\tAVG_DP\tFREEMIX\tFREELK1\tFREELK0\tFREE_RH\tFREE_RA\tCHIPMIX\tCHIPLK1\tCHIPLK0\tCHIP_RH\tCHIP_RA\tDPREF\tRDPHET\tRDPALT\n" > {output.selfSM};
@@ -87,7 +82,6 @@ rule gatk_contam:
         cp {output.selfSM} {output.mqc};
         touch {output.stamp};
 
-        # 5) Cleanup
         rm -f {params.tmpdir}/{wildcards.sample}.{wildcards.alnr}.*.pileups.table;
         """
 
