@@ -26,10 +26,9 @@ rule gen_samstats:
         run_threads_a=config["gen_samstats"]["run_threadsa"],
         run_threads_b=config["gen_samstats"]["run_threadsb"],
     shell:
-        "samtools stats -@  {params.run_threads_a} --reference {params.huref} {input.cram} > {output.stats} 2> {log} &;"
-        "samtools flagstats -@  {params.run_threads_b} {input.cram} > {output.flagstats}  2> {log}.2 &;"
-        "samtools idxstats -@  {params.run_threads_b} {input.cram} > {output.idxstats} 2> {log}.3 &;"
-        "wait;"
+        "samtools stats -@  {params.run_threads_a} --reference {params.huref} {input.cram} > {output.stats} 2> {log};"
+        "samtools flagstats -@  {params.run_threads_b} {input.cram} > {output.flagstats}  2> {log}.2;"
+        "samtools idxstats -@  {params.run_threads_b} {input.cram} > {output.idxstats} 2> {log}.3;"
         "touch {log}.waitdone;"
         "touch {output.sent};"
         
