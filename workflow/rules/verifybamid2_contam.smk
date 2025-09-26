@@ -32,6 +32,7 @@ rule verifybamid2_contam:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         db_prefix=config["supporting_files"]["files"]["verifybam2"]["dat_files"]["name"],
         site_vcf=config["supporting_files"]["files"]["verifybam2"]["oneM_snps_vcf"]["name"],
+	cluster_sample=ret_sample,
     shell:
         r"""
         set -euo pipefail
