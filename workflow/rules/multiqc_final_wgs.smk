@@ -71,6 +71,11 @@ rule aggregate_report_components:
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
         ),
+	expand(
+            MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",
+            sample=SSAMPS,
+            alnr=ALL_ALIGNERS,
+        ),
         expand(
             MDIR + "{sample}/align/{alnr}/alignqc/qmap/{sample}.{alnr}/{sample}.{alnr}.qmap.done",
             sample=SSAMPS,
