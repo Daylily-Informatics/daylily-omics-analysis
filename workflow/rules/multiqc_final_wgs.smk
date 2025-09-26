@@ -66,11 +66,11 @@ rule aggregate_report_components:
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
         ),
-        expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
-            sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-        ),
+        #expand(
+        #    MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
+        #    sample=SSAMPS,
+        #    alnr=ALL_ALIGNERS,
+        #),
 	expand(
             MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",
             sample=SSAMPS,
