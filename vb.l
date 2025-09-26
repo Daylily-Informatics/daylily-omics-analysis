@@ -46,3 +46,4 @@ Deprecated Options - These options still are available but not recommended
 
 NOTES:
 When --help was included in the argument. The program prints the help message but do not actually run
+a
