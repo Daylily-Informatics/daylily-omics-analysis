@@ -40,8 +40,11 @@ rule gatk_contam:
 
         mkdir -p "$(dirname {output.pile_merged})"/logs;
 
+        SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {input.ref_fa} --mode bam --threads {threads} 2>> {log})";
+        echo "gatk_contam SAFE_IN=${SAFE_IN}" >> {log};
+
         gatk GetPileupSummaries \
-          -I {input.cram} \
+          -I "${SAFE_IN}" \
           -V {input.sites_vcf} \
           -R {input.ref_fa} \
           -L {input.sites_vcf} \
