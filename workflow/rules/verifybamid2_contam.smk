@@ -44,11 +44,9 @@ rule verifybamid2_contam:
             {output.vb_tsv} {output.selfSM} {output.mqc} {output.contam}
 
         verifybamid2 \
-            --WithinAncestry \
             --BamFile {input.cram} \
             --Output {output.vb_prefix} \
             --DisableSanityCheck \
-            --SiteVCF {params.site_vcf} \
             --SVDPrefix {params.db_prefix} \
             --NumThread {threads} \
             --Reference {params.huref} \
