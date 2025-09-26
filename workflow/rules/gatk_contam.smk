@@ -7,8 +7,8 @@ rule gatk_contam:
     input:
         cram = MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         # common sites VCF (gnomAD/common SNPs) and its index
-        sites_vcf = config["supporting_files"]["files"]["gatk_contam"]["sites_vcf"]["name"],
-        sites_vcf_tbi = lambda wildcards: config["supporting_files"]["files"]["gatk_contam"]["sites_vcf"]["name"] + ".tbi",
+        sites_vcf = config["supporting_files"]["files"]["gatk"]["af_sites"],
+        sites_vcf_tbi = lambda wildcards: config["supporting_files"]["files"]["gatk"]["af_sites"] + ".tbi",
         # reference FASTA and its index/dict should already exist in your ref bundle
         ref_fa   = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai  = lambda w: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
