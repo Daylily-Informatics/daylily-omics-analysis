@@ -1,10 +1,12 @@
 ---
 
-# .... to create an analysis manifest for your data, see the script in bin/sample_sheet_2_analysis_manifest.sh
-# these are defaults auto selected if not specified.
-hg38_analysis_manifest: .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv
-hg38_broad_analysis_manifest: .test_data/data/0.01xwgs_HG002_hg38_broad.samplesheet.csv
-b37_analysis_manifest: .test_data/data/0.01xwgs_HG002_b37.samplesheet.csv
+# Default sample metadata tables. Override with --config samples_table=/path units_table=/path
+hg38_samples_table: .test_data/data/0.01xwgs_HG002_hg38.samples.tsv
+hg38_units_table: .test_data/data/0.01xwgs_HG002_hg38.units.tsv
+hg38_broad_samples_table: .test_data/data/0.01xwgs_HG002_hg38.samples.tsv
+hg38_broad_units_table: .test_data/data/0.01xwgs_HG002_hg38.units.tsv
+b37_samples_table: .test_data/data/0.01xwgs_HG002_b37.samples.tsv
+b37_units_table: .test_data/data/0.01xwgs_HG002_b37.units.tsv
 
 profile_name: slurm
 
@@ -725,8 +727,14 @@ vanilla:
     partition: "i192,i192mem"
 
 verifybamid2_contam:
-    env_yaml: "../envs/verifybamid2_v0.2.yaml"
-    threads: 4
+    env_yaml: "../envs/verifybamid2_v0.1.yaml"
+    threads: 8
+    ld_preload: " "
+    partition: "i192,i192mem,i128"
+
+gatk_contam:
+    env_yaml: "../envs/gatkcontam_v0.1.yaml"
+    threads: 24
     ld_preload: " "
     partition: "i192,i192mem,i128"
 

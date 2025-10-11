@@ -9,9 +9,9 @@
 
 def get_dppl_inputs(wildcards):
     ret_files = []
-    for samp in samples[samples['samp'] == wildcards.sx ]['sample_lane']:
-        ret_files.append( MDIR + f"{samp}/align/{wildcards.alnr}/{samp}.{wildcards.alnr}.sort.bam")
-        ret_files.append( MDIR + f"{samp}/align/{wildcards.alnr}/{samp}.{wildcards.alnr}.sort.bam.bai")
+    for samp in samples[samples['sample'] == wildcards.sx ]['sample_lane']:
+        ret_files.append( MDIR + f"{sample}/align/{wildcards.alnr}/{sample}.{wildcards.alnr}.sort.bam")
+        ret_files.append( MDIR + f"{sample}/align/{wildcards.alnr}/{sample}.{wildcards.alnr}.sort.bam.bai")
 
     return ret_files
 

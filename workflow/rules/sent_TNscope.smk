@@ -39,19 +39,47 @@ rule sent_TNscope:
         normal_sample=lambda wc: TN_PAIRS[wc.sample],
         numa=config['senttn']['numa'],
         cluster_sample=ret_sample,
+        pon_vcf=lambda wc: config['senttn'].get('pon_vcf', '') or '',
+        pon_index=lambda wc: config['senttn'].get('pon_index', '') or '',
+        germline_vcf=lambda wc: config['senttn'].get('germline_vcf', '')
+        if config['senttn'].get('germline_vcf', '')
+        else config['senttn'].get('germline_resource', '') or '',
+        cosmic_vcf=lambda wc: config['senttn'].get('cosmic_vcf', '') or '',
+        dbsnp_vcf=lambda wc: config['senttn'].get('dbsnp_vcf', '') or '',
+        annotation_bed=lambda wc: config['senttn'].get('annotation_bed', '') or '',
+        emit_conf=str(config['senttn'].get('emit_conf', '') or ''),
+        filter_conf=str(config['senttn'].get('filter_conf', '') or ''),
+        extra_args=config['senttn'].get('extra_args', '') or '',
     shell:
         r"""
         set -euo pipefail
         ulimit -n 65536 || true
 
+        mkdir -p "$(dirname {output.vcf})"
+        mkdir -p "$(dirname {log})"
+
         tchr=$(echo {params.cpre}{params.chrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
         tchr=${{tchr%:}}
         IFS=':' read -r tcontig tstart tend <<< "$tchr"
-        if [ -z "${{tend:-}}" ]; then
-            tstart=0
-            tend=$(awk -v c="$tcontig" '$1==c{{print $2; exit}}' {params.huref}.fai)
+
+        contig_len=$(awk -v c="$tcontig" '$1==c{{print $2; exit}}' "{params.huref}.fai")
+        if [ -z "${{contig_len}}" ]; then
+            echo "ERROR: Contig '$tcontig' not found in {params.huref}.fai" >> {log} 2>&1
+            exit 1
         fi
-        region="$tcontig:$tstart-$tend"
+
+        if [ -z "${{tend:-}}" ]; then
+            region="$tcontig"
+        else
+            : "${{tstart:=1}}"
+            if [ "$tstart" -lt 1 ]; then tstart=1; fi
+            if [ "$tend" -gt "$contig_len" ]; then tend="$contig_len"; fi
+            if [ "$tstart" -gt "$tend" ]; then
+                echo "ERROR: Empty/invalid interval after normalization: $tcontig:$tstart-$tend" >> {log} 2>&1
+                exit 1
+            fi
+            region="$tcontig:$tstart-$tend"
+        fi
 
         timestamp=$(date +%Y%m%d%H%M%S)_$(head -c 12 /dev/urandom | tr -dc 'a-zA-Z0-9')
         export TMPDIR=/dev/shm/senttn_tmp_$timestamp
@@ -70,6 +98,49 @@ rule sent_TNscope:
             exit 4
         fi
 
+        pon_arg=""
+        if [ -n "{params.pon_vcf}" ]; then
+            pon_arg="--pon {params.pon_vcf}"
+            if [ -n "{params.pon_index}" ]; then
+                pon_arg="$pon_arg --pon_index {params.pon_index}"
+            fi
+        fi
+
+        germline_arg=""
+        if [ -n "{params.germline_vcf}" ]; then
+            germline_arg="--germline_resource {params.germline_vcf}"
+        fi
+
+        cosmic_arg=""
+        if [ -n "{params.cosmic_vcf}" ]; then
+            cosmic_arg="--cosmic {params.cosmic_vcf}"
+        fi
+
+        dbsnp_arg=""
+        if [ -n "{params.dbsnp_vcf}" ]; then
+            dbsnp_arg="--dbsnp {params.dbsnp_vcf}"
+        fi
+
+        annotation_arg=""
+        if [ -n "{params.annotation_bed}" ]; then
+            annotation_arg="--annotation {params.annotation_bed}"
+        fi
+
+        emit_arg=""
+        if [ -n "{params.emit_conf}" ]; then
+            emit_arg="--emit_conf {params.emit_conf}"
+        fi
+
+        filter_arg=""
+        if [ -n "{params.filter_conf}" ]; then
+            filter_arg="--filter_conf {params.filter_conf}"
+        fi
+
+        extra_args="{params.extra_args}"
+        if [ "$extra_args" = "None" ]; then
+            extra_args=""
+        fi
+
         {params.numa} /fsx/data/cached_envs/sentieon-genomics-202503.01.rc1/bin/sentieon driver \
             --tumor_sample {params.tumor_sample} \
             --normal_sample {params.normal_sample} \
@@ -77,9 +148,19 @@ rule sent_TNscope:
             -r {params.huref} \
             -i {input.tumor_cram} \
             -i {input.normal_cram} \
-            --interval $region \
+            --interval "$region" \
             --algo TNscope \
+            $pon_arg \
+            $germline_arg \
+            $cosmic_arg \
+            $dbsnp_arg \
+            $annotation_arg \
+            $emit_arg \
+            $filter_arg \
+            $extra_args \
             {output.vcf} >> {log} 2>&1
+
+        touch {output.vcf}
         """
 
 

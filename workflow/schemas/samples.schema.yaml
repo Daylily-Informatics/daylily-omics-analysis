@@ -1,0 +1,73 @@
+---
+$schema: http://json-schema.org/draft-04/schema#
+
+description: Daylily sample metadata table (one row per biological sample).
+properties:
+    SampleID:
+        type: string
+    SampleSource:
+        type: string
+    SampleClass:
+        type: string
+    SampleUse:
+        type: string
+    biological_sex:
+        type: string
+    iddna_uid:
+        type: string
+    concordance_control_path:
+        type: string
+    is_positive_control:
+        type: string
+    is_negative_control:
+        type: string
+    sample_type:
+        type: string
+    merge_single:
+        type: string
+    tum_nrm_sampleid_match:
+        type: string
+    external_sample_id:
+        type: string
+    n_X:
+        type: string
+    n_Y:
+        type: string
+    truth_data_dir:
+        type: string
+    bwa_kmer:
+        type: string
+    deep_model:
+        type: string
+    ultima_cram:
+        type: string
+    ultima_cram_aligner:
+        type: string
+    ultima_cram_snv_caller:
+        type: string
+    ont_cram:
+        type: string
+    ont_cram_aligner:
+        type: string
+    ont_cram_snv_caller:
+        type: string
+    pb_bam:
+        type: string
+    pb_bam_aligner:
+        type: string
+    pb_bam_snv_caller:
+        type: string
+required:
+    - SampleID
+    - SampleSource
+    - SampleClass
+    - SampleUse
+    - biological_sex
+    - iddna_uid
+    - concordance_control_path
+    - is_positive_control
+    - is_negative_control
+    - sample_type
+    - merge_single
+    - tum_nrm_sampleid_match
+    - external_sample_id

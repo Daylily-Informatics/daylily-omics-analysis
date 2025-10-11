@@ -53,17 +53,18 @@ If `. dyinit` succeeds you should see a magenta `WORKFLOW SUCCESS` banner.  The 
 
 ## 4. Run a Local Smoke Test
 
-Use the 0.01× HG002 dataset to validate the environment before scheduling Slurm jobs.
+Use the 0.01× HG002 dataset to validate the environment before scheduling Slurm jobs. Daylily now expects `config/samples.tsv` and `config/units.tsv`; any remaining references to `analysis_manifest.csv` below refer to the legacy format and should be interpreted as the pair of sample/unit tables.
 
 ```bash
 # Local profile targets the head node directly
 dy-a local hg38
 
-# Stage the toy manifest
-cp .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv config/analysis_manifest.csv
+# Stage the toy sample/unit tables
+cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
-# Inspect the manifest if you are curious
-head -n 2 config/analysis_manifest.csv
+# Inspect the units table if you are curious
+head -n 2 config/units.tsv
 
 # Dry-run and then execute the workflow
 dy-r seqqc -j 1 -p -k -n
@@ -103,7 +104,8 @@ Seven 30× Illumina GIAB samples are staged in the Daylily reference bucket.  Th
 . dyinit
 dy-a slurm hg38
 
-cp .test_data/data/giab_30x_hg38_analysis_manifest.csv config/analysis_manifest.csv
+cp .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv config/samples.tsv
+cp .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv config/units.tsv
 
 # plan the run
 dy-r produce_snv_concordances -p -k -j 9 -n
@@ -120,7 +122,8 @@ ls results/day/hg38/other_reports/*giab*
 . dyinit
 dy-a slurm b37
 
-cp .test_data/data/giab_30x_b37_analysis_manifest.csv config/analysis_manifest.csv
+cp .test_data/data/giab_30x_b37_analysis_manifest.samples.tsv config/samples.tsv
+cp .test_data/data/giab_30x_b37_analysis_manifest.units.tsv config/units.tsv
 
 dy-r produce_snv_concordances -p -k -j 9 -n
 dy-r produce_snv_concordances -p -k -j 9

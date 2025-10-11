@@ -268,10 +268,10 @@ rule bcl2fastq_run:  # TARGET : Target to run BCL2FQ
         config["multiqc"]["bcl2fq"]["env_yaml"]
     shell:
         """epocsec=$(date +'%s');
-        cmd=$( echo "at2mgsamp_sheet.py {params.bcl_outdir} {params.ru} {params.ex} merge $DAY_ROOT/bcl2fq_links_$epocsec/ $DAY_ROOT/config/analysis_manifest.csv");
+        cmd=$( echo "at2mgsamp_sheet.py {params.bcl_outdir} {params.ru} {params.ex} merge $DAY_ROOT/bcl2fq_links_$epocsec/ $DAY_ROOT/config/units.tsv");
         echo "$cmd";
         $cmd;
-        colr '  ANALYSIS SAMPLESHEET READY IN config/analysis_manifest.csv' 'yellow' 'green' 'b' 2>&1;
+        colr '  ANALYSIS UNIT TABLE READY IN config/units.tsv' 'yellow' 'green' 'b' 2>&1;
         touch {output};
         {latency_wait};
         """

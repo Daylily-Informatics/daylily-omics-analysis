@@ -7,9 +7,8 @@
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "Error: This script must be sourced, not executed directly."
     echo "Usage: source $0 [--project <project_name>] [--skip-project-check]"
-    #return 3
+    return 3
 fi
-
 
 
 # Set default contact email if not already set
@@ -21,13 +20,12 @@ if [[ -f "/etc/parallelcluster/cfnconfig" ]]; then
     region="$cfn_region"
 else
     echo "Error: AWS ParallelCluster config not found at /etc/parallelcluster/cfnconfig"
-    #return 3
 fi
 
 # Check if region is set
 if [[ -z "$region" ]]; then
     echo "Error: cfn_region is not set or is empty."
-    #return 3
+
 fi
 
 # Function to display usage
@@ -44,7 +42,7 @@ usage() {
     fi
     echo ""
     echo "Valid regions: Use a valid AWS region (e.g., us-east-1, us-west-2)."
-    #return 3
+    return 3
 }
 
 # Function to check if a command exists
@@ -55,7 +53,7 @@ command_exists() {
 # Ensure AWS CLI is installed
 if ! command_exists aws; then
     echo "Error: AWS CLI is not installed. Please install it first."
-    #return 3
+    return 3
 fi
 
 # Parse input arguments
@@ -93,7 +91,7 @@ if [[ "$DEACTIVATE" == true ]]; then
     echo "Deactivating existing environments..."
     source bin/day_deactivate &> /dev/null || {
         echo "Error during environment deactivation."
-        #return 4
+        return 4
     }
     echo "Environment deactivated successfully."
 fi
@@ -106,7 +104,7 @@ if [[ -z "$PROJECT" ]]; then
         echo "Notice: --project not set. Using default project name: $PROJECT"
     else
         echo "Error: Cluster config file not found at /opt/parallelcluster/shared/cluster-config.yaml"
-        #return 3
+
     fi
 fi
 
@@ -123,7 +121,7 @@ export DAY_AWS_REGION="$region"
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 if [[ -z "$AWS_ACCOUNT_ID" ]]; then
     echo "Error: Unable to retrieve AWS Account ID."
-    #return 3
+    return 3
 fi
 
 # Skip project check if the flag is provided
@@ -134,7 +132,7 @@ if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
     # Ensure the budget file exists
     if [[ ! -f "$budget_file" ]]; then
         echo "Error: Budget file '$budget_file' not found."
-        #return 3
+        return 3
     fi
 
     # Validate the project for the current user
@@ -157,7 +155,7 @@ create_budget() {
     echo "bash bin/create_budget.sh --help"
     echo "Then append the new project/budget name to /fsx/data/budget_tags/pcluster-project-budget-tags.tsv."
     echo "Note: /fsx/data is read-only; update the file via S3."
-    #return 3
+
 }
 
 # Query AWS budgets
@@ -165,7 +163,7 @@ BUDGETS=$(aws budgets describe-budgets --account-id "$AWS_ACCOUNT_ID" --region "
 
 if [[ -z "$BUDGETS" && "$SKIP_PROJECT_CHECK" != "true" ]]; then
     echo "Error: Unable to retrieve any budgets from AWS. Please check your AWS permissions or configuration."
-    #return 3
+
 fi
 
 # Check if the specified project budget exists
@@ -181,7 +179,7 @@ if [[ -z "$MATCHING_BUDGET" && "$SKIP_PROJECT_CHECK" != "true" ]]; then
         create_budget
     else
         echo "Exiting without creating a budget."
-        #return 3
+        return 3
     fi
 fi
 
@@ -191,7 +189,7 @@ export USED_BUDGET=$(echo "$MATCHING_BUDGET" | jq -r ".CalculatedSpend.ActualSpe
 
 if [[ (-z "$TOTAL_BUDGET" || -z "$USED_BUDGET") && "$SKIP_PROJECT_CHECK" != "true" ]]; then
     echo "Error: Unable to calculate budget details for project '$PROJECT'."
-    #return 3
+    return 3
 fi
 
 # Calculate usage percentage
@@ -220,10 +218,10 @@ export DAY_ROOT="$PWD"
 ulimit -n 16384
 
 # Set Sentieon variables
-export SENTIEON_TMPDIR='/fsx/scratch/'
-export SENTIEON_LICENSE='/fsx/data/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
-export SENTIEON_INSTALL_DIR='/fsx/data/cached_envs/sentieon-genomics-202308.03'
-export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
+##export SENTIEON_TMPDIR='/fsx/scratch/'
+##export SENTIEON_LICENSE='/fsx/data/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
+##export SENTIEON_INSTALL_DIR='/fsx/data/cached_envs/sentieon-genomics-202308.03'
+##export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
 
 # Backup original PATH and PS1 if not already set
 export ORIG_PATH="${ORIG_PATH:-$PATH}"
@@ -278,7 +276,7 @@ if [[ "$1" =~ ^(-h|--help|help)$ ]]; then
     else
         echo "Help file not found at docs/markdown/cli_help_brief.md"
     fi
-    #return 0
+    return 0
 fi
 
 # Define 'sq' alias for squeue with specific output format
@@ -299,9 +297,9 @@ echo "Day CLI initialized for project '$PROJECT' in region '$region'."
 echo -e "The Daylily CLI is now available."
 echo -e "Available commands (tab completion is enabled for all):"
 echo  " "
-echo -e "\t(day-activate / dy-a) [slurm|local] ([hg38|b37])- Activate a Slurm or local environment."
+echo -e "\t(day-activate / dy-a) [slurm|local] ([hg38|hg38_broad|b37])- Activate a Slurm or local environment."
 echo -e "\t                           "
-echo -e "\t{day-set-genome-build / dy-g) [b37|hg38] - Set the genome build for the current environment."
+echo -e "\t{day-set-genome-build / dy-g) [b37|hg38|hg38_broad] - Set the genome build for the current environment."
 echo -e "\t                           "
 echo -e "\t(day-run / dy-r)          - Run a command in the current environment."
 echo -e "\t                           <tab> for exposed targets, -<tab> for all command line flags."
@@ -315,11 +313,15 @@ echo -e "\t                           "
 echo -e "\t                           "
 echo -e "\t                           "
 echo -e "\t(example): ACTIVATE AN ANALYSIS ENV\n"
-echo -e "\t\tGENOME_BUILD=hg38\n"
-echo -e "\t\tdy-a slurm \$GENOME_BUILD\n"
+echo -e "\n"
+echo -e "\t\tdy-a slurm hg38 # or hg38_broad or b37\n"
 
 echo -e "\t(example): RUN ALIGNMENT\n"
-echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.samplesheet.csv congfig/analysis_manifest.csv\n"
-echo -e "\t\tdy-r produce_snv_concordances -p -k -j 20 --config aligners=[\"bwa2a\"] dedupers=[\"dppl\"] genome_build=\"\$GENOME_BUILD\" snv_callers=[\"deep\"] -n # remove -n to quit dry-run\n"
+echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv\n"
+echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv\n"
+
+echo -e "\t\texport DAY_CONTAINERIZED=true # true to use pre-built container of all analysis envs. false will create each conda env as needed\n"
+
+echo -e "\t\tdy-r produce_snv_concordances -p -k -j 2 --config aligners=[\"bwa2a\"] dedupers=[\"dppl\"]  snv_callers=[\"deep\"] -n # remove -n to quit dry-run\n"
 
 return 0

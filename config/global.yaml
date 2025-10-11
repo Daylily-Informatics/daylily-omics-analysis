@@ -17,7 +17,8 @@ logs:
 
 
 # example test data
-remote_analysis_manifest: ".test_data/data/0.01xwgs_HG002.samplesheet.csv"
+remote_samples_table: ".test_data/data/0.01x_3_wgs_HG002_hg38.samples.tsv"
+remote_units_table: ".test_data/data/0.01x_3_wgs_HG002_hg38.units.tsv"
 
 # STILL WORKING?
 sentieon_liscence_server: "localhost:8990"
