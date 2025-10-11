@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="daylily-omics-analysis",
-    version="0.7.336",
+    version="0.7.343",
     packages=find_packages(),
     install_requires=[
         # Add dependencies here
