@@ -396,7 +396,18 @@ def _build_analysis_unit(row):
     return "-".join(parts)
 
 
-metadata["unit_analysis_uid"] = metadata.apply(_build_analysis_unit, axis=1)
+if "analysis_unit_uid" in metadata.columns:
+    metadata["analysis_unit_uid"] = metadata["analysis_unit_uid"].apply(
+        _clean_component
+    )
+    missing_uids = metadata["analysis_unit_uid"] == ""
+    if missing_uids.any():
+        metadata.loc[missing_uids, "analysis_unit_uid"] = metadata[missing_uids].apply(
+            _build_analysis_unit, axis=1
+        )
+    metadata["unit_analysis_uid"] = metadata["analysis_unit_uid"]
+else:
+    metadata["unit_analysis_uid"] = metadata.apply(_build_analysis_unit, axis=1)
 
 if metadata["unit_analysis_uid"].duplicated().any():
     dupes = metadata[metadata["unit_analysis_uid"].duplicated()]["unit_analysis_uid"].tolist()
