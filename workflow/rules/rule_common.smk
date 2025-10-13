@@ -436,8 +436,8 @@ metadata["lib_prep"] = metadata.get("LIBPREP", "").replace("", "na")
 metadata["instrument"] = metadata.get("SEQ_PLATFORM", "").replace("", "na")
 
 if "MERGE_SINGLE" not in metadata.columns:
-    metadata["MERGE_SINGLE"] = "merge"
-metadata.loc[metadata["MERGE_SINGLE"].isin(["", None]), "MERGE_SINGLE"] = "merge"
+    metadata["MERGE_SINGLE"] = "single"
+metadata.loc[metadata["MERGE_SINGLE"].isin(["", None]), "MERGE_SINGLE"] = "single"
 
 metadata["sample"] = metadata["unit_analysis_uid"]
 metadata["sample_lane"] = metadata["unit_analysis_uid"]
@@ -471,7 +471,7 @@ for col, default in {
     "IS_POSITIVE_CONTROL": "false",
     "IS_NEGATIVE_CONTROL": "false",
     "SAMPLE_TYPE": "na",
-    "MERGE_SINGLE": "merge",
+    "MERGE_SINGLE": "single",
     "EXTERNAL_SAMPLE_ID": "na",
     "TRUTH_DATA_DIR": "na",
     "N_X": "na",
@@ -594,7 +594,7 @@ for _, row in samples.iterrows():
     ru_id         = str(row.get("RU", ""))
     ex_id         = str(row.get("EX", ""))
     lane_id       = str(row.get("LANE", ""))
-    merge_single  = str(row.get("MERGE_SINGLE", "merge")).strip().lower()
+    merge_single  = str(row.get("MERGE_SINGLE", "single")).strip().lower()
 
     # Uniqueness / unsupported mode checks (kept from your original intent)
     if samp_id in sample_info and merge_single == "single":
@@ -603,10 +603,10 @@ for _, row in samples.iterrows():
             f"This should only occur if 'merge' has been specified. merge_single is '{merge_single}'."
         )
 
-    if merge_single == "single":
+    if merge_single not in {"single", "merge"}:
         raise WorkflowError(
-            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': per-lane ('single') mode is currently unsupported. "
-            f"Use merged behavior or construct per-lane manifests explicitly."
+            f"\n\nMANIFEST ERROR '{sample}, {sample_lane}': MERGE_SINGLE must be 'single' or 'merge',"
+            f" but found '{merge_single}'."
         )
 
     # Legacy constraint about characters (kept; now based on named cols)
