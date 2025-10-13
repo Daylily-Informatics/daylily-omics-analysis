@@ -307,7 +307,7 @@ echo -e "\t                           "
 echo -e "\t(day-deactivate / dy-d)   - Deactivate the current environment."
 echo -e "\t                           Use 'dy-d reset' to hard reset the environment."
 echo -e "\t                           "
-echo -e "\t(day-build / dy-b)        - Build a new environment (run once per head node user)."
+echo -e "\t(day-build BUILD / dy-b BUILD)        - Build a new environment (run once per head node user)."
 
 echo -e "\t                           "
 echo -e "\t                           "
