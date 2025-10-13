@@ -279,7 +279,7 @@ def load_tsv_as_str(path: str) -> pd.DataFrame:
     )
     return df
 
-def normalize_boolish(df: pd.DataFrame, cols=("is_positive_control", "is_negative_control")) -> pd.DataFrame:
+def normalize_boolish(df: pd.DataFrame, cols=("IS_POSITIVE_CONTROL", "IS_NEGATIVE_CONTROL")) -> pd.DataFrame:
     for c in cols:
         if c in df.columns:
             df[c] = (
@@ -292,8 +292,13 @@ def normalize_boolish(df: pd.DataFrame, cols=("is_positive_control", "is_negativ
             df[c] = df[c].where(df[c].isin({"true", "false"}), "false")
     return df
 
-sample_records = normalize_boolish(load_tsv_as_str(samples_table_path))
+sample_records = load_tsv_as_str(samples_table_path)
 unit_records   = load_tsv_as_str(units_table_path)
+
+sample_records.columns = [c.upper() for c in sample_records.columns]
+unit_records.columns   = [c.upper() for c in unit_records.columns]
+
+sample_records = normalize_boolish(sample_records)
 
 if sample_records.empty:
     raise WorkflowError("The samples table is empty. Please provide at least one sample entry.")
@@ -305,13 +310,13 @@ validate(sample_records, schema="../schemas/samples.schema.yaml")
 validate(unit_records, schema="../schemas/units.schema.yaml")
 
 required_unit_columns = {
-    "RunID",
-    "SampleID",
-    "ExperimentID",
-    "LaneID",
-    "BarcodeID",
-    "LibPrep",
-    "SeqPlatform",
+    "RUNID",
+    "SAMPLEID",
+    "EXPERIMENTID",
+    "LANEID",
+    "BARCODEID",
+    "LIBPREP",
+    "SEQ_PLATFORM",
 }
 missing_unit_columns = required_unit_columns - set(unit_records.columns)
 if missing_unit_columns:
@@ -320,31 +325,32 @@ if missing_unit_columns:
     )
 
 for opt_col in [
-    "ILMN_R1_path",
-    "ILMN_R2_path",
-    "PacBio_R1_path",
-    "PacBio_R2_path",
-    "ONT_R1_path",
-    "ONT_R2_path",
-    "UG_R1_path",
-    "UG_R2_path",
-    "subsample_pct",
+    "ILMN_R1_PATH",
+    "ILMN_R2_PATH",
+    "PACBIO_R1_PATH",
+    "PACBIO_R2_PATH",
+    "ONT_R1_PATH",
+    "ONT_R2_PATH",
+    "UG_R1_PATH",
+    "UG_R2_PATH",
+    "SUBSAMPLE_PCT",
+    "SEQ_VENDOR",
 ]:
     if opt_col not in unit_records.columns:
         unit_records[opt_col] = ""
 
-if "SampleID" not in sample_records.columns:
-    raise WorkflowError("The samples table must contain a 'SampleID' column.")
+if "SAMPLEID" not in sample_records.columns:
+    raise WorkflowError("The samples table must contain a 'SAMPLEID' column.")
 
 metadata = unit_records.merge(
     sample_records,
-    on="SampleID",
+    on="SAMPLEID",
     how="left",
     validate="many_to_one",
 )
 
-if metadata["SampleSource"].isna().any():
-    missing_samples = metadata[metadata["SampleSource"].isna()]["SampleID"].unique()
+if metadata["SAMPLESOURCE"].isna().any():
+    missing_samples = metadata[metadata["SAMPLESOURCE"].isna()]["SAMPLEID"].unique()
     raise WorkflowError(
         "The following SampleID entries are missing from samples.tsv: "
         + ", ".join(sorted(missing_samples))
@@ -359,17 +365,17 @@ def _clean_component(value):
 
 def _build_analysis_unit(row):
     parts = [
-        _clean_component(row["RunID"]),
-        _clean_component(row["SampleID"]),
-        _clean_component(row["ExperimentID"]),
-	_clean_component(row["BarcodeID"]),
-        _clean_component(row["LaneID"]),
+        _clean_component(row["RUNID"]),
+        _clean_component(row["SAMPLEID"]),
+        _clean_component(row["EXPERIMENTID"]),
+        _clean_component(row["BARCODEID"]),
+        _clean_component(row["LANEID"]),
     ]
 
     parts = [p for p in parts if p]
     if not parts:
         raise WorkflowError(
-            "Unable to construct analysis unit identifier; missing RunID/SampleID/ExperimentID/BarcodeID/LaneID."
+            "Unable to construct analysis unit identifier; missing RUNID/SAMPLEID/EXPERIMENTID/BARCODEID/LANEID."
         )
     return "_".join(parts)
 
@@ -384,10 +390,10 @@ if metadata["analysis_unit_uid"].duplicated().any():
 
 def _select_reads(row):
     for r1, r2 in [
-        ("ILMN_R1_path", "ILMN_R2_path"),
-        ("PacBio_R1_path", "PacBio_R2_path"),
-        ("ONT_R1_path", "ONT_R2_path"),
-        ("UG_R1_path", "UG_R2_path"),
+        ("ILMN_R1_PATH", "ILMN_R2_PATH"),
+        ("PACBIO_R1_PATH", "PACBIO_R2_PATH"),
+        ("ONT_R1_PATH", "ONT_R2_PATH"),
+        ("UG_R1_PATH", "UG_R2_PATH"),
     ]:
         r1_path = _clean_component(row.get(r1, ""))
         r2_path = _clean_component(row.get(r2, ""))
@@ -399,19 +405,19 @@ def _select_reads(row):
 
 
 metadata["r1_path"], metadata["r2_path"] = zip(*metadata.apply(_select_reads, axis=1))
-metadata["lib_prep"] = metadata.get("LibPrep", "").replace("", "na")
-metadata["instrument"] = metadata.get("SeqPlatform", "").replace("", "na")
+metadata["lib_prep"] = metadata.get("LIBPREP", "").replace("", "na")
+metadata["instrument"] = metadata.get("SEQ_PLATFORM", "").replace("", "na")
 
-if "merge_single" not in metadata.columns:
-    metadata["merge_single"] = "merge"
-metadata.loc[metadata["merge_single"].isin(["", None]), "merge_single"] = "merge"
+if "MERGE_SINGLE" not in metadata.columns:
+    metadata["MERGE_SINGLE"] = "merge"
+metadata.loc[metadata["MERGE_SINGLE"].isin(["", None]), "MERGE_SINGLE"] = "merge"
 
 metadata["sample"] = metadata["analysis_unit_uid"]
 metadata["sample_lane"] = metadata["analysis_unit_uid"]
-metadata["RU"] = metadata["RunID"]
-metadata["EX"] = metadata["SampleID"]
-metadata["SQ"] = metadata["ExperimentID"]
-metadata["LANE"] = metadata["LaneID"]
+metadata["RU"] = metadata["RUNID"]
+metadata["EX"] = metadata["SAMPLEID"]
+metadata["SQ"] = metadata["EXPERIMENTID"]
+metadata["LANE"] = metadata["LANEID"]
 
 def _safe_int(x):
     try:
@@ -422,41 +428,56 @@ def _safe_int(x):
 
 metadata["LANE"] = metadata["LANE"].apply(_safe_int)
 
-if "tum_nrm_sampleid_match" not in metadata.columns:
-    metadata["tum_nrm_sampleid_match"] = "na"
+if "TUM_NRM_SAMPLEID_MATCH" not in metadata.columns:
+    metadata["TUM_NRM_SAMPLEID_MATCH"] = "na"
 metadata.loc[
-    metadata["tum_nrm_sampleid_match"].isin(["", None, "None"]),
-    "tum_nrm_sampleid_match",
+    metadata["TUM_NRM_SAMPLEID_MATCH"].isin(["", None, "None"]),
+    "TUM_NRM_SAMPLEID_MATCH",
 ] = "na"
 
 samples = metadata.set_index(["sample", "sample_lane"], drop=False)
 
 for col, default in {
-    "biological_sex": "na",
-    "iddna_uid": "na",
-    "concordance_control_path": "na",
-    "is_positive_control": "false",
-    "is_negative_control": "false",
-    "sample_type": "na",
-    "merge_single": "merge",
-    "external_sample_id": "na",
+    "BIOLOGICAL_SEX": "na",
+    "IDDNA_UID": "na",
+    "CONCORDANCE_CONTROL_PATH": "na",
+    "IS_POSITIVE_CONTROL": "false",
+    "IS_NEGATIVE_CONTROL": "false",
+    "SAMPLE_TYPE": "na",
+    "MERGE_SINGLE": "merge",
+    "EXTERNAL_SAMPLE_ID": "na",
+    "TRUTH_DATA_DIR": "na",
+    "N_X": "na",
+    "N_Y": "na",
+    "ULTIMA_CRAM": "na",
+    "ULTIMA_CRAM_ALIGNER": "na",
+    "ULTIMA_CRAM_SNV_CALLER": "na",
+    "ONT_CRAM": "na",
+    "ONT_CRAM_ALIGNER": "na",
+    "ONT_CRAM_SNV_CALLER": "na",
+    "ULTIMA_SUBSAMPLE_PCT": "na",
+    "ONT_SUBSAMPLE_PCT": "na",
+    "PB_BAM": "na",
+    "PB_BAM_ALIGNER": "na",
+    "PB_BAM_SNV_CALLER": "na",
+    "DEEP_MODEL": "WGS",
     "instrument": "na",
     "lib_prep": "na",
-    "bwa_kmer": str(config.get("bwa_mem2a_aln_sort", {}).get("k", "19")),
+    "BWA_KMER": str(config.get("bwa_mem2a_aln_sort", {}).get("k", "19")),
 }.items():
     if col not in samples.columns:
         samples[col] = default
     samples[col] = samples[col].replace({None: default, "": default})
 
 # Ensure tum_nrm_sampleid_match exists and treat missing values as 'na'
-if "tum_nrm_sampleid_match" in samples.columns:
-    samples["tum_nrm_sampleid_match"] = samples["tum_nrm_sampleid_match"].apply(
+if "TUM_NRM_SAMPLEID_MATCH" in samples.columns:
+    samples["TUM_NRM_SAMPLEID_MATCH"] = samples["TUM_NRM_SAMPLEID_MATCH"].apply(
         lambda x: "na"
         if pd.isna(x) or str(x).strip().lower() in {"", "na"}
         else str(x).strip()
     )
 else:
-    samples["tum_nrm_sampleid_match"] = "na"
+    samples["TUM_NRM_SAMPLEID_MATCH"] = "na"
 
 ## validate the analysis_manifest.csv with the appropriate yaml schema
 ##validate(samples, schema="../schemas/analysis_manifest.schema.yaml")
@@ -546,7 +567,7 @@ for _, row in samples.iterrows():
     ru_id         = str(row.get("RU", ""))
     ex_id         = str(row.get("EX", ""))
     lane_id       = str(row.get("LANE", ""))
-    merge_single  = str(row.get("merge_single", "merge")).strip().lower()
+    merge_single  = str(row.get("MERGE_SINGLE", "merge")).strip().lower()
 
     # Uniqueness / unsupported mode checks (kept from your original intent)
     if samp_id in sample_info and merge_single == "single":
@@ -585,7 +606,7 @@ for _, row in samples.iterrows():
 
     # Copy through selected fields with normalization where you did it before
     # biological_sex normalization
-    bsex = str(row.get("biological_sex", "na")).strip().lower()
+    bsex = str(row.get("BIOLOGICAL_SEX", "na")).strip().lower()
     if bsex.startswith("m"):
         bsex = "male"
     elif bsex.startswith("f"):
@@ -595,17 +616,27 @@ for _, row in samples.iterrows():
     sample_info[samp_id]["biological_sex"] = bsex
 
     # Simple passthroughs
-    for k in [
-        "ultima_cram", "ont_cram",
-        "ultima_cram_snv_caller", "ont_cram_snv_caller",
-        "sample_type", "is_positive_control", "is_negative_control",
-        "tum_nrm_sampleid_match", "external_sample_id",
-        "bwa_kmer", "instrument", "lib_prep",
+    for col, key in [
+        ("ULTIMA_CRAM", "ultima_cram"),
+        ("ONT_CRAM", "ont_cram"),
+        ("ULTIMA_CRAM_SNV_CALLER", "ultima_cram_snv_caller"),
+        ("ONT_CRAM_SNV_CALLER", "ont_cram_snv_caller"),
+        ("SAMPLE_TYPE", "sample_type"),
+        ("IS_POSITIVE_CONTROL", "is_positive_control"),
+        ("IS_NEGATIVE_CONTROL", "is_negative_control"),
+        ("TUM_NRM_SAMPLEID_MATCH", "tum_nrm_sampleid_match"),
+        ("EXTERNAL_SAMPLE_ID", "external_sample_id"),
+        ("BWA_KMER", "bwa_kmer"),
     ]:
-        sample_info[samp_id][k] = row.get(k, "")
+        sample_info[samp_id][key] = row.get(col, "")
+    for derived_col in [
+        ("instrument", "instrument"),
+        ("lib_prep", "lib_prep"),
+    ]:
+        sample_info[samp_id][derived_col[1]] = row.get(derived_col[0], "")
 
     # iddna_uid split (legacy behavior)
-    iddna_uid_val = row.get("iddna_uid", "")
+    iddna_uid_val = row.get("IDDNA_UID", "")
     if iddna_uid_val not in (None, "", "na", "NA", "None"):
         sample_info[samp_id]["iddna_uid"] = str(iddna_uid_val).split(":")
     else:
@@ -615,7 +646,7 @@ for _, row in samples.iterrows():
     deep_models_ok = {
         "WGS", "WES", "PACBIO", "HYBRID_PACBIO_ILLUMINA", "ONT_R104", "ONT_R941"
     }
-    dm = str(row.get("deep_model", "") or "").strip().upper()
+    dm = str(row.get("DEEP_MODEL", "") or "").strip().upper()
     if dm not in deep_models_ok:
         print(
             f"\nWARNING::: deep_model '{dm or 'NA'}' not in {sorted(deep_models_ok)}. Using 'WGS'.\n",
@@ -625,13 +656,13 @@ for _, row in samples.iterrows():
     sample_info[samp_id]["deep_model"] = dm
 
     # Concordance control path
-    cpath = row.get("concordance_control_path", "")
+    cpath = row.get("CONCORDANCE_CONTROL_PATH", "")
     sample_info[samp_id]["concordance_control_path"] = cpath
     if cpath not in ["na", "NA", "", None, "None"]:
         CONCORDANCE_SAMPLES[samp_id] = cpath
 
     # Track CRAM aligners (non-empty values only)
-    for aligner_col in ("ultima_cram_aligner", "ont_cram_aligner", "pb_bam_aligner"):
+    for aligner_col in ("ULTIMA_CRAM_ALIGNER", "ONT_CRAM_ALIGNER", "PB_BAM_ALIGNER"):
         aval = str(row.get(aligner_col, "") or "").strip()
         if aval and aval.lower() not in {"na", "none", "hyb"}:
             CRAM_ALIGNERS.append(aval)
@@ -812,7 +843,7 @@ for sample in samples["sample"].unique():
 
 # Tumor-normal pairs
 TN_DICT = {}
-for match_id, grp in samples.groupby("tum_nrm_sampleid_match"):
+for match_id, grp in samples.groupby("TUM_NRM_SAMPLEID_MATCH"):
     _match = "" if pd.isna(match_id) else str(match_id).strip().lower()
     if _match in {"", "na"}:
         # skip unpaired entries
@@ -821,8 +852,8 @@ for match_id, grp in samples.groupby("tum_nrm_sampleid_match"):
         raise WorkflowError(
             f"tum_nrm_sampleid_match '{match_id}' has {len(grp)} entries; expected exactly 2"
         )
-    tumors = grp[grp["sample_type"].str.lower() == "tumor"]["sample"].tolist()
-    normals = grp[grp["sample_type"].str.lower() == "normal"]["sample"].tolist()
+    tumors = grp[grp["SAMPLE_TYPE"].str.lower() == "tumor"]["sample"].tolist()
+    normals = grp[grp["SAMPLE_TYPE"].str.lower() == "normal"]["sample"].tolist()
     if len(tumors) != 1 or len(normals) != 1:
         raise WorkflowError(
             f"tum_nrm_sampleid_match '{match_id}' requires one tumor and one normal but found {len(tumors)} tumor(s) and {len(normals)} normal(s)"
@@ -933,20 +964,20 @@ def ret_mod_chrm(ret_str):
 
 
 ## Method to wrap the bwa fastq reader with seqtk to subsample
-# if a subsample_pct column is present in the sample sheet, return the back end of the process substitution
+# if a SUBSAMPLE_PCT column is present in the sample sheet, return the back end of the process substitution
 # which will do the subsampling
 def get_subsample_head_tail(sample_id):
     ss_head = ss_tail = ""
     row = samples[samples["sample"] == sample_id]
-    ss_pct = (first_val(row, "subsample_pct") or "").strip()
+    ss_pct = (first_val(row, "SUBSAMPLE_PCT") or "").strip()
     if ss_pct in {"", "na", "None", "0", "0.0", 0, 100, "100", "100.0", 100.0}:
         return ("", "")
     try:
         f = float(ss_pct)
     except Exception as e:
-        raise WorkflowError(f"subsample_pct must be a float in (0.0,1.0]; got '{ss_pct}'") from e
+        raise WorkflowError(f"SUBSAMPLE_PCT must be a float in (0.0,1.0]; got '{ss_pct}'") from e
     if not (0.0 < f <= 1.0):
-        raise WorkflowError(f"subsample_pct must be in (0.0,1.0]; got {f}")
+        raise WorkflowError(f"SUBSAMPLE_PCT must be in (0.0,1.0]; got {f}")
     return (f" <( seqkit sample -j 16 --line-width=0 --quiet --rand-seed=7 --seq-type=dna --proportion={f} ",
             " ) ")
 
@@ -970,7 +1001,7 @@ def get_diploid_bed_arg(wildcards):
 
     diploid_bed = ""
     try:
-        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["biological_sex"][0].lower()
+        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
 
         if "male" == sample_bsex:
             diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
@@ -992,7 +1023,7 @@ def get_haploid_bed_arg(wildcards):
     haploid_bed = " "
 
     try:
-        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["biological_sex"][0].lower()
+        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
 
         if "male" == sample_bsex:
             haploid_bed = f' --haploid_bed {config["supporting_files"]["files"]["huref"]["male_haploid"]["name"]} '
@@ -1143,7 +1174,7 @@ def get_deep_model(wildcards):
     deep_model="WGS"
 
     try:
-        deep_model = samples[samples["analysis_unit_uid"] == wildcards.sample]["deep_model"][0]
+        deep_model = samples[samples["analysis_unit_uid"] == wildcards.sample]["DEEP_MODEL"][0]
     except Exception as e:
         print(f"'deep_model' key not found" + str(e), file=sys.stderr)
     

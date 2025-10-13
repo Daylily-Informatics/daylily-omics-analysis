@@ -3,71 +3,71 @@ $schema: http://json-schema.org/draft-04/schema#
 
 description: Daylily sample metadata table (one row per biological sample).
 properties:
-    SampleID:
+    SAMPLEID:
         type: string
-    SampleSource:
+    SAMPLESOURCE:
         type: string
-    SampleClass:
+    SAMPLECLASS:
         type: string
-    SampleUse:
+    SAMPLEUSE:
         type: string
-    biological_sex:
+    BIOLOGICAL_SEX:
         type: string
-    iddna_uid:
+    IDDNA_UID:
         type: string
-    concordance_control_path:
+    CONCORDANCE_CONTROL_PATH:
         type: string
-    is_positive_control:
+    IS_POSITIVE_CONTROL:
         type: string
-    is_negative_control:
+    IS_NEGATIVE_CONTROL:
         type: string
-    sample_type:
+    SAMPLE_TYPE:
         type: string
-    merge_single:
+    MERGE_SINGLE:
         type: string
-    tum_nrm_sampleid_match:
+    TUM_NRM_SAMPLEID_MATCH:
         type: string
-    external_sample_id:
+    EXTERNAL_SAMPLE_ID:
         type: string
-    n_X:
+    N_X:
         type: string
-    n_Y:
+    N_Y:
         type: string
-    truth_data_dir:
+    TRUTH_DATA_DIR:
         type: string
-    bwa_kmer:
+    BWA_KMER:
         type: string
-    deep_model:
+    DEEP_MODEL:
         type: string
-    ultima_cram:
+    ULTIMA_CRAM:
         type: string
-    ultima_cram_aligner:
+    ULTIMA_CRAM_ALIGNER:
         type: string
-    ultima_cram_snv_caller:
+    ULTIMA_CRAM_SNV_CALLER:
         type: string
-    ont_cram:
+    ONT_CRAM:
         type: string
-    ont_cram_aligner:
+    ONT_CRAM_ALIGNER:
         type: string
-    ont_cram_snv_caller:
+    ONT_CRAM_SNV_CALLER:
         type: string
-    pb_bam:
+    PB_BAM:
         type: string
-    pb_bam_aligner:
+    PB_BAM_ALIGNER:
         type: string
-    pb_bam_snv_caller:
+    PB_BAM_SNV_CALLER:
         type: string
 required:
-    - SampleID
-    - SampleSource
-    - SampleClass
-    - SampleUse
-    - biological_sex
-    - iddna_uid
-    - concordance_control_path
-    - is_positive_control
-    - is_negative_control
-    - sample_type
-    - merge_single
-    - tum_nrm_sampleid_match
-    - external_sample_id
+    - SAMPLEID
+    - SAMPLESOURCE
+    - SAMPLECLASS
+    - SAMPLEUSE
+    - BIOLOGICAL_SEX
+    - IDDNA_UID
+    - CONCORDANCE_CONTROL_PATH
+    - IS_POSITIVE_CONTROL
+    - IS_NEGATIVE_CONTROL
+    - SAMPLE_TYPE
+    - MERGE_SINGLE
+    - TUM_NRM_SAMPLEID_MATCH
+    - EXTERNAL_SAMPLE_ID
