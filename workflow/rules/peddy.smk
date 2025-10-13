@@ -12,7 +12,7 @@ import os
 def gen_ped_file(wildcards):
     bio_sex = samples[samples["unit_analysis_uid"] == wildcards.sample]["biological_sex"][
         0
-    ]  #  sample_info is created in common.smk
+    ]  #  sample_info is created in rule_common.smk
     ped_sex = 0
     if bio_sex in ["female"]:
         ped_sex = 2
