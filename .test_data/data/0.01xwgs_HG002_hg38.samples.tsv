@@ -1,2 +1,2 @@
-SAMPLEID	analysis_unit_uid	SAMPLESOURCE	SAMPLECLASS	BIOLOGICAL_SEX	CONCORDANCE_CONTROL_PATH	IS_POSITIVE_CONTROL	IS_NEGATIVE_CONTROL	SAMPLE_TYPE	TUM_NRM_SAMPLEID_MATCH	EXTERNAL_SAMPLE_ID	N_X	N_Y	TRUTH_DATA_DIR
-ANA0-HG002	RIH0-ANA0-HG002-DBC0-0-DBC0-PCR-FREE-ILMN-NOVASEQ	blood	research	male	/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG2/	true	false	blood	na	HG002	na	na	/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG2/
+SAMPLEID	SAMPLESOURCE	SAMPLECLASS	BIOLOGICAL_SEX	CONCORDANCE_CONTROL_PATH	IS_POSITIVE_CONTROL	IS_NEGATIVE_CONTROL	SAMPLE_TYPE	TUM_NRM_SAMPLEID_MATCH	EXTERNAL_SAMPLE_ID	N_X	N_Y	TRUTH_DATA_DIR
+ANA0-HG002	blood	research	male	/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG2/	true	false	blood	na	HG002	na	na	/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG2/
