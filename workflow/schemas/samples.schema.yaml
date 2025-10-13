@@ -3,6 +3,8 @@ $schema: http://json-schema.org/draft-04/schema#
 
 description: Daylily sample metadata table (one row per biological sample).
 properties:
+    RUNID:
+        type: string
     SAMPLEID:
         type: string
     SAMPLESOURCE:
