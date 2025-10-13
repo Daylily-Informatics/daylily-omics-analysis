@@ -3,43 +3,45 @@ $schema: http://json-schema.org/draft-04/schema#
 
 description: Daylily sequencing unit table (one row per run/lane/library).
 properties:
-    RunID:
+    RUNID:
         type: string
-    SampleID:
+    SAMPLEID:
         type: string
-    ExperimentID:
+    EXPERIMENTID:
         type: string
-    LaneID:
+    LANEID:
         type: string
-    BarcodeID:
+    BARCODEID:
         type: string
-    LibPrep:
+    LIBPREP:
         type: string
-    SeqPlatform:
+    SEQ_PLATFORM:
         type: string
-    ILMN_R1_path:
+    SEQ_VENDOR:
         type: string
-    ILMN_R2_path:
+    ILMN_R1_PATH:
         type: string
-    PacBio_R1_path:
+    ILMN_R2_PATH:
         type: string
-    PacBio_R2_path:
+    PACBIO_R1_PATH:
         type: string
-    ONT_R1_path:
+    PACBIO_R2_PATH:
         type: string
-    ONT_R2_path:
+    ONT_R1_PATH:
         type: string
-    UG_R1_path:
+    ONT_R2_PATH:
         type: string
-    UG_R2_path:
+    UG_R1_PATH:
         type: string
-    subsample_pct:
+    UG_R2_PATH:
+        type: string
+    SUBSAMPLE_PCT:
         type: string
 required:
-    - RunID
-    - SampleID
-    - ExperimentID
-    - LaneID
-    - BarcodeID
-    - LibPrep
-    - SeqPlatform
+    - RUNID
+    - SAMPLEID
+    - EXPERIMENTID
+    - LANEID
+    - BARCODEID
+    - LIBPREP
+    - SEQ_PLATFORM

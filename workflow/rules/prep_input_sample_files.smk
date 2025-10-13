@@ -385,9 +385,9 @@ else:
 def get_ont_cramsx(wildcards):
     crams = []
 
-    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ont_cram'][0])
+    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ONT_CRAM'][0])
     crai=f"{cram}.crai"
-    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ont_cram_aligner'][0]
+    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ONT_CRAM_ALIGNER'][0]
     if cram_aligner in ['na','',None,'None']:
         return []
     elif cram_aligner in ['ont']:
@@ -414,9 +414,9 @@ def get_ont_cramsx(wildcards):
 def get_ultima_cramsx(wildcards):
     crams = []
 
-    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ultima_cram'][0])
+    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ULTIMA_CRAM'][0])
     crai=f"{cram}.crai"
-    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ultima_cram_aligner'][0]
+    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ULTIMA_CRAM_ALIGNER'][0]
     if cram_aligner in ['na','',None,'None']:
         print(f"WARNING, ultima_cram set to  '{cram_aligner}'",file=sys.stderr)
         return []
@@ -445,9 +445,9 @@ def get_ultima_downsample(wildcards):
     ss_pct = 'na'
     ss_pct_as_int = 'na'
     try:
-        ss_pct = samples.loc[(wildcards.sample), "ultima_subsample_pct"][0]
+        ss_pct = samples.loc[(wildcards.sample), "ULTIMA_SUBSAMPLE_PCT"][0]
     except:
-        print(f"WARNING: ultima_subsample_pct for {wildcards.sample} not found in manifest. Please correct your manifest if this is not expected.",file=sys.stderr)
+        print(f"WARNING: ULTIMA_SUBSAMPLE_PCT for {wildcards.sample} not found in manifest. Please correct your manifest if this is not expected.",file=sys.stderr)
 
     
     if ss_pct in ['na','',None,'None',"1","1.0",1.0,1]:
@@ -469,9 +469,9 @@ def get_ont_downsample(wildcards):
     ss_pct_as_int = 'na'
     
     try:
-        ss_pct = samples.loc[(wildcards.sample), "ont_subsample_pct"][0]
+        ss_pct = samples.loc[(wildcards.sample), "ONT_SUBSAMPLE_PCT"][0]
     except:
-        print(f"WARNING: ont_subsample_pct for {wildcards.sample} not found in manifest. Please correct your manifest if this is not expected.",file=sys.stderr)
+        print(f"WARNING: ONT_SUBSAMPLE_PCT for {wildcards.sample} not found in manifest. Please correct your manifest if this is not expected.",file=sys.stderr)
 
     if ss_pct in ['na','',None,'None',"1","1.0",1.0,1]:
         ss_pct = "na"
@@ -598,9 +598,9 @@ rule prep_cram_inputs:  # TARGET: Just Pre
 def get_pb_cram(wildcards):
     crams = []
 
-    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['pb_bam'][0])
+    cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['PB_BAM'][0])
     crai=f"{cram}.crai"
-    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['pb_bam_aligner'][0]
+    cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['PB_BAM_ALIGNER'][0]
     if cram_aligner in ['na','',None,'None']:
         return []
     elif cram_aligner in ['pb']:
