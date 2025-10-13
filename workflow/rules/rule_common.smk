@@ -368,8 +368,8 @@ def _build_analysis_unit(row):
         _clean_component(row["RUNID"]),
         _clean_component(row["SAMPLEID"]),
         _clean_component(row["EXPERIMENTID"]),
-        _clean_component(row["BARCODEID"]),
         _clean_component(row["LANEID"]),
+        _clean_component(row["BARCODEID"]),
         _clean_component(row.get("LIBPREP", "")),
         _clean_component(row.get("SEQ_VENDOR", "")),
         _clean_component(row.get("SEQ_PLATFORM", "")),
@@ -378,9 +378,9 @@ def _build_analysis_unit(row):
     parts = [p for p in parts if p]
     if not parts:
         raise WorkflowError(
-            "Unable to construct analysis unit identifier; missing RUNID/SAMPLEID/EXPERIMENTID/BARCODEID/LANEID."
+            "Unable to construct analysis unit identifier; missing RUNID/SAMPLEID/EXPERIMENTID/LANEID/BARCODEID."
         )
-    return "_".join(parts)
+    return "-".join(parts)
 
 
 metadata["unit_analysis_uid"] = metadata.apply(_build_analysis_unit, axis=1)
