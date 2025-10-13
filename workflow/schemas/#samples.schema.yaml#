@@ -11,7 +11,11 @@ properties:
         type: string
     SAMPLECLASS:
         type: string
+    SAMPLEUSE:\
+        type: string
     BIOLOGICAL_SEX:
+        type: string
+    IDDNA_UID:
         type: string
     CONCORDANCE_CONTROL_PATH:
         type: string
@@ -20,6 +24,8 @@ properties:
     IS_NEGATIVE_CONTROL:
         type: string
     SAMPLE_TYPE:
+        type: string
+    MERGE_SINGLE:
         type: string
     TUM_NRM_SAMPLEID_MATCH:
         type: string
@@ -31,13 +37,39 @@ properties:
         type: string
     TRUTH_DATA_DIR:
         type: string
+    BWA_KMER:
+        type: string
+    DEEP_MODEL:
+        type: string
+    ULTIMA_CRAM:
+        type: string
+    ULTIMA_CRAM_ALIGNER:
+        type: string
+    ULTIMA_CRAM_SNV_CALLER:
+        type: string
+    ONT_CRAM:
+        type: string
+    ONT_CRAM_ALIGNER:
+        type: string
+    ONT_CRAM_SNV_CALLER:
+        type: string
+    PB_BAM:
+        type: string
+    PB_BAM_ALIGNER:
+        type: string
+    PB_BAM_SNV_CALLER:
+        type: string
 required:
     - SAMPLEID
     - SAMPLESOURCE
     - SAMPLECLASS
+    - SAMPLEUSE
     - BIOLOGICAL_SEX
+    - IDDNA_UID
     - CONCORDANCE_CONTROL_PATH
     - IS_POSITIVE_CONTROL
     - IS_NEGATIVE_CONTROL
     - SAMPLE_TYPE
+    - MERGE_SINGLE
+    - TUM_NRM_SAMPLEID_MATCH
     - EXTERNAL_SAMPLE_ID
