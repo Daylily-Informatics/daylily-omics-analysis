@@ -73,7 +73,7 @@ except Exception as e:
 # Import the global and help SMK files. The global and common SMK files
 # contain shared methods used by other SMK files.
 
-include: "rules/global_common.smk"  # Sample and supporting data includes are w/in global
+include: "rules/common.smk"  # Sample and supporting data includes are merged here
 include: "rules/help.smk"
 
 
