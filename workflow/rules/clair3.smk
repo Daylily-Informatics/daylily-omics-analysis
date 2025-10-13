@@ -7,7 +7,7 @@ import os
 
 def get_clair_model_path(wildcards):
     # using the aligner is a hack, should move this to config and pulled from seq technology
-    instrument = samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0].lower()
+    instrument = samples[samples["unit_analysis_uid"] == wildcards.sample]["instrument"][0].lower()
     
     model_path = "/opt/models/ilmn"
     if instrument == "ont":
@@ -28,7 +28,7 @@ def get_clair_model_path(wildcards):
 
 def get_clair_platform(wildcards):
     # using the aligner is a hack, should move this to config and pulled from seq technology
-    instrument = samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0].lower()
+    instrument = samples[samples["unit_analysis_uid"] == wildcards.sample]["instrument"][0].lower()
     
     platform = "ilmn"
 
