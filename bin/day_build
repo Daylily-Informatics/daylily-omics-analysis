@@ -7,7 +7,7 @@ DP=$DAY_PROJECT
 # Attempt to deactivate any existing environment
 source bin/day_deactivate &> /dev/null 
 echo "Attempting to deactivate existing environments & re-init with --project $DP ."
-. dyinit --project $DP --deactivate &> /dev/null
+. dyoainit --project $DP --deactivate &> /dev/null
 
 
 # Handle build argument

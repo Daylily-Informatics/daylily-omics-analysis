@@ -40,7 +40,7 @@ The fastest way to experience the workflows is to run the built-in smoke test us
    ```bash
    # from the repository root
    bash               # start a clean shell session if connecting via SSH
-   . dyinit           # configures the DAYOA conda env and CLI helpers
+   . dyoainit           # configures the DAYOA conda env and CLI helpers
    dy-a local hg38    # or `dy-a slurm hg38` to target the cluster profile
    ```
 
@@ -101,7 +101,7 @@ cd daylily
 #### Next, init daylily, set the genome, stage sample/unit tables and run a test workflow.
 
 ```bash
-. dyinit  --project PROJECT
+. dyoainit  --project PROJECT
 
 dy-a local hg38 # the other option: b37 ( or set via config command line below)
 
@@ -168,7 +168,7 @@ cd daylily
 
 #  prepare to run the test
 tmux new -s slurm_test
-. dyinit 
+. dyoainit 
 dy-a slurm hg38 # the other options being b37
 
 # create a test sample/unit pair for one giab sample only, which will run on the 0.01x test dataset
@@ -232,7 +232,7 @@ git clone <repository-url> daylily
 cd daylily
 
 
-. dyinit  --project PROJECT 
+. dyoainit  --project PROJECT 
 dy-a slurm hg38 # the other option being b37
 
 # TO create a single sample manifest
@@ -260,7 +260,7 @@ git clone <repository-url> daylily
 cd daylily
 
 
-. dyinit  --project PROJECT 
+. dyoainit  --project PROJECT 
 dy-a slurm hg38 # the other options being b37
 
 # copy full 30x giab sample templates into config/

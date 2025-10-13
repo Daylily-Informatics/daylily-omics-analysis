@@ -16,13 +16,13 @@ fi
 # Attempt to deactivate any existing environment
 source bin/day_deactivate &> /dev/null 
 echo "Attempting to deactivate existing environments & re-init with --project $DP ."
-. dyinit --project $DP --deactivate &> /dev/null
+. dyoainit --project $DP --deactivate &> /dev/null
 export DAY_PROFILE=$dayp
 
 
 # Check if DAY_ROOT is set
 if [[ -z "$DAY_ROOT" ]]; then
-    echo "ERROR: DAY_ROOT is not set. Have you executed 'source dyinit'? Use -h for help."
+    echo "ERROR: DAY_ROOT is not set. Have you executed 'source dyoainit'? Use -h for help."
     return 2
 fi
 
@@ -146,7 +146,7 @@ if [[ "$pe_ret_code" != "0" ]]; then
     source bin/util/col_error.bash
     colr "ERROR: Activation failed with return code $pe_ret_code."  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
     colr ""  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
-    colr  "Have you run 'day-build'? If so, try 'bin/day_deactivate reset; source dyinit; day-activate local;'"  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+    colr  "Have you run 'day-build'? If so, try 'bin/day_deactivate reset; source dyoainit; day-activate local;'"  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
     return $pe_ret_code
 else
 
