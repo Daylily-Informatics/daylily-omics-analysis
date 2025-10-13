@@ -1,5 +1,5 @@
 # Daylily Omics Analysis
-_0.7.343_
+_0.7.355_
 
 Daylily Omics Analysis provides the Snakemake-based workflows that power the Daylily whole genome sequencing (WGS) platform.  The pipelines support short-read, long-read and hybrid analyses, deliver concordance and QC reporting, and surface cost telemetry so that analytical performance can be evaluated alongside runtime and spend.  The repository previously lived alongside the infrastructure automation in a monorepo; it now focuses exclusively on analysis.  Cluster lifecycle management is handled by the companion project [daylily-ephemeral-cluster](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).
 
