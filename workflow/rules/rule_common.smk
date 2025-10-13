@@ -342,6 +342,19 @@ for opt_col in [
 if "SAMPLEID" not in sample_records.columns:
     raise WorkflowError("The samples table must contain a 'SAMPLEID' column.")
 
+# Drop duplicate metadata columns from the samples table before merging with
+# the units table. The units table should be authoritative for run-level
+# metadata, and retaining both versions causes pandas to suffix the columns
+# (e.g. `RUNID_x`/`RUNID_y`), which later breaks lookups that expect
+# canonical names such as `RUNID`.
+overlap_columns = (
+    set(sample_records.columns)
+    & set(unit_records.columns)
+    - {"SAMPLEID"}
+)
+if overlap_columns:
+    sample_records = sample_records.drop(columns=sorted(overlap_columns))
+
 metadata = unit_records.merge(
     sample_records,
     on="SAMPLEID",
