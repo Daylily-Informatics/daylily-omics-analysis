@@ -132,7 +132,7 @@ if "jid" not in config:
 
 
 # Pull in the other global smk files
-include: "rule_common.smk"  # noqa
+include: "common.smk"  # noqa
 include: "supporting_data.smk"  # noqa
 
 
