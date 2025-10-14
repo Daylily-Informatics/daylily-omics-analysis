@@ -16,6 +16,23 @@ logs:
         top: "results/day/logs/day.log"
 
 
+smaca:
+  command: "SMAca.py"
+  controls_manifest: ""
+  panel_bed: ""
+  extra_args: ""
+  summary_filename: "SMAca_results.tsv"
+  flags:
+    case: "--case"
+    crai: "--crai"
+    reference: "--reference"
+    controls: "--controls"
+    panel: "--panel"
+    output: "--output"
+    sample: "--sample"
+    threads: "--threads"
+
+
 # example test data
 remote_samples_table: ".test_data/data/0.01x_3_wgs_HG002_hg38.samples.tsv"
 remote_units_table: ".test_data/data/0.01x_3_wgs_HG002_hg38.units.tsv"
