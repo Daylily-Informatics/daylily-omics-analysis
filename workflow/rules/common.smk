@@ -335,6 +335,8 @@ for opt_col in [
     "UG_R2_PATH",
     "SUBSAMPLE_PCT",
     "SEQ_VENDOR",
+    "AMPLIFICATION_TYPE",
+    "ALIGNED_REF_UID",
 ]:
     if opt_col not in unit_records.columns:
         unit_records[opt_col] = ""
