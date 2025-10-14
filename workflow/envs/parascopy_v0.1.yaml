@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - samtools
+  - pip:
+      - git+https://github.com/tprodanov/parascopy.git

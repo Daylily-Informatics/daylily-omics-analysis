@@ -1,5 +1,8 @@
 ## Changelog
 
+### [Unreleased]
+- Added Parascopy copy-number calling workflow, configuration entries, and execution environment.
+
 ### [0.7.147] - 2024-11-30
 - The [README](README.md) has been walked through with a fresh AWS user, and instructions through the end of confirming the headnode can submit and run jobs works! Including running tests and the PCUI functionality works.  Whoop!
 - Added a Snakemake rule, configuration hooks, and environment definition to run the [GeneToCN](https://github.com/bioinfo-ut/GeneToCN) caller within the workflow.
