@@ -312,6 +312,33 @@ mosdepth:
     depth_bins: "0,1,3,5,10,15,20,30,40"
     partition: "i8"
 
+quickmer2:
+    threads: 8
+    mem_mb: 64000
+    partition: "i8"
+    time: "24:00:00"
+    repo_url: "https://github.com/KiddLab/QuicK-mer2.git"
+    repo_rev: "main"
+    repo_dir: "resources/QuicK-mer2"
+    env_yaml: "../envs/quickmer2_v0.1.yaml"
+    work_root: "{MDIR}/{sample}/align/{alnr}/cnv/quickmer2/work"
+    kmer_catalog: "config/quickmer2/example_kmers.tsv"
+    normalization_table: "config/quickmer2/example_normalization.tsv"
+    additional_args: ""
+    update_repo: true
+    keep_work: false
+    clone_depth: 1
+    command_template: |
+        python {repo_dir}/QuicK-mer2.py \
+            --sample {sample} \
+            --bam {cram} \
+            --reference {reference} \
+            --kmer-db {kmer_catalog} \
+            --normalization-table {normalization_table} \
+            --threads {threads} \
+            --output {run_dir} {additional_args}
+
+
 duphold_sort_index:
     threads: 7
     partition: "i8"
