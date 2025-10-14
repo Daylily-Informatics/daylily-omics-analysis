@@ -68,7 +68,7 @@ rule parascopy:
         partition=_parascopy_partition(),
         mem_mb=_parascopy_mem_mb(),
     conda:
-        "workflow/envs/parascopy_v0.1.yaml"
+        "envs/parascopy_v0.1.yaml"
     shell:
         """
         set -euo pipefail
