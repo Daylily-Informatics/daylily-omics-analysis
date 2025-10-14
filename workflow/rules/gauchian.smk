@@ -69,6 +69,7 @@ rule produce_all_htd:
         "./logs/smn12.done",
         "./logs/cyp2d6.done",
         "./logs/smaca.done"
+        "./logs/genetocn.done"
     output:
         "./logs/all_htd_cmp_readsy"
     shell:
