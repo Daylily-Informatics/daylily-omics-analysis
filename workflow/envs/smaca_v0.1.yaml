@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python >=3.8
+  - pip
+  - samtools
+  - pip:
+      - git+https://github.com/babelomics/SMAca.git
