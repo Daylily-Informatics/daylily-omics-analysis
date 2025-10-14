@@ -1,0 +1,19 @@
+name: quickmer2
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - git
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - pysam
+  - samtools
+  - bedtools
+  - jellyfish
+  - pyyaml
+  - tabulate
