@@ -278,6 +278,18 @@ go_left:
     threads: 7
     partition: "i8"
 
+genetocn:
+    env_yaml: "../envs/genetocn_v0.1.yaml"
+    partition: "i8"
+    threads: 8
+    mem_mb: 32000
+    reference: ""
+    panel: ""
+    intervals: ""
+    annotation: ""
+    extra_args: ""
+    command_template: ""
+
 kat:
     threads: 7
     heap_size: "1G"

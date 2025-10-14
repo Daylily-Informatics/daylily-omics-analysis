@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - samtools
+  - pip:
+      - git+https://github.com/bioinfo-ut/GeneToCN.git@main
