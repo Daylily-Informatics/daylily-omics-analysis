@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+awk -F'\t' 'NR>1{print $1}' smn_fetch_table.tsv | sort -u > samples.txt
+
+
 # ------------------------------------------------------------
 # fqfetch.sh  — Fetch FASTQs for 1000G/Coriell samples using wget + GNU parallel
 # ------------------------------------------------------------
