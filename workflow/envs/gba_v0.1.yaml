@@ -10,4 +10,4 @@ dependencies:
     - pip
     - pip:
       - str_analysis
-      - git+https://github.com/Illumina/Gauchian.git@v1.0.2
+      - git+https://github.com/Illumina/Gauchian.git@main
