@@ -1,24 +1,97 @@
-#!/usr/bin/env sh
-# fetch_fastqs.sh  — Fetch all R1/R2 FASTQs for NA/HG samples from ENA.
-# Fallback (optional) to NYGC 30× CRAM/BAM when FASTQs aren’t provided.
-# deps: curl, awk, sed, xargs, and aria2c OR wget
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 
-if [ "$#" -lt 2 ]; then
-  echo "Usage: $0 <samples.txt|smn_fetch_table.tsv> <out_dir> [--tsv] [--nygc-fallback] [--only-manifest] [--parallel N]" >&2
-  exit 2
+usage() {
+  cat <<'USAGE'
+Usage:
+  fqfetch.sh <samples.txt|smn_fetch_table.tsv> <out_dir> [--tsv] [--nygc-fallback] [--only-manifest] [--parallel N]
+
+Modes:
+  - Plain list: one SampleID per line
+  - TSV mode:  --tsv  (expects first column header "SampleID")
+
+Flags:
+  --nygc-fallback   Also query PRJEB31736 (NYGC 30x PCR-free) for CRAM/BAM if no FASTQs
+  --only-manifest   Write per-sample URL manifests but do not download
+  --parallel N      Number of samples to process concurrently (default 3)
+
+Subcommand (internal):
+  fqfetch.sh one <sample> <out_dir> <nygc_fallback(0|1)> <only_manifest(0|1)>
+USAGE
+}
+
+ENA_BASE="https://www.ebi.ac.uk/ena/portal/api/search"
+
+ena_fastq_q() {
+  local s="$1"
+  printf "%s?result=read_run&format=tsv&limit=0&fields=run_accession,fastq_ftp,library_strategy,library_layout,instrument_model&query=sample_alias%%3D%%22%s%%22%%20AND%%20tax_eq(9606)\n" \
+    "$ENA_BASE" "$s"
+}
+ena_nygc_q() {
+  local s="$1"
+  printf "%s?result=read_run&format=tsv&limit=0&fields=run_accession,fastq_ftp,bam_ftp,submitted_ftp,cram_ftp,cram_index_ftp,instrument_model&query=sample_alias%%3D%%22%s%%22%%20AND%%20project_accession%%3D%%22PRJEB31736%%22%%20AND%%20tax_eq(9606)\n" \
+    "$ENA_BASE" "$s"
+}
+phase3_dir() {
+  printf "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/%s/sequence_read/\n" "$1"
+}
+
+# ---- subcommand: one sample ----
+if [[ "${1:-}" == "one" ]]; then
+  sample="$2"; out="$3"; nygc="${4:-0}"; only="${5:-0}"
+
+  mkdir -p "$out/$sample"
+  manf="$out/$sample/urls.txt"
+  : > "$manf"
+
+  # 1) FASTQs via ENA (fastq_ftp has R1;R2)
+  q1="$(ena_fastq_q "$sample")"
+  curl -fsSL "$q1" 2>/dev/null | awk -F'\t' 'NR>1 && $2!=""{gsub(/;/,"\n",$2); print $2}' \
+    | sed 's#^#ftp://#' >> "$manf" || true
+
+  # 2) Optional fallback: NYGC PRJEB31736 CRAM/BAM
+  if [[ "$nygc" == "1" ]] && ! grep -q '[[:graph:]]' "$manf"; then
+    q2="$(ena_nygc_q "$sample")"
+    curl -fsSL "$q2" 2>/dev/null | awk -F'\t' 'NR>1{
+      for(i=1;i<=NF;i++){
+        if ($i ~ /_ftp$/ && $i!="") {gsub(/;/,"\n",$i); print $i}
+      }}' | sed 's#^#ftp://#' >> "$manf" || true
+  fi
+
+  # 3) Last resort: list Phase3 directory for *_1/_2.filt.fastq.gz
+  if ! grep -q '[[:graph:]]' "$manf"; then
+    p3="$(phase3_dir "$sample")"
+    curl -fsSL "$p3" 2>/dev/null | grep -oE 'ERR[0-9]+_[12]\.filt\.fastq\.gz' | sort -u \
+      | awk -v P="$p3" '{print P $1}' >> "$manf" || true
+  fi
+
+  # dedupe
+  awk 'NF && !seen[$0]++' "$manf" > "$manf.tmp" && mv "$manf.tmp" "$manf"
+
+  # stop here if only manifest
+  if [[ "$only" == "1" ]]; then
+    [[ -s "$manf" ]] || echo "WARN: $sample — no public URLs found" >&2
+    exit 0
+  fi
+
+  # choose downloader
+  if command -v aria2c >/dev/null 2>&1; then
+    ( cd "$out/$sample" && aria2c -c -x16 -s16 --auto-file-renaming=false --allow-overwrite=true -i "$manf" )
+  elif command -v wget >/dev/null 2>&1; then
+    ( cd "$out/$sample" && wget -c -i "$manf" )
+  else
+    echo "ERROR: need aria2c or wget" >&2
+    exit 3
+  fi
+  exit 0
 fi
 
-INPUT="$1"
-OUT="$2"
-shift 2
+# ---- main mode ----
+if [[ "$#" -lt 2 ]]; then usage; exit 2; fi
+INPUT="$1"; OUT="$2"; shift 2
 
-IS_TSV=0
-NYGC_FALLBACK=0
-ONLY_MANIFEST=0
-PARALLEL=3
-
-while [ "$#" -gt 0 ]; do
+IS_TSV=0; NYGC_FALLBACK=0; ONLY_MANIFEST=0; PARALLEL=3
+while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --tsv) IS_TSV=1 ;;
     --nygc-fallback) NYGC_FALLBACK=1 ;;
@@ -31,95 +104,15 @@ done
 
 mkdir -p "$OUT"
 
-# pick downloader
-if command -v aria2c >/dev/null 2>&1; then
-  DL="aria2c -c -x16 -s16 --auto-file-renaming=false --allow-overwrite=true -i -"
-elif command -v wget >/dev/null 2>&1; then
-  DL="wget -c -i -"
+# Build null-delimited list of SampleIDs
+if [[ "$IS_TSV" == "1" ]]; then
+  # first column named SampleID
+  mapfile -d '' samples < <(awk -F'\t' 'NR==1{if($1!="SampleID"){exit 9}} NR>1 && $1!=""{print $1}' "$INPUT" | tr -d '\r' | awk 'NF' | sed 's/$/\0/')
 else
-  echo "ERROR: need aria2c or wget" >&2
-  exit 3
+  mapfile -d '' samples < <(awk 'NF && $0!~/^#/' "$INPUT" | tr -d '\r' | sed 's/$/\0/')
 fi
 
-ENA_BASE='https://www.ebi.ac.uk/ena/portal/api/search'
-phase3_dir() { printf "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/%s/sequence_read/\n" "$1"; }
-
-ena_fastq_q() {
-  samp="$1"
-  printf "%s?result=read_run&format=tsv&limit=0&fields=run_accession,fastq_ftp,library_strategy,library_layout,instrument_model&query=sample_alias%%3D%%22%s%%22%%20AND%%20tax_eq(9606)\n" "$ENA_BASE" "$samp"
-}
-ena_nygc_q() {
-  samp="$1"
-  printf "%s?result=read_run&format=tsv&limit=0&fields=run_accession,fastq_ftp,bam_ftp,submitted_ftp,cram_ftp,cram_index_ftp,instrument_model&query=sample_alias%%3D%%22%s%%22%%20AND%%20project_accession%%3D%%22PRJEB31736%%22%%20AND%%20tax_eq(9606)\n" "$ENA_BASE" "$samp"
-}
-
-# read sample IDs
-get_samples() {
-  if [ "$IS_TSV" -eq 1 ]; then
-    # assume column named SampleID (first row header)
-    awk -F'\t' 'NR>1 && $1!="" {print $1}' "$INPUT" | tr -d '\r'
-  else
-    awk 'NF && $0!~ /^#/' "$INPUT" | tr -d '\r'
-  fi
-}
-
-fetch_one() {
-  S="$1"
-  SOUT="$OUT/$S"
-  mkdir -p "$SOUT"
-  MAN="$SOUT/urls.txt"
-  : > "$MAN"
-
-  # 1) ENA FASTQs (R1/R2 in fastq_ftp)
-  Q1="$(ena_fastq_q "$S")"
-  TSV="$(curl -fsSL "$Q1" || true)"
-  # collect ftp paths
-  printf "%s\n" "$TSV" | awk -F'\t' 'NR>1 && $2!=""{gsub(/;/,"\n",$2); print $2}' \
-    | sed 's#^#ftp://#' >> "$MAN"
-
-  # 2) If none and fallback requested, query PRJEB31736 for CRAM/BAM/submitted_ftp
-  if [ "$NYGC_FALLBACK" -eq 1 ] && ! grep -q '[[:graph:]]' "$MAN"; then
-    Q2="$(ena_nygc_q "$S")"
-    TSV2="$(curl -fsSL "$Q2" || true)"
-    printf "%s\n" "$TSV2" | awk -F'\t' 'NR>1{
-      for(i=1;i<=NF;i++){
-        if ($i ~ /_ftp$/ && $i!="") { gsub(/;/,"\n",$i); print $i }
-      }}' | sed 's#^#ftp://#' >> "$MAN"
-  fi
-
-  # 3) Final fallback: try Phase3 directory listing (sometimes shows filtered fastqs)
-  if ! grep -q '[[:graph:]]' "$MAN"; then
-    P3="$(phase3_dir "$S")"
-    LIST="$(curl -fsSL "$P3" || true)"
-    printf "%s\n" "$LIST" | \
-      grep -oE 'ERR[0-9]+_[12]\.filt\.fastq\.gz' | sort -u | \
-      awk -v P="$P3" '{print P $1}' >> "$MAN" || true
-  fi
-
-  # de-dupe
-  awk 'NF && !seen[$0]++' "$MAN" > "$MAN.tmp" && mv "$MAN.tmp" "$MAN"
-
-  if [ "$ONLY_MANIFEST" -eq 1 ]; then
-    if [ ! -s "$MAN" ]; then
-      echo "WARN: $S — no public URLs found" >&2
-    else
-      echo "WROTE manifest: $MAN"
-    fi
-    return 0
-  fi
-
-  if [ ! -s "$MAN" ]; then
-    echo "WARN: $S — no public URLs found" >&2
-    return 0
-  fi
-
-  # download
-  echo "==> $S ($(wc -l < "$MAN") objects)"
-  ( cd "$SOUT" && $DL )
-}
-
-export OUT ENA_BASE DL ONLY_MANIFEST NYGC_FALLBACK
-export -f fetch_one 2>/dev/null || true
-
-# GNU xargs and BSD xargs both support -P
-get_samples | xargs -I{} -P "${PARALLEL}" sh -c 'fetch_one "$@"' _ {}
+# Launch workers with null-delimited xargs; pass fixed args plus sample at the end
+printf '%s' "${samples[@]}" | xargs -0 -n1 -P "$PARALLEL" \
+  bash -c 'script="$0"; out="$1"; nygc="$2"; only="$3"; sample="$4"; "$script" one "$sample" "$out" "$nygc" "$only"' \
+  "$0" "$OUT" "$NYGC_FALLBACK" "$ONLY_MANIFEST"
