@@ -6,6 +6,16 @@ snv_callers_somatic:
   - "senttn"
 
 
+parascopy:
+  threads: 8
+  mem_mb: 16000
+  partition: "i8"
+  locus_config: null  # Set to the path of the Parascopy locus configuration JSON.
+  reference: null     # Optional override for the reference FASTA used by Parascopy.
+  targets: null       # Optional BED/TSV of targets supplied to Parascopy.
+  extra_args: ""
+
+
 logs:
     operational:
         top: "logs/ops.log"

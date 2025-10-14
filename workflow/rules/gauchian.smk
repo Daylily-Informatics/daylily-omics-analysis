@@ -67,7 +67,8 @@ rule produce_all_htd:
     input:
         "./logs/gauchian.done",
         "./logs/smn12.done",
-        "./logs/cyp2d6.done"
+        "./logs/cyp2d6.done",
+        "./logs/parascopy.done"
     output:
         "./logs/all_htd_cmp_readsy"
     shell:
