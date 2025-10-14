@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - samtools
+  - bcftools
+  - bedtools
+  - pip:
+      - git+https://github.com/Mesh89/SurVeyor@main

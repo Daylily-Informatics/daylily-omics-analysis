@@ -765,7 +765,18 @@ tiddit:
     threads: 64
     min_sv_size: 10  # default is 100, min 10.
     env_yaml: "../envs/tiddit_v0.1.yaml"
-    ld_preload: " " 
+    ld_preload: " "
+    partition: "i192,i192mem,i128"
+
+surveyor:
+    threads: 32
+    partition: "i192,i192mem,i128"
+    env_yaml: "../envs/surveyor_v0.1.yaml"
+    extra_args: ""
+    ld_preload: "  "
+
+surveyor_sort_index:
+    threads: 8
     partition: "i192,i192mem,i128"
 
 vanilla:
