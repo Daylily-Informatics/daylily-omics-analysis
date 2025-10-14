@@ -1,0 +1,132 @@
+"""Rules for running the GeneToCN copy-number caller."""
+
+import re
+
+GENETOCN_CFG = config.get("genetocn", {})
+GENETOCN_ENV = GENETOCN_CFG.get("env_yaml", "workflow/envs/genetocn_v0.1.yaml")
+GENETOCN_THREADS = GENETOCN_CFG.get("threads", config["go_left"]["threads"])
+GENETOCN_MEM_MB = GENETOCN_CFG.get("mem_mb", 32000)
+
+
+def genetocn_inputs(wildcards):
+    """Return the required and optional inputs for GeneToCN."""
+    cram = MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+    crai = f"{cram}.crai"
+    inputs = {"cram": cram, "crai": crai}
+
+    panel = GENETOCN_CFG.get("panel") or GENETOCN_CFG.get("targets")
+    if panel:
+        inputs["panel"] = panel
+
+    intervals = GENETOCN_CFG.get("intervals")
+    if intervals:
+        inputs["intervals"] = intervals
+
+    annotation = GENETOCN_CFG.get("annotation")
+    if annotation:
+        inputs["annotation"] = annotation
+
+    return inputs
+
+
+def genetocn_command(wildcards, input, output, threads):
+    """Build the GeneToCN command, allowing overrides from the config."""
+    cfg = GENETOCN_CFG
+    reference = cfg.get(
+        "reference",
+        config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+    )
+    panel = getattr(input, "panel", None)
+    intervals = getattr(input, "intervals", None)
+    annotation = getattr(input, "annotation", None)
+    extra_args = cfg.get("extra_args", "").strip()
+
+    template = cfg.get("command_template")
+    values = {
+        "sample": wildcards.sample,
+        "aligner": wildcards.alnr,
+        "cram": input.cram,
+        "bam": input.cram,
+        "crai": input.crai,
+        "bai": input.crai,
+        "reference": reference,
+        "panel": panel or "",
+        "intervals": intervals or "",
+        "annotation": annotation or "",
+        "outdir": output.results_dir,
+        "results_dir": output.results_dir,
+        "threads": threads,
+        "extra_args": extra_args,
+        "panel_flag": "" if not panel else f"--panel {panel}",
+        "interval_flag": "" if not intervals else f"--intervals {intervals}",
+        "annotation_flag": "" if not annotation else f"--annotation {annotation}",
+    }
+
+    if template:
+        command = template.format(**values).strip()
+        return re.sub(r"\s+", " ", command)
+
+    cmd_parts = [
+        "GeneToCN",
+        f"--sample {wildcards.sample}",
+        f"--bam {input.cram}",
+        f"--reference {reference}",
+        f"--outdir {output.results_dir}",
+        f"--threads {threads}",
+    ]
+
+    if panel:
+        cmd_parts.append(f"--panel {panel}")
+    if intervals:
+        cmd_parts.append(f"--intervals {intervals}")
+    if annotation:
+        cmd_parts.append(f"--annotation {annotation}")
+    if extra_args:
+        cmd_parts.append(extra_args)
+
+    return " ".join(cmd_parts)
+
+
+rule genetocn:
+    """Run GeneToCN on an input CRAM/CRAI pair."""
+    input:
+        genetocn_inputs
+    output:
+        results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/genetocn/results/{sample}.{alnr}"),
+        done=MDIR + "{sample}/align/{alnr}/htd/genetocn/{sample}.{alnr}.genetocn.done",
+    params:
+        cluster_sample=ret_sample,
+        command=genetocn_command,
+    log:
+        MDIR + "{sample}/align/{alnr}/htd/genetocn/logs/{sample}.{alnr}.genetocn.log",
+    threads: GENETOCN_THREADS
+    resources:
+        mem_mb=GENETOCN_MEM_MB
+    conda:
+        GENETOCN_ENV
+    shell:
+        """
+        set -euo pipefail
+
+        out_dir={output.results_dir}
+        mkdir -p "$(dirname {log})"
+        rm -rf "${{out_dir}}"
+        mkdir -p "${{out_dir}}"
+
+        {params.command} > {log} 2>&1
+
+        touch {output.done}
+        """
+
+
+localrules: produce_genetocn
+
+
+rule produce_genetocn:
+    """Aggregate completion for all GeneToCN runs."""
+    input:
+        expand(MDIR + "{sample}/align/{alnr}/htd/genetocn/{sample}.{alnr}.genetocn.done", sample=SSAMPS, alnr=ALIGNERS)
+    output:
+        "./logs/genetocn.done"
+    shell:
+        "touch {output}"
