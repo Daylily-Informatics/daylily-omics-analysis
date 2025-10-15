@@ -30,43 +30,56 @@ A broader motivation for the project, including why the pipelines emphasise FAIR
 
 The fastest way to experience the workflows is to run the built-in smoke test using the GIAB 0.01× HG002 dataset.  The steps below assume you have cloned this repository onto the head node of an ephemeral cluster created with `daylily-ephemeral-cluster`.  The same commands can also run locally provided the dependencies defined in [setup.py](setup.py) are installed.
 
-1. **Clone the repository.**
+0. **Clone the repository.**
    ```bash
    git clone https://github.com/Daylily-Informatics/daylily-omics-analysis.git
    cd daylily-omics-analysis
    ```
+
+1. **Stage the test sample and unit tables.**
+   _VIA Packaged Test Data:_
+   ```bash
+   cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+   cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
+   head -n 2 config/samples.tsv
+   head -n 2 config/units.tsv
+   ```
+  _VIA `daylily-ephemeral-cluster` Utilities:_
+   - See the [README](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster/blob/main/README.md) for more information.
 
 2. **Initialise the Daylily CLI and activate a profile.**
    ```bash
    # from the repository root
    bash               # start a clean shell session if connecting via SSH
    . dyoainit           # configures the DAYOA conda env and CLI helpers
-   dy-a local hg38    # or `dy-a slurm hg38` to target the cluster profile
-   ```
 
-3. **Stage sample metadata tables.**
+   ```
+3. **Build the daylily-omics-analysis conda env (only necessary once per headnode creation).**
    ```bash
-   cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
-   cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
+   . dyoainit
+   dy-b BUILD
    ```
 
-4. **Dry-run the workflow.**
+4. **Activate The (local or slurm) Executor & Set The Genome Build.**
    ```bash
-   dy-r seqqc -j 1 -p -k -n
+   . dyoainit
+   dy-a [local|slurm] hg38    # or `dy-a slurm hg38` to target the cluster profile
    ```
 
-5. **Execute the workflow.**
-   ```bash
-   dy-r seqqc -j 1 -p -k
-   ```
-
-   Results will be written under `results/day/hg38/` and logs will collect in `logs/`.
-
-6. **Scale out on the cluster (optional).**
+5. **Dry-run the workflow.**
    ```bash
    dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep']
+   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
    ```
+
+6. **Execute the workflow.**
+
+   ```bash
+   dy-a slurm hg38
+   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep']
+   ```
+   Results will be written under `results/day/hg38/` and logs (depending on the scope) will collect in `logs/` and `.snakemake/` and w/in each rule output directory.
+
 
 For instructions on crafting custom sample/unit tables, enabling additional tools (e.g. DeepVariant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
 
