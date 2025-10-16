@@ -290,7 +290,7 @@ def _plan_run_download(
     download_dir: Path,
     fasterq_dump: str | None,
     *,
-    preserve_orig_readnames: bool,
+    leave_ena_formatted_readnames: bool,
 ) -> RunDownloadPlan:
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
     fastq_md5 = _split_values(run_meta.get("fastq_md5", ""))
@@ -368,7 +368,7 @@ def _plan_run_download(
                 "--temp",
                 str(target_dir / "tmp"),
             ]
-            if not preserve_orig_readnames:
+            if not leave_ena_formatted_readnames:
                 conversion_command.extend(
                     [
                         "--defline-seq",
@@ -588,10 +588,10 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="Skip runs that do not provide paired FASTQ files, logging the skipped runs.",
     )
     parser.add_argument(
-        "--preserve-orig-readnames",
+        "--leave-ena-formatted-readnames",
         action="store_true",
         help=(
-            "Keep the original read names emitted by fasterq-dump instead of"
+            "Keep the ENA-formatted read names emitted by fasterq-dump instead of"
             " normalising them to Illumina-style deflines."
         ),
     )
@@ -670,7 +670,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             meta,
             download_root,
             fasterq_dump,
-            preserve_orig_readnames=args.preserve_orig_readnames,
+            leave_ena_formatted_readnames=args.leave_ena_formatted_readnames,
         )
         per_run_downloads[run_id] = plan
 
