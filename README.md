@@ -165,7 +165,8 @@ head -n 2 config/units.tsv
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
 dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl'] -n # dry run
-dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl'] 
+dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl']
+# Replace 'dppl' with 'dppl_sent' to run the Sentieon-based duplicate marking option.
 ```
 
 #### More On The `-j` Flag
