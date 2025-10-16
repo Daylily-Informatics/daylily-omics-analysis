@@ -75,7 +75,7 @@ The fastest way to experience the workflows is to run the built-in smoke test us
       --parallel PARALLEL   Number of concurrent downloads to perform (default: 1).
 
       Example:
-      bin/fetch_err_sources.py --parallel 4 ERR1234567 ERR7654321
+      bin/fetch_err_sources.py --parallel 4 ERR188263 ERR3989446
   ```
 
    ```bash
