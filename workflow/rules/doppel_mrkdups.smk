@@ -47,7 +47,6 @@ if "dppl" in DDUP:
             view_threads=config["doppelmark"]["view_threads"],
             view_mem=config["doppelmark"]["view_mem"],
             mbuffer_mem=config["doppelmark"]["mbuffer_mem"],
-            optical_distance=config["doppelmark"].get("optical_distance", 2500),
         log:
             "{MDIR}{sample}/align/{alnr}/logs/dedupe.{sample}.{alnr}.log",
         shell:
@@ -68,15 +67,6 @@ if "dppl" in DDUP:
             #trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
             tdir=$TMPDIR; 
 
-            read_name=$(samtools view {input.bam} | head -n 1 | cut -f1);
-            if [[ $read_name =~ ^[[:alnum:]]+:[0-9]+:[[:alnum:]]+:[0-9]+:[0-9]+:[0-9]+:[0-9]+$ ]]; then
-                opt_distance={params.optical_distance};
-                echo "Optical duplicate detection enabled (distance $opt_distance)." | tee -a {log};
-            else
-                opt_distance=-1;
-                echo "Optical duplicate detection disabled; read name '$read_name' not Illumina formatted." | tee -a {log};
-            fi;
-
             {params.numa} resources/DOPPLEMARK/doppelmark \
              -parallelism {params.doppelmark_threads} \
              -bam {input.bam} \
@@ -87,7 +77,6 @@ if "dppl" in DDUP:
              -min-bases {params.min_bases} \
              -queue-length {params.queue_length} \
              -shard-size {params.shard_size}   \
-             -optical-distance $opt_distance \
             | mbuffer -m {params.mbuffer_mem} \
             | samtools view -@ {params.view_threads} -m {params.view_mem} --output-fmt-option level={params.cram_compression} -C -T {params.huref_fasta}   --write-index  -o  {output.cram} - >> {log} 2>&1; 
 
