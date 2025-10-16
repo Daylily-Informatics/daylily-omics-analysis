@@ -45,7 +45,7 @@ The fastest way to experience the workflows is to run the built-in smoke test us
    head -n 2 config/units.tsv
    ```
 
-  _VIA SRA/ENA ERR Accessions:_
+  _VIA SRA ENA ERR Accessions:_
    - This helper script will take ERR#'s, download FQs to `resources/ena_runs` and create `samples.tsv` and `units.tsv` which can be used by the pipelines. 
 
    ```bash
