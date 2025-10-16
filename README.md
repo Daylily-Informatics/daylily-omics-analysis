@@ -49,10 +49,39 @@ The fastest way to experience the workflows is to run the built-in smoke test us
    - This helper script will take ERR#'s, download FQs to `resources/ena_runs` and create `samples.tsv` and `units.tsv` which can be used by the pipelines. 
 
    ```bash
+   bin/fetch_err_sources.py --parallel 2 ERR188263 -h
+
+      usage: fetch_err_sources.py [-h] [--download-dir DOWNLOAD_DIR] [--out-dir OUT_DIR] [--skip-download] [--skip-singletons] [--overwrite | --skip-existing] [--check-existing] [--leave-ena-formatted-readnames]
+                                 [--parallel PARALLEL]
+                                 err_uid [err_uid ...]
+
+      Download ENA runs and build Daylily tables
+
+      positional arguments:
+      err_uid               One or more ENA run accessions (ERR identifiers).
+
+      options:
+      -h, --help            show this help message and exit
+      --download-dir DOWNLOAD_DIR
+                              Directory to store downloaded data (default: resources/ena_runs).
+      --out-dir OUT_DIR     Directory for generated samples/units tables (default: conf).
+      --skip-download       Skip downloading files (useful for metadata-only dry runs).
+      --skip-singletons     Skip runs that do not provide paired FASTQ files, logging the skipped runs.
+      --overwrite           Overwrite any existing downloaded files for the requested runs before downloading.
+      --skip-existing       Do not overwrite existing downloaded files; emit a warning when they are detected.
+      --check-existing      Report whether existing downloaded files match the expected sizes before any downloads are attempted.
+      --leave-ena-formatted-readnames
+                              Keep the ENA-formatted read names emitted by fasterq-dump instead of normalising them to Illumina-style deflines.
+      --parallel PARALLEL   Number of concurrent downloads to perform (default: 1).
+
+      Example:
+      bin/fetch_err_sources.py --parallel 4 ERR1234567 ERR7654321
+  ```
+
+   ```bash
    bin/fetch_err_sources.py  ERR3989446
    ```
    - The script will return the paths to the created `samples.tsv` and `units.tsv` files, which you should move to `config/` and rename to `samples.tsv` and `units.tsv`.
-   - 
 
   _VIA `daylily-ephemeral-cluster` Utilities:_
    - See the [README](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster/blob/main/README.md) for more information.
