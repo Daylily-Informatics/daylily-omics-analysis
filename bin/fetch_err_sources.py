@@ -287,6 +287,8 @@ def _plan_run_download(
     run_meta: Dict[str, str],
     download_dir: Path,
     fasterq_dump: str | None,
+    *,
+    preserve_orig_readnames: bool,
 ) -> RunDownloadPlan:
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
     fastq_md5 = _split_values(run_meta.get("fastq_md5", ""))
@@ -356,23 +358,29 @@ def _plan_run_download(
                 target_dir / f"{base_name}_1.fastq",
                 target_dir / f"{base_name}_2.fastq",
             ]
+            conversion_command = [
+                fasterq_dump,
+                "--split-files",
+                "--outdir",
+                str(target_dir),
+                "--temp",
+                str(target_dir / "tmp"),
+            ]
+            if not preserve_orig_readnames:
+                conversion_command.extend(
+                    [
+                        "--defline-seq",
+                        "@$sn/$ri",
+                        "--defline-qual",
+                        "+",
+                    ]
+                )
+            conversion_command.append(str(download.destination))
             plan = RunDownloadPlan(
                 "fastq",
                 downloads=[download],
                 fastq_outputs=fastq_outputs,
-                conversion_command=[
-                    fasterq_dump,
-                    "--split-files",
-                    "--outdir",
-                    str(target_dir),
-                    "--temp",
-                    str(target_dir / "tmp"),
-                    "--defline-seq",
-                    "@$sn/$ri",
-                    "--defline-qual",
-                    "+",
-                    str(download.destination),
-                ],
+                conversion_command=conversion_command,
                 conversion_tempdir=target_dir / "tmp",
             )
             return plan
@@ -577,6 +585,14 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Skip runs that do not provide paired FASTQ files, logging the skipped runs.",
     )
+    parser.add_argument(
+        "--preserve-orig-readnames",
+        action="store_true",
+        help=(
+            "Keep the original read names emitted by fasterq-dump instead of"
+            " normalising them to Illumina-style deflines."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -629,7 +645,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     per_run_downloads: Dict[str, RunDownloadPlan] = {}
     for run_id, meta in run_records.items():
-        plan = _plan_run_download(run_id, meta, download_root, fasterq_dump)
+        plan = _plan_run_download(
+            run_id,
+            meta,
+            download_root,
+            fasterq_dump,
+            preserve_orig_readnames=args.preserve_orig_readnames,
+        )
         per_run_downloads[run_id] = plan
 
     if not args.skip_download:
