@@ -20,13 +20,16 @@ import csv
 import datetime as _dt
 import hashlib
 import io
+import shutil
+import subprocess
+from dataclasses import dataclass, field
 from pathlib import Path
 import sys
 import textwrap
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Literal, Sequence
 
 ENA_FILEREPORT_URL = "https://www.ebi.ac.uk/ena/portal/api/filereport"
 BODY_PREVIEW_CHARS = 600
@@ -134,6 +137,22 @@ SAMPLE_COLUMNS = [
 ]
 
 
+@dataclass
+class DownloadItem:
+    url: str
+    destination: Path
+    md5: str | None = None
+
+
+@dataclass
+class RunDownloadPlan:
+    download_type: Literal["fastq", "cram", "bam"]
+    downloads: List[DownloadItem] = field(default_factory=list)
+    fastq_outputs: List[Path] = field(default_factory=list)
+    conversion_command: List[str] | None = None
+    conversion_tempdir: Path | None = None
+
+
 class EnaError(RuntimeError):
     """Raised when the ENA API cannot satisfy a request."""
 
@@ -222,7 +241,7 @@ def _resolve_sample_id(run_meta: Dict[str, str]) -> str:
     return (run_meta.get("run_accession") or "").strip()
 
 
-def _check_fastq_pairing(run_id: str, run_meta: Dict[str, str]) -> Tuple[bool, str]:
+def _check_fastq_pairing(run_id: str, run_meta: Dict[str, str]) -> tuple[bool, str]:
     layout = (run_meta.get("library_layout") or "").strip().upper()
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
     if layout == "SINGLE":
@@ -246,7 +265,9 @@ def _md5(path: Path) -> str:
 
 def _download(url: str, destination: Path, expected_md5: str | None = None) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(url) as response, destination.open("wb") as handle:  # pragma: no cover - network
+    with urllib.request.urlopen(url) as response, destination.open(
+        "wb"
+    ) as handle:  # pragma: no cover - network
         while True:
             chunk = response.read(8192)
             if not chunk:
@@ -265,12 +286,17 @@ def _plan_run_download(
     run_id: str,
     run_meta: Dict[str, str],
     download_dir: Path,
-) -> Tuple[str, List[Tuple[str, Path, str]]]:
+    fasterq_dump: str | None,
+) -> RunDownloadPlan:
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
-    fastq_md5   = _split_values(run_meta.get("fastq_md5", ""))
-    bam_files   = _split_values(run_meta.get("bam_ftp", ""))
-    bam_md5     = _split_values(run_meta.get("bam_md5", ""))
-
+    fastq_md5 = _split_values(run_meta.get("fastq_md5", ""))
+    bam_files = _split_values(run_meta.get("bam_ftp", ""))
+    bam_md5 = _split_values(run_meta.get("bam_md5", ""))
+    submitted_files = _split_values(run_meta.get("submitted_ftp", ""))
+    submitted_md5 = _split_values(run_meta.get("submitted_md5", ""))
+    submitted_formats = [
+        value.lower() for value in _split_values(run_meta.get("submitted_format", ""))
+    ]
 
     target_dir = download_dir / run_id
 
@@ -279,23 +305,95 @@ def _plan_run_download(
             raise EnaError(
                 f"Run {run_id} does not provide a complete paired FASTQ set."
             )
-        r1 = _normalise_remote(fastq_files[0])
-        r2 = _normalise_remote(fastq_files[1])
-        dl = [
-            (r1, target_dir / Path(fastq_files[0]).name, fastq_md5[0] if fastq_md5 else None),
-            (r2, target_dir / Path(fastq_files[1]).name, fastq_md5[1] if len(fastq_md5) > 1 else None),
-        ]
-        return "fastq", dl
+        downloads: List[DownloadItem] = []
+        for idx, remote in enumerate(fastq_files):
+            dest = target_dir / Path(remote).name
+            md5 = fastq_md5[idx] if idx < len(fastq_md5) else None
+            downloads.append(DownloadItem(_normalise_remote(remote), dest, md5))
+        fastq_outputs = [item.destination for item in downloads[:2]]
+        return RunDownloadPlan(
+            "fastq", downloads=downloads, fastq_outputs=fastq_outputs
+        )
 
-    if cram_files:
-        cram_url = _normalise_remote(cram_files[0])
-        md5 = cram_md5[0] if cram_md5 else None
-        return "cram", [(cram_url, target_dir / Path(cram_files[0]).name, md5)]
+    submitted_entries: List[tuple[str, str, str | None]] = []
+    for idx, remote in enumerate(submitted_files):
+        fmt = submitted_formats[idx] if idx < len(submitted_formats) else ""
+        md5 = submitted_md5[idx] if idx < len(submitted_md5) else None
+        submitted_entries.append((remote, fmt, md5))
+
+    def _make_download(remote: str, md5: str | None) -> DownloadItem:
+        return DownloadItem(
+            _normalise_remote(remote), target_dir / Path(remote).name, md5
+        )
+
+    submitted_fastqs = [
+        _make_download(remote, md5)
+        for remote, fmt, md5 in submitted_entries
+        if fmt.startswith("fastq")
+        or remote.lower().endswith((".fastq", ".fastq.gz", ".fq", ".fq.gz"))
+    ]
+    if submitted_fastqs:
+        if len(submitted_fastqs) < 2:
+            raise EnaError(
+                f"Run {run_id} does not provide a complete paired FASTQ set."
+            )
+        return RunDownloadPlan(
+            "fastq",
+            downloads=submitted_fastqs,
+            fastq_outputs=[download.destination for download in submitted_fastqs[:2]],
+        )
+
+    for remote, fmt, md5 in submitted_entries:
+        if fmt == "sra" or remote.lower().endswith(".sra"):
+            if not fasterq_dump:
+                raise EnaError(
+                    f"Run {run_id} only provides SRA archives but the SRA Toolkit (fasterq-dump)"
+                    " is not available."
+                )
+            download = _make_download(remote, md5)
+            base_name = Path(download.destination).stem
+            fastq_outputs = [
+                target_dir / f"{base_name}_1.fastq",
+                target_dir / f"{base_name}_2.fastq",
+            ]
+            plan = RunDownloadPlan(
+                "fastq",
+                downloads=[download],
+                fastq_outputs=fastq_outputs,
+                conversion_command=[
+                    fasterq_dump,
+                    "--split-files",
+                    "--outdir",
+                    str(target_dir),
+                    "--temp",
+                    str(target_dir / "tmp"),
+                    "--defline-seq",
+                    "@$sn/$ri",
+                    "--defline-qual",
+                    "+",
+                    str(download.destination),
+                ],
+                conversion_tempdir=target_dir / "tmp",
+            )
+            return plan
+
+    for remote, fmt, md5 in submitted_entries:
+        if fmt == "cram" or remote.lower().endswith(".cram"):
+            download = _make_download(remote, md5)
+            return RunDownloadPlan("cram", downloads=[download])
 
     if bam_files:
-        bam_url = _normalise_remote(bam_files[0])
-        md5 = bam_md5[0] if bam_md5 else None
-        return "bam", [(bam_url, target_dir / Path(bam_files[0]).name, md5)]
+        downloads: List[DownloadItem] = []
+        for idx, remote in enumerate(bam_files):
+            dest = target_dir / Path(remote).name
+            md5 = bam_md5[idx] if idx < len(bam_md5) else None
+            downloads.append(DownloadItem(_normalise_remote(remote), dest, md5))
+        return RunDownloadPlan("bam", downloads=downloads)
+
+    for remote, fmt, md5 in submitted_entries:
+        if fmt == "bam" or remote.lower().endswith(".bam"):
+            download = _make_download(remote, md5)
+            return RunDownloadPlan("bam", downloads=[download])
 
     raise EnaError(
         f"Run {run_id} does not expose FASTQ, CRAM, or BAM data for download."
@@ -314,16 +412,23 @@ def _normalise_sex(raw: str) -> str:
 def build_units_row(
     run_meta: Dict[str, str],
     experiment_meta: Dict[str, str],
-    download_type: str,
-    downloads: List[Tuple[str, Path, str]],
+    plan: RunDownloadPlan,
 ) -> Dict[str, str]:
     row = {column: "" for column in UNIT_COLUMNS}
 
     run_id = run_meta.get("run_accession", "")
     sample_id = _resolve_sample_id(run_meta)
     experiment_id = run_meta.get("experiment_accession", "")
-    instrument = run_meta.get("instrument_platform") or run_meta.get("instrument_model") or "UNKNOWN"
-    libprep = run_meta.get("library_selection") or run_meta.get("library_strategy") or "UNKNOWN"
+    instrument = (
+        run_meta.get("instrument_platform")
+        or run_meta.get("instrument_model")
+        or "UNKNOWN"
+    )
+    libprep = (
+        run_meta.get("library_selection")
+        or run_meta.get("library_strategy")
+        or "UNKNOWN"
+    )
     vendor = run_meta.get("center_name") or "UNKNOWN"
 
     row.update(
@@ -353,26 +458,26 @@ def build_units_row(
         }
     )
 
-    if download_type == "fastq":
-        if len(downloads) >= 2:
-            row["ILMN_R1_PATH"] = str(downloads[0][1])
-            row["ILMN_R2_PATH"] = str(downloads[1][1])
+    if plan.download_type == "fastq":
+        if len(plan.fastq_outputs) >= 2:
+            row["ILMN_R1_PATH"] = str(plan.fastq_outputs[0])
+            row["ILMN_R2_PATH"] = str(plan.fastq_outputs[1])
         # Clear cram/bam columns
         row["ULTIMA_CRAM"] = ""
         row["ONT_CRAM"] = ""
         row["PB_BAM"] = ""
-    elif download_type == "cram":
-        cram_path = str(downloads[0][1])
+    elif plan.download_type == "cram":
+        cram_path = str(plan.downloads[0].destination)
         row["ULTIMA_CRAM"] = cram_path
         row["ONT_CRAM"] = cram_path if "ONT" in instrument.upper() else ""
         row["PB_BAM"] = ""
-    elif download_type == "bam":
-        bam_path = str(downloads[0][1])
+    elif plan.download_type == "bam":
+        bam_path = str(plan.downloads[0].destination)
         row["PB_BAM"] = bam_path
         row["ULTIMA_CRAM"] = ""
         row["ONT_CRAM"] = ""
     else:
-        raise ValueError(f"Unsupported download type: {download_type}")
+        raise ValueError(f"Unsupported download type: {plan.download_type}")
 
     return row
 
@@ -383,7 +488,9 @@ def build_sample_row(
     sample_meta: Dict[str, str],
 ) -> Dict[str, str]:
     scientific_name = sample_meta.get("scientific_name") or "na"
-    sample_alias = sample_meta.get("sample_alias") or sample_meta.get("sample_title") or sample_id
+    sample_alias = (
+        sample_meta.get("sample_alias") or sample_meta.get("sample_title") or sample_id
+    )
     hint_tokens = " ".join(
         filter(
             None,
@@ -423,10 +530,14 @@ def build_sample_row(
     return row
 
 
-def write_tsv(path: Path, columns: Sequence[str], rows: Iterable[Dict[str, str]]) -> None:
+def write_tsv(
+    path: Path, columns: Sequence[str], rows: Iterable[Dict[str, str]]
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns, delimiter="\t", lineterminator="\n")
+        writer = csv.DictWriter(
+            handle, fieldnames=columns, delimiter="\t", lineterminator="\n"
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow({col: row.get(col, "") for col in columns})
@@ -443,7 +554,9 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             """
         ),
     )
-    parser.add_argument("err_uid", nargs="+", help="One or more ENA run accessions (ERR identifiers).")
+    parser.add_argument(
+        "err_uid", nargs="+", help="One or more ENA run accessions (ERR identifiers)."
+    )
     parser.add_argument(
         "--download-dir",
         default="resources/ena_runs",
@@ -474,7 +587,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    run_records = _fetch_ena_records("read_run", args.err_uid, RUN_FIELDS, "run_accession")
+    run_records = _fetch_ena_records(
+        "read_run", args.err_uid, RUN_FIELDS, "run_accession"
+    )
     missing_runs = sorted(set(args.err_uid) - set(run_records))
     if missing_runs:
         raise EnaError(f"No metadata returned for: {', '.join(missing_runs)}")
@@ -495,37 +610,68 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     run_records = filtered_runs
 
-    experiment_ids = [meta.get("experiment_accession", "") for meta in run_records.values()]
-    experiment_records = _fetch_ena_records("experiment", experiment_ids, EXPERIMENT_FIELDS, "experiment_accession")
+    experiment_ids = [
+        meta.get("experiment_accession", "") for meta in run_records.values()
+    ]
+    experiment_records = _fetch_ena_records(
+        "experiment", experiment_ids, EXPERIMENT_FIELDS, "experiment_accession"
+    )
 
     sample_ids = [meta.get("sample_accession", "") for meta in run_records.values()]
-    sample_records = _fetch_ena_records("sample", sample_ids, SAMPLE_FIELDS, "sample_accession")
+    sample_records = _fetch_ena_records(
+        "sample", sample_ids, SAMPLE_FIELDS, "sample_accession"
+    )
 
     download_root = Path(args.download_dir)
     download_root.mkdir(parents=True, exist_ok=True)
 
-    per_run_downloads: Dict[str, Tuple[str, List[Tuple[str, Path, str]]]] = {}
+    fasterq_dump = shutil.which("fasterq-dump")
+
+    per_run_downloads: Dict[str, RunDownloadPlan] = {}
     for run_id, meta in run_records.items():
-        download_type, plan = _plan_run_download(run_id, meta, download_root)
-        per_run_downloads[run_id] = (download_type, plan)
+        plan = _plan_run_download(run_id, meta, download_root, fasterq_dump)
+        per_run_downloads[run_id] = plan
 
     if not args.skip_download:
-        for run_id, (download_type, plan) in per_run_downloads.items():
-            for url, dest, md5 in plan:
-                if dest.exists():
+        for run_id, plan in per_run_downloads.items():
+            for item in plan.downloads:
+                if item.destination.exists():
                     continue
-                print(f"Downloading {run_id} ({download_type}): {url} -> {dest}")
-                _download(url, dest, md5)
+                print(
+                    f"Downloading {run_id} ({plan.download_type}): {item.url} -> {item.destination}"
+                )
+                _download(item.url, item.destination, item.md5)
+            if plan.conversion_command:
+                outputs_ready = plan.fastq_outputs and all(
+                    path.exists() for path in plan.fastq_outputs
+                )
+                if outputs_ready:
+                    continue
+                if plan.conversion_tempdir is not None:
+                    plan.conversion_tempdir.mkdir(parents=True, exist_ok=True)
+                print(
+                    "Converting {run_id} SRA to FASTQ via fasterq-dump: {command}".format(
+                        run_id=run_id, command=" ".join(plan.conversion_command)
+                    )
+                )
+                try:
+                    subprocess.run(plan.conversion_command, check=True)
+                except subprocess.CalledProcessError as exc:
+                    raise EnaError(
+                        f"fasterq-dump failed for run {run_id} with exit code {exc.returncode}."
+                    ) from exc
 
     units_rows: List[Dict[str, str]] = []
     sample_rows: Dict[str, Dict[str, str]] = {}
 
     for run_id, meta in run_records.items():
-        download_type, plan = per_run_downloads[run_id]
-        experiment_meta = experiment_records.get(meta.get("experiment_accession", ""), {})
+        plan = per_run_downloads[run_id]
+        experiment_meta = experiment_records.get(
+            meta.get("experiment_accession", ""), {}
+        )
         sample_meta = sample_records.get(meta.get("sample_accession", ""), {})
 
-        units_rows.append(build_units_row(meta, experiment_meta, download_type, plan))
+        units_rows.append(build_units_row(meta, experiment_meta, plan))
 
         sample_id = _resolve_sample_id(meta)
         if sample_id and sample_id not in sample_rows:
