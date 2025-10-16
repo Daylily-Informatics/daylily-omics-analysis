@@ -164,8 +164,8 @@ def _fetch_ena_records(
     params = {
         "result": result,
         "accession": ",".join(unique),
-        "fields": ",".join(fields),
         "format": "tsv",
+        "limit": "0",
     }
     url = f"{ENA_FILEREPORT_URL}?{urllib.parse.urlencode(params)}"
     text = _http_get(url)
@@ -176,7 +176,11 @@ def _fetch_ena_records(
     for row in reader:
         key = (row.get(key_field) or "").strip()
         if key:
-            records[key] = {k: (v or "").strip() for k, v in row.items()}
+            cleaned = {k: (v or "").strip() for k, v in row.items() if k}
+            if fields:
+                records[key] = {field: cleaned.get(field, "") for field in fields}
+            else:
+                records[key] = cleaned
     return records
 
 
