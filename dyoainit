@@ -279,18 +279,6 @@ if [[ "$1" =~ ^(-h|--help|help)$ ]]; then
     return 0
 fi
 
-# Define 'sq' alias for squeue with specific output format
-sq_cmd='squeue -o "%i  %P  %C  %t  %N  %c  %T  %m  %M  %D  %j"'
-sq() {
-    if [ $# -eq 0 ]; then
-        eval "$sq_cmd"
-    else
-        eval "$sq_cmd -j \"$(echo "$@" | tr ' ' ',')\""
-    fi
-}
-alias sq=sq
-
-echo "squeue helper alias 'sq' activated"
 
 # Final message
 echo "Day CLI initialized for project '$PROJECT' in region '$region'."
@@ -308,7 +296,6 @@ echo -e "\t(day-deactivate / dy-d)   - Deactivate the current environment."
 echo -e "\t                           Use 'dy-d reset' to hard reset the environment."
 echo -e "\t                           "
 echo -e "\t(day-build BUILD / dy-b BUILD)        - Build a new environment (run once per head node user)."
-
 echo -e "\t                           "
 echo -e "\t                           "
 echo -e "\t                           "
