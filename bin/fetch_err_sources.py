@@ -187,7 +187,7 @@ def _fetch_ena_records(
         "format": "tsv",
         "limit": "0",
     }
-    url = f"{ENA_FILEREPORT_URL}?{urllib.parse.urlencode(params)}"
+    url = f"{ENA_FILEREPORT_URL}?{urllib.parse.urlencode(params, safe=',')}"
     text = _http_get(url)
     if not text.strip():
         return {}
