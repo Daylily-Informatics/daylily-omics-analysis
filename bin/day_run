@@ -75,7 +75,7 @@ echo "SMK> D:$cmddt / U:$USER / PWD:$PWD / CMD: (${snakecmd[*]})" >> "$cmd_log"
 
 # Run snakemake command
 colr "Executing: ${snakecmd[*]}"  "$DY_IT0" "$DY_IB0" "$DY_IS1"  1>&2
-( $snakecmd && touch daylily.successful_run ) || touch daylily.failed_run
+( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
 ret_code=$?
 
 colr "RETURN CODE: $ret_code" "$DY_IB0" "$DY_IT0" "$DY_IS0" 1>&2
