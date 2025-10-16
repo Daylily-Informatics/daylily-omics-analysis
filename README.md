@@ -44,35 +44,45 @@ The fastest way to experience the workflows is to run the built-in smoke test us
    head -n 2 config/samples.tsv
    head -n 2 config/units.tsv
    ```
+
+  _VIA SRA/ENA ERR Accessions:_
+   - This helper script will take ERR#'s, download FQs to `resources/ena_runs` and create `samples.tsv` and `units.tsv` which can be used by the pipelines. 
+
+   ```bash
+   bin/fetch_err_sources.py  ERR3989446
+   ```
+   - The script will return the paths to the created `samples.tsv` and `units.tsv` files, which you should move to `config/` and rename to `samples.tsv` and `units.tsv`.
+   - 
+
   _VIA `daylily-ephemeral-cluster` Utilities:_
    - See the [README](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster/blob/main/README.md) for more information.
 
-2. **Initialise the Daylily CLI and activate a profile.**
+1. **Initialise the Daylily CLI and activate a profile.**
    ```bash
    # from the repository root
    bash               # start a clean shell session if connecting via SSH
    . dyoainit           # configures the DAYOA conda env and CLI helpers
 
    ```
-3. **Build the daylily-omics-analysis conda env (only necessary once per headnode creation).**
+2. **Build the daylily-omics-analysis conda env (only necessary once per headnode creation).**
    ```bash
    . dyoainit
    dy-b BUILD
    ```
 
-4. **Activate The (local or slurm) Executor & Set The Genome Build.**
+3. **Activate The (local or slurm) Executor & Set The Genome Build.**
    ```bash
    . dyoainit
    dy-a [local|slurm] hg38    # or `dy-a slurm hg38` to target the cluster profile
    ```
 
-5. **Dry-run the workflow.**
+4. **Dry-run the workflow.**
    ```bash
    dy-a slurm hg38
    dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
    ```
 
-6. **Execute the workflow.**
+5. **Execute the workflow.**
 
    ```bash
    dy-a slurm hg38

@@ -11,6 +11,8 @@ The generated tables follow the Daylily schemas and include the optional
 file.
 """
 
+# removed cram_ftp,cram_md5,cram_bytes,cram_index_ftp
+
 from __future__ import annotations
 
 import argparse
@@ -43,10 +45,6 @@ RUN_FIELDS = [
     "submitted_md5",
     "submitted_bytes",
     "submitted_format",
-    "cram_ftp",
-    "cram_md5",
-    "cram_bytes",
-    "cram_index_ftp",
     "bam_ftp",
     "bam_md5",
     "bam_bytes",
@@ -257,8 +255,6 @@ def _plan_run_download(
 ) -> Tuple[str, List[Tuple[str, Path, str]]]:
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
     fastq_md5   = _split_values(run_meta.get("fastq_md5", ""))
-    cram_files  = _split_values(run_meta.get("cram_ftp", ""))
-    cram_md5    = _split_values(run_meta.get("cram_md5", ""))
     bam_files   = _split_values(run_meta.get("bam_ftp", ""))
     bam_md5     = _split_values(run_meta.get("bam_md5", ""))
 
