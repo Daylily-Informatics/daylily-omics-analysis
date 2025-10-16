@@ -27,6 +27,7 @@ import urllib.request
 from typing import Dict, Iterable, List, Sequence, Tuple
 
 ENA_FILEREPORT_URL = "https://www.ebi.ac.uk/ena/portal/api/filereport"
+BODY_PREVIEW_CHARS = 600
 
 # OK
 
@@ -140,6 +141,7 @@ class EnaError(RuntimeError):
 
 
 def _http_get(url: str) -> str:
+    print(f"Fetching URL: {url}")
     try:
         with urllib.request.urlopen(url) as response:
             data = response.read().decode("utf-8")
