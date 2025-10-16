@@ -216,17 +216,26 @@ def _normalise_remote(remote: str) -> str:
     return f"https://{remote}"
 
 
-def _ensure_even_fastq(run_id: str, run_meta: Dict[str, str]) -> None:
+def _resolve_sample_id(run_meta: Dict[str, str]) -> str:
+    for key in ("sample_accession", "sample_alias", "sample_title", "run_accession"):
+        value = (run_meta.get(key) or "").strip()
+        if value:
+            return value
+    return (run_meta.get("run_accession") or "").strip()
+
+
+def _check_fastq_pairing(run_id: str, run_meta: Dict[str, str]) -> Tuple[bool, str]:
     layout = (run_meta.get("library_layout") or "").strip().upper()
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
     if layout == "SINGLE":
-        raise EnaError(
-            f"Run {run_id} is single-end; paired FASTQ data is required."
+        return False, "Run {run} is single-end; paired FASTQ data is required.".format(
+            run=run_id
         )
     if fastq_files and len(fastq_files) % 2 != 0:
-        raise EnaError(
-            f"Run {run_id} reports an odd number of FASTQ files: {fastq_files}"
+        return False, "Run {run} reports an odd number of FASTQ files: {files}".format(
+            run=run_id, files=fastq_files
         )
+    return True, ""
 
 
 def _md5(path: Path) -> str:
@@ -315,7 +324,7 @@ def build_units_row(
     row = {column: "" for column in UNIT_COLUMNS}
 
     run_id = run_meta.get("run_accession", "")
-    sample_id = run_meta.get("sample_accession", "")
+    sample_id = _resolve_sample_id(run_meta)
     experiment_id = run_meta.get("experiment_accession", "")
     instrument = run_meta.get("instrument_platform") or run_meta.get("instrument_model") or "UNKNOWN"
     libprep = run_meta.get("library_selection") or run_meta.get("library_strategy") or "UNKNOWN"
@@ -454,19 +463,41 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Skip downloading files (useful for metadata-only dry runs).",
     )
+    parser.add_argument(
+        "--skip-singletons",
+        action="store_true",
+        help="Skip runs that do not provide paired FASTQ files, logging the skipped runs.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
 
+    timestamp = _dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     run_records = _fetch_ena_records("read_run", args.err_uid, RUN_FIELDS, "run_accession")
     missing_runs = sorted(set(args.err_uid) - set(run_records))
     if missing_runs:
         raise EnaError(f"No metadata returned for: {', '.join(missing_runs)}")
 
+    singleton_messages: List[str] = []
+    filtered_runs: Dict[str, Dict[str, str]] = {}
     for run_id, meta in run_records.items():
-        _ensure_even_fastq(run_id, meta)
+        ok, reason = _check_fastq_pairing(run_id, meta)
+        if ok:
+            filtered_runs[run_id] = meta
+            continue
+        if args.skip_singletons:
+            warning = f"WARNING: {reason} Skipping run."
+            print(warning, file=sys.stderr)
+            singleton_messages.append(f"{run_id}\t{reason}")
+            continue
+        raise EnaError(reason)
+
+    run_records = filtered_runs
 
     experiment_ids = [meta.get("experiment_accession", "") for meta in run_records.values()]
     experiment_records = _fetch_ena_records("experiment", experiment_ids, EXPERIMENT_FIELDS, "experiment_accession")
@@ -500,14 +531,19 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         units_rows.append(build_units_row(meta, experiment_meta, download_type, plan))
 
-        sample_id = meta.get("sample_accession", "")
+        sample_id = _resolve_sample_id(meta)
         if sample_id and sample_id not in sample_rows:
             sample_rows[sample_id] = build_sample_row(sample_id, meta, sample_meta)
 
-    timestamp = _dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-    out_dir = Path(args.out_dir)
     units_path = out_dir / f"err_source_{timestamp}_units.tsv"
     samples_path = out_dir / f"err_source_{timestamp}_samples.tsv"
+
+    if singleton_messages:
+        singleton_log = out_dir / f"err_singletons_{timestamp}.log"
+        with singleton_log.open("w", encoding="utf-8") as handle:
+            for entry in singleton_messages:
+                handle.write(f"{entry}\n")
+        print(f"Wrote singleton log to: {singleton_log}")
 
     write_tsv(units_path, UNIT_COLUMNS, units_rows)
     write_tsv(samples_path, SAMPLE_COLUMNS, sample_rows.values())
