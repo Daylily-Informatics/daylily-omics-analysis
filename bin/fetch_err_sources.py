@@ -16,10 +16,12 @@ file.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import csv
 import datetime as _dt
 import hashlib
 import io
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass, field
@@ -593,11 +595,29 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
             " normalising them to Illumina-style deflines."
         ),
     )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Number of concurrent downloads to perform (default: 1).",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
+
+    if args.parallel < 1:
+        raise EnaError("--parallel must be at least 1.")
+
+    cpu_count = os.cpu_count() or 1
+    if args.parallel > cpu_count:
+        print(
+            "WARNING: --parallel value {parallel} exceeds available processors ({nproc}).".format(
+                parallel=args.parallel, nproc=cpu_count
+            ),
+            file=sys.stderr,
+        )
 
     timestamp = _dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     out_dir = Path(args.out_dir)
@@ -655,6 +675,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         per_run_downloads[run_id] = plan
 
     if not args.skip_download:
+        download_queue: List[tuple[str, RunDownloadPlan, DownloadItem]] = []
         for run_id, plan in per_run_downloads.items():
             for item in plan.downloads:
                 if item.destination.exists():
@@ -662,7 +683,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(
                     f"Downloading {run_id} ({plan.download_type}): {item.url} -> {item.destination}"
                 )
-                _download(item.url, item.destination, item.md5)
+                download_queue.append((run_id, plan, item))
+
+        if download_queue:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=args.parallel
+            ) as executor:
+                futures = [
+                    executor.submit(_download, item.url, item.destination, item.md5)
+                    for _, _, item in download_queue
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    future.result()
+
+        for run_id, plan in per_run_downloads.items():
             if plan.conversion_command:
                 outputs_ready = plan.fastq_outputs and all(
                     path.exists() for path in plan.fastq_outputs
