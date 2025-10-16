@@ -144,6 +144,7 @@ class DownloadItem:
     url: str
     destination: Path
     md5: str | None = None
+    size: int | None = None
 
 
 @dataclass
@@ -296,6 +297,9 @@ def _plan_run_download(
     fastq_md5 = _split_values(run_meta.get("fastq_md5", ""))
     bam_files = _split_values(run_meta.get("bam_ftp", ""))
     bam_md5 = _split_values(run_meta.get("bam_md5", ""))
+    fastq_sizes_raw = _split_values(run_meta.get("fastq_bytes", ""))
+    submitted_sizes_raw = _split_values(run_meta.get("submitted_bytes", ""))
+    bam_sizes_raw = _split_values(run_meta.get("bam_bytes", ""))
     submitted_files = _split_values(run_meta.get("submitted_ftp", ""))
     submitted_md5 = _split_values(run_meta.get("submitted_md5", ""))
     submitted_formats = [
@@ -313,7 +317,13 @@ def _plan_run_download(
         for idx, remote in enumerate(fastq_files):
             dest = target_dir / Path(remote).name
             md5 = fastq_md5[idx] if idx < len(fastq_md5) else None
-            downloads.append(DownloadItem(_normalise_remote(remote), dest, md5))
+            size = None
+            if idx < len(fastq_sizes_raw):
+                try:
+                    size = int(fastq_sizes_raw[idx])
+                except ValueError:
+                    size = None
+            downloads.append(DownloadItem(_normalise_remote(remote), dest, md5, size))
         fastq_outputs = [item.destination for item in downloads[:2]]
         return RunDownloadPlan(
             "fastq", downloads=downloads, fastq_outputs=fastq_outputs
@@ -323,16 +333,22 @@ def _plan_run_download(
     for idx, remote in enumerate(submitted_files):
         fmt = submitted_formats[idx] if idx < len(submitted_formats) else ""
         md5 = submitted_md5[idx] if idx < len(submitted_md5) else None
-        submitted_entries.append((remote, fmt, md5))
+        size = None
+        if idx < len(submitted_sizes_raw):
+            try:
+                size = int(submitted_sizes_raw[idx])
+            except ValueError:
+                size = None
+        submitted_entries.append((remote, fmt, md5, size))
 
-    def _make_download(remote: str, md5: str | None) -> DownloadItem:
+    def _make_download(remote: str, md5: str | None, size: int | None) -> DownloadItem:
         return DownloadItem(
-            _normalise_remote(remote), target_dir / Path(remote).name, md5
+            _normalise_remote(remote), target_dir / Path(remote).name, md5, size
         )
 
     submitted_fastqs = [
-        _make_download(remote, md5)
-        for remote, fmt, md5 in submitted_entries
+        _make_download(remote, md5, size)
+        for remote, fmt, md5, size in submitted_entries
         if fmt.startswith("fastq")
         or remote.lower().endswith((".fastq", ".fastq.gz", ".fq", ".fq.gz"))
     ]
@@ -347,14 +363,14 @@ def _plan_run_download(
             fastq_outputs=[download.destination for download in submitted_fastqs[:2]],
         )
 
-    for remote, fmt, md5 in submitted_entries:
+    for remote, fmt, md5, size in submitted_entries:
         if fmt == "sra" or remote.lower().endswith(".sra"):
             if not fasterq_dump:
                 raise EnaError(
                     f"Run {run_id} only provides SRA archives but the SRA Toolkit (fasterq-dump)"
                     " is not available."
                 )
-            download = _make_download(remote, md5)
+            download = _make_download(remote, md5, size)
             base_name = Path(download.destination).stem
             fastq_outputs = [
                 target_dir / f"{base_name}_1.fastq",
@@ -387,9 +403,9 @@ def _plan_run_download(
             )
             return plan
 
-    for remote, fmt, md5 in submitted_entries:
+    for remote, fmt, md5, size in submitted_entries:
         if fmt == "cram" or remote.lower().endswith(".cram"):
-            download = _make_download(remote, md5)
+            download = _make_download(remote, md5, size)
             return RunDownloadPlan("cram", downloads=[download])
 
     if bam_files:
@@ -397,12 +413,18 @@ def _plan_run_download(
         for idx, remote in enumerate(bam_files):
             dest = target_dir / Path(remote).name
             md5 = bam_md5[idx] if idx < len(bam_md5) else None
-            downloads.append(DownloadItem(_normalise_remote(remote), dest, md5))
+            size = None
+            if idx < len(bam_sizes_raw):
+                try:
+                    size = int(bam_sizes_raw[idx])
+                except ValueError:
+                    size = None
+            downloads.append(DownloadItem(_normalise_remote(remote), dest, md5, size))
         return RunDownloadPlan("bam", downloads=downloads)
 
-    for remote, fmt, md5 in submitted_entries:
+    for remote, fmt, md5, size in submitted_entries:
         if fmt == "bam" or remote.lower().endswith(".bam"):
-            download = _make_download(remote, md5)
+            download = _make_download(remote, md5, size)
             return RunDownloadPlan("bam", downloads=[download])
 
     raise EnaError(
@@ -587,6 +609,31 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         action="store_true",
         help="Skip runs that do not provide paired FASTQ files, logging the skipped runs.",
     )
+    overwrite_group = parser.add_mutually_exclusive_group()
+    overwrite_group.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "Overwrite any existing downloaded files for the requested runs before"
+            " downloading."
+        ),
+    )
+    overwrite_group.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help=(
+            "Do not overwrite existing downloaded files; emit a warning when they"
+            " are detected."
+        ),
+    )
+    parser.add_argument(
+        "--check-existing",
+        action="store_true",
+        help=(
+            "Report whether existing downloaded files match the expected sizes"
+            " before any downloads are attempted."
+        ),
+    )
     parser.add_argument(
         "--preserve-orig-readnames",
         action="store_true",
@@ -623,10 +670,27 @@ def main(argv: Sequence[str] | None = None) -> int:
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    requested_runs: List[str] = []
+    seen_runs: set[str] = set()
+    duplicate_runs: List[str] = []
+    for run in args.err_uid:
+        if run in seen_runs:
+            duplicate_runs.append(run)
+            continue
+        seen_runs.add(run)
+        requested_runs.append(run)
+
+    if duplicate_runs:
+        raise EnaError(
+            "Duplicate run accessions supplied: {runs}".format(
+                runs=", ".join(sorted(set(duplicate_runs)))
+            )
+        )
+
     run_records = _fetch_ena_records(
-        "read_run", args.err_uid, RUN_FIELDS, "run_accession"
+        "read_run", requested_runs, RUN_FIELDS, "run_accession"
     )
-    missing_runs = sorted(set(args.err_uid) - set(run_records))
+    missing_runs = sorted(set(requested_runs) - set(run_records))
     if missing_runs:
         raise EnaError(f"No metadata returned for: {', '.join(missing_runs)}")
 
@@ -673,6 +737,59 @@ def main(argv: Sequence[str] | None = None) -> int:
             preserve_orig_readnames=args.preserve_orig_readnames,
         )
         per_run_downloads[run_id] = plan
+
+    for run_id, plan in per_run_downloads.items():
+        existing_items: List[tuple[DownloadItem, int]] = []
+        for item in plan.downloads:
+            if item.destination.exists():
+                actual_size = item.destination.stat().st_size
+                existing_items.append((item, actual_size))
+                if args.check_existing:
+                    if item.size is None:
+                        message = (
+                            f"Existing file for {run_id}: {item.destination} "
+                            f"has size {actual_size} bytes (expected size unknown)."
+                        )
+                    elif actual_size == item.size:
+                        message = (
+                            f"Existing file for {run_id}: {item.destination} "
+                            f"matches expected size {item.size} bytes."
+                        )
+                    else:
+                        message = (
+                            f"Existing file for {run_id}: {item.destination} "
+                            f"has size {actual_size} bytes (expected {item.size})."
+                        )
+                    print(f"CHECK: {message}")
+        if not existing_items:
+            continue
+        if args.skip_existing:
+            print(
+                "WARNING: Existing files detected for run {run}; skipping download"
+                " (--skip-existing).".format(run=run_id),
+                file=sys.stderr,
+            )
+            for item, actual_size in existing_items:
+                if item.size is not None and actual_size != item.size:
+                    raise EnaError(
+                        "Existing file for run {run} has unexpected size ({actual} bytes,"
+                        " expected {expected}). Re-run with --overwrite to replace it.".format(
+                            run=run_id, actual=actual_size, expected=item.size
+                        )
+                    )
+            continue
+        if args.overwrite:
+            for item, _ in existing_items:
+                try:
+                    item.destination.unlink()
+                except FileNotFoundError:
+                    pass
+            continue
+        conflict_paths = ", ".join(str(item.destination) for item, _ in existing_items)
+        raise EnaError(
+            "Existing files found for run {run}: {paths}. Use --overwrite or"
+            " --skip-existing to proceed.".format(run=run_id, paths=conflict_paths)
+        )
 
     if not args.skip_download:
         download_queue: List[tuple[str, RunDownloadPlan, DownloadItem]] = []
