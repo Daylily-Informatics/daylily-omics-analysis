@@ -178,16 +178,22 @@ def _fetch_ena_records(
     fields: Sequence[str],
     key_field: str,
 ) -> Dict[str, Dict[str, str]]:
-    unique = sorted(set(a for a in accessions if a))
+    seen: set[str] = set()
+    unique: List[str] = []
+    for accession in accessions:
+        if not accession or accession in seen:
+            continue
+        unique.append(accession)
+        seen.add(accession)
     if not unique:
         return {}
-    params = {
-        "result": result,
-        "accession": ",".join(unique),
-        "format": "tsv",
-        "limit": "0",
-    }
-    url = f"{ENA_FILEREPORT_URL}?{urllib.parse.urlencode(params, safe=',')}"
+    params: List[tuple[str, str]] = [
+        ("result", result),
+        ("format", "tsv"),
+        ("limit", "0"),
+    ]
+    params.extend(("accession", accession) for accession in unique)
+    url = f"{ENA_FILEREPORT_URL}?{urllib.parse.urlencode(params)}"
     text = _http_get(url)
     if not text.strip():
         return {}
