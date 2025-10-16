@@ -40,12 +40,13 @@ RUN_FIELDS = [
     "submitted_md5",
     "submitted_bytes",
     "submitted_format",
-    "submitted_cram_ftp",
-    "submitted_cram_md5",
-    "submitted_cram_bytes",
-    "submitted_bam_ftp",
-    "submitted_bam_md5",
-    "submitted_bam_bytes",
+    "cram_ftp",
+    "cram_md5",
+    "cram_bytes",
+    "cram_index_ftp",
+    "bam_ftp",
+    "bam_md5",
+    "bam_bytes",
     "library_layout",
     "library_selection",
     "library_source",
@@ -251,11 +252,12 @@ def _plan_run_download(
     download_dir: Path,
 ) -> Tuple[str, List[Tuple[str, Path, str]]]:
     fastq_files = _split_values(run_meta.get("fastq_ftp", ""))
-    fastq_md5 = _split_values(run_meta.get("fastq_md5", ""))
-    cram_files = _split_values(run_meta.get("submitted_cram_ftp", ""))
-    cram_md5 = _split_values(run_meta.get("submitted_cram_md5", ""))
-    bam_files = _split_values(run_meta.get("submitted_bam_ftp", ""))
-    bam_md5 = _split_values(run_meta.get("submitted_bam_md5", ""))
+    fastq_md5   = _split_values(run_meta.get("fastq_md5", ""))
+    cram_files  = _split_values(run_meta.get("cram_ftp", ""))
+    cram_md5    = _split_values(run_meta.get("cram_md5", ""))
+    bam_files   = _split_values(run_meta.get("bam_ftp", ""))
+    bam_md5     = _split_values(run_meta.get("bam_md5", ""))
+
 
     target_dir = download_dir / run_id
 
