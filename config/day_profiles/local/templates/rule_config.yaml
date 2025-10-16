@@ -240,6 +240,18 @@ doppelmark:
     dop_opts:  " -max-depth 30000 "
     constraint: " "
 
+doppelmark_sentieon:
+    threads: 7
+    partition: "i8"
+    mem_mb: 50000
+    env_yaml: "../envs/sentieon_v0.1.yaml"
+    numactl: " "
+    cram_opts: " --cram_write_options version=3.0,compressor=rans "
+    tmp_base: "/dev/shm"
+    index_threads: 2
+    optical_distance: 2500
+    constraint: " "
+
 dysgu:
     threads: 7
     env_yaml: "../envs/dysgu_sv_v0.2.yaml"
