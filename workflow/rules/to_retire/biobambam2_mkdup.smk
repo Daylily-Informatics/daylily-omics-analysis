@@ -9,7 +9,7 @@
 
 def get_dppl_inputs(wildcards):
     ret_files = []
-    for samp in samples[samples['sample'] == wildcards.sx ]['sample_lane']:
+    for samp in samples[samples['sample'] == wildcards.sample_lane ]['sample_lane']:
         ret_files.append( MDIR + f"{sample}/align/{wildcards.alnr}/{sample}.{wildcards.alnr}.sort.bam")
         ret_files.append( MDIR + f"{sample}/align/{wildcards.alnr}/{sample}.{wildcards.alnr}.sort.bam.bai")
 
@@ -22,15 +22,15 @@ if "bbb2" in DDUP:
     rule biobambam2_mkdup:
         """Runs duplicate marking on the raw BAM."""
         input:
-            bam=MDIR + "{sx}/align/{alnr}/{sx}.{alnr}.sort.bam",
-            bai=MDIR + "{sx}/align/{alnr}/{sx}.{alnr}.sort.bam.bai",
+            bam=MDIR + "{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.sort.bam",
+            bai=MDIR + "{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.sort.bam.bai",
         priority: 3
         output:
-            bamo="{MDIR}{sx}/align/{alnr}/{sx}.{alnr}.mrkdup.sort.bam",
-            bami="{MDIR}{sx}/align/{alnr}/{sx}.{alnr}.mrkdup.sort.bam.bai",
+            bamo="{MDIR}{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.mrkdup.sort.bam",
+            bami="{MDIR}{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.mrkdup.sort.bam.bai",
         threads: config["doppelmark_markdups"]["threads"]
         benchmark:
-            repeat("{MDIR}{sx}/benchmarks/{sx}.{alnr}.dppl.mrkdup.bench.tsv", 0)
+            repeat("{MDIR}{sample_lane}/benchmarks/{sample_lane}.{alnr}.dppl.mrkdup.bench.tsv", 0)
         container:
             "docker://daylilyinformatics/biobambam2:2.0.0"
         resources:
@@ -39,9 +39,9 @@ if "bbb2" in DDUP:
             vcpu=config["doppelmark_markdups"]["threads"],
         params:
             na=1,
-            cluster_sample=ret_sx, #
+            cluster_sample=ret_sample_lane, #
         log:
-            "{MDIR}{sx}/align/{alnr}/logs/dedupe.{sx}.{alnr}.log",
+            "{MDIR}{sample_lane}/align/{alnr}/logs/dedupe.{sample_lane}.{alnr}.log",
         shell:
             """
             bammarkduplicates2 -@ {threads} \
