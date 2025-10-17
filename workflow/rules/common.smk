@@ -407,12 +407,12 @@ if "analysis_unit_uid" in metadata.columns:
         metadata.loc[missing_uids, "analysis_unit_uid"] = metadata[missing_uids].apply(
             _build_analysis_unit, axis=1
         )
-    metadata["unit_analysis_uid"] = metadata["analysis_unit_uid"]
+    metadata["analysis_unit_uid"] = metadata["analysis_unit_uid"]
 else:
-    metadata["unit_analysis_uid"] = metadata.apply(_build_analysis_unit, axis=1)
+    metadata["analysis_unit_uid"] = metadata.apply(_build_analysis_unit, axis=1)
 
-if metadata["unit_analysis_uid"].duplicated().any():
-    dupes = metadata[metadata["unit_analysis_uid"].duplicated()]["unit_analysis_uid"].tolist()
+if metadata["analysis_unit_uid"].duplicated().any():
+    dupes = metadata[metadata["analysis_unit_uid"].duplicated()]["analysis_unit_uid"].tolist()
     raise WorkflowError(
         f"Duplicate analysis unit identifiers detected: {sorted(set(dupes))}"
     )
@@ -429,7 +429,7 @@ def _select_reads(row):
         if r1_path:
             return r1_path, r2_path if r2_path else "na"
     raise WorkflowError(
-        f"No read pairs specified for analysis unit {row['unit_analysis_uid']}."
+        f"No read pairs specified for analysis unit {row['analysis_unit_uid']}."
     )
 
 
@@ -441,8 +441,8 @@ if "MERGE_SINGLE" not in metadata.columns:
     metadata["MERGE_SINGLE"] = "single"
 metadata.loc[metadata["MERGE_SINGLE"].isin(["", None]), "MERGE_SINGLE"] = "single"
 
-metadata["sample"] = metadata["unit_analysis_uid"]
-metadata["sample_lane"] = metadata["unit_analysis_uid"]
+metadata["sample"] = metadata["analysis_unit_uid"]
+metadata["sample_lane"] = metadata["analysis_unit_uid"]
 metadata["RU"] = metadata["RUNID"]
 metadata["EX"] = metadata["SAMPLEID"]
 metadata["SQ"] = metadata["EXPERIMENTID"]
@@ -589,7 +589,7 @@ sample_lane_seen = set()
 
 for _, row in samples.iterrows():
     # Keys from named columns
-    samp_id       = row.get("unit_analysis_uid", "")
+    samp_id       = row.get("analysis_unit_uid", "")
     sample        = row.get("sample", "")
     sample_lane   = row.get("sample_lane", "")
     sq_id         = str(row.get("SQ", ""))
@@ -866,7 +866,7 @@ if "remove_samples" in config:
 SSAMPS = {}
 for sample in samples["sample"].unique():
     row = samples[samples["sample"] == sample]
-    ss = first_val(row, "unit_analysis_uid")
+    ss = first_val(row, "analysis_unit_uid")
     SSAMPS.setdefault(ss, []).append(sample)
 
 
@@ -924,14 +924,14 @@ def getCRAMs(wildcards):
 
 def getR2sS(wildcards):
     fr2s = []
-    for r2 in samples[samples["unit_analysis_uid"] == wildcards.sample]["r2_path"]:
+    for r2 in samples[samples["analysis_unit_uid"] == wildcards.sample]["r2_path"]:
         fr2s.append(r2)
     return sorted(fr2s)
 
 
 def getR1sS(wildcards):
     fr1s = []
-    for r1 in samples[samples["unit_analysis_uid"] == wildcards.sample]["r1_path"]:
+    for r1 in samples[samples["analysis_unit_uid"] == wildcards.sample]["r1_path"]:
         fr1s.append(r1)
     return sorted(fr1s)
 
@@ -940,8 +940,8 @@ def getR1sS(wildcards):
 def ret_sample(wildcards):
     if "sample" in wildcards.keys():
         return wildcards.sample if len(str(wildcards.sample).split(" ")) < 1 else "sample-len-zero"
-    elif "sx" in wildcards.keys():
-        return wildcards.sx if len(str(wildcards.sx).split(" ")) < 1 else "sample-len-zero"
+    elif "analysis_unit_uid" in wildcards.keys():
+        return wildcards.analysis_unit_uid if len(str(wildcards.analysis_unit_uid).split(" ")) < 1 else "sample-len-zero"
     else:
         return "get-sample-ERROR"
 
@@ -1023,14 +1023,14 @@ def get_samp_name(wildcards):
 
 
 def get_instrument(wildcards):
-    return samples[samples["unit_analysis_uid"] == wildcards.sample]["instrument"][0]
+    return samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0]
 
 
 def get_diploid_bed_arg(wildcards):
 
     diploid_bed = ""
     try:
-        sample_bsex = samples[samples["unit_analysis_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
+        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
 
         if "male" == sample_bsex:
             diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
@@ -1052,7 +1052,7 @@ def get_haploid_bed_arg(wildcards):
     haploid_bed = " "
 
     try:
-        sample_bsex = samples[samples["unit_analysis_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
+        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
 
         if "male" == sample_bsex:
             haploid_bed = f' --haploid_bed {config["supporting_files"]["files"]["huref"]["male_haploid"]["name"]} '
@@ -1203,7 +1203,7 @@ def get_deep_model(wildcards):
     deep_model="WGS"
 
     try:
-        deep_model = samples[samples["unit_analysis_uid"] == wildcards.sample]["DEEP_MODEL"][0]
+        deep_model = samples[samples["analysis_unit_uid"] == wildcards.sample]["DEEP_MODEL"][0]
     except Exception as e:
         print(f"'deep_model' key not found" + str(e), file=sys.stderr)
     
@@ -1213,7 +1213,7 @@ def get_deep_model(wildcards):
 def instrument(wildcards):
     instrument = "na"
     try:
-        instrument = samples[samples["unit_analysis_uid"] == wildcards.sample]["instrument"][0].lower()
+        instrument = samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0].lower()
     except Exception as e:
         instrument = "na"
     return instrument

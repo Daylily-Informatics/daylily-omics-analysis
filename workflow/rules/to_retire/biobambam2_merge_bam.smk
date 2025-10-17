@@ -8,14 +8,14 @@ import os
   
 def get_merge_samp_b2(wildcards):
     ret_files = []
-    for sample in samples[samples['samp'] == wildcards.sx ]['sample_lane']:
+    for sample in samples[samples['samp'] == wildcards.sample_lane ]['sample_lane']:
         ret_files.append( MDIR + f"{sample}/align/{wildcards.alnr}/{sample}.{wildcards.alnr}.sort.bam")
     return ret_files
 
  
 def get_lane_from_samp(wildcards):
 
-    return len(SSAMPS[wildcards.sx])
+    return len(SSAMPS[wildcards.sample_lane])
     
     
 
@@ -24,18 +24,18 @@ rule merge_bam_b2:
         get_merge_samp_b2
         #bamo=expand(MDIR + "{sample}/align/{{alnr}}/{sample}.{{alnr}}.sort.bam", sample=get_merge_samp)
     output:
-        bamo=MDIR+ "{sx}/align/{alnr}/{sx}.{alnr}.sort.bam",
-        baio=MDIR+ "{sx}/align/{alnr}/{sx}.{alnr}.sort.bam.bai",
+        bamo=MDIR+ "{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.sort.bam",
+        baio=MDIR+ "{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.sort.bam.bai",
     log:
-        MDIR+ "{sx}/align/{alnr}/log_bammerge/{sx}.{alnr}.sort.bam.log"
+        MDIR+ "{sample_lane}/align/{alnr}/log_bammerge/{sample_lane}.{alnr}.sort.bam.log"
     benchmark:
-        MDIR+ "{sx}/benchmark/{sx}.{alnr}.sort.bam.log"
+        MDIR+ "{sample_lane}/benchmark/{sample_lane}.{alnr}.sort.bam.log"
     threads: config['bbb2_merge_bed']['threads']
     params:
         glfs=get_lane_from_samp,
         smem=config['bbb2_merge_bed']['smem'],
         mmem=config['bbb2_merge_bed']['mmem'],
-        cluster_sample=ret_sx,
+        cluster_sample=ret_sample,
         mthreads=config['bbb2_merge_bed']['mthreads'],
         sthreads=config['bbb2_merge_bed']['sthreads'],
         othreads=config['bbb2_merge_bed']['othreads'],
@@ -80,7 +80,7 @@ localrules:
 
 rule merge_all_bams_b2:  # TARGET merge_all_bams
     input:
-        b=expand(MDIR+ "{sx}/align/{alnr}/{sx}.{alnr}.sort.bam", sx=SSAMPS.keys(), alnr=ALIGNERS)
+        b=expand(MDIR+ "{sample_lane}/align/{alnr}/{sample_lane}.{alnr}.sort.bam", sample_lane=SSAMPS.keys(), alnr=ALIGNERS)
     output:
         "mg.done",
     shell:
