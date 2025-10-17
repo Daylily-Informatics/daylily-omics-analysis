@@ -95,6 +95,11 @@ CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
 DVSOM_CHRMS = config["deepsomatic"][f"{config['genome_build']}_dvsom_chrms"].split(",")
 M2_CHRMS = config["mutect2"][f"{config['genome_build']}_mutect2_chrms"].split(",")
+VARSCAN2_CHRMS = (
+    []
+    if "varscan2" not in config
+    else config["varscan2"][f"{config['genome_build']}_varscan2_chrms"].split(",")
+)
 SENTTN_CHRMS = config["senttn"][f"{config['genome_build']}_senttn_chrms"].split(",")
 # STRELKA2_CHRMS = config["strelka2"][f"{config['genome_build']}_strelka2_chrms"].split(",")
 
@@ -1109,6 +1114,31 @@ def get_mutect2_chrm_day(wildcards):
     else:
         raise Exception(
             "mutect2 chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
+
+        )
+
+    return ret_mod_chrm(ret_str)
+
+
+def get_varscan2_chrm_day(wildcards):
+    pchr=""  # prefix handled already
+    ret_str = ""
+    sl = wildcards.varscan2chrm.replace('chr', '').split("-")
+    sl2 = wildcards.varscan2chrm.replace('chr', '').split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.varscan2chrm
+    elif len(sl) == 1:
+        ret_str = pchr + sl[0]
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        while start <= end:
+            ret_str = str(ret_str) + " " + pchr + str(start)
+            start = start + 1
+    else:
+        raise Exception(
+            "varscan2 chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y,25=MT"
 
         )
 

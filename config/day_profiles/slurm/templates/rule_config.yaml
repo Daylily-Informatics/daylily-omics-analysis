@@ -197,6 +197,21 @@ deepsomatic:
     numa: " OMP_THREADS=64 OMP_PROC_BIND=close OMP_PLACES=threads  OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
     dvsom_conda: "../envs/vanilla_v0.1.yaml"
 
+varscan2:
+    threads: 24
+    container: "docker://quay.io/biocontainers/varscan:2.4.4--pl5321hdfd78af_3"
+    conda: "../envs/varscan2_v0.1.yaml"
+    partition: "i192,i128,i192mem"
+    partition_other: "i192,i128,i192mem"
+    mem_mb: 64000
+    hg38_varscan2_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    hg38_broad_varscan2_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    b37_varscan2_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    mpileup_opts: "-q 1 -Q 20 --count-orphans --max-depth 10000"
+    somatic_opts: "--min-coverage-normal 10 --min-coverage-tumor 8 --min-var-freq 0.05 --p-value 0.05"
+    java_opts: ""
+    tmp_root: "/dev/shm"
+
 mutect2:
     threads: 42
     container: "docker://broadinstitute/gatk:4.5.0.0"

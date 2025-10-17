@@ -199,6 +199,22 @@ deepsomatic:
     dvsom_conda: "../envs/vanilla_v0.1.yaml"
 
 
+varscan2:
+    threads: 4
+    container: "docker://quay.io/biocontainers/varscan:2.4.4--pl5321hdfd78af_3"
+    conda: "../envs/varscan2_v0.1.yaml"
+    partition: "i8"
+    partition_other: "i8"
+    mem_mb: 16000
+    hg38_varscan2_chrms: "21,22"
+    hg38_broad_varscan2_chrms: "21,22"
+    b37_varscan2_chrms: "21,22"
+    mpileup_opts: "-q 1 -Q 20 --count-orphans --max-depth 10000"
+    somatic_opts: "--min-coverage-normal 8 --min-coverage-tumor 6 --min-var-freq 0.05 --p-value 0.05"
+    java_opts: ""
+    tmp_root: "/dev/shm"
+
+
 mutect2:
     threads: 7
     container: "docker://broadinstitute/gatk:4.5.0.0"

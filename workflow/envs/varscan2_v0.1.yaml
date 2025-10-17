@@ -1,0 +1,11 @@
+name: varscan2
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - varscan=2.4.4
+  - samtools=1.18
+  - bcftools=1.18
+  - bedtools=2.31.0
+  - htslib=1.18
+  - openjdk=11
