@@ -10,9 +10,7 @@ import os
 
 # ped file:  "family_id individual_id paternal_id maternal_id bio_sex phenotype"
 def gen_ped_file(wildcards):
-    bio_sex = samples[samples["analysis_unit_uid"] == wildcards.sample]["biological_sex"][
-        0
-    ]  #  sample_info is created in rule_common.smk
+    bio_sex = config["sample_info"][wildcards.sample]["biological_sex"].lower() 
     ped_sex = 0
     if bio_sex in ["female"]:
         ped_sex = 2
