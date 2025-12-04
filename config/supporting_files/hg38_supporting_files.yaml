@@ -29,11 +29,11 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_haploid_male.bed
       core_bed:
         class: file_no_suffix_star
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad_core.bed
+        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/hg38_broad_calling_regions.bed
       fasta:
         class: file_no_suffix_star
         name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta
-        bed: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad_core.bed
+        bed:  /fsx/data/genomic_data/organism_references/H_sapiens/hg38/hg38_broad_calling_regions.bed 
       fasta_minalt:
         class: file_no_suffix_star
         name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta
