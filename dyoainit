@@ -62,15 +62,6 @@ if ! command_exists conda; then
     return 3
 fi
 
-# Ensure the DAYOA conda environment exists; build it if missing
-#if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
-#    echo "Conda environment 'DAYOA' not found. Building it now..."
-#    if ! source bin/day_build BUILD; then
-#        echo "Error: Failed to build the DAYOA conda environment."
-#        return 3
-#    fi
-#fi
-
 # Parse input arguments
 SKIP_PROJECT_CHECK=false
 DEACTIVATE=false
@@ -268,10 +259,8 @@ fi
 # Define aliases
 alias day-activate="source bin/day_activate"
 alias day-deactivate="source bin/day_deactivate"
-alias day-build="source bin/day_build"
 alias day-run="bin/day_run"
 alias dy-a="source bin/day_activate"
-alias dy-b="source bin/day_build"
 alias dy-d="source bin/day_deactivate"
 alias dy-r="bin/day_run"
 alias dy-h="echo hello"
@@ -299,13 +288,17 @@ conda env list
 if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then                                                                                                                       
     echo "!Conda environment 'DAYOA' not found. Building it now..."
     echo " ... you might need to start from a new shell."
-    source $HOME/.bashrc
-    source bin/day_build BUILD
-    if [[ $! != 0 ]]; then
-	echo "DAYOA build failed!"
-	return 2
+    
+    source config/day/day_env_installer.sh DAYOA
+    if [[ "$?" != "0" ]]; then
+        echo "Error: Failed to install the DAYOA environment. - $!"
+        return 1
+    else
+	echo "DAYOA install success"
     fi
-fi                 
+fi
+
+
 
 # Final message
 echo "Day CLI initialized for project '$PROJECT' in region '$region'."
@@ -322,7 +315,6 @@ echo -e "\t                           "
 echo -e "\t(day-deactivate / dy-d)   - Deactivate the current environment."
 echo -e "\t                           Use 'dy-d reset' to hard reset the environment."
 echo -e "\t                           "
-echo -e "\t(day-build BUILD / dy-b BUILD)        - Build a new environment (run once per head node user)."
 echo -e "\t                           "
 echo -e "\t                           "
 echo -e "\t                           "
@@ -331,7 +323,6 @@ echo -e "\t  ... which once run, you will copy the samples.tsv and units.tsv fil
 echo -e "\t                           "
 echo -e "\t(example): ACTIVATE AN ANALYSIS ENV\n"
 echo -e "\n"
-echo -e "\t\tIf this is the first time you are running on a new cluster, you will need to run dy-b BUILD (just once per cluster)\n"
 echo -e "\n"
 echo -e "\t\tdy-a slurm hg38 # or hg38_broad or b37\n"
 
@@ -343,6 +334,4 @@ echo -e "\t\texport DAY_CONTAINERIZED=false # (DEPRECATED)"
 
 echo -e "\t\tdy-r produce_snv_concordances -p -k -j 2 --config aligners=[\"bwa2a\"] dedupers=[\"dppl\"]  snv_callers=[\"deep\"] -n # remove -n to quit dry-run\n"
 
-echo -e "\t\t ALERT ---\n"
-echo -e "\t\t\t >>> If this is the first time you are running on a new cluster, you will need to run dy-b BUILD (just once per cluster) following '. dyoainit'<<<\n"
 return 0
