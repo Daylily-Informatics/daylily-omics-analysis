@@ -298,6 +298,9 @@ if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
     fi
 fi
 
+conda activate DAYOA || {
+    echo "Error: Failed to activate 'DAYOA' conda  environment."
+}
 
 
 # Final message
