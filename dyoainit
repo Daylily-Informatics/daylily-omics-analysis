@@ -56,6 +56,21 @@ if ! command_exists aws; then
     return 3
 fi
 
+# Ensure conda is available
+if ! command_exists conda; then
+    echo "Error: conda is not available in PATH. Please install or load conda before continuing."
+    return 3
+fi
+
+# Ensure the DAYOA conda environment exists; build it if missing
+if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
+    echo "Conda environment 'DAYOA' not found. Building it now..."
+    if ! source bin/day_build BUILD; then
+        echo "Error: Failed to build the DAYOA conda environment."
+        return 3
+    fi
+fi
+
 # Parse input arguments
 SKIP_PROJECT_CHECK=false
 DEACTIVATE=false
