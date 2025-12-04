@@ -23,6 +23,7 @@ The remainder of this document assumes you already have an ephemeral cluster ava
 * **Reference curation.** Re-usable manifests, GIAB sample sheets, and tooling to stage the shared reference buckets used by the cluster environment.
 * **Configurable execution.** Profiles for local execution and Slurm-backed cluster execution, including containerised and Conda-based environments.
 * **Transparent data products.** Results are organised per genome build under `results/day/<build>/` with concordance and QC artefacts grouped for inspection.
+* **Thousands of QC Metrics** [see list of most produced by DayOA](docs/daylily_MOST_metrics_matrix.tsv)
 
 A broader motivation for the project, including why the pipelines emphasise FAIR bioinformatics practices, reproducible hardware profiles, and transparent cost reporting, is captured in the [Intention](#intention) section below.
 
