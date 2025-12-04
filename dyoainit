@@ -63,13 +63,13 @@ if ! command_exists conda; then
 fi
 
 # Ensure the DAYOA conda environment exists; build it if missing
-if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
-    echo "Conda environment 'DAYOA' not found. Building it now..."
-    if ! source bin/day_build BUILD; then
-        echo "Error: Failed to build the DAYOA conda environment."
-        return 3
-    fi
-fi
+#if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
+#    echo "Conda environment 'DAYOA' not found. Building it now..."
+#    if ! source bin/day_build BUILD; then
+#        echo "Error: Failed to build the DAYOA conda environment."
+#        return 3
+#    fi
+#fi
 
 # Parse input arguments
 SKIP_PROJECT_CHECK=false
@@ -294,6 +294,18 @@ if [[ "$1" =~ ^(-h|--help|help)$ ]]; then
     return 0
 fi
 
+conda env list
+# Ensure the DAYOA conda environment exists; build it if missing                                                                                                                                      
+if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then                                                                                                                       
+    echo "!Conda environment 'DAYOA' not found. Building it now..."
+    echo " ... you might need to start from a new shell."
+    source $HOME/.bashrc
+    source bin/day_build BUILD
+    if [[ $! != 0 ]]; then
+	echo "DAYOA build failed!"
+	return 2
+    fi
+fi                 
 
 # Final message
 echo "Day CLI initialized for project '$PROJECT' in region '$region'."
