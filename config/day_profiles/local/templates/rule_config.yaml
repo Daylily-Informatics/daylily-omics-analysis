@@ -251,6 +251,14 @@ dysgu_sort_index:
     threads: 7
     partition: "i8"
 
+bbsplit_contam:
+    threads: 7
+    env_yaml: "../envs/bbmap_v0.1.yaml"
+    partition: "i8"
+    mem_mb: 16000
+    extra_args: ""
+    ld_preload: "  "
+
 fastp:
     threads: 7
     env_yaml: "../envs/fastp_v0.1.yaml"

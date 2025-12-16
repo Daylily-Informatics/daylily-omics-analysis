@@ -67,6 +67,10 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: createme
       covid_genomes:
         name: createme
+    bbsplit:
+      references:
+        host_reference:
+          name: ""
     glimpse:
       GLIMPSE_huref:
         name: createme

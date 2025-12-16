@@ -113,6 +113,11 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       ref_vcf:
         class: file_only
         name: /fsx/data/tool_specific_resources/H_sapiens/b37/supersonic_modules/RE2666_intersect_1000g_phase1_release_v3.20101123.vcf
+    bbsplit:
+      references:
+        host_reference:
+          class: file_only
+          name: ""
     iddnas:
       human_iddnas:
         class: file_only
