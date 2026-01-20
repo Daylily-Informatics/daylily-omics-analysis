@@ -27,8 +27,24 @@ rule collect_rules_benchmark_data:
         "python bin/util/benchmarks/split_bench_rule_col.py {params.working_file} {output} > {log};"
         "sed -i -E 's/\t$/\tNA/' {output};"
 
+localrules:
+    collect_rules_benchmark_data_singleton,
 
 
+rule collect_rules_benchmark_data_singleton:  # TARGET: collect benchmarks
+    output:
+        f"{MDIR}other_reports/rules_benchmark_data_singleton.tsv",
+    params:
+        cluster_sample="rules_benchmark_collect",
+        working_file=f"{MDIR}reports/benchmarks_summary.tsv",
+        ref_code=config["genome_build"],
+    log:
+        f"{MDIR}other_reports/logs/rules_benchmarks_singleton_summary.log",
+    container: None
+    shell:
+        "bin/util/benchmarks/collect_day_benchmark_data.sh {params.ref_code} > {log};"
+        "python bin/util/benchmarks/split_bench_rule_col.py {params.working_file} {output} > {log};"
+        "sed -i -E 's/\t$/\tNA/' {output};"
 
 localrules:
     aggregate_report_components,
