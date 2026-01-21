@@ -938,10 +938,10 @@ def getR1sS(wildcards):
 
 # Call from params block to get sample ID back, without() wildcards (and others ) are added automatically if no () is included.
 def ret_sample(wildcards):
+    if "analysis_unit_uid" in wildcards.keys():
+        return wildcards.analysis_unit_uid if len(str(wildcards.analysis_unit_uid).split(" ")) < 1 else "sample-len-zero2"
     if "sample" in wildcards.keys():
-        return wildcards.sample if len(str(wildcards.sample).split(" ")) < 1 else "sample-len-zero"
-    elif "analysis_unit_uid" in wildcards.keys():
-        return wildcards.analysis_unit_uid if len(str(wildcards.analysis_unit_uid).split(" ")) < 1 else "sample-len-zero"
+        return wildcards.sample  if len(str(wildcards.sample).split(" ")) < 1 else "sample-len-zero1"
     else:
         return "get-sample-ERROR"
 
