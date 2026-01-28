@@ -1,3 +1,6 @@
+# AWS CREDENTIALS
+Ask user for profile name to set AWS_PROFILE to, never use default as profile name.
+
 # UPON STARTING A NEW TERMINAL SESSION ON A MAC
 On a mac, no workflows will actually ever be run, but we need the conda env for the dy-cli to work to debug and tinker locally.  This repo must be deployed to an AWS ParallelCluster headnode which has been configured by `daylily-ephemeral-cluster`, and each analysis workset is run from a clone of this repo (or reruns).
 
