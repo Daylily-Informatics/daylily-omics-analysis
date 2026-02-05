@@ -163,7 +163,6 @@ cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
 head -n 2 config/units.tsv
 
-export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
 dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl'] -n # dry run
 dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl']
@@ -229,7 +228,6 @@ dy-a slurm hg38 # the other options being b37
 cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
 cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
-export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
 # run the test, which will auto detect the sample/unit tables & will run this all via slurm
 dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
@@ -293,7 +291,6 @@ dy-a slurm hg38 # the other option being b37
 head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv > config/samples.tsv
 head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv > config/units.tsv
 
-export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
 dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n  # dry run
 
@@ -321,7 +318,6 @@ dy-a slurm hg38 # the other options being b37
 cp .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv  config/samples.tsv
 cp .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv  config/units.tsv
 
-export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
 dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe,'bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep'] -n  # dry run
 
