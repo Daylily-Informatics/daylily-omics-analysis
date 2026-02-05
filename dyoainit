@@ -334,6 +334,6 @@ echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.t
 echo -e "\t\tcp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv\n"
 
 
-echo -e "\t\tdy-r produce_snv_concordances -p -k -j 2 --config aligners=[\"bwa2a\"] dedupers=[\"dppl\"]  snv_callers=[\"deep\"] -n # remove -n to quit dry-run\n"
+echo -e "\t\tdy-r produce_snv_concordances -p -k -j 2 --config aligners=[\"bwa2a\"] dedupers=[\"dppl\"]  snv_callers=[\"deep19\"] -n # remove -n to quit dry-run\n"
 
 return 0

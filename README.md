@@ -109,19 +109,19 @@ The fastest way to experience the workflows is to run the built-in smoke test us
 4. **Dry-run the workflow.**
    ```bash
    dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
+   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] -n
    ```
 
 5. **Execute the workflow.**
 
    ```bash
    dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep']
+   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19']
    ```
    Results will be written under `results/day/hg38/` and logs (depending on the scope) will collect in `logs/` and `.snakemake/` and w/in each rule output directory.
 
 
-For instructions on crafting custom sample/unit tables, enabling additional tools (e.g. DeepVariant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
+For instructions on crafting custom sample/unit tables, enabling additional tools (e.g. Deep19Variant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
 
 ## Documentation Roadmap
 
@@ -129,7 +129,7 @@ For instructions on crafting custom sample/unit tables, enabling additional tool
 | --- | --- |
 | [`docs/quickest_start.md`](docs/quickest_start.md) | Checklist for new users that links infrastructure bootstrapping with the minimal analysis steps in this repository. |
 | [`docs/first_ephemeral_cluster_analysis.md`](docs/first_ephemeral_cluster_analysis.md) | Detailed walkthrough for cloning the repo on a head node, preparing manifests, and running both local and Slurm-backed jobs. |
-| [`docs/advanced/`](docs/advanced) | Deep dives on specialised workflows, benchmarking, and operations. |
+| [`docs/advanced/`](docs/advanced) | Deep19 dives on specialised workflows, benchmarking, and operations. |
 | [`docs/reports/`](docs/reports) | Example concordance and QC outputs from previous Daylily runs. |
 | [`docs/whitepaper/`](docs/whitepaper) | Background material for the forthcoming Daylily whitepaper. |
 
@@ -230,7 +230,7 @@ cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
 
 # run the test, which will auto detect the sample/unit tables & will run this all via slurm
-dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
+dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] -n
 ```
 
 Which will produce a plan that looks like.
@@ -240,13 +240,13 @@ Which will produce a plan that looks like.
 Job stats:
 job                           count    min threads    max threads
 --------------------------  -------  -------------  -------------
-deep_concat_fofn                  1              2              2
-deep_concat_index_chunks          1              4              4
-deepvariant                      24             64             64
+deep19_concat_fofn                  1              2              2
+deep19_concat_index_chunks          1              4              4
+deep19variant                      24             64             64
 doppelmark_dups                   1            192            192
 dv_sort_index_chunk_vcf          24              4              4
 pre_prep_raw_fq                   1              1              1
-prep_deep_chunkdirs               1              1              1
+prep_deep19_chunkdirs               1              1              1
 prep_for_concordance_check        1             32             32
 prep_results_dirs                 1              1              1
 produce_snv_concordances          1              1              1
@@ -259,7 +259,7 @@ total                            59              1            192
 Run the test with:
 
 ```bash
-dy-r produce_snv_concordances -p -k -j 6  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] #  -j 6 will run 6 jobs in parallel max, which is done here b/c the test data runs so quickly we do not need to spin up one spor instance per deepvariant job & since 3 dv jobs can run on a 192 instance, this flag will limit creating only  2 instances at a time.
+dy-r produce_snv_concordances -p -k -j 6  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] #  -j 6 will run 6 jobs in parallel max, which is done here b/c the test data runs so quickly we do not need to spin up one spor instance per deep19variant job & since 3 dv jobs can run on a 192 instance, this flag will limit creating only  2 instances at a time.
 ```
 
 _note1:_ the first time you run a pipeline, if the docker images are not cached, there can be a delay in starting jobs as the docker images are cached. They are only pulled 1x per cluster lifetime, so subsequent runs will be faster.
@@ -292,9 +292,9 @@ head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv > config/s
 head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv > config/units.tsv
 
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n  # dry run
+dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] -n  # dry run
 
-dy-r produce_snv_concordances -p -k -j 10  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] # run jobs, and wait for completion
+dy-r produce_snv_concordances -p -k -j 10  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] # run jobs, and wait for completion
 ```
 
 
@@ -319,9 +319,9 @@ cp .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv  config/samples.t
 cp .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv  config/units.tsv
 
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe,'bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep'] -n  # dry run
+dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe,'bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep19'] -n  # dry run
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe','bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep'] 
+dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe','bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep19'] 
 
 ```
 
@@ -329,7 +329,7 @@ dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['
 
 ```bash
 max_snakemake_tasks_active_at_a_time=2 # for local headnode, maybe 400 for a full cluster
-dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_kat produce_multiqc_final_wgs -p -k -j $max_snakemake_tasks_active_at_a_time --config genome_build=hg38 aligners=['strobe','bwa2a','sent'] dedupers=['dppl'] snv_callers=['oct','sentd','deep','clair3','lfq2'] sv_callers=['tiddit','manta','dysgu'] -n
+dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_kat produce_multiqc_final_wgs -p -k -j $max_snakemake_tasks_active_at_a_time --config genome_build=hg38 aligners=['strobe','bwa2a','sent'] dedupers=['dppl'] snv_callers=['oct','sentd','deep19','clair3','lfq2'] sv_callers=['tiddit','manta','dysgu'] -n
 ```
 
 ## To Create Your Own `config/samples.tsv` and `config/units.tsv`
