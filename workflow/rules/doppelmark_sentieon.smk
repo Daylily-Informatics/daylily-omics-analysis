@@ -51,7 +51,7 @@ if "dppl_sent" in DDUP:
             ),
             sentieon_driver=SENT_CFG.get(
                 "driver_path",
-                "/fsx/data/cached_envs/sentieon-genomics-202503.01.rc1/bin/sentieon",
+                "/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon",
             ),
             index_threads=DOPPEL_SENT_CFG.get("index_threads", 4),
             metrics_path=lambda wildcards: (

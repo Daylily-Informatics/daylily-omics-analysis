@@ -94,7 +94,7 @@ rule sentieon_gatk_bsqr:  #TARGET: sent bwa sort
             echo "libjemalloc not found in the active conda environment $CONDA_PREFIX.";
             exit 3;
         fi
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.01.rc1/bin/sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
             -t {threads} \
             -r {params.huref} \
             -i {input.cram} \
@@ -104,7 +104,7 @@ rule sentieon_gatk_bsqr:  #TARGET: sent bwa sort
             -k {params.mills} \
             {output.recal_data_table} >> {log} 2>&1;
 
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.01.rc1/bin/sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
             -t {threads} \
             -r {params.huref} \
             -i {input.cram} \
@@ -214,7 +214,7 @@ rule sentieon_gatk_snv:  #TARGET: sent bwa sort
             echo "libjemalloc not found in the active conda environment $CONDA_PREFIX.";
             exit 3;
         fi
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.01.rc1/bin/sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
             -t {threads} \
             -r {params.huref} \
             -i {input.cram} \
