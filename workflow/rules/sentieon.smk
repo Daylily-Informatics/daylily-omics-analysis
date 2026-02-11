@@ -103,8 +103,8 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         -x {params.bwa_model} \
         -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
         {params.huref} \
-         {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f1} )  {params.subsample_tail} {params.trim_tail}  \
-         {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f2} )  {params.subsample_tail} {params.trim_tail} {params.mbuffer} \
+         {params.subsample_head} <( {params.igz} -q  {input.f1} {params.trim_head} )  {params.subsample_tail}  \
+         {params.subsample_head} <( {params.igz} -q  {input.f2} {params.trim_head} )  {params.subsample_tail} {params.mbuffer} \
         | /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon  util sort \
         -t  {params.sort_threads} \
         --reference {params.huref} \

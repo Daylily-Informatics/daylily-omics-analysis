@@ -1022,6 +1022,7 @@ def get_subsample_tail(wildcards):
 ## Method to wrap the fastq reader with seqkit subseq to trim reads to a fixed length
 # if ILMN_TRIM_READ_LENGTH column is present in the sample sheet, return the shell fragments
 # for process substitution that will truncate reads from the 3' end.
+# Uses pipe instead of nested process substitution to avoid seqkit read errors.
 def get_ilmn_trim_head_tail(sample_id):
     row = samples[samples["sample"] == sample_id]
     trim_len = (first_val(row, "ILMN_TRIM_READ_LENGTH") or "").strip()
@@ -1035,7 +1036,7 @@ def get_ilmn_trim_head_tail(sample_id):
         ) from e
     if length <= 0:
         raise WorkflowError(f"ILMN_TRIM_READ_LENGTH must be positive; got {length}")
-    return (f" <( seqkit subseq -j 4 -r 1:{length} ", " ) ")
+    return (f" | seqkit subseq -j 4 -r 1:{length} ", "")
 
 
 def get_ilmn_trim_head(wildcards):

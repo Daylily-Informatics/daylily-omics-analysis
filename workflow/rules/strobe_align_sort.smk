@@ -83,8 +83,8 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
             --rg=CN:"{params.rgcn}" \
             --rg=PG:"{params.rgpg}" \
             --use-index {params.huref}  \
-            {params.trim_head} {params.subsample_head} <(  {params.igz} -q  {input.f1} )  {params.subsample_tail} {params.trim_tail} \
-            {params.trim_head} {params.subsample_head}  <( {params.igz} -q {input.f2} )  {params.subsample_tail} {params.trim_tail}  {params.mbuffer} \
+            {params.subsample_head} <(  {params.igz} -q  {input.f1} {params.trim_head} )  {params.subsample_tail} \
+            {params.subsample_head}  <( {params.igz} -q {input.f2} {params.trim_head} )  {params.subsample_tail}  {params.mbuffer} \
             |  samtools sort \
             -l 1  \
             -m {params.sort_thread_mem}   \

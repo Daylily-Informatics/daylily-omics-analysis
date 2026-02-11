@@ -76,8 +76,8 @@ rule bwa_mem2_sort:
         -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
         {params.bwa_opts}  -t {params.bwa_threads}  \
         {params.huref} \
-        {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f1} )  {params.subsample_tail} {params.trim_tail}  \
-        {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f2} )  {params.subsample_tail} {params.trim_tail} {params.mbuffer} \
+        {params.subsample_head} <( {params.igz} -q  {input.f1} {params.trim_head} )  {params.subsample_tail}  \
+        {params.subsample_head} <( {params.igz} -q  {input.f2} {params.trim_head} )  {params.subsample_tail} {params.mbuffer} \
         |  samtools sort \
         -l 1  \
         -m {params.sort_thread_mem}   \
