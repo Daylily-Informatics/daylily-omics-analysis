@@ -37,6 +37,8 @@ properties:
         type: string
     SUBSAMPLE_PCT:
         type: string
+    ILMN_TRIM_READ_LENGTH:
+        type: string
     AMPLIFICATION_TYPE:
         type: string
     ALIGNED_REF_UID:

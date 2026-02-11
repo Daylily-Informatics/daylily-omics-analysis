@@ -40,6 +40,8 @@ rule bwa_mem2_sort:
         rgpg="bwamem2",  #program
         subsample_head=get_subsample_head,
         subsample_tail=get_subsample_tail,
+        trim_head=get_ilmn_trim_head,
+        trim_tail=get_ilmn_trim_tail,
         bwa_threads=config["bwa_mem2a_aln_sort"]["bwa_threads"],
         samp=get_samp_name,
         mbuffer=config["bwa_mem2a_aln_sort"]["mbuffer"],
@@ -65,14 +67,17 @@ rule bwa_mem2_sort:
         tdir=$TMPDIR;
 
         epocsec=$(date +'%s');
-        
+
+        if [[ -n "{params.trim_head}" ]]; then
+            echo "ILMN_TRIM_READ_LENGTH: trimming reads via seqkit subseq" >> {log} 2>&1;
+        fi
 
         {params.bwa_mem2a_cmd} mem \
         -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
         {params.bwa_opts}  -t {params.bwa_threads}  \
         {params.huref} \
-        {params.subsample_head} <( {params.igz} -q  {input.f1} )  {params.subsample_tail}  \
-        {params.subsample_head} <( {params.igz} -q  {input.f2} )  {params.subsample_tail} {params.mbuffer} \
+        {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f1} )  {params.subsample_tail} {params.trim_tail}  \
+        {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f2} )  {params.subsample_tail} {params.trim_tail} {params.mbuffer} \
         |  samtools sort \
         -l 1  \
         -m {params.sort_thread_mem}   \
