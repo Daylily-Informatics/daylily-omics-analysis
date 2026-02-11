@@ -1,21 +1,37 @@
 # noqa   # noqa
 import snakemake  # noqa
-from snakemake.utils import min_version
 import datetime
 import os
 import random
+import re as _re
 
 config = config  # noqa   ## Unnecessary, this is merely to keep the linters happy
 config['tmpsub'] = random.randint(1,10000000)
 
 # #### GLOBAL COMMON.SMK
 # -----------------------
-# 
+#
 
 
 # #### MIN VERSION CHECK Snakemake
 # --------------------------------
-min_version("6.0.0") # I started this A LONG time ago!
+# Belt-and-suspenders: inline check avoids pkg_resources (removed in Python 3.12+)
+def _check_min_version(required):
+    try:
+        from packaging.version import Version as _pv
+        if _pv(snakemake.__version__) < _pv(required):
+            raise Exception()
+    except ImportError:
+        cur = tuple(int(x) for x in _re.sub(r"[^0-9.]", "", snakemake.__version__).split(".") if x)
+        req = tuple(int(x) for x in _re.sub(r"[^0-9.]", "", required).split(".") if x)
+        if cur < req:
+            raise Exception()
+    except Exception:
+        raise WorkflowError(
+            f"Expecting Snakemake version {required} or higher "
+            f"(you are currently using {snakemake.__version__})."
+        )
+_check_min_version("6.0.0")  # I started this A LONG time ago!
 
 
 ## DEPRECATE BIOME STUFF

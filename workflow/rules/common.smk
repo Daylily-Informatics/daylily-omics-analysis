@@ -1,4 +1,3 @@
-from snakemake.utils import min_version
 from snakemake.utils import validate
 from snakemake.exceptions import WorkflowError
 import re
