@@ -148,7 +148,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
 
             echo "BBBDFBDFBDFGDF"; #--use-all-records
             rm -rf {params.conc_dir}/_$subd || sleep 1;  export cmd="`which rtg` vcfeval --decompose --squash-ploidy  --ref-overlap -e $bed -b $vcf -c {input.cvcf} -o {params.conc_dir}/_$subd -t {params.sdf} --threads {params.sub_threads}";
-            export  fin_cmd="env python workflow/scripts/parse-vcfeval-summary.py {params.conc_dir}/_$subd/summary.txt {params.cluster_sample} $bed $subd  $alt_name {params.conc_dir}_$subd/{params.cluster_sample}_$subdb_summary.txt $allvar_mean_dp $aligner $snv ";
+            export  fin_cmd="env python workflow/scripts/parse-vcfeval-summary.py {params.conc_dir}/_$subd/summary.txt {params.alt_name} $bed $subd  $alt_name {params.conc_dir}_$subd/{params.alt_name}_$subdb_summary.txt $allvar_mean_dp $aligner $snv ";
             ccmd="$cmd >> {params.conc_dir}_a.err 2>&1; $fin_cmd >> {params.conc_dir}_b.err 2>&1; ";
             echo "$ccmd" >> {output.fofn} 2>&1; '
             ) >> {log} 2>&1;
