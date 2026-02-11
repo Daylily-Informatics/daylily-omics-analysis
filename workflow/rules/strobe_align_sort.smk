@@ -41,6 +41,8 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
             rgcn="CenterName",  # center name
             subsample_head=get_subsample_head,
             subsample_tail=get_subsample_tail,
+            trim_head=get_ilmn_trim_head,
+            trim_tail=get_ilmn_trim_tail,
             strobe_threads=config["strobe_align_sort"]["strobe_threads"],
             samp=get_samp_name,
             mbuffer=config["strobe_align_sort"]["mbuffer"],
@@ -67,6 +69,9 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
 
             ulimit -n 65536 || echo "ulimit mod failed";
 
+            if [[ -n "{params.trim_head}" ]]; then
+                echo "ILMN_TRIM_READ_LENGTH: trimming reads via seqkit subseq" >> {log} 2>&1;
+            fi
 
             {params.strobe_cmd} \
             -t {params.strobe_threads} {params.strobe_opts} \
@@ -78,8 +83,8 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
             --rg=CN:"{params.rgcn}" \
             --rg=PG:"{params.rgpg}" \
             --use-index {params.huref}  \
-            {params.subsample_head} <(  {params.igz} -q  {input.f1} )  {params.subsample_tail} \
-            {params.subsample_head}  <( {params.igz} -q {input.f2} )  {params.subsample_tail}  {params.mbuffer} \
+            {params.trim_head} {params.subsample_head} <(  {params.igz} -q  {input.f1} )  {params.subsample_tail} {params.trim_tail} \
+            {params.trim_head} {params.subsample_head}  <( {params.igz} -q {input.f2} )  {params.subsample_tail} {params.trim_tail}  {params.mbuffer} \
             |  samtools sort \
             -l 1  \
             -m {params.sort_thread_mem}   \

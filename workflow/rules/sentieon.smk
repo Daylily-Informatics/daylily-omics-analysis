@@ -47,6 +47,8 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         bwa_model=config['sentieon']['bwa_model'],
         subsample_head=get_subsample_head,
         subsample_tail=get_subsample_tail,
+        trim_head=get_ilmn_trim_head,
+        trim_tail=get_ilmn_trim_tail,
     conda:
         config["sentieon"]["env_yaml"]
     shell:
@@ -70,7 +72,7 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         epocsec=$(date +'%s');
 
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
-        
+
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR=/dev/shm/sentieon_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
@@ -81,7 +83,7 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         tdir=$TMPDIR;
 
         # Find the jemalloc library in the active conda environment
-        jemalloc_path=$(find "$CONDA_PREFIX" -name "libjemalloc*" | grep -E '\.so|\.dylib' | head -n 1); 
+        jemalloc_path=$(find "$CONDA_PREFIX" -name "libjemalloc*" | grep -E '\.so|\.dylib' | head -n 1);
 
         # Check if jemalloc was found and set LD_PRELOAD accordingly
         if [[ -n "$jemalloc_path" ]]; then
@@ -91,13 +93,18 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
             echo "libjemalloc not found in the active conda environment $CONDA_PREFIX.";
             exit 3;
         fi
+
+        if [[ -n "{params.trim_head}" ]]; then
+            echo "ILMN_TRIM_READ_LENGTH: trimming reads via seqkit subseq" >> {log} 2>&1;
+        fi
+
         LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon bwa mem \
         -t {params.bwa_threads}  {params.sent_opts}  \
         -x {params.bwa_model} \
         -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
         {params.huref} \
-         {params.subsample_head} <( {params.igz} -q  {input.f1} )  {params.subsample_tail}  \
-         {params.subsample_head} <( {params.igz} -q  {input.f2} )  {params.subsample_tail} {params.mbuffer} \
+         {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f1} )  {params.subsample_tail} {params.trim_tail}  \
+         {params.trim_head} {params.subsample_head} <( {params.igz} -q  {input.f2} )  {params.subsample_tail} {params.trim_tail} {params.mbuffer} \
         | /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon  util sort \
         -t  {params.sort_threads} \
         --reference {params.huref} \
