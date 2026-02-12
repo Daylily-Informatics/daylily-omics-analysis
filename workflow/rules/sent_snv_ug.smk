@@ -2,7 +2,7 @@ import sys
 import os
 
 
-ALIGNERS_UG = "ug"
+ALIGNERS_UG = ["ug"]
 
 rule sent_snv_ug:
     input:
