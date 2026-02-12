@@ -1036,7 +1036,8 @@ def get_ilmn_trim_head_tail(sample_id):
         ) from e
     if length <= 0:
         raise WorkflowError(f"ILMN_TRIM_READ_LENGTH must be positive; got {length}")
-    return (f" | seqkit subseq -j 4 -r 1:{length} ", "")
+    return (f" | seqkit subseq -j 16 --line-width=0 --quiet --seq-type=dna -r 1:{length} ", "")
+    # seqkit sample -j 16 --line-width=0 --quiet --rand-seed=7 --seq-type=dna --proportion={f}
 
 
 def get_ilmn_trim_head(wildcards):
