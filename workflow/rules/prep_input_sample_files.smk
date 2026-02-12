@@ -492,8 +492,8 @@ rule pre_prep_ultima_cram:
     input:
         get_ultima_cramsx,
     output:
-        cram=MDIR + "{sample}/align/ug/{sample_lane}.cram",
-        crai=MDIR + "{sample}/align/ug/{sample_lane}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.crai",
     resources:
         partition=config['prep_input_sample_files']['partition'],
         threads=config['prep_input_sample_files']['threads'],
@@ -507,7 +507,7 @@ rule pre_prep_ultima_cram:
         use_threads=config["prep_input_sample_files"]["use_threads"],
     threads: config["prep_input_sample_files"]["threads"],
     log:
-        MDIR + "{sample}/align/ug/logs/{sample_lane}.cram.log",
+        MDIR + "{sample}/align/{alnr}/logs/{sample_lane}.cram.log",
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -537,8 +537,8 @@ rule pre_prep_ont_cram:
     input:
         get_ont_cramsx,
     output:
-        cram=MDIR + "{sample}/align/ont/{sample_lane}.cram",
-        crai=MDIR + "{sample}/align/ont/{sample_lane}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.crai",
     threads: config["prep_input_sample_files"]["threads"],
     resources:
         partition=config['prep_input_sample_files']['partition'],
@@ -552,7 +552,7 @@ rule pre_prep_ont_cram:
         cluster_sample=ret_sample,
         use_threads=config["prep_input_sample_files"]["use_threads"],
     log:
-        MDIR + "{sample}/align/ont/logs/{sample_lane}.cram.log",
+        MDIR + "{sample}/align/{alnr}/logs/{sample_lane}.cram.log",
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -631,12 +631,12 @@ rule pre_prep_pb_cram:
     input:
         get_pb_cram,
     output:
-        cram=MDIR + "{sample}/align/pb/{sample_lane}.cram",
-        crai=MDIR + "{sample}/align/pb/{sample_lane}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.crai",
     params:
         c=config["prep_input_sample_files"]["source_read_method"],
     log:
-        MDIR + "{sample}/align/pb/logs/{sample_lane}.cram.log",
+        MDIR + "{sample}/align/{alnr}/logs/{sample_lane}.cram.log",
     shell:
         "(mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;"
         "{params.c} {input[0]} {output.cram} >> {log} 2>&1;"
