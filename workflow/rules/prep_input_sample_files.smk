@@ -492,8 +492,8 @@ rule pre_prep_ultima_cram:
     input:
         get_ultima_cramsx,
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
     wildcard_constraints:
         alnr="ug",
     resources:
@@ -541,8 +541,8 @@ rule pre_prep_ont_cram:
     input:
         get_ont_cramsx,
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
     wildcard_constraints:
         alnr="ont",
     threads: config["prep_input_sample_files"]["threads"],
@@ -637,8 +637,8 @@ rule pre_prep_pb_cram:
     input:
         get_pb_cram,
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
     wildcard_constraints:
         alnr="pb",
     params:
