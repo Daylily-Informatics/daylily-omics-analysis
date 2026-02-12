@@ -486,8 +486,6 @@ def get_ont_downsample(wildcards):
         
     return ss_pct_as_int
 
-
-
 rule pre_prep_ultima_cram:
     input:
         get_ultima_cramsx,
