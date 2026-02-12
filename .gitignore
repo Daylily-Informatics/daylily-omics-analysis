@@ -4,6 +4,12 @@ __pycache__/
 *$py.class
 .vscode/
 
+
+DYMEMBERS
+
+day_pipe_stats.json
+results/
+
 etc/about_me.yaml
 
 .jemalloc_loc
