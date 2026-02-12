@@ -288,7 +288,7 @@ rule produce_sentdug_vcf:  # TARGET: sentieon dnascope vcf
 localrules:
     prep_sentdug_chunkdirs,
 
-
+ 
 rule prep_sentdug_chunkdirs:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",

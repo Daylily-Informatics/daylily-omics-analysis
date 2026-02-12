@@ -386,7 +386,7 @@ def get_ont_cramsx(wildcards):
     crams = []
 
     cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ONT_CRAM'][0])
-    crai=f"{cram}.crai"
+    crai=f"{cram}.csi"  # ONT BAM files use .csi index, not .crai
     cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ONT_CRAM_ALIGNER'][0]
     if cram_aligner in ['na','',None,'None']:
         return []
@@ -597,7 +597,7 @@ def get_pb_cram(wildcards):
     crams = []
 
     cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['PB_BAM'][0])
-    crai=f"{cram}.crai"
+    crai=f"{cram}.csi"  # PacBio BAM files use .csi index, not .crai
     cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['PB_BAM_ALIGNER'][0]
     if cram_aligner in ['na','',None,'None']:
         return []
@@ -605,7 +605,7 @@ def get_pb_cram(wildcards):
         pass
     else:
         raise Exception(f"ERROR:  {cram_aligner} is not a valid cram aligner. Only 'pb' is supported. Please check your manifest and try again.")
-    
+
     if os.path.exists(cram) and os.path.exists(crai):
         pass
     else:
