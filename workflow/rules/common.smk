@@ -897,7 +897,6 @@ def get_normal_sample(wildcards):
 SAMP_SAMPI_INDEX = list(samples.index)  # deprecate
 RR = ["R1", "R2"]
 
-
 def getR2s(wildcards):
     fr2s = []
     for sample_lane in samples.loc[wildcards.sample, "sample_lane"]:
