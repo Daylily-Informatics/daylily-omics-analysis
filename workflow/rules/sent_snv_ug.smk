@@ -91,7 +91,7 @@ rule sent_snv_ug:
             --emit_mode variant \
             {output.gvcf} >> {log} 2>&1;
 
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503/bin/sentieon driver -t {params.use_threads} \
+        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
             -r {params.huref} \
             --algo DNAModelApply \
             --model {params.model} \
