@@ -1,0 +1,11 @@
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+dependencies:
+  - minimap2>=2.28
+  - samtools>=1.21
+  - htslib
+  - pigz
+
