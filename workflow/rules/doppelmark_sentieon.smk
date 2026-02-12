@@ -92,16 +92,7 @@ if "dppl_sent" in DDUP:
             metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.metrics.txt;
 
             read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
-            if [[ "$read_name" =~ ^[[:alnum:]]+:[0-9]+:[[:alnum:]]+:[0-9]+:[0-9]+:[0-9]+:[0-9]+$ ]]; then
-                opt_distance={params.optical_distance};
-                echo "Optical duplicate detection enabled (distance $opt_distance)." | tee -a {log};
-                opt_flag="--optical-duplicate-pixel-distance $opt_distance";
-            else
-                opt_distance=-1;
-                echo "Optical duplicate detection disabled; read name '$read_name' not Illumina formatted." | tee -a {log};
-                opt_flag="";
-            fi;
-
+            
             jemalloc_path=$(find "$CONDA_PREFIX" \( -name "libjemalloc*.so*" -o -name "libjemalloc*.dylib" \) | head -n 1 || true);
             if [[ -n "$jemalloc_path" ]]; then
                 export LD_PRELOAD="$jemalloc_path";
@@ -124,7 +115,6 @@ if "dppl_sent" in DDUP:
                 --algo Dedup \
                 --score_info "$score_file" \
                 --metrics "$metrics_tmp" \
-                $opt_flag \
                 {params.cram_opts} \
                 {output.cram} >> {log} 2>&1;
 
