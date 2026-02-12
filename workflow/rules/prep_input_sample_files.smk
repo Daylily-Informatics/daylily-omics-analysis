@@ -494,6 +494,7 @@ rule pre_prep_ultima_cram:
     output:
         cram=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.crai",
+	cramready=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.ready",
     resources:
         partition=config['prep_input_sample_files']['partition'],
         threads=config['prep_input_sample_files']['threads'],
@@ -515,7 +516,8 @@ rule pre_prep_ultima_cram:
         (mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;
         export TMPDIR=$(dirname {log})/tmpdir;
         mkdir -p $TMPDIR || echo {log} dir exists >> {log} 2>&1;
-
+	mkdir -p $(dirname {output.cramready});
+	touch {output.cramready};
         if [[ '{params.downsample}' != 'na' ]]; then
             echo 'downsampling to {params.downsample}' >> {log} 2>&1;            
             samtools view -@ {params.use_threads} -T {params.huref} -C -s 33.{params.downsample} {input[0]} -o {output.cram} >> {log} 2>&1;
@@ -529,6 +531,7 @@ rule pre_prep_ultima_cram:
             sleep 5;
             {params.c} {input[1]} {output.crai} >> {log} 2>&1;
         fi
+	
         """
 
 

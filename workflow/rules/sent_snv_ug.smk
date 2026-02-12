@@ -293,6 +293,7 @@ rule prep_sentdug_chunkdirs:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+	cramready=MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.ready",
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/snv/sentdug/vcfs/{dchrm}/{{sample}}.ready",
