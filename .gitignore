@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 .vscode/
 
-
+day_stats.json
 DYMEMBERS
 
 day_pipe_stats.json
