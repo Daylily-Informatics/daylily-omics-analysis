@@ -16,3 +16,7 @@ dependencies:
   - seqfu
   - sambamba
   - isa-l==2.31.0
+  - python
+  - pip  # Specify pip as a dependency first
+  - pip:
+      - https://github.com/Sentieon/sentieon-cli/archive/refs/tags/v1.5.2.tar.gz
