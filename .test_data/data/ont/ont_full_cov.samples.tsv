@@ -1,0 +1,5 @@
+SAMPLEID	ALIAS	SEX	RELATIONSHIP	PEDIGREE	POPULATION	DEEP_MODEL	CONCORDANCE_CONTROL_PATH	POSITIVE_CONTROL	NEGATIVE_CONTROL	TUMOR_NORMAL_PAIR
+HG001	NA12878	male	son	CEPH1463	CEU	WGS	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/truth_sets/hg38/HG001_GRCh38_1_22_v4.2.1_benchmark.vcf.gz	false	false	na
+HG002	NA24385	male	son	AshkenazimTrio	AJ	WGS	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/truth_sets/hg38/HG002_GRCh38_1_22_v4.2.1_benchmark.vcf.gz	false	false	na
+HG003	NA24149	male	father	AshkenazimTrio	AJ	WGS	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/truth_sets/hg38/HG003_GRCh38_1_22_v4.2.1_benchmark.vcf.gz	false	false	na
+
