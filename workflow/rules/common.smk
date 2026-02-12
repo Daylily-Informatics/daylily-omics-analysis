@@ -428,6 +428,14 @@ def _select_reads(row):
         r2_path = _clean_component(row.get(r2, ""))
         if r1_path:
             return r1_path, r2_path if r2_path else "na"
+
+    # Check for CRAM/BAM-only samples (Ultima, ONT, PacBio)
+    for cram_col in ["ULTIMA_CRAM", "ONT_CRAM", "PB_BAM"]:
+        cram_path = _clean_component(row.get(cram_col, ""))
+        if cram_path:
+            # Return dummy FASTQ paths for CRAM-only samples
+            return "na", "na"
+
     raise WorkflowError(
         f"No read pairs specified for analysis unit {row['analysis_unit_uid']}."
     )
