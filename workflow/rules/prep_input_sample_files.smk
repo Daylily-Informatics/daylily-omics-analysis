@@ -492,10 +492,8 @@ rule pre_prep_ultima_cram:
     input:
         get_ultima_cramsx,
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-    wildcard_constraints:
-        alnr="ug",
+        cram=MDIR + "{sample}/align/ug/{sample_lane}.cram",
+        crai=MDIR + "{sample}/align/ug/{sample_lane}.cram.crai",
     resources:
         partition=config['prep_input_sample_files']['partition'],
         threads=config['prep_input_sample_files']['threads'],
@@ -509,7 +507,7 @@ rule pre_prep_ultima_cram:
         use_threads=config["prep_input_sample_files"]["use_threads"],
     threads: config["prep_input_sample_files"]["threads"],
     log:
-        MDIR + "{sample}/align/{alnr}/logs/{sample}.cram.log",
+        MDIR + "{sample}/align/ug/logs/{sample_lane}.cram.log",
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -517,8 +515,7 @@ rule pre_prep_ultima_cram:
         (mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;
         export TMPDIR=$(dirname {log})/tmpdir;
         mkdir -p $TMPDIR || echo {log} dir exists >> {log} 2>&1;
-	mkdir -p $(dirname {output.cramready});
-	touch {output.cramready};
+
         if [[ '{params.downsample}' != 'na' ]]; then
             echo 'downsampling to {params.downsample}' >> {log} 2>&1;            
             samtools view -@ {params.use_threads} -T {params.huref} -C -s 33.{params.downsample} {input[0]} -o {output.cram} >> {log} 2>&1;
@@ -532,7 +529,6 @@ rule pre_prep_ultima_cram:
             sleep 5;
             {params.c} {input[1]} {output.crai} >> {log} 2>&1;
         fi
-	
         """
 
 
@@ -541,10 +537,8 @@ rule pre_prep_ont_cram:
     input:
         get_ont_cramsx,
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-    wildcard_constraints:
-        alnr="ont",
+        cram=MDIR + "{sample}/align/ont/{sample_lane}.cram",
+        crai=MDIR + "{sample}/align/ont/{sample_lane}.cram.crai",
     threads: config["prep_input_sample_files"]["threads"],
     resources:
         partition=config['prep_input_sample_files']['partition'],
@@ -558,7 +552,7 @@ rule pre_prep_ont_cram:
         cluster_sample=ret_sample,
         use_threads=config["prep_input_sample_files"]["use_threads"],
     log:
-        MDIR + "{sample}/align/{alnr}/logs/{sample}.cram.log",
+        MDIR + "{sample}/align/ont/logs/{sample_lane}.cram.log",
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -637,14 +631,12 @@ rule pre_prep_pb_cram:
     input:
         get_pb_cram,
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-    wildcard_constraints:
-        alnr="pb",
+        cram=MDIR + "{sample}/align/pb/{sample_lane}.cram",
+        crai=MDIR + "{sample}/align/pb/{sample_lane}.cram.crai",
     params:
         c=config["prep_input_sample_files"]["source_read_method"],
     log:
-        MDIR + "{sample}/align/{alnr}/logs/{sample}.cram.log",
+        MDIR + "{sample}/align/pb/logs/{sample_lane}.cram.log",
     shell:
         "(mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;"
         "{params.c} {input[0]} {output.cram} >> {log} 2>&1;"
