@@ -81,7 +81,7 @@ rule sent_snv_ug:
             echo "libjemalloc not found in the active conda environment $CONDA_PREFIX.";
             exit 3;
         fi
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503/bin/sentieon driver -t {params.use_threads} \
+        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
             -r {params.huref} \
             -i {input.cram} \
             --interval {params.schrm_mod} \
