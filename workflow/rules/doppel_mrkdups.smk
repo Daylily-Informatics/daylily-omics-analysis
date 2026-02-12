@@ -51,6 +51,8 @@ if "dppl" in DDUP:
             "{MDIR}{sample}/align/{alnr}/logs/dedupe.{sample}.{alnr}.log",
         shell:
             """
+	    set -euo pipefail
+
             touch {log};
             TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
             itype=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
@@ -78,7 +80,7 @@ if "dppl" in DDUP:
              -queue-length {params.queue_length} \
              -shard-size {params.shard_size}   \
             | mbuffer -m {params.mbuffer_mem} \
-            | samtools view -@ {params.view_threads} -m {params.view_mem} --output-fmt-option level={params.cram_compression} -C -T {params.huref_fasta}   --write-index  -o  {output.cram} - >> {log} 2>&1; 
+            | samtools view  -@ {params.view_threads} -m {params.view_mem} --output-fmt-option level={params.cram_compression} -C -T {params.huref_fasta}   --write-index  -o  {output.cram} - >> {log} 2>&1 ; 
 
 
             end_time=$(date +%s);
