@@ -19,3 +19,5 @@ Always `conda activate DAY-EC`, little is done in this repo from a mac, but most
 # Debugging From MAC
 If given an AWS_PROFILE, region, cluster name, pem file, and optionally the : path to analysis, and potentially a tmux session analysis is running in. With the `DAY-EC` env actice, you can use `pcluster describe-cluster -n <name> --region <region>` to get the cluster headnode ip, and can then ssh into it using ssh -i <pemfile> ubuntu@<headnode-ip>.  
 
+# Sentieon Info
+Some can be found here: https://github.com/Sentieon/sentieon-models?tab=readme-ov-file

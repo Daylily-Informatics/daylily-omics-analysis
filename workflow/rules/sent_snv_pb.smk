@@ -4,28 +4,37 @@ import os
 
 ALIGNERS_PB = ["sentmm2"]
 
+
+# ---------------------------------------------------------------------------
+# sent_snv_pacbio: Sentieon DNAscope LongRead pipeline (PacBio HiFi)
+# Uses sentieon-cli dnascope-longread which implements the full two-pass
+# phased variant calling pipeline (DNAscope → VariantPhaser → RepeatModel →
+# DNAscopeHP per-haplotype → merge).  Outputs SNV/indel VCF + SV VCF.
+# ---------------------------------------------------------------------------
+
 rule sent_snv_pacbio:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-        d=MDIR + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.ready",
     output:
-        vcf=temp(MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.vcf"),
-        gvcf=temp(MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.gvcf"),
-        gvcfindex=temp(MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.gvcf.idx"),
+        vcfgz=MDIR
+        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz",
+        vcfgztbi=MDIR
+        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz.tbi",
+        svvcfgz=MDIR
+        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.sv.vcf.gz",
+        svvcfgztbi=MDIR
+        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.sv.vcf.gz.tbi",
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/log/vcfs/{sample}.{alnr}.sentdpb.{dchrm}.snv.log",
+        + "{sample}/align/{alnr}/snv/sentdpb/log/{sample}.{alnr}.sentdpb.snv.log",
     threads: config['sentdpb']['threads']
     conda:
-        "../envs/sentieon_v0.1.yaml"
+        config["sentdpb"]["env_yaml"]
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpb.{dchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpb.bench.tsv",
             0
             if "bench_repeat" not in config["sentdpb"]
             else config["sentdpb"]["bench_repeat"],
@@ -37,38 +46,34 @@ rule sent_snv_pacbio:
         vcpu=config['sentdpb']['threads'],
         mem_mb=config['sentdpb']['mem_mb'],
     params:
-        schrm_mod=get_dchrm_day,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdpb"]["dna_scope_snv_model"],
         cluster_sample=ret_sample,
     shell:
         """
-
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR=/fsx/scratch/sentdpb_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
-        tdir=$TMPDIR;
 
         if [ -z "$SENTIEON_LICENSE" ]; then
-            echo "SENTIEON_LICENSE not set. Please set the SENTIEON_LICENSE environment variable to the license file path & make this update to your dyinit file as well." >> {log} 2>&1;
+            echo "SENTIEON_LICENSE not set." >> {log} 2>&1;
             exit 3;
         fi
 
         if [ ! -f "$SENTIEON_LICENSE" ]; then
-            echo "The file referenced by SENTIEON_LICENSE ('$SENTIEON_LICENSE') does not exist. Please provide a valid file path." >> {log} 2>&1;
+            echo "SENTIEON_LICENSE file not found: '$SENTIEON_LICENSE'" >> {log} 2>&1;
             exit 4;
         fi
 
-        TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
-        itype=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
+        TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
+        itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
         echo "INSTANCE TYPE: $itype" > {log};
-        echo "INSTANCE TYPE: $itype";
         start_time=$(date +%s);
 
-        
-        ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
+        ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
         # --- Validate input CRAM contains aligned data ---
         echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
@@ -77,14 +82,13 @@ rule sent_snv_pacbio:
             exit 10;
         fi
         _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
         if [ "$_sq_count" -eq 0 ]; then
             echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
             exit 11;
         fi
         echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
-        # Find the jemalloc library in the active conda environment
+        # Find jemalloc in the active conda environment
         jemalloc_path="";
         for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
             if [[ -d "$_dir" ]]; then
@@ -98,179 +102,63 @@ rule sent_snv_pacbio:
             fi
         done
 
-        # Check if jemalloc was found and set LD_PRELOAD accordingly
         if [[ -n "$jemalloc_path" ]]; then
             export LD_PRELOAD="$jemalloc_path";
             export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
             echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
             echo "MALLOC_CONF set to: $MALLOC_CONF" >> {log};
         else
-            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu)." >> {log};
-            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
-            exit 3;
+            echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
-        #LD_PRELOAD=$LD_PRELOAD 
-        unset LD_PRELOAD
-        /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} \
+
+        # --- sentieon-cli dnascope-longread (PacBio HiFi) ---
+        # The CLI runs the full two-pass phased pipeline internally.
+        # Outputs: <basename>.vcf.gz (SNV/indel) and <basename>.sv.vcf.gz (SV)
+        cli_out="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sentdpb";
+
+        echo "sentieon-cli dnascope-longread starting: model={params.model} tech=HiFi" >> {log} 2>&1;
+        set +e;
+        sentieon-cli dnascope-longread \
             -r {params.huref} \
             -i {input.cram} \
-            --interval {params.schrm_mod} \
-            --algo DNAscope --model "{params.model}" \
-            --emit_mode variant \
-            {output.gvcf} >> {log} 2>&1;
+            -m "{params.model}" \
+            -t {threads} \
+            --tech HiFi \
+            "${{cli_out}}.vcf.gz" >> {log} 2>&1;
+        cli_rc=$?;
+        set -e;
+        echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
+        if [ $cli_rc -ne 0 ]; then
+            echo "ERROR: sentieon-cli dnascope-longread failed with exit code $cli_rc" >> {log} 2>&1;
+            exit $cli_rc;
+        fi
 
-        #LD_PRELOAD=$LD_PRELOAD 
-        unset LD_PRELOAD
-        /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} \
-            -r {params.huref} \
-            --algo DNAModelApply \
-            --model {params.model} \
-            -v {output.gvcf} {output.vcf} >> {log} 2>&1;
+        # --- Reheader SNV VCF: rename sample to cluster_sample ---
+        if [ -f "${{cli_out}}.vcf.gz" ]; then
+            oldname=$(bcftools query -l "${{cli_out}}.vcf.gz" | head -n1);
+            echo -e "${{oldname}}\t{params.cluster_sample}" > "$TMPDIR/rename.txt";
+            bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
+            bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
+        else
+            echo "ERROR: SNV VCF not produced by sentieon-cli" >> {log} 2>&1;
+            exit 20;
+        fi
+
+        # --- Reheader SV VCF ---
+        if [ -f "${{cli_out}}.sv.vcf.gz" ]; then
+            bcftools reheader -s "$TMPDIR/rename.txt" -o {output.svvcfgz} "${{cli_out}}.sv.vcf.gz" >> {log} 2>&1;
+            bcftools index -f -t --threads {threads} -o {output.svvcfgztbi} {output.svvcfgz} >> {log} 2>&1;
+        else
+            echo "WARNING: SV VCF not produced; creating empty placeholder" >> {log} 2>&1;
+            touch {output.svvcfgz} {output.svvcfgztbi};
+        fi
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
-        echo "Elapsed-Time-min:\t$itype\t$elapsed_time\n";
         echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
 
-        touch {output.vcf};
         """
 
-
-rule sentdpb_sort_index_chunk_vcf:
-    input:
-        vcf=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.vcf",
-    priority: 46
-    output:
-        vcfsort=touch(MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.sort.vcf"),
-        vcfgz=touch(MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.sort.vcf.gz"),
-        vcftbi=touch(MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/{sample}.{alnr}.sentdpb.{dchrm}.snv.sort.vcf.gz.tbi"),
-    conda:
-        "../envs/vanilla_v0.1.yaml"
-    log:
-        MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/vcfs/{dchrm}/log/{sample}.{alnr}.sentdpb.{dchrm}.snv.sort.vcf.gz.log",
-    resources:
-        vcpu=1,
-        threads=1,
-        partition="i192,i192mem"
-    params:
-        x='y',
-        cluster_sample=ret_sample,
-    threads: 1 #config["config"]["sort_index_sentdpbna_chunk_vcf"]['threads']
-    shell:
-        """
-        
-        #bedtools sort -header -i {input.vcf} > {output.vcfsort} 2>> {log};
-        #awk 'BEGIN{{header=1}} 
-        #    header && /^#/ {{print; next}} 
-        #    header && /^[^#]/ {{header=0; exit}}' {input.vcf} > {output.vcfsort} 2>> {log};
-        #awk '/^[^#]/' {input.vcf} | sort --buffer-size=210G -T /fsx/scratch/ --parallel={threads} -k1,1V -k2,2n >> {output.vcfsort} 2>> {log};
-
-        cp {input.vcf} {output.vcfsort} >> {log} 2>&1;
-        touch {input.vcf};
-        sleep 1;
-        bgzip -@ {threads} {output.vcfsort} >> {log} 2>&1;
-        touch {output.vcfsort};
-
-        tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
-        
-        """
-
-
-localrules:
-    sentdpb_concat_fofn,
-
-
-rule sentdpb_concat_fofn:
-    input:
-        chunk_tbi=sorted(
-            expand(
-                MDIR
-                + "{{sample}}/align/{{alnr}}/snv/sentdpb/vcfs/{ochm}/{{sample}}.{{alnr}}.sentdpb.{ochm}.snv.sort.vcf.gz.tbi",
-                ochm=SENTDPB_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),
-    # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th dchrm wildcard is effectively being constrained by the values in the sentdpb_CHRMS array;  So you produce 1 input array of files for every sample+dchrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first sentdpbchrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
-    priority: 44
-    output:
-        fin_fofn=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.concat.vcf.gz.fofn.tmp",
-    threads: 1
-    resources:
-        threads=1
-    params:
-        fn_stub="{sample}.{alnr}.sentdpb."
-    benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpb.concat.fofn.bench.tsv"
-    conda:
-        "../envs/vanilla_v0.1.yaml"
-    log:
-        MDIR + "{sample}/align/{alnr}/snv/sentdpb/log/{sample}.{alnr}.sentdpb.cocncat.fofn.log",
-    shell:
-        """
-
-        for i in {input.chunk_tbi}; do
-            ii=$(echo $i | perl -pe 's/\.tbi$//g'; );
-            echo $ii >> {output.tmp_fofn};
-        done;
-        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.sentdpb. {output.fin_fofn}) >> {log} 2>&1;
-
-        """
-
-
-rule sentdpb_concat_index_chunks:
-    input:
-        fofn=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.concat.vcf.gz.fofn",
-    output:
-        vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz"
-        ),
-        vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.temp.vcf.gz"
-        ),
-        vcfgztbi=touch(
-            MDIR
-            + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz.tbi"
-        ),
-    threads: 64
-    resources:
-        vcpu=64,
-        threads=64,
-        partition="i192,i192mem,i128"
-    priority: 47
-    params:
-        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        cluster_sample=ret_sample,
-    resources:
-        attempt_n=lambda wildcards, attempt:  (attempt + 0)
-    benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpb.merge.bench.tsv"
-    conda:
-        "../envs/vanilla_v0.1.yaml"
-    log:
-        MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/log/{sample}.{alnr}.sentdpb.snv.merge.sort.gatherered.log",
-    shell:
-        """
-        touch {log};
-        mkdir -p $(dirname {log});
-        # This is acceptable bc I am concatenating from the same tools output, not across tools
-        #touch {output.vcfgztemp};
-
-        bcftools concat -a -d all --threads {threads} -f {input.fofn}  -O z -o {output.vcfgztemp} >> {log} 2>&1;
-
-        export oldname=$(bcftools query -l {output.vcfgztemp} | head -n1) >> {log} 2>&1;
-        echo -e "${{oldname}}\t{params.cluster_sample}" > {output.vcfgz}.rename.txt
-        bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
-        bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
-
-        rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
-
-        """
 
 localrules:
     clear_combined_sentdpb_vcf,
@@ -287,14 +175,14 @@ rule clear_combined_sentdpb_vcf:  # TARGET:  clear combined sentdpb vcf so the c
     priority: 42
     shell:
         """
-        rm {input}*  1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';
+        rm {input}*  1> /dev/null  2> /dev/null || echo 'file not found for deletion: {input}';
         """
 
 
 localrules:
     produce_sentdpb_vcf,
 
- 
+
 rule produce_sentdpb_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
@@ -313,29 +201,4 @@ rule produce_sentdpb_vcf:  # TARGET: sentieon dnascope vcf
         """( touch {output} ;
 
         {latency_wait}; ls {output} ) >> {log} 2>&1;
-        """
-
-
-localrules:
-    prep_sentdpb_chunkdirs,
-
-
-rule prep_sentdpb_chunkdirs:
-    input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-    output:
-        expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/sentdpb/vcfs/{dchrm}/{{sample}}.ready",
-            dchrm=SENTDPB_CHRMS,
-        ),
-    threads: 1
-    log:
-        MDIR + "{sample}/align/{alnr}/snv/sentdpb/logs/{sample}.{alnr}.chunkdirs.log",
-    shell:
-        """
-        ( echo {output}  ;
-        mkdir -p $(dirname {output} );
-        touch {output};
-        ls {output}; ) > {log} 2>&1;
         """
