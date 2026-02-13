@@ -2,6 +2,13 @@
 # Aligns unaligned PacBio BAM → CRAM via minimap2 -ax map-hifi | samtools sort
 # No deduplication step: PacBio HiFi PCR-free reads do not require it.
 
+# Filter SAMPS to only those with PB_BAM_ALIGNER == 'sentmm2'
+PB_SENTMM2_SAMPS = list(
+    samples[
+        samples["PB_BAM_ALIGNER"].isin(["sentmm2"])
+    ]["sample_lane"].unique()
+)
+
 
 rule sentmm2_align_sort:
     """Align PacBio HiFi uBAM with minimap2, sort to CRAM."""
@@ -84,5 +91,5 @@ localrules: produce_sentmm2_align_sort,
 
 rule produce_sentmm2_align_sort:  # TARGET: produce_sentmm2_align_sort
     input:
-        expand(MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram", sample=SAMPS)
+        expand(MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram", sample=PB_SENTMM2_SAMPS)
 

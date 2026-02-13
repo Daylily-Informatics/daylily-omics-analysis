@@ -8,4 +8,5 @@ dependencies:
   - samtools>=1.21
   - htslib
   - pigz
+  - mbuffer
 
