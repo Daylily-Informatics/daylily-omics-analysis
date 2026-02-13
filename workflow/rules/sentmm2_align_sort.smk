@@ -49,6 +49,16 @@ rule sentmm2_align_sort:
     shell:
         """
 
+        if [ -z "$SENTIEON_LICENSE" ]; then
+            echo "SENTIEON_LICENSE not set. Please set the SENTIEON_LICENSE environment variable to the license file path & make this update to your dyinit file as well." >> {log} 2>&1;
+            exit 3;
+        fi
+
+        if [ ! -f "$SENTIEON_LICENSE" ]; then
+            echo "The file referenced by SENTIEON_LICENSE ('$SENTIEON_LICENSE') does not exist. Please provide a valid file path." >> {log} 2>&1;
+            exit 4;
+        fi
+
         TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
         itype=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
         echo "INSTANCE TYPE: $itype" > {log};
@@ -56,16 +66,29 @@ rule sentmm2_align_sort:
         ulimit -n 65536 || echo "ulimit mod failed";
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        TMPDIR=/dev/shm/sentmm2_tmp_$timestamp;
+        export TMPDIR=/dev/shm/sentmm2_tmp_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
-        APPTAINER_HOME=$TMPDIR;
+        export APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \\"$TMPDIR\\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
 
         tdir=$TMPDIR;
         epocsec=$(date +'%s');
 
+        # Find the jemalloc library in the active conda environment
+        jemalloc_path=$(find "$CONDA_PREFIX" -name "libjemalloc*" | grep -E '\.so|\.dylib' | head -n 1);
+
+        # Check if jemalloc was found and set LD_PRELOAD accordingly
+        if [[ -n "$jemalloc_path" ]]; then
+            LD_PRELOAD="$jemalloc_path";
+            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+        else
+            echo "libjemalloc not found in the active conda environment $CONDA_PREFIX.";
+            exit 3;
+        fi
+
         samtools fastq -@ 4 -T MM,ML {input.bam} \
-        | minimap2 \
+        | LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
         {params.minimap2_opts} \
         -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
         -t {params.minimap2_threads} \
