@@ -73,14 +73,28 @@ rule sentdhuo_snv:
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
         
         # Find the jemalloc library in the active conda environment
-        jemalloc_path=$(find "$CONDA_PREFIX" -name "libjemalloc*" | grep -E '\.so|\.dylib' | head -n 1); 
+        jemalloc_path="";
+        for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
+            if [[ -d "$_dir" ]]; then
+                for _ext in so dylib; do
+                    _candidate=$(find "$_dir" -maxdepth 1 -name "libjemalloc*.$_ext*" 2>/dev/null | head -n 1);
+                    if [[ -n "$_candidate" && -r "$_candidate" ]]; then
+                        jemalloc_path="$_candidate";
+                        break 2;
+                    fi
+                done
+            fi
+        done
 
         # Check if jemalloc was found and set LD_PRELOAD accordingly
         if [[ -n "$jemalloc_path" ]]; then
-            LD_PRELOAD="$jemalloc_path";
+            export LD_PRELOAD="$jemalloc_path";
+            export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
             echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+            echo "MALLOC_CONF set to: $MALLOC_CONF" >> {log};
         else
-            echo "libjemalloc not found in the active conda environment $CONDA_PREFIX.";
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu)." >> {log};
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
             exit 3;
         fi
 
