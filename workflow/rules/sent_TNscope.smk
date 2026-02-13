@@ -88,6 +88,34 @@ rule sent_TNscope:
         export APPTAINER_HOME=$TMPDIR
         trap 'rm -rf "$TMPDIR" || true' EXIT
 
+        # --- Validate tumor CRAM contains aligned data ---
+        echo "Validating tumor CRAM: {input.tumor_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.tumor_cram} >> {log} 2>&1; then
+            echo "ERROR: Tumor CRAM failed integrity check: {input.tumor_cram}" | tee -a {log};
+            exit 10;
+        fi
+        _sq_count=$(samtools view -H {input.tumor_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Tumor CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: Tumor CRAM has no @SQ headers (unaligned?): {input.tumor_cram}" | tee -a {log};
+            exit 11;
+        fi
+        echo "Tumor CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
+        # --- Validate normal CRAM contains aligned data ---
+        echo "Validating normal CRAM: {input.normal_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.normal_cram} >> {log} 2>&1; then
+            echo "ERROR: Normal CRAM failed integrity check: {input.normal_cram}" | tee -a {log};
+            exit 12;
+        fi
+        _sq_count=$(samtools view -H {input.normal_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Normal CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: Normal CRAM has no @SQ headers (unaligned?): {input.normal_cram}" | tee -a {log};
+            exit 13;
+        fi
+        echo "Normal CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set. Please set the SENTIEON_LICENSE environment variable to the license file path & make this update to your dyinit file as well." >> {log} 2>&1
             exit 3
