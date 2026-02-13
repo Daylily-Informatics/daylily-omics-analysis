@@ -4,8 +4,7 @@ channels:
   - anaconda
   - defaults
 dependencies:
-  - minimap2>=2.28
-  - samtools>=1.21
+  - samtools
   - htslib
   - pigz
   - mbuffer
