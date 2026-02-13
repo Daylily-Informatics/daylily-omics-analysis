@@ -45,10 +45,11 @@ rule sent_DNAscope:
         """
         export bwt_max_mem={params.max_mem} ;
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR=/fsx/scratch/sentd_tmp_$timestamp;
+        export TMPDIR=/dev/shm/sentd_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
+
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
         tdir=$TMPDIR;
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;

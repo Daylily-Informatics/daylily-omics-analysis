@@ -56,7 +56,7 @@ rule sentmm2_align_sort:
         ulimit -n 65536 || echo "ulimit mod failed";
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        TMPDIR=/fsx/scratch/sentmm2_tmp_$timestamp;
+        TMPDIR=/dev/shm/sentmm2_tmp_$timestamp;
         mkdir -p $TMPDIR;
         APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \\"$TMPDIR\\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
