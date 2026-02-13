@@ -16,6 +16,8 @@ rule sentdhuo_snv:
         + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf"),
      tvcf=temp(MDIR
         + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.tmp"),
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_UG)
     log:
         MDIR
         + "{sample}/align/{alnr}/snv/sentdhuo/log/vcfs/{sample}.{alnr}.sentdhuo.{dchrm}.snv.log",
@@ -340,6 +342,8 @@ rule prep_sentdhuo_chunkdirs:
             MDIR + "{{sample}}/align/{{alnr}}/snv/sentdhuo/vcfs/{dchrm}/{{sample}}.ready",
             dchrm=SENTDHUO_CHRMS,
         ),
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_UG)
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/snv/sentdhuo/logs/{sample}.{alnr}.chunkdirs.log",

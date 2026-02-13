@@ -15,7 +15,9 @@ rule sentdhio_snv:
         vcf=MDIR
             + "{sample}/align/{alnr}/snv/sentdhio/vcfs/{dchrm}/{sample}.{alnr}.sentdhio.{dchrm}.snv.sort.vcf.gz",
         tbi=MDIR
-            + "{sample}/align/{alnr}/snv/sentdhio/vcfs/{dchrm}/{sample}.{alnr}.sentdhio.{dchrm}.snv.sort.vcf.gz.tbi",           
+            + "{sample}/align/{alnr}/snv/sentdhio/vcfs/{dchrm}/{sample}.{alnr}.sentdhio.{dchrm}.snv.sort.vcf.gz.tbi",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_ONT)
     log:
         MDIR
         + "{sample}/align/{alnr}/snv/sentdhio/log/vcfs/{sample}.{alnr}.sentdhio.{dchrm}.snv.log",
@@ -330,6 +332,8 @@ rule prep_sentdhio_chunkdirs:
             MDIR + "{{sample}}/align/{{alnr}}/snv/sentdhio/vcfs/{dchrm}/{{sample}}.ready",
             dchrm=SENTDHIO_CHRMS,
         ),
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_ONT)
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/snv/sentdhio/logs/{sample}.{alnr}.chunkdirs.log",
