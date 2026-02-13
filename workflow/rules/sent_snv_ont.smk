@@ -101,7 +101,9 @@ rule sent_snv_ont:
             exit 3;
         fi
         
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
+        #LD_PRELOAD=$LD_PRELOAD 
+        unset LD_PRELOAD
+        /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
             -r {params.huref} \
             -i {input.cram} \
             --interval {params.schrm_mod} \
@@ -109,7 +111,9 @@ rule sent_snv_ont:
             --emit_mode variant \
             {output.gvcf} >> {log} 2>&1;
 
-         LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
+         #LD_PRELOAD=$LD_PRELOAD 
+         unset LD_PRELOAD
+         /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
             -r {params.huref} \
             --algo DNAModelApply \
 	    --model {params.model_2} \
