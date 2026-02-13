@@ -64,12 +64,13 @@ rule sentmm2_align_sort:
         tdir=$TMPDIR;
         epocsec=$(date +'%s');
 
-        minimap2 \
+        samtools fastq -@ 4 -T MM,ML {input.bam} \
+        | minimap2 \
         {params.minimap2_opts} \
         -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
         -t {params.minimap2_threads} \
         {params.huref} \
-        {input.bam} {params.mbuffer} \
+        - {params.mbuffer} \
         | samtools sort \
         -l 1 \
         -m {params.sort_thread_mem} \
