@@ -131,7 +131,7 @@ bwa_mem2a_aln_sort:
 
 sentmm2_align_sort:
     env_yaml: "../envs/sentmm2_v0.1.yaml"
-    partition: "i192,i192mem"
+    partition: "i192mem"
     threads: 192
     minimap2_threads: 160
     sort_threads: 32
