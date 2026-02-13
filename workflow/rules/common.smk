@@ -334,6 +334,8 @@ for opt_col in [
     "UG_R2_PATH",
     "SUBSAMPLE_PCT",
     "ILMN_TRIM_READ_LENGTH",
+    "LONGREADTRIM_READ_LENGTH",
+    "LONGREADTRIM_MODE",
     "SEQ_VENDOR",
     "AMPLIFICATION_TYPE",
     "ALIGNED_REF_UID",
@@ -430,7 +432,7 @@ def _select_reads(row):
             return r1_path, r2_path if r2_path else "na"
 
     # Check for CRAM/BAM-only samples (Ultima, ONT, PacBio)
-    for cram_col in ["ULTIMA_CRAM", "ONT_CRAM", "PB_BAM"]:
+    for cram_col in ["ULTIMA_CRAM", "ONT_CRAM", "PB_BAM", "ONT_BAM"]:
         cram_path = _clean_component(row.get(cram_col, ""))
         if cram_path:
             # Return dummy FASTQ paths for CRAM-only samples
@@ -497,6 +499,11 @@ for col, default in {
     "PB_BAM": "na",
     "PB_BAM_ALIGNER": "na",
     "PB_BAM_SNV_CALLER": "na",
+    "ONT_BAM": "na",
+    "ONT_BAM_ALIGNER": "na",
+    "ONT_BAM_SNV_CALLER": "na",
+    "LONGREADTRIM_READ_LENGTH": "na",
+    "LONGREADTRIM_MODE": "na",
     "DEEP_MODEL": "WGS",
     "instrument": "na",
     "lib_prep": "na",
@@ -699,7 +706,7 @@ for _, row in samples.iterrows():
         CONCORDANCE_SAMPLES[samp_id] = cpath
 
     # Track CRAM aligners (non-empty values only)
-    for aligner_col in ("ULTIMA_CRAM_ALIGNER", "ONT_CRAM_ALIGNER", "PB_BAM_ALIGNER"):
+    for aligner_col in ("ULTIMA_CRAM_ALIGNER", "ONT_CRAM_ALIGNER", "PB_BAM_ALIGNER", "ONT_BAM_ALIGNER"):
         aval = str(row.get(aligner_col, "") or "").strip()
         if aval and aval.lower() not in {"na", "none", "hyb"}:
             CRAM_ALIGNERS.append(aval)
@@ -1054,6 +1061,50 @@ def get_ilmn_trim_tail(wildcards):
     return get_ilmn_trim_head_tail(wildcards.sample)[1]
 
 
+## Long-read trimming helpers (ONT / PacBio)
+# Controlled by LONGREADTRIM_READ_LENGTH and LONGREADTRIM_MODE columns.
+# Modes: 'head' (remove first N bases), 'tail' (remove last N bases),
+#        'consecutive' (non-overlapping N-base subreads via seqkit sliding).
+def get_longread_trim_head_tail(sample_id):
+    row = samples[samples["sample"] == sample_id]
+    trim_len = (first_val(row, "LONGREADTRIM_READ_LENGTH") or "").strip()
+    trim_mode = (first_val(row, "LONGREADTRIM_MODE") or "").strip().lower()
+
+    if trim_len in {"", "na", "None", "0"} or trim_mode in {"", "na", "None"}:
+        return ("", "")
+
+    try:
+        length = int(trim_len)
+    except Exception as e:
+        raise WorkflowError(
+            f"LONGREADTRIM_READ_LENGTH must be a positive integer or 'na'; got '{trim_len}'"
+        ) from e
+    if length <= 0:
+        raise WorkflowError(f"LONGREADTRIM_READ_LENGTH must be positive; got {length}")
+
+    if trim_mode == "head":
+        # Remove the first N bases from every read
+        return (f" | seqkit subseq -j 16 --line-width=0 --quiet --seq-type=dna -r {length + 1}:-1 ", "")
+    elif trim_mode == "tail":
+        # Remove the last N bases from every read
+        return (f" | seqkit subseq -j 16 --line-width=0 --quiet --seq-type=dna -r 1:-{length + 1} ", "")
+    elif trim_mode == "consecutive":
+        # Split each read into consecutive non-overlapping N-base subreads
+        return (f" | seqkit sliding -j 16 --line-width=0 --quiet --seq-type=dna -s {length} -W {length} ", "")
+    else:
+        raise WorkflowError(
+            f"LONGREADTRIM_MODE must be 'head', 'tail', or 'consecutive'; got '{trim_mode}'"
+        )
+
+
+def get_longread_trim_head(wildcards):
+    return get_longread_trim_head_tail(wildcards.sample)[0]
+
+
+def get_longread_trim_tail(wildcards):
+    return get_longread_trim_head_tail(wildcards.sample)[1]
+
+
 def get_samp_name(wildcards):
     return wildcards.sample
 
@@ -1112,29 +1163,35 @@ def get_alnr(wildcards):
     return wildcards.alnr
 
 def get_dchrm_day(wildcards):
-    pchr= GENOME_CHR_PREFIX
+    pchr = GENOME_CHR_PREFIX
+    mito_code = "MT" if "b37" == config['genome_build'] else "M"
 
-    ret_str = ""
-    sl = wildcards.dchrm.replace('chr','').split("-")
-    sl2 = wildcards.dchrm.replace('chr','').split("~")
-    
+    chrm_map = {'23': 'X', '24': 'Y', '25': mito_code}
+
+    def _chrm_name(n):
+        """Map numeric chromosome ID to proper name (23=X, 24=Y, 25=MT/M)."""
+        s = str(n)
+        return pchr + chrm_map.get(s, s)
+
+    raw = wildcards.dchrm.replace('chr', '')
+    sl = raw.split("-")
+    sl2 = raw.split("~")
+
     if len(sl2) == 2:
-        ret_str = pchr + wildcards.dchrm + ':'
+        # Sub-region notation (e.g. "1~100000-200000"), preserved as-is
+        ret_str = pchr + wildcards.dchrm
     elif len(sl) == 1:
-        ret_str = pchr + sl[0] + ':'
+        ret_str = _chrm_name(sl[0])
     elif len(sl) == 2:
         start = int(sl[0])
         end = int(sl[1])
-        while start <= end:
-            ret_str = str(ret_str) + "," + pchr + str(start) + ':'
-            start = start + 1
+        ret_str = ','.join(_chrm_name(i) for i in range(start, end + 1))
     else:
         raise Exception(
             "sentD chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y, 25=MT"
         )
-    mito_code="MT" if "b37" == config['genome_build'] else "M",
 
-    return ret_mod_chrm(ret_str).lstrip(',').replace('chr23','chrX').replace('chr24','chrY').replace('chr25','chrMT').replace('23:','X:').replace('24:','Y:').replace('25:',f'{mito_code}:')
+    return ret_str
 
 
 def get_dvchrm_day(wildcards):

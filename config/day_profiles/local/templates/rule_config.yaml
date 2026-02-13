@@ -140,6 +140,18 @@ sentmm2_align_sort:
     mbuffer: " | mbuffer -m 50M -q -s 128k "
     constraint: ""
 
+sentmm2ont_align_sort:
+    env_yaml: "../envs/sentmm2ont_v0.1.yaml"
+    partition: "i8"
+    threads: 7
+    minimap2_threads: 5
+    sort_threads: 2
+    mem_mb: 50000
+    sort_thread_mem: "1G"
+    minimap2_opts: " -ax map-ont "
+    mbuffer: " | mbuffer -m 50M -q -s 128k "
+    constraint: ""
+
 strobe_align_sort:
     env_yaml: "../envs/strobe_aligner.yaml"
     partition: "i8"
