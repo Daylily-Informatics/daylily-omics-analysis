@@ -66,7 +66,21 @@ rule deepvariant_15:
         export APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
-        
+
+        # --- Validate input CRAM contains aligned data ---
+        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
+            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
+            exit 10;
+        fi
+        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
+            exit 11;
+        fi
+        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
         {params.numa} \
         /opt/deepvariant/bin/run_deepvariant \
         --model_type={params.deep_model} --ref={params.huref} \

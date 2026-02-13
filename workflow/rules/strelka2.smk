@@ -52,6 +52,20 @@ rule strelka2_germline:
         set -euo pipefail
         mkdir -p {params.run_dir}
 
+        # --- Validate input CRAM contains aligned data ---
+        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
+            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
+            exit 10;
+        fi
+        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
+            exit 11;
+        fi
+        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
         vchr=$(echo {params.cpre}{params.schrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' )
         vchr=${{vchr%:}}
         IFS=':' read -r vcontig vstart vend <<< "$vchr"
@@ -160,6 +174,34 @@ rule strelka2_somatic:
         r"""
         set -euo pipefail
         mkdir -p {params.run_dir}
+
+        # --- Validate tumor CRAM contains aligned data ---
+        echo "Validating tumor CRAM: {input.tumor_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.tumor_cram} >> {log} 2>&1; then
+            echo "ERROR: Tumor CRAM failed integrity check: {input.tumor_cram}" | tee -a {log};
+            exit 10;
+        fi
+        _sq_count=$(samtools view -H {input.tumor_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Tumor CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: Tumor CRAM has no @SQ headers (unaligned?): {input.tumor_cram}" | tee -a {log};
+            exit 11;
+        fi
+        echo "Tumor CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
+        # --- Validate normal CRAM contains aligned data ---
+        echo "Validating normal CRAM: {input.normal_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.normal_cram} >> {log} 2>&1; then
+            echo "ERROR: Normal CRAM failed integrity check: {input.normal_cram}" | tee -a {log};
+            exit 12;
+        fi
+        _sq_count=$(samtools view -H {input.normal_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Normal CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: Normal CRAM has no @SQ headers (unaligned?): {input.normal_cram}" | tee -a {log};
+            exit 13;
+        fi
+        echo "Normal CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         vchr=$(echo {params.cpre}{params.schrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/' )
         vchr=${{vchr%:}}

@@ -41,6 +41,34 @@ rule mutect2_bams:
 
         mkdir -p "$(dirname {output.tumor_bam})"
 
+        # --- Validate tumor CRAM contains aligned data ---
+        echo "Validating tumor CRAM: {input.tumor_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.tumor_cram} >> {log} 2>&1; then
+            echo "ERROR: Tumor CRAM failed integrity check: {input.tumor_cram}" | tee -a {log};
+            exit 10;
+        fi
+        _sq_count=$(samtools view -H {input.tumor_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Tumor CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: Tumor CRAM has no @SQ headers (unaligned?): {input.tumor_cram}" | tee -a {log};
+            exit 11;
+        fi
+        echo "Tumor CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
+        # --- Validate normal CRAM contains aligned data ---
+        echo "Validating normal CRAM: {input.normal_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.normal_cram} >> {log} 2>&1; then
+            echo "ERROR: Normal CRAM failed integrity check: {input.normal_cram}" | tee -a {log};
+            exit 12;
+        fi
+        _sq_count=$(samtools view -H {input.normal_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Normal CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        if [ "$_sq_count" -eq 0 ]; then
+            echo "ERROR: Normal CRAM has no @SQ headers (unaligned?): {input.normal_cram}" | tee -a {log};
+            exit 13;
+        fi
+        echo "Normal CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
         # Build interval token; map 23→X, 24→Y, 25→{params.mito_code}; strip trailing colon.
         tchr=$(echo {params.cpre}{params.chrm} \
         | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/')
