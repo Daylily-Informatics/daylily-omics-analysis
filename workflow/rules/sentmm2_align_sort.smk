@@ -48,7 +48,7 @@ rule sentmm2_align_sort:
         config["sentmm2_align_sort"]["env_yaml"]
     shell:
         """
-
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set. Please set the SENTIEON_LICENSE environment variable to the license file path & make this update to your dyinit file as well." >> {log} 2>&1;
             exit 3;
