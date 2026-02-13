@@ -39,6 +39,16 @@ properties:
         type: string
     ILMN_TRIM_READ_LENGTH:
         type: string
+    LONGREADTRIM_READ_LENGTH:
+        type: string
+    LONGREADTRIM_MODE:
+        type: string
+    ONT_BAM:
+        type: string
+    ONT_BAM_ALIGNER:
+        type: string
+    ONT_BAM_SNV_CALLER:
+        type: string
     AMPLIFICATION_TYPE:
         type: string
     ALIGNED_REF_UID:

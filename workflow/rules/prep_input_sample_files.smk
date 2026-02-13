@@ -685,6 +685,43 @@ def get_pb_bam(wildcards):
     return [bam_path]
 
 
+def get_ont_bam(wildcards):
+    """Return path to unaligned ONT BAM from ONT_BAM manifest column.
+
+    Unlike get_ont_cramsx(), this does NOT require a companion index file
+    (.csi/.bai) because the input is an unaligned BAM (uBAM) which
+    cannot be coordinate-indexed.  Accepts 'sentmm2ont' as the aligner.
+    """
+    bam_path = os.path.abspath(
+        samples[samples['sample_lane'] == wildcards.sample]['ONT_BAM'][0]
+    )
+    bam_aligner = samples[
+        samples['sample_lane'] == wildcards.sample
+    ]['ONT_BAM_ALIGNER'][0]
+
+    if bam_aligner in ['na', '', None, 'None']:
+        return []
+    elif bam_aligner in ['sentmm2ont']:
+        pass
+    else:
+        raise Exception(
+            f"ERROR: ONT_BAM_ALIGNER='{bam_aligner}' is not valid. "
+            f"Only 'sentmm2ont' is supported. Check your manifest."
+        )
+
+    if not os.path.exists(bam_path):
+        raise Exception(
+            f"ERROR: ONT_BAM path '{bam_path}' does not exist. "
+            f"Check your manifest."
+        )
+
+    bam_aligner_dir = f"{MDIR}/{wildcards.sample}/align/{bam_aligner}/"
+    print(f"PREP ONT BAM:: {bam_aligner_dir} ... ", file=sys.stderr)
+    os.system(f"mkdir -p {bam_aligner_dir}")
+    os.system(f"touch {bam_aligner_dir}/.ok")
+
+    return [bam_path]
+
 
 localrules:
     pre_prep_pb_cram,
