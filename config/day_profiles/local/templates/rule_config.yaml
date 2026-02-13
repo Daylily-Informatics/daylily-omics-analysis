@@ -755,6 +755,22 @@ sentieon:
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""
 
+sent_aln_sort_snv:
+    threads: 7
+    benchmark_runs: 0
+    env_yaml: "../envs/sentieon_v0.1.yaml"
+    mem_mb: 50000
+    partition: "i8"
+    constraint: ""
+    bench_repeat: 0
+    hapl: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
+    gbz: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
+    model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    pop_vcf: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/pop-v20g41-20251216.vcf.gz"
+    canonical_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38/hg38_canonical.bed"
+    dbsnp: "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
+    pcr_free: "true"
+
 sentieon_gatk:
     threads: 7
     bwa_threads: 7
