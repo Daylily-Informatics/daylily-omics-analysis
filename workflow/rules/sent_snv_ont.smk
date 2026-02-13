@@ -57,6 +57,7 @@ rule sent_snv_ont:
         """
 
         timestamp=$(date +%Y%m%d%H%M%S);
+	export PATH=$PATH:$SENTIEON_BIN_DIR
         export TMPDIR=/dev/shm/sentdont_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
