@@ -226,7 +226,7 @@ ulimit -n 16384
 # Set Sentieon variables
 export SENTIEON_TMPDIR='/dev/shm/'
 #export SENTIEON_LICENSE='/fsx/data/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
-export SENTIEON_INSTALL_DIR='/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/'
+export SENTIEON_INSTALL_DIR='/fsx/data/cached_envs/sentieon-genomics-202503.02'
 export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
 
 # Backup original PATH and PS1 if not already set
