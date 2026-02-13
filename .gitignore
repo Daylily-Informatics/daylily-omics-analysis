@@ -11,6 +11,8 @@ day_pipe_stats.json
 results/
 
 etc/about_me.yaml
+scripts/
+pblogs
 
 .jemalloc_loc
 .snakemake/
