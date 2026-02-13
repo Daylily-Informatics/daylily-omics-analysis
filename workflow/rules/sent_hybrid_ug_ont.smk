@@ -133,7 +133,6 @@ rule sentdhuo_snv:
             --sr_aln {input.ug_cram} \
             --lr_aln {input.ont_cram} \
             -m {params.model} \
-            --longread_tech ONT \
             --skip_svs \
             --skip_mosdepth \
             --skip_cnv \

@@ -127,7 +127,6 @@ rule sentdhio_snv:
             --skip_cnv \
             --skip_multiqc \
             -m {params.model} \
-            --longread_tech ONT \
             {params.diploid_bed} {params.haploid_bed} {output.vcf} >> {log} 2>&1;
 
 
