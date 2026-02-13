@@ -60,6 +60,7 @@ rule sent_snv_ont:
         timestamp=$(date +%Y%m%d%H%M%S);
 	export PATH=$PATH:$SENTIEON_BIN_DIR
         export TMPDIR=/dev/shm/sentdont_tmp_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;

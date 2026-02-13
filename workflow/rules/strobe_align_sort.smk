@@ -59,9 +59,10 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
             start_time=$(date +%s);
 
             timestamp=$(date +%Y%m%d%H%M%S);
-            TMPDIR=/dev/shm/strobe_tmp_$timestamp;
+            export TMPDIR=/dev/shm/strobe_tmp_$timestamp;
+            export SENTIEON_TMPDIR=$TMPDIR;
             mkdir -p $TMPDIR;
-            APPTAINER_HOME=$TMPDIR;
+            export APPTAINER_HOME=$TMPDIR;
             trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
             tdir=$TMPDIR;
 
