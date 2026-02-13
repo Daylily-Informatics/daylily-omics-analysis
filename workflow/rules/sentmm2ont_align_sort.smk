@@ -69,13 +69,20 @@ rule sentmm2ont_align_sort:
         ulimit -n 65536 || echo "ulimit mod failed";
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR=/dev/shm/sentmm2ont_tmp_$timestamp;
-        export SENTIEON_TMPDIR=$TMPDIR;
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \\"$TMPDIR\\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        export TMPDIR="/dev/shm/sentmm2ont_tmp_${timestamp}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        if [ ! -d "$TMPDIR" ]; then
+            echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
+            exit 5;
+        fi
+        echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" >> {log} 2>&1;
+        df -h /dev/shm >> {log} 2>&1;
+        export APPTAINER_HOME="$TMPDIR";
+        trap "rm -rf \"$TMPDIR\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
 
-        tdir=$TMPDIR;
+        tdir="$TMPDIR";
         epocsec=$(date +'%s');
 
         # Find the jemalloc library in the active conda environment
@@ -104,6 +111,12 @@ rule sentmm2ont_align_sort:
             exit 3;
         fi
 
+        # Verify TMPDIR still exists before pipeline
+        if [ ! -d "$tdir" ]; then
+            echo "ERROR: TMPDIR disappeared before pipeline start: $tdir" >> {log} 2>&1;
+            exit 6;
+        fi
+
         samtools fastq -@ 4 -T MM,ML {input.bam} \
         {params.longread_trim_head} {params.longread_trim_tail} \
         | LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
@@ -116,7 +129,7 @@ rule sentmm2ont_align_sort:
         -l 1 \
         -m {params.sort_thread_mem} \
         -@ {params.sort_threads} \
-        -T $tdir \
+        -T "$tdir/srt" \
         -O CRAM \
         --reference {params.huref} \
         --write-index \
