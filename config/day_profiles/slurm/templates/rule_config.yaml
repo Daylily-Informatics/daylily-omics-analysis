@@ -129,6 +129,18 @@ bwa_mem2a_aln_sort:
     mbuffer: " | mbuffer -m 128G -q -s 2M  "  #| mbuffer -m 10G -q -s 1M " 
     constraint: ""  # --constraint 'm7gb768|r7gb1536' 
 
+sentmm2_align_sort:
+    env_yaml: "../envs/sentmm2_v0.1.yaml"
+    partition: "i192,i192mem"
+    threads: 192
+    minimap2_threads: 160
+    sort_threads: 32
+    mem_mb: 200000
+    sort_thread_mem: "4G"
+    minimap2_opts: " -ax map-hifi "
+    mbuffer: " | mbuffer -m 128G -q -s 2M "
+    constraint: ""
+
 strobe_align_sort:
     env_yaml: "../envs/strobe_aligner.yaml"
     partition: "i192mem"
