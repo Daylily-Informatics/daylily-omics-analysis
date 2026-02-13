@@ -69,7 +69,7 @@ rule sentmm2ont_align_sort:
         ulimit -n 65536 || echo "ulimit mod failed";
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentmm2ont_tmp_${timestamp}_$$";
+        export TMPDIR="/dev/shm/sentmm2ont_tmp_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
