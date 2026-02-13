@@ -48,6 +48,7 @@ rule sent_snv_pacbio:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdpb"]["dna_scope_snv_model"],
+        pop_vcf=config["sentdpb"]["pop_vcf"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -122,6 +123,7 @@ rule sent_snv_pacbio:
             -r {params.huref} \
             -i {input.cram} \
             -m "{params.model}" \
+            -d "{params.pop_vcf}" \
             -t {threads} \
             --tech HiFi \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;

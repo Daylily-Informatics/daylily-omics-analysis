@@ -43,6 +43,7 @@ rule sentdhio_snv:
         use_threads=config["sentdhio"]["use_threads"],
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
+        pop_vcf=config["sentdhio"]["pop_vcf"],
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,
@@ -124,6 +125,7 @@ rule sentdhio_snv:
             --lr_aln {input.cram} \
             --lr_align_input \
             --lr_input_ref {params.huref} \
+            -d "{params.pop_vcf}" \
             --skip_svs \
             --skip_mosdepth \
             --skip_cnv \

@@ -42,6 +42,7 @@ rule sentdhuo_snv:
         schrm_mod=get_dchrm_day,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
+        pop_vcf=config["sentdhuo"]["pop_vcf"],
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,
@@ -134,6 +135,7 @@ rule sentdhuo_snv:
             -r  {params.huref} \
             --sr_aln {input.ug_cram} \
             --lr_aln {input.ont_cram} \
+            -d "{params.pop_vcf}" \
             -m {params.model} \
             --skip_svs \
             --skip_mosdepth \
