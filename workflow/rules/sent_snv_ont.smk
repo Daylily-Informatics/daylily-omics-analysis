@@ -52,6 +52,7 @@ rule sent_snv_ont:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdont"]["dna_scope_snv_model"],
+        pop_vcf=config["sentdont"]["pop_vcf"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -59,6 +60,7 @@ rule sent_snv_ont:
         timestamp=$(date +%Y%m%d%H%M%S);
 	export PATH=$PATH:$SENTIEON_BIN_DIR
         export TMPDIR=/dev/shm/sentdont_tmp_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
@@ -127,6 +129,7 @@ rule sent_snv_ont:
             -r {params.huref} \
             -i {input.cram} \
             -m "{params.model}" \
+            -d "{params.pop_vcf}" \
             -t {threads} \
             --tech ONT \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;

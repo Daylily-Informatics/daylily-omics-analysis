@@ -43,6 +43,7 @@ rule sentdhio_snv:
         use_threads=config["sentdhio"]["use_threads"],
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
+        pop_vcf=config["sentdhio"]["pop_vcf"],
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,
@@ -51,7 +52,8 @@ rule sentdhio_snv:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR=/dev/shm/sentdontr_tmp_$timestamp;
+        export TMPDIR=/dev/shm/sentdhio_tmp_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
         trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
@@ -124,6 +126,7 @@ rule sentdhio_snv:
             --lr_aln {input.cram} \
             --lr_align_input \
             --lr_input_ref {params.huref} \
+            -d "{params.pop_vcf}" \
             --skip_svs \
             --skip_mosdepth \
             --skip_cnv \
