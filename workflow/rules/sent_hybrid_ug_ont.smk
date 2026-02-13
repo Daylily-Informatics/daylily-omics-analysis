@@ -5,11 +5,11 @@ ALIGNERS_UG = ["ug"]
 
 rule sentdhuo_snv:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        ug_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
+        ont_crai=MDIR + "{sample}/align/ont/{sample}.cram.crai",
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
-        r1=getR1s,
-        r2=getR2s,
         d=MDIR + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.ready",
     output:
      vcf=temp(MDIR
@@ -72,19 +72,33 @@ rule sentdhuo_snv:
 
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
+        # --- Validate Ultima (short-read) CRAM contains aligned data ---
+        echo "Validating Ultima CRAM: {input.ug_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.ug_cram} >> {log} 2>&1; then
+            echo "ERROR: Ultima CRAM failed integrity check: {input.ug_cram}" | tee -a {log};
             exit 10;
         fi
-        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
+        _sq_count=$(samtools view -H {input.ug_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "Ultima CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
         if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
+            echo "ERROR: Ultima CRAM has no @SQ headers (unaligned?): {input.ug_cram}" | tee -a {log};
             exit 11;
         fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+        echo "Ultima CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
+
+        # --- Validate ONT (long-read) CRAM contains aligned data ---
+        echo "Validating ONT CRAM: {input.ont_cram}" >> {log} 2>&1;
+        if ! samtools quickcheck -v {input.ont_cram} >> {log} 2>&1; then
+            echo "ERROR: ONT CRAM failed integrity check: {input.ont_cram}" | tee -a {log};
+            exit 12;
+        fi
+        _sq_count_ont=$(samtools view -H {input.ont_cram} 2>/dev/null | grep -c '^@SQ' || true);
+        echo "ONT CRAM @SQ header count: $_sq_count_ont" >> {log} 2>&1;
+        if [ "$_sq_count_ont" -eq 0 ]; then
+            echo "ERROR: ONT CRAM has no @SQ headers (unaligned?): {input.ont_cram}" | tee -a {log};
+            exit 13;
+        fi
+        echo "ONT CRAM validation passed ($_sq_count_ont reference sequences)" >> {log} 2>&1;
 
         # Find the jemalloc library in the active conda environment
         jemalloc_path="";
@@ -112,16 +126,12 @@ rule sentdhuo_snv:
             exit 3;
         fi
 
-        
+
         LD_PRELOAD=$LD_PRELOAD sentieon-cli -v dnascope-hybrid \
             -t {params.use_threads} \
             -r  {params.huref} \
-            --sr_r1_fastq {input.r1} \
-            --sr_r2_fastq {input.r2} \
-            --sr_readgroups "@RG\tID:{params.cluster_sample}-1\tSM:{params.cluster_sample}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA" \
-            --lr_aln {input.cram} \
-            --lr_align_input \
-            --lr_input_ref {params.huref} \
+            --sr_aln {input.ug_cram} \
+            --lr_aln {input.ont_cram} \
             -m {params.model} \
             --longread_tech ONT \
             --skip_svs \
@@ -322,8 +332,10 @@ localrules:
 
 rule prep_sentdhuo_chunkdirs:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        ug_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
+        ont_crai=MDIR + "{sample}/align/ont/{sample}.cram.crai",
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/snv/sentdhuo/vcfs/{dchrm}/{{sample}}.ready",
