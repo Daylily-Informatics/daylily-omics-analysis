@@ -136,9 +136,9 @@ sentmm2_align_sort:
     minimap2_threads: 160
     sort_threads: 32
     mem_mb: 200000
-    sort_thread_mem: "4G"
+    sort_thread_mem: "3G"
     minimap2_opts: " -ax map-hifi "
-    mbuffer: " | mbuffer -m 128G -q -s 2M "
+    mbuffer: " | mbuffer -m 32G -q -s 2M "
     constraint: ""
 
 strobe_align_sort:
