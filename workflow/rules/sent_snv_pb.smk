@@ -109,8 +109,10 @@ rule sent_snv_pacbio:
             echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
             exit 3;
         fi
-        #LD_PRELOAD=$LD_PRELOAD 
+        #LD_PRELOAD=$LD_PRELOAD
         unset LD_PRELOAD
+        echo "DNAscope starting: model={params.model}" >> {log} 2>&1;
+        set +e;
         /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} \
             -r {params.huref} \
             -i {input.cram} \
@@ -118,14 +120,38 @@ rule sent_snv_pacbio:
             --algo DNAscope --model "{params.model}" \
             --emit_mode variant \
             {output.gvcf} >> {log} 2>&1;
+        dnascope_rc=$?;
+        set -e;
+        echo "DNAscope exit code: $dnascope_rc" >> {log} 2>&1;
+        if [ $dnascope_rc -ne 0 ]; then
+            echo "ERROR: DNAscope failed with exit code $dnascope_rc" >> {log} 2>&1;
+            exit $dnascope_rc;
+        fi
 
-        #LD_PRELOAD=$LD_PRELOAD 
+        # Validate gvcf exists and is non-empty before DNAModelApply
+        if [ ! -s {output.gvcf} ]; then
+            echo "ERROR: DNAscope gvcf output missing or empty: {output.gvcf}" >> {log} 2>&1;
+            exit 20;
+        fi
+        gvcf_lines=$(wc -l < {output.gvcf});
+        echo "DNAscope gvcf line count: $gvcf_lines" >> {log} 2>&1;
+
+        #LD_PRELOAD=$LD_PRELOAD
         unset LD_PRELOAD
+        echo "DNAModelApply starting: model={params.model}" >> {log} 2>&1;
+        set +e;
         /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} \
             -r {params.huref} \
             --algo DNAModelApply \
-            --model {params.model} \
+            --model "{params.model}" \
             -v {output.gvcf} {output.vcf} >> {log} 2>&1;
+        modelapply_rc=$?;
+        set -e;
+        echo "DNAModelApply exit code: $modelapply_rc" >> {log} 2>&1;
+        if [ $modelapply_rc -ne 0 ]; then
+            echo "ERROR: DNAModelApply failed with exit code $modelapply_rc" >> {log} 2>&1;
+            exit $modelapply_rc;
+        fi
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
