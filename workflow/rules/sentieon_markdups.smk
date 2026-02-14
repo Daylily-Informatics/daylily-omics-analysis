@@ -16,14 +16,14 @@ rule doppelmark_sentieon_dups:
         bai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.sort.bam.bai",
     priority: 3
     output:
-        cram="{MDIR}{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram",
-        crai="{MDIR}{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram",
+        crai=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram.crai",
     wildcard_constraints:
         alnr="|".join(OG_ALIGNERS)
     threads: DOPPEL_SENT_CFG.get("threads", 1)
     benchmark:
         repeat(
-            "{MDIR}{sample}/benchmarks/{sample}.{alnr}.smd.mrkdup.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.smd.mrkdup.bench.tsv",
             0,
         )
     conda:
@@ -60,7 +60,7 @@ rule doppelmark_sentieon_dups:
             f"{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt"
         ),
     log:
-        "{MDIR}{sample}/align/{alnr}/smd/logs/dedupe.smd.{sample}.{alnr}.log",
+        MDIR + "{sample}/align/{alnr}/smd/logs/dedupe.smd.{sample}.{alnr}.log",
     shell:
         """
         set -euo pipefail;

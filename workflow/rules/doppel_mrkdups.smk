@@ -16,13 +16,13 @@ rule doppelmark_dups:
         bai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.sort.bam.bai",
     priority: 3
     output:
-        cram="{MDIR}{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram",
-        crai="{MDIR}{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram",
+        crai=MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram.crai",
     wildcard_constraints:
         alnr="|".join(OG_ALIGNERS)
     threads: config["doppelmark"]["threads"]
     benchmark:
-        repeat("{MDIR}{sample}/benchmarks/{sample}.{alnr}.dmd.mrkdup.bench.tsv", 0)
+        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.dmd.mrkdup.bench.tsv", 0)
     conda:
         "../envs/doppelmark_v0.1.yaml"
     resources:
@@ -47,7 +47,7 @@ rule doppelmark_dups:
         view_mem=config["doppelmark"]["view_mem"],
         mbuffer_mem=config["doppelmark"]["mbuffer_mem"],
     log:
-        "{MDIR}{sample}/align/{alnr}/dmd/logs/dedupe.dmd.{sample}.{alnr}.log",
+        MDIR + "{sample}/align/{alnr}/dmd/logs/dedupe.dmd.{sample}.{alnr}.log",
     shell:
         """
         set -euo pipefail
