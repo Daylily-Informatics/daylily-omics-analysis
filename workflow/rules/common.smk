@@ -122,20 +122,45 @@ SENTDHIP_CHRMS = config["sentdhip"][f"{config['genome_build']}_sentdhip_chrms"].
 
 
 # Handle aligners
-
+# ------------------------------------------------------------------
+# Primary auto-detection happens in bin/day_run (bash, before snakemake).
+# The sys.argv fallback below covers edge cases where bin/day_run
+# is bypassed (e.g. direct snakemake invocation).
+# ------------------------------------------------------------------
 
 ALIGNERS = []
-if 'aligners' not in config:
-    
+if 'aligners' not in config or config.get('aligners') is None or len(config.get('aligners', [])) == 0:
     os.system(
         f'''colr "...WARNING: No aligners set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 else:
-    ALIGNERS = sorted(set([] if config.get('aligners') is None else config["aligners"]))
-    # PRINT INFO
+    ALIGNERS = sorted(set(config["aligners"]))
     os.system(
         f"""colr 'aligners: {ALIGNERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
+
+# Fallback: auto-detect aligner targets from sys.argv
+_ALIGNER_TARGET_MAP = {
+    "produce_bwa_mem2_sort_bam": "bwa2a",
+    "produce_sentieon_bwa_sort_bam": "sent",
+    "produce_strobe_align_sort_bam": "strobe",
+    "produce_sentmm2_align_sort": "sentmm2",
+    "produce_sentmm2ont_align_sort": "sentmm2ont",
+}
+if not ALIGNERS:
+    _cli_aligner_codes = set()
+    for _arg in sys.argv:
+        if _arg in _ALIGNER_TARGET_MAP:
+            _cli_aligner_codes.add(_ALIGNER_TARGET_MAP[_arg])
+    if _cli_aligner_codes:
+        ALIGNERS = sorted(_cli_aligner_codes)
+        os.system(
+            f'''colr "...INFO: Auto-detected aligner targets on CLI. ALIGNERS set to: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
+
+os.system(
+    f"""colr 'aligners (final): {ALIGNERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+)
 
 # Handle dedupers
 # Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), na (no dedup / skip)
@@ -158,9 +183,8 @@ else:
         os.system(
             f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
-# Auto-detect dedup targets from command-line and merge into DDUP.
-# This lets users specify dedup_doppelmark / dedup_sentieon as targets
-# without needing --config dedupers="['dmd','smd']".
+
+# Fallback: auto-detect dedup targets from sys.argv
 _DEDUP_TARGET_MAP = {
     "dedup_doppelmark": "dmd",
     "dedup_sentieon": "smd",
@@ -178,10 +202,8 @@ if _cli_dedup_codes:
         or len(config.get('dedupers', [])) == 0
     )
     if _had_only_default:
-        # Replace the default 'na' with the detected codes
         DDUP = sorted(_cli_dedup_codes)
     else:
-        # Merge CLI targets with explicit config
         DDUP = sorted(set(DDUP) | _cli_dedup_codes)
     os.system(
         f'''colr "...INFO: Detected dedup targets on CLI. DDUP updated to: {DDUP}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
@@ -189,7 +211,7 @@ if _cli_dedup_codes:
 
 # PRINT INFO
 os.system(
-    f"""colr 'deduper: {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+    f"""colr 'deduper (final): {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
 )
 
 snv_CALLERS = []

@@ -60,8 +60,66 @@ fi
 
 
 
-# Build the snakemake command
-snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "$@")
+# ---------------------------------------------------------------------------
+# Auto-detect aligner / deduper config from target rule names on the CLI.
+# If the user specifies target rules like dedup_doppelmark or
+# produce_bwa_mem2_sort_bam, we inject the corresponding --config values
+# so downstream expand() calls see a populated ALIGNERS / DDUP list.
+# Explicit --config aligners=... / dedupers=... always takes priority.
+# ---------------------------------------------------------------------------
+_dedup_codes=()
+_aligner_codes=()
+_has_dedupers_config=false
+_has_aligners_config=false
+
+for _arg in "$@"; do
+    # Detect dedup targets
+    case "$_arg" in
+        dedup_doppelmark)       _dedup_codes+=("dmd")   ;;
+        dedup_sentieon)         _dedup_codes+=("smd")   ;;
+        dedup_none)             _dedup_codes+=("na")    ;;
+    esac
+    # Detect aligner targets
+    case "$_arg" in
+        produce_bwa_mem2_sort_bam)      _aligner_codes+=("bwa2a")       ;;
+        produce_sentieon_bwa_sort_bam)  _aligner_codes+=("sent")        ;;
+        produce_strobe_align_sort_bam)  _aligner_codes+=("strobe")      ;;
+        produce_sentmm2_align_sort)     _aligner_codes+=("sentmm2")     ;;
+        produce_sentmm2ont_align_sort)  _aligner_codes+=("sentmm2ont")  ;;
+    esac
+    # Check if user already specified these config keys
+    case "$_arg" in
+        dedupers=*)  _has_dedupers_config=true  ;;
+        aligners=*)  _has_aligners_config=true  ;;
+    esac
+done
+
+_extra_config_args=()
+
+# Build dedupers config if detected and not already explicit
+if [[ ${#_dedup_codes[@]} -gt 0 ]] && [[ "$_has_dedupers_config" == "false" ]]; then
+    _dedup_str=$(printf ",'%s'" "${_dedup_codes[@]}")
+    _dedup_str="[${_dedup_str:1}]"
+    _extra_config_args+=("dedupers=${_dedup_str}")
+    colr "...AUTO-CONFIG: dedupers=${_dedup_str} (from target rules)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+fi
+
+# Build aligners config if detected and not already explicit
+if [[ ${#_aligner_codes[@]} -gt 0 ]] && [[ "$_has_aligners_config" == "false" ]]; then
+    _aligner_str=$(printf ",'%s'" "${_aligner_codes[@]}")
+    _aligner_str="[${_aligner_str:1}]"
+    _extra_config_args+=("aligners=${_aligner_str}")
+    colr "...AUTO-CONFIG: aligners=${_aligner_str} (from target rules)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+fi
+
+# Build the snakemake command.
+# Auto-detected config is placed BEFORE "$@" so that any explicit
+# --config keys from the user override the auto-detected ones.
+if [[ ${#_extra_config_args[@]} -gt 0 ]]; then
+    snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "--config" "${_extra_config_args[@]}" "$@")
+else
+    snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "$@")
+fi
 
 snakecmd="${snakecmd_init[@]//\-\-keep-temp/\-\-notemp}"
 
