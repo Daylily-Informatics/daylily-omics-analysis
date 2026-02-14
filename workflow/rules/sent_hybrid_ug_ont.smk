@@ -44,8 +44,8 @@ rule sentdhuo_snv:
         model=config["sentdhuo"]["dna_scope_snv_model"],
         pop_vcf=config["sentdhuo"]["pop_vcf"],
         cluster_sample=ret_sample,
-        haploid_bed=get_haploid_bed_arg,
-        diploid_bed=get_diploid_bed_arg,
+        haploid_bed="", #get_haploid_bed_arg,
+        diploid_bed="", #get_diploid_bed_arg,
         use_threads=config["sentdhuo"]["use_threads"],
     shell:
         """
