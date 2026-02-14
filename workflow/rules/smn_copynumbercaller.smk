@@ -3,8 +3,8 @@
 rule smn_copynumbercaller:
     """Call SMN1/SMN2 copy number using SMNCopyNumberCaller."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         summary=MDIR + "{sample}/align/{alnr}/htd/smn12/{sample}.{alnr}.smn12.summary.json",
     params:

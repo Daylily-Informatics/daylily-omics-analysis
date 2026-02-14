@@ -3,8 +3,8 @@
 rule smaca:  # TARGET : Run SMAca copy-number estimation for SMN genes.
     """Execute SMAca on a CRAM/CRAI pair."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/smaca/results/{sample}.{alnr}"),
         summary=MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.summary.tsv",
@@ -135,6 +135,7 @@ rule produce_smaca:
             MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.done",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         )
     output:
         "./logs/smaca.done"

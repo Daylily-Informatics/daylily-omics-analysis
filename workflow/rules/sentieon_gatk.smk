@@ -8,13 +8,13 @@ import os
 
 rule sentieon_gatk_bsqr:  #TARGET: sent bwa sort
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        recal_data_table=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal_data.table",
-        recal_cram=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram",
-        recal_cram_crai=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram.crai",
-    log: MDIR + "{sample}/align/{alnr}/snv/gatk/logs/{sample}.{alnr}.gatk.bsqr.sort.log",
+        recal_data_table=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal_data.table",
+        recal_cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram",
+        recal_cram_crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram.crai",
+    log: MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.gatk.bsqr.sort.log",
     threads: config["sentieon_gatk"]["threads"]
     benchmark:
         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.gatk.bsqr.bench.tsv", 0)
@@ -150,20 +150,20 @@ localrules: produce_sentieon_gatk_bsqr,
 
 rule produce_sentieon_gatk_bsqr:  # TARGET: produce_sentieon_bwa_sort_bam
      input:
-         expand(MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram", sample=SAMPS, alnr=ALIGNERS)
+         expand(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram", sample=SAMPS, alnr=ALIGNERS, ddup=DDUP)
 
 
 
 rule sentieon_gatk_snv:  #TARGET: sent bwa sort
     input:
-        cram=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram",
-        cram_crai=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram",
+        cram_crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.bsqr.recal.cram.crai",
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.snv.sort.vcf.gz",
-        vcfgz_tbi=MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.snv.sort.vcf.gz.tbi",
-        vcfsort=temp(MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.snv.sort.vcf"),
-        vcftmp=temp(MDIR + "{sample}/align/{alnr}/snv/gatk/{sample}.{alnr}.gatk.snv.vcf.gz"),
-    log: MDIR + "{sample}/align/{alnr}/snv/gatk/logs/{sample}.{alnr}.gatk.snv.sort.log",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.snv.sort.vcf.gz",
+        vcfgz_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.snv.sort.vcf.gz.tbi",
+        vcfsort=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.snv.sort.vcf"),
+        vcftmp=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.gatk.snv.vcf.gz"),
+    log: MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.gatk.snv.sort.log",
     threads: config["sentieon_gatk"]["threads"]
     benchmark:
         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.gatk.snv.bench.tsv", 0)

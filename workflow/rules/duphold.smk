@@ -14,26 +14,26 @@ rule duphold:
         bai=(MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam.bai"),
         snv_vcf=(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz"
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz"
         ),
         snv_vcftbi=(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz.tbi"
         ),
         sv_vcf=(
             MDIR
-            + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{s_v_caller}.sv.sort.vcf.gz"
+            + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{s_v_caller}.sv.sort.vcf.gz"
         ),
-        sv_vcftbi=(            MDIR            + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{s_v_caller}.sv.sort.vcf.gz.tbi"        ),
+        sv_vcftbi=(            MDIR            + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{s_v_caller}.sv.sort.vcf.gz.tbi"        ),
     output:
-        vcf= MDIR + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.vcf",
+        vcf= MDIR + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.vcf",
     priority: 48
     benchmark:
         (
             MDIR
             + "{sample}/benchmarks/{sample}.{alnr}.{snv_caller}.{s_v_caller}-duphold.bench.tsv"
         )
-    log: MDIR + "{sample}/align/{alnr}/sv/DUPHOLD/{s_v_caller}_{snv_caller}/duphold.log"
+    log: MDIR + "{sample}/align/{alnr}/{ddup}/sv/DUPHOLD/{s_v_caller}_{snv_caller}/duphold.log"
     threads: config["duphold"]["threads"]
     conda:
         config["vanilla"]["env_yaml"]
@@ -60,11 +60,11 @@ rule duphold:
 # obscured by sort/bgzip. They would all return, but not necessarry
 rule duphold_sort_index:
     input:
-        vcf= MDIR + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.vcf",
+        vcf= MDIR + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.vcf",
     output:
-        vcfsort =  MDIR + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf",
-        vcfgz=   MDIR + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi",
+        vcfsort =  MDIR + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf",
+        vcfgz=   MDIR + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi",
     benchmark:
         (
             MDIR
@@ -78,7 +78,7 @@ rule duphold_sort_index:
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/sv/{s_v_caller}/logs/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/logs/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.log",
     params:
         cluster_sample=ret_sample_sv,
     shell:
@@ -103,9 +103,10 @@ rule produce_all_svs:   # TARGET: gather cnvs calls and duphold
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
             s_v_caller=sv_CALLERS,
             snv_caller=snv_CALLERS,
         ),

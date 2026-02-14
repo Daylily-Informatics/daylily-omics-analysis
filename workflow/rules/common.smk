@@ -135,13 +135,24 @@ else:
     )
 
 # Handle dedupers
+# Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), nmd (no dedup)
+# Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
+DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
+DDUP_VALID_CODES = {"dmd", "smd", "nmd"}
+
 DDUP = []
 if 'dedupers' not in config:
     os.system(
         f'''colr "...WARNING: No dedupers set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 else:
-    DDUP = sorted(set([] if config.get('dedupers') is None else config["dedupers"]))
+    _raw_ddup = sorted(set([] if config.get('dedupers') is None else config["dedupers"]))
+    DDUP = sorted(set(DDUP_LEGACY_MAP.get(d, d) for d in _raw_ddup))
+    _unknown = set(DDUP) - DDUP_VALID_CODES
+    if _unknown:
+        os.system(
+            f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
     # PRINT INFO
     os.system(
         f"""colr 'deduper: {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
@@ -1318,7 +1329,7 @@ def get_somcall_normal_cram(wildcards):
         nsamp = TN_PAIRS[wildcards.sample]
     except KeyError:
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{wildcards.ddup}/{nsamp}.{wildcards.alnr}.{wildcards.ddup}.cram"
 
 
 def get_somcall_normal_crai(wildcards):
@@ -1326,10 +1337,10 @@ def get_somcall_normal_crai(wildcards):
         nsamp = TN_PAIRS[wildcards.sample]
     except KeyError:
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{wildcards.ddup}/{nsamp}.{wildcards.alnr}.{wildcards.ddup}.cram.crai"
 
 def get_somcall_tumor_cram(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
 
 def get_somcall_tumor_crai(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram.crai"

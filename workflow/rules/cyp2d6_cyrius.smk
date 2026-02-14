@@ -6,8 +6,8 @@
 
 rule cp2d6_cyrius:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         manifest=MDIR + "{sample}/align/{alnr}/htd/cyp2d6/cyp2d6_cyrius.manifest",
     params:

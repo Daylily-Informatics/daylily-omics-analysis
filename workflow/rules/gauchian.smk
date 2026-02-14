@@ -3,8 +3,8 @@
 rule gauchian:
     """Run the Gauchian caller on an input CRAM/CRAI pair."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         manifest=temp(MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.manifest"),
         results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/gauchian/results/{sample}.{alnr}"),
