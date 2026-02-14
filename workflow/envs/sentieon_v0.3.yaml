@@ -1,20 +1,27 @@
 channels:
   - conda-forge
   - bioconda
+  - defaults
 dependencies:
-  - mbuffer
+  - sentieon=202503.02
+  - python=3.10
+  - pip
+  - setuptools
+  - wheel
   - curl
+  - mbuffer
   - samtools
-  - mosdepth
   - bcftools
-  - jemalloc
   - htslib
+  - mosdepth
+  - hificnv
   - pigz
   - seqkit
   - seqfu
   - sambamba
-  - isa-l==2.31.0
-  - python
-  - pip  # Specify pip as a dependency first
+  - jemalloc
+  - isa-l=2.31.0
+  - git
+  - pip
   - pip:
-      - https://github.com/Sentieon/sentieon-cli/archive/refs/tags/v1.5.2.tar.gz
+    - git+https://github.com/Sentieon/sentieon-cli.git@v1.5.2
