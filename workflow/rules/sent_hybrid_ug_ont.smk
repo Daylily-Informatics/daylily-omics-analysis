@@ -13,7 +13,7 @@ rule sentdhuo_snv:
         d=MDIR + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.ready",
     output:
      vcf=temp(MDIR
-        + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf"),
+        + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.gz"),
      tvcf=temp(MDIR
         + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.tmp"),
     wildcard_constraints:
@@ -158,7 +158,7 @@ rule sentdhuo_snv:
 rule sentdhuo_sort_index_chunk_vcf:
     input:
         vcf=MDIR
-        + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf",
+        + "{sample}/align/{alnr}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.gz",
     priority: 46
     output:
         vcfsort=touch(MDIR
@@ -184,12 +184,7 @@ rule sentdhuo_sort_index_chunk_vcf:
         """
         
         cp {input.vcf} {output.vcfsort} 2>> {log};
-        touch {input.vcf};
-        sleep 1;
-        touch {output.vcfsort};
         bgzip  -@ {threads} {output.vcfsort} >> {log} 2>&1;
-        touch {output.vcfsort};
-        
         tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
         
         """
