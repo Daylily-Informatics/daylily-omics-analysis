@@ -11,6 +11,7 @@ dependencies:
   - curl
   - mbuffer
   - samtools
+  - bedtools
   - bcftools
   - htslib
   - mosdepth
