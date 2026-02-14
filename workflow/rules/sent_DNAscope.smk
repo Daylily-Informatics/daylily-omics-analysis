@@ -24,7 +24,7 @@ rule sent_DNAscope:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentd.{dchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentd.{dchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["sentD"]
             else config["sentD"]["bench_repeat"],
@@ -158,7 +158,7 @@ rule sentD_concat_fofn:
     params:
         fn_stub="{sample}.{alnr}.sentd."
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentd.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentd.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -202,7 +202,7 @@ rule sentD_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentd.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentd.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:

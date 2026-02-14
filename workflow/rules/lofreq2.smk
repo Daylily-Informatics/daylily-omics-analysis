@@ -86,7 +86,7 @@ rule lofreq2:
         mem_mb=config['lofreq2']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.lfq2.{lfqchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["lofreq2"]
             else config["lofreq2"]["bench_repeat"],
@@ -215,7 +215,7 @@ rule lofreq2_concat_fofn:
         fn_stub="{sample}.{alnr}.lfq2.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.lfq2.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.lfq2.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -260,7 +260,7 @@ rule lofreq2_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.lfq2.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.lfq2.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:

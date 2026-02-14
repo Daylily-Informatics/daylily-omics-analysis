@@ -26,7 +26,7 @@ rule tiddit:
         partition=config["tiddit"]["partition"],
         threads=config["tiddit"]["threads"]
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.tiddit.sv.vcf.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.tiddit.sv.vcf.bench.tsv"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/logs/{sample}.{alnr}.tiddit.sv.vcf.log",
     container:
@@ -67,7 +67,7 @@ rule tiddit_sort_index:
         partition="i192,i192mem",
         threads=config["tiddit"]["threads"]
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.tiddit.sv.vcf.sort.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.tiddit.sv.vcf.sort.bench.tsv"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/logs/{sample}.{alnr}.tiddit.sv.vcf.sort.log",
     conda:

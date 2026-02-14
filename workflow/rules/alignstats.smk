@@ -19,16 +19,16 @@ rule alignstats:
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         json=MDIR
-        + "{sample}/align/{alnr}/alignqc/alignstats/{sample}.{alnr}.alignstats.json",
+        + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.alignstats.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.alignstats.bench.tsv"
     threads: config["alignstats"]["threads"]
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
         partition=config["alignstats"]["partition"],
         threads=config["alignstats"]["threads"],
         vcpu=config["alignstats"]["threads"]
-    log:  MDIR + "{sample}/align/{alnr}/alignqc/alignstats/logs/{sample}.{alnr}.alignstats.log",
+    log:  MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/logs/{sample}.{alnr}.{ddup}.alignstats.log",
     params:
         P=50,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],

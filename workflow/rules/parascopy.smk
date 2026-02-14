@@ -48,8 +48,8 @@ rule parascopy:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/parascopy/results/{sample}.{alnr}.parascopy"),
-        done=MDIR + "{sample}/align/{alnr}/htd/parascopy/{sample}.{alnr}.parascopy.done",
+        results_dir=directory(MDIR + "{sample}/align/{alnr}/{ddup}/htd/parascopy/results/{sample}.{alnr}.{ddup}.parascopy"),
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done",
     params:
         cluster_sample=ret_sample,
         reference=lambda wildcards: _parascopy_reference(),
@@ -58,9 +58,9 @@ rule parascopy:
         targets=lambda wildcards: _parascopy_targets(),
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.alnr}.parascopy",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.parascopy.benchmark.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.parascopy.benchmark.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/htd/parascopy/logs/{sample}.{alnr}.parascopy.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/parascopy/logs/{sample}.{alnr}.{ddup}.parascopy.log",
     threads: _parascopy_threads()
     resources:
         vcpu=_parascopy_threads(),

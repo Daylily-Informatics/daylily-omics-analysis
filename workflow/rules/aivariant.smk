@@ -195,7 +195,7 @@ rule aiv:
         mem_mb=config['aiv']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.aiv.{aivchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.aiv.{aivchrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('aiv', {}) else config['aiv']['bench_repeat'],
         ),
     params:

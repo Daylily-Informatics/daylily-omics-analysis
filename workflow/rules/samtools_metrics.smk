@@ -9,17 +9,17 @@ rule gen_samstats:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        stats=MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.stats.tsv",
-        flagstats=MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.flagstat.tsv",
-        idxstats=MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.idxstat.tsv",
-        sent=MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.complete",
+        stats=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.stats.tsv",
+        flagstats=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.flagstat.tsv",
+        idxstats=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.idxstat.tsv",
+        sent=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
     threads: config["gen_samstats"]["threads"]
     conda:
         config["samtools_markdups"]["env_yaml"]
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.samt.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.samt.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/logs/{sample}.{alnr}.samt.log"
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/logs/{sample}.{alnr}.{ddup}.samt.log"
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,

@@ -38,7 +38,7 @@ rule sent_snv_ont:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdont.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdont.bench.tsv",
             0
             if "bench_repeat" not in config["sentdont"]
             else config["sentdont"]["bench_repeat"],

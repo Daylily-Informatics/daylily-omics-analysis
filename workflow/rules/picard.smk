@@ -8,15 +8,15 @@ rule picard_cram:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
     output:
-        sent=touch(MDIR + "{sample}/align/{alnr}/alignqc/picard/picard/{sample}.{alnr}.done"),
+        sent=touch(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done"),
     threads: config["picard"]["threads"]
     resources:
         vcpu=config["picard"]["threads"],
         partition=config["picard"]["partition"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.picard.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.picard.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/picard/logs/{sample}.{alnr}.stats.log"
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/logs/{sample}.{alnr}.{ddup}.stats.log"
     conda:
         "../envs/picard_v0.1.yaml"
     params:

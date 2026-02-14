@@ -25,7 +25,7 @@ rule manta:
     threads: config["manta"]["threads"]
     priority: 36
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.manta.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.manta.bench.tsv"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/logs/{sample}.{alnr}.manta.log",
     resources:

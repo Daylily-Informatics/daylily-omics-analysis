@@ -12,16 +12,16 @@ rule mosdepth:
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         MDIR
-        + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}.mosdepth.summary.sort.bed",
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
     threads: config["mosdepth"]["threads"]
     resources:
         threads=config["mosdepth"]["threads"],
         partition=config["mosdepth"]["partition"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.mosdepth.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.mosdepth.bench.tsv"
     log:
-        a=MDIR + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}.mosdepth.log",
-        b=MDIR + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}/{sample}.md",
+        a=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.log",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}/{ddup}/{sample}.md",
     conda:
         config["mosdepth"]["env_yaml"]
     params:

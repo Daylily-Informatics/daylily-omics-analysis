@@ -25,7 +25,7 @@ rule snpeff:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         snpeff_xmx="16g" if "xmx" not in config["snpeff"] else config["snpeff"]["xmx"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv}.snpeff.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.snpeff.bench.tsv"
     conda:
         "../envs/snpeff_v0.1.yaml"
     shell:

@@ -27,7 +27,7 @@ rule vep:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         vep_cache=config["supporting_files"]["files"]["vep"]["vep_cache"]['name'],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv}.vep.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep.bench.tsv"
     container:
         "docker://ensemblorg/ensembl-vep:release_114.2"        
     shell:

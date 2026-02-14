@@ -90,7 +90,7 @@ rule octopus:
         "docker://daylilyinformatics/octopus-skylake:0.7.4" 
     priority: 45
     benchmark:
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.oct.{ochrm}.bench.tsv"
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct.{ochrm}.bench.tsv"
     resources:
         vcpu= config['octopus']['threads'],
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
@@ -201,7 +201,7 @@ rule oct_concat_fofn:
         fn_stub="{sample}.{alnr}.oct.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.oct.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -245,7 +245,7 @@ rule oct_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.oct.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct.merge.bench.tsv"
     conda:
         config["octopus"]["oct_gather_env"]
     log:

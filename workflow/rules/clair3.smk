@@ -93,7 +93,7 @@ rule clair3:
         mem_mb=config['clair3']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.clair3.{clairchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.clair3.{clairchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["clair3"]
             else config["clair3"]["bench_repeat"],
@@ -235,7 +235,7 @@ rule clair3_concat_fofn:
         fn_stub="{sample}.{alnr}.clair3.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.clair3.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.clair3.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -279,7 +279,7 @@ rule clair3_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.clair3.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.clair3.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:

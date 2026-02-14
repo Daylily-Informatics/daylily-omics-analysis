@@ -25,7 +25,7 @@ rule sent_snv_ug:
         "../envs/sentieon_v0.1.yaml"
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdug.{dchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["sentdug"]
             else config["sentdug"]["bench_repeat"],
@@ -200,7 +200,7 @@ rule sentdug_concat_fofn:
     params:
         fn_stub="{sample}.{alnr}.sentdug."
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdug.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdug.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -244,7 +244,7 @@ rule sentdug_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdug.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdug.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:

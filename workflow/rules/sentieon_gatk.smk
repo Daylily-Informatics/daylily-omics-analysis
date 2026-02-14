@@ -17,7 +17,7 @@ rule sentieon_gatk_bsqr:  #TARGET: sent bwa sort
     log: MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.gatk.bsqr.sort.log",
     threads: config["sentieon_gatk"]["threads"]
     benchmark:
-        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.gatk.bsqr.bench.tsv", 0)
+        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.bsqr.bench.tsv", 0)
     priority: 5
     resources:
         partition=config['sentieon_gatk']['partition'],
@@ -166,7 +166,7 @@ rule sentieon_gatk_snv:  #TARGET: sent bwa sort
     log: MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.gatk.snv.sort.log",
     threads: config["sentieon_gatk"]["threads"]
     benchmark:
-        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.gatk.snv.bench.tsv", 0)
+        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.snv.bench.tsv", 0)
     priority: 5
     resources:
         partition=config['sentieon_gatk']['partition'],

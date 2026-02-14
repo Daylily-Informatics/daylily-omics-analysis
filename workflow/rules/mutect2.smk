@@ -169,7 +169,7 @@ rule mutect2:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.mutect2.{m2chrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.mutect2.{m2chrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('mutect2', {}) else config['mutect2']['bench_repeat'],
         )
     resources:
