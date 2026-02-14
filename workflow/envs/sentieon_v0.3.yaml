@@ -5,6 +5,8 @@ dependencies:
   - mbuffer
   - curl
   - samtools
+  - mosdepth
+  - bcftools
   - jemalloc
   - htslib
   - pigz

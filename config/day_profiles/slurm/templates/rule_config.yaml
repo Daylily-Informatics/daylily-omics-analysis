@@ -508,8 +508,8 @@ sentdhio:
     hg38_broad_sentdhio_chrms: "1-24"
     b37_sentdhio_chrms: "1-24" #"19,21" # "1-24"
     ld_preload: " "
-    env_yaml: "../envs/sentieon_v0.1.yaml"
-    sentD_gather_env: "../envs/sentieon_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
@@ -525,8 +525,8 @@ sentdhuo:
     hg38_broad_sentdhuo_chrms: "1-24"
     b37_sentdhuo_chrms: "1-24" #"19,21" # "1-24"
     ld_preload: " "
-    env_yaml: "../envs/sentieon_v0.1.yaml"
-    sentD_gather_env: "../envs/sentieon_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
@@ -543,8 +543,8 @@ sentdhip:
     hg38_broad_sentdhip_chrms: "1-24"
     b37_sentdhip_chrms: "1-24" #"19,21" # "1-24"
     ld_preload: " " 
-    env_yaml: "../envs/vanilla_v0.1.yaml"
-    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
@@ -560,8 +560,8 @@ sentdug:
     hg38_broad_sentdug_chrms: "1-24"
     b37_sentdug_chrms: "1-24" #"19,21" # "1-24"
     ld_preload: " " 
-    env_yaml: "../envs/sentieon_v0.1.yaml"
-    sentD_gather_env: "../envs/sentieon_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem"
@@ -588,22 +588,6 @@ sentdpb:
     max_mem: "140G"
 
 
-sentdpbr:
-    threads: 192
-    use_threads: 190
-    hg38_sentdpbr_chrms: "1-24"
-    hg38_broad_sentdpbr_chrms: "1-24"    
-    b37_sentdpbr_chrms: "1-24" #"19,21" # "1-24"
-    ld_preload: " " 
-    env_yaml: "../envs/sentieon_v0.1.yaml"
-    sentD_gather_env: "../envs/sentieon_v0.1.yaml"
-    bench_repeat: 0
-    numactl: " "
-    partition: "i192mem"
-    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.3.bundle"
-    mem_mb: 200000
-    max_mem: "140G"
-
 sentdont:
     threads: 192
     use_threads: 190
@@ -621,36 +605,6 @@ sentdont:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
     max_mem: "140G"
-
-sentdugr:
-    threads: 192
-    use_threads: 184
-    hg38_sentdugr_chrms: "1-24"
-    hg38_broad_sentdugr_chrms: "1-24"
-    b37_sentdugr_chrms: "1-24" #"19,21" # "1-24"
-    ld_preload: " " 
-    env_yaml: "../envs/vanilla_v0.1.yaml"
-    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
-    bench_repeat: 0
-    numactl: " "
-    partition: "i192mem"
-    dnascope_model: /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle
-    mem_mb: 200000
-
-sentdontr:
-    threads: 192
-    use_threads: 184
-    hg38_sentdontr_chrms: "1-24"
-    hg38_broad_sentdontr_chrms: "1-24"
-    b37_sentdontr_chrms: "1-24" #"19,21" # "1-24"
-    ld_preload: " " 
-    env_yaml: "../envs/vanilla_v0.1.yaml"
-    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
-    bench_repeat: 0
-    numactl: " "
-    partition: "i192mem"
-    dnascope_model: /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.1.bundle
-    mem_mb: 200000
 
 sentD:
     threads: 192

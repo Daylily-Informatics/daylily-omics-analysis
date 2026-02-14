@@ -58,7 +58,7 @@ rule sent_snv_ont:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
         timestamp=$(date +%Y%m%d%H%M%S);
-	export PATH=$PATH:$SENTIEON_BIN_DIR
+
         export TMPDIR=/dev/shm/sentdont_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
