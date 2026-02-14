@@ -23,7 +23,7 @@ rule dysgu:
         threads=config['dysgu']['threads'],
         partition=config['dysgu']['partition'],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.dysgu.sv.vcf.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dysgu.sv.vcf.bench.tsv"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/logs/{sample}.{alnr}.dysgu.sv.vcf.log",
     conda:
@@ -68,7 +68,7 @@ rule dysgu_sort_index:
         threads=config['dysgu_sort_index']['threads'],
         partition=config['dysgu_sort_index']['partition']
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.dysgu.sv.vcf.sort.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dysgu.sv.vcf.sort.bench.tsv"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/logs/{sample}.{alnr}.dysgu.sv.vcf.sort.log",
     conda:

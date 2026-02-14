@@ -145,7 +145,7 @@ rule varn:
         mem_mb=config['varn']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.varn.{varnchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.varn.{varnchrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('varn', {}) else config['varn']['bench_repeat'],
         ),
     params:

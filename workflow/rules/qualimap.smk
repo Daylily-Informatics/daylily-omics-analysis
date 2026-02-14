@@ -14,9 +14,9 @@ rule qualimap:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        d=MDIR + "{sample}/align/{alnr}/alignqc/qmap/{sample}.{alnr}/{sample}.{alnr}.qmap.done",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.qmap.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.qmap.bench.tsv"
     resources:
         vcpu=config["qualimap"]["threads"],
         threads=config["qualimap"]["threads"],
@@ -29,7 +29,7 @@ rule qualimap:
         config["qualimap"]["env_yaml"]
     threads: config["qualimap"]["threads"]
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/qmap/{sample}/logs/{sample}.{alnr}.qmap.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}/logs/{sample}.{alnr}.{ddup}.qmap.log",
     shell:
         """
         set +euo pipefail;

@@ -24,7 +24,7 @@ rule deepvariant_ultima_make_examples:
         partition=config['deepvariant']['partition'],
         mem_mb=config['deepvariant']['mem_mb'],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.{dvchrm}."+f"{config['deepvariant']['threads']}.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}."+f"{config['deepvariant']['threads']}.bench.tsv"
     params:
         dchrm=get_dvchrm_day,
         deep_model="WGS",
@@ -107,7 +107,7 @@ rule deepvariant_ultima_call_variants:
         config['deepvariant']['deepug_cv_container']
     priority: 44  # slightly lower priority to ensure examples first
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.{dvchrm}.cv."+f"{config['deepvariant']['threads']}.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}.cv."+f"{config['deepvariant']['threads']}.bench.tsv"
     resources:
         vcpu=config['deepvariant']['threads'],
         threads=config['deepvariant']['threads'],
@@ -180,7 +180,7 @@ rule dvug_sort_index_chunk_vcf:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/log/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.{dvchrm}.srt."+f"{config['deepvariant']['threads']}.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}.srt."+f"{config['deepvariant']['threads']}.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -237,7 +237,7 @@ rule deepug_concat_fofn:
         fn_stub="{sample}.{alnr}.deepug.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.concat.fofn.bench.tsv"
     conda:
         config['deepvariant']['deepug_conda']
     log:
@@ -285,7 +285,7 @@ rule deepug_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.merge.bench.tsv"
     conda:
         config['deepvariant']['deepug_conda']
     log:

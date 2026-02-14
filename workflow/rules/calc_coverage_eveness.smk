@@ -14,19 +14,19 @@ rule calc_coverage_evenness:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        # tsv=MDIR  + "{sample}/align/{alnr}/norm_cov_eveness/{sample}.{alnr}.norm_cov_eveness.mqc.tsv",
-        mos_pre=MDIR   + "{sample}/align/{alnr}/alignqc/norm_cov_eveness/{sample}.{alnr}.md",
+        # tsv=MDIR  + "{sample}/align/{alnr}/{ddup}/norm_cov_eveness/{sample}.{alnr}.{ddup}.norm_cov_eveness.mqc.tsv",
+        mos_pre=MDIR   + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md",
     container: None
     conda:
         "../envs/mosdepth_v0.1.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.norm_cov_eveness.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.norm_cov_eveness.bench.tsv"
     threads: config['calc_coverage_evenness']['threads']
     resources:
         vcpu=config['calc_coverage_evenness']['threads'],
         partition=config['calc_coverage_evenness']['partition'],
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/norm_cov_eveness/logs/norm_cov_eveness.mqc.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/logs/norm_cov_eveness.mqc.log",
     params:
         cluster_sample=ret_sample,
         chrm_regions="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22",

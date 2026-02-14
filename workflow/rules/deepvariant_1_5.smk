@@ -29,7 +29,7 @@ rule deepvariant_15:
         mem_mb=config['deepvariant']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.deep15.{dvchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deep15.{dvchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["deepvariant"]
             else config["deepvariant"]["bench_repeat"],
@@ -159,7 +159,7 @@ rule deep15_concat_fofn:
         fn_stub="{sample}.{alnr}.deep15.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deep15.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deep15.concat.fofn.bench.tsv"
     conda:
         config['deepvariant']['deep15_conda']
     log:
@@ -207,7 +207,7 @@ rule deep15_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deep15.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deep15.merge.bench.tsv"
     conda:
         config['deepvariant']['deep15_conda']
     log:

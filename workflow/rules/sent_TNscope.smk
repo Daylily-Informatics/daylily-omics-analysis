@@ -22,7 +22,7 @@ rule sent_TNscope:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.senttn.{senttnchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.senttn.{senttnchrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('senttn', {}) else config['senttn']['bench_repeat'],
         )
     resources:

@@ -26,7 +26,7 @@ rule sent_snv_ontr:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpbr.{dchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdpbr.{dchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["sentdpbr"]
             else config["sentdpbr"]["bench_repeat"],
@@ -202,7 +202,7 @@ rule sentdpbr_concat_fofn:
     params:
         fn_stub="{sample}.{alnr}.sentdpbr."
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpbr.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdpbr.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -246,7 +246,7 @@ rule sentdpbr_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpbr.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdpbr.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:

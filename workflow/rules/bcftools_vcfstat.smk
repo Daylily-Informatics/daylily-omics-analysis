@@ -22,7 +22,7 @@ rule bcftools_vcfstat:
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/logs/{sample}.{alnr}.{snv_caller}.bcfstats.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv_caller}.bcfstat.bench.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstat.bench.tsv",
     conda:
         config["vanilla"]["env_yaml"]
     threads: config["bcftools_vcfstat"]["threads"]

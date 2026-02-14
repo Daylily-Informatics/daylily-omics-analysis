@@ -31,7 +31,7 @@ rule duphold:
     benchmark:
         (
             MDIR
-            + "{sample}/benchmarks/{sample}.{alnr}.{snv_caller}.{s_v_caller}-duphold.bench.tsv"
+            + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv_caller}.{s_v_caller}-duphold.bench.tsv"
         )
     log: MDIR + "{sample}/align/{alnr}/{ddup}/sv/DUPHOLD/{s_v_caller}_{snv_caller}/duphold.log"
     threads: config["duphold"]["threads"]
@@ -68,7 +68,7 @@ rule duphold_sort_index:
     benchmark:
         (
             MDIR
-            + "{sample}/benchmarks/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.bench.tsv"
+            + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv_caller}.{s_v_caller}-d.sort.bench.tsv"
         )
     threads: config["duphold"]["threads"]
     priority: 49

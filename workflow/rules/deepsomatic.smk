@@ -52,7 +52,7 @@ rule dvsom:
         mem_mb=config['deepsomatic']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.dvsom.{dvsomchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dvsom.{dvsomchrm}.bench.tsv",
             0 if "bench_repeat" not in config["deepsomatic"] else config["deepsomatic"]["bench_repeat"],
         )
     params:

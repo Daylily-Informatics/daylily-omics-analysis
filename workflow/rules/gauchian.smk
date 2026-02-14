@@ -6,18 +6,18 @@ rule gauchian:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        manifest=temp(MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.manifest"),
-        results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/gauchian/results/{sample}.{alnr}"),
-        done=MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.done",
+        manifest=temp(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.manifest"),
+        results_dir=directory(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/results/{sample}.{alnr}"),
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done",
     params:
         cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         genome="37" if config["genome_build"] == "b37" else "38",
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.alnr}.gauchian",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.gauchian.benchmark.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gauchian.benchmark.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/htd/gauchian/logs/gauchian.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/logs/gauchian.log",
     threads: config["go_left"]["threads"]
     conda:
          "workflow/envs/gba_v0.1.yaml"

@@ -9,20 +9,20 @@ rule cp2d6_cyrius:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        manifest=MDIR + "{sample}/align/{alnr}/htd/cyp2d6/cyp2d6_cyrius.manifest",
+        manifest=MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyp2d6/cyp2d6_cyrius.manifest",
     params:
         cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         genome="37" if "b37" == config['genome_build'] else "38",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.96cyriusbench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.96cyriusbench.tsv"
     resources:
         vcpu=config['go_left']['threads'],
         threads=config['go_left']['threads'],
         partition=config['go_left']['partition'],
         mem_mb=1000,
     log:
-        MDIR + "{sample}/align/{alnr}/htd/cyp2d6/logs/cyp2d6.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyp2d6/logs/cyp2d6.log",
     threads: config["go_left"]["threads"]
     conda:
          "workflow/envs/cyrius_v0.1.yaml"

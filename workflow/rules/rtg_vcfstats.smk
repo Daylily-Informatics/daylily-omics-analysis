@@ -22,7 +22,7 @@ rule rtg_vcfstats:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{snv_caller}.rtg.vcfstats.txt",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv_caller}.rtgvcfstats.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv_caller}.rtgvcfstats.bench.tsv"
     threads: config["rtg_vcfstats"]["threads"]
     resources:
         threads=config["rtg_vcfstats"]["threads"],

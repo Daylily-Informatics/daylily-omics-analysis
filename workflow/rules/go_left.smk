@@ -13,19 +13,19 @@ rule goleft:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        done=touch(MDIR + "{sample}/align/{alnr}/alignqc/goleft.done"),
-        donetwo=touch(MDIR + "{sample}/align/{alnr}/alignqc/goleft/golefttwo.done"),
+        done=touch(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done"),
+        donetwo=touch(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft/golefttwo.done"),
     params:
         cluster_sample=ret_sample,
         sexchrms="X,Y" if os.environ.get('DAY_GENOME_BUILD','') == 'b37' else "chrX,chrY",
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.goleft.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.goleft.bench.tsv"
     resources:
         vcpu=config["go_left"]["threads"],
         partition=config["go_left"]["partition"],
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/goleft/logs/goleft.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft/logs/goleft.log",
     threads: config["go_left"]["threads"]
     conda:
         config["go_left"]["env_yaml"]

@@ -48,7 +48,7 @@ rule peddy:
         cluster_sample=ret_sample,
         ld_preload=config["malloc_alt"]["ld_preload"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv}.peddy.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.peddy.bench.tsv"
     container:
         None
     conda:

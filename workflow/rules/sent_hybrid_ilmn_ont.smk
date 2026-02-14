@@ -27,7 +27,7 @@ rule sentdhio_snv:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdhio.{dchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhio.{dchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["sentdhio"]
             else config["sentdhio"]["bench_repeat"],
@@ -205,7 +205,7 @@ rule sentdhio_concat_fofn:
     params:
         fn_stub="{sample}.{alnr}.sentdhio."
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdhio.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhio.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
@@ -249,7 +249,7 @@ rule sentdhio_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdhio.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhio.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:

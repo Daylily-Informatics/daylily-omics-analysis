@@ -23,7 +23,7 @@ rule surveyor:
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/logs/{sample}.{alnr}.surveyor.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.surveyor.sv.vcf.bench.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.surveyor.sv.vcf.bench.tsv",
     threads: config["surveyor"]["threads"]
     resources:
         vcpu=config["surveyor"]["threads"],
@@ -60,7 +60,7 @@ rule surveyor_sort_index:
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/logs/{sample}.{alnr}.surveyor.sv.sort.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.surveyor.sv.sort.bench.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.surveyor.sv.sort.bench.tsv",
     threads: config["surveyor_sort_index"]["threads"]
     resources:
         vcpu=config["surveyor_sort_index"]["threads"],

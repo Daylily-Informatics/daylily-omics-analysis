@@ -34,7 +34,7 @@ rule sent_snv_pacbio:
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdpb.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdpb.bench.tsv",
             0
             if "bench_repeat" not in config["sentdpb"]
             else config["sentdpb"]["bench_repeat"],

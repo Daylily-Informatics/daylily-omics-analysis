@@ -13,15 +13,15 @@ rule verifybamid2_contam:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        vb_prefix=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2",
-        vb_tsv=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
-        contam=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.contam.tsv",
-        selfSM=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.selfSM",
-        mqc=MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2_mqc.tsv",
+        vb_prefix=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2",
+        vb_tsv=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
+        contam=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.contam.tsv",
+        selfSM=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.selfSM",
+        mqc=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2_mqc.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/logs/{sample}.{alnr}.vb2.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/logs/{sample}.{alnr}.{ddup}.vb2.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.vb2.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.vb2.bench.tsv"
     conda:
         config["verifybamid2_contam"]["env_yaml"]
     threads: config["verifybamid2_contam"]["threads"]

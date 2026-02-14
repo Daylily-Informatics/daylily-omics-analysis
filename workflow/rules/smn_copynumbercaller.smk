@@ -6,12 +6,12 @@ rule smn_copynumbercaller:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        summary=MDIR + "{sample}/align/{alnr}/htd/smn12/{sample}.{alnr}.smn12.summary.json",
+        summary=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
     params:
         cluster_sample=ret_sample,
         reference=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
     log:
-        MDIR + "{sample}/align/{alnr}/htd/smn12/logs/{sample}.{alnr}.smn12.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/logs/{sample}.{alnr}.{ddup}.smn12.log",
     threads: config["go_left"]["threads"]
     conda:
         "workflow/envs/smn12_v0.1.yaml"
