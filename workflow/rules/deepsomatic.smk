@@ -199,7 +199,7 @@ rule dvsom_concat_index_chunks:
         """
 
 
-rule produce_dvsom_vcf:  # Target: produce deep-somatic
+rule produce_dvsom_vcf:  # TARGET : Produce DeepSomatic VCFs
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:

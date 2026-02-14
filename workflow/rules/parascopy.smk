@@ -112,7 +112,7 @@ rule parascopy:
 localrules: produce_parascopy
 
 
-rule produce_parascopy:
+rule produce_parascopy:  # TARGET : Produce Parascopy results
     """Aggregate completion of all Parascopy runs."""
     input:
         expand(

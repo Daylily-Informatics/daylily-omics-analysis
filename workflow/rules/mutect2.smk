@@ -267,7 +267,7 @@ rule mutect2_concat_index_chunks:
         """
 
 
-rule produce_mutect2_vcf:  # Target: produce mutect2
+rule produce_mutect2_vcf:  # TARGET : Produce Mutect2 VCFs
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:

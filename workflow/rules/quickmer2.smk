@@ -168,7 +168,7 @@ localrules:
     produce_quickmer2,
 
 
-rule produce_quickmer2:
+rule produce_quickmer2:  # TARGET : Produce QuicK-mer2 copy-number results
     """Target rule to ensure QuicK-mer2 outputs exist for all CRAM alignments."""
     input:
         expand(

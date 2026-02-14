@@ -253,7 +253,7 @@ rule relatedness_report:
         "../scripts/relatedness_report.py"
 
 
-rule produce_relatedness:
+rule produce_relatedness:  # TARGET : Produce relatedness analysis
     input:
         "results/relatedness_qc/relatedness_summary.tsv",
         "results/relatedness_qc/relatedness_report.html"

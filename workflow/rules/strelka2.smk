@@ -278,7 +278,7 @@ rule strelka2_somatic_concat:
         rm -f {output.indel}.tmp {output.indel}.rename.txt;
         """
 
-rule produce_strelka2_germline_vcf:
+rule produce_strelka2_germline_vcf:  # TARGET : Produce Strelka2 germline VCFs
     input:
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz",
@@ -306,7 +306,7 @@ rule produce_strelka2_germline_vcf:
         mem_mb=config['strelka2']['mem_mb'],
 
 
-rule produce_strelka2_somatic_vcf:
+rule produce_strelka2_somatic_vcf:  # TARGET : Produce Strelka2 somatic VCFs
     input:
         snv=expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz",

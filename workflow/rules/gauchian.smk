@@ -65,7 +65,7 @@ MANIFEST
 
 localrules: produce_gauchian
 
-rule produce_gauchian:
+rule produce_gauchian:  # TARGET : Produce Gauchian results
     """Aggregate completion for all Gauchian runs."""
     input:
         expand(MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.done", sample=SSAMPS, alnr=ALIGNERS)
@@ -77,7 +77,7 @@ rule produce_gauchian:
 
 localrules: produce_all_htd
 
-rule produce_all_htd:
+rule produce_all_htd:  # TARGET : Produce all HTD results (Gauchian, SMN, CYP2D6, Parascopy)
     input:
         "./logs/gauchian.done",
         "./logs/smn12.done",

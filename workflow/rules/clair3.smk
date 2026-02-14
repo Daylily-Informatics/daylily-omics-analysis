@@ -307,7 +307,7 @@ rule clair3_concat_index_chunks:
 localrules:
     clear_combined_clair3_vcf,
 
-rule clear_combined_clair3_vcf:
+rule clear_combined_clair3_vcf:  # TARGET : Clear combined Clair3 VCFs for re-evaluation
     input:
         vcf=expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz",

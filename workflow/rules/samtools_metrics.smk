@@ -35,7 +35,7 @@ rule gen_samstats:
 
 localrules: produce_samtools_metrics
 
-rule produce_samtools_metrics:  #TARGET: produce samtools BAM metrics
+rule produce_samtools_metrics:  # TARGET : Produce samtools BAM metrics
     input:
         expand(MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.complete",
             sample=SAMPS,
