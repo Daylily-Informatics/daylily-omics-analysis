@@ -5,6 +5,7 @@ dependencies:
   - mbuffer
   - curl
   - samtools
+  - bedtools
   - mosdepth
   - bcftools
   - jemalloc
