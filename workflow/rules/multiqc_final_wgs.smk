@@ -62,27 +62,27 @@ rule aggregate_report_components:
         ),
         f"{MDIR}other_reports/normcovevenness_combo_mqc.tsv",
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/cov_calcs_complete.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/picard/picard/{sample}.{alnr}.done",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}.mosdepth.summary.sort.bed",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/goleft.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
@@ -98,12 +98,12 @@ rule aggregate_report_components:
         #    alnr=ALL_ALIGNERS,
         #),
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/qmap/{sample}.{alnr}/{sample}.{alnr}.qmap.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
         ),
-        expand(MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.complete",
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
                sample=SSAMPS,
                alnr=ALL_ALIGNERS,
             ddup=DDUP,

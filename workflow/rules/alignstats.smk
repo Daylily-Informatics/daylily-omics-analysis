@@ -51,10 +51,10 @@ localrules:
 rule finish_align_stats:
     input:
         json=MDIR
-        + "{sample}/align/{alnr}/alignqc/alignstats/{sample}.{alnr}.alignstats.json",
+        + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
     output:
         tsv=MDIR
-        + "{sample}/align/{alnr}/alignqc/alignstats/{sample}.{alnr}.alignstats.tsv",
+        + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
     threads: 2
     params:
         P=50,

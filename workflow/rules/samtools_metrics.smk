@@ -37,9 +37,10 @@ localrules: produce_samtools_metrics
 
 rule produce_samtools_metrics:  # TARGET : Produce samtools BAM metrics
     input:
-        expand(MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.complete",
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
             sample=SAMPS,
-            alnr=CRAM_ALIGNERS
+            alnr=CRAM_ALIGNERS,
+            ddup=DDUP
             )
     output:
         touch(MDIR + "other_reports/samtools_metrics_gather.done"),
