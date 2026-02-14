@@ -158,6 +158,35 @@ else:
         os.system(
             f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
+# Auto-detect dedup targets from command-line and merge into DDUP.
+# This lets users specify dedup_doppelmark / dedup_sentieon as targets
+# without needing --config dedupers="['dmd','smd']".
+_DEDUP_TARGET_MAP = {
+    "dedup_doppelmark": "dmd",
+    "dedup_sentieon": "smd",
+    "dedup_none": "na",
+}
+_cli_dedup_codes = set()
+for _arg in sys.argv:
+    if _arg in _DEDUP_TARGET_MAP:
+        _cli_dedup_codes.add(_DEDUP_TARGET_MAP[_arg])
+
+if _cli_dedup_codes:
+    _had_only_default = (set(DDUP) == {"na"}) and (
+        'dedupers' not in config
+        or config.get('dedupers') is None
+        or len(config.get('dedupers', [])) == 0
+    )
+    if _had_only_default:
+        # Replace the default 'na' with the detected codes
+        DDUP = sorted(_cli_dedup_codes)
+    else:
+        # Merge CLI targets with explicit config
+        DDUP = sorted(set(DDUP) | _cli_dedup_codes)
+    os.system(
+        f'''colr "...INFO: Detected dedup targets on CLI. DDUP updated to: {DDUP}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+    )
+
 # PRINT INFO
 os.system(
     f"""colr 'deduper: {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
