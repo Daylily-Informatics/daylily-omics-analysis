@@ -136,7 +136,8 @@ else:
         f"""colr 'aligners: {ALIGNERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
 
-# Fallback: auto-detect aligner targets from sys.argv
+# Fallback: auto-detect aligners from env var set by bin/day_run,
+# or from sys.argv for direct snakemake invocations.
 _ALIGNER_TARGET_MAP = {
     "produce_bwa_mem2_sort_bam": "bwa2a",
     "produce_sentieon_bwa_sort_bam": "sent",
@@ -145,15 +146,22 @@ _ALIGNER_TARGET_MAP = {
     "produce_sentmm2ont_align_sort": "sentmm2ont",
 }
 if not ALIGNERS:
-    _cli_aligner_codes = set()
-    for _arg in sys.argv:
-        if _arg in _ALIGNER_TARGET_MAP:
-            _cli_aligner_codes.add(_ALIGNER_TARGET_MAP[_arg])
-    if _cli_aligner_codes:
-        ALIGNERS = sorted(_cli_aligner_codes)
+    _auto_aligners_env = os.environ.get('_DY_AUTO_ALIGNERS', '')
+    if _auto_aligners_env:
+        ALIGNERS = sorted(set(_auto_aligners_env.split(',')))
         os.system(
-            f'''colr "...INFO: Auto-detected aligner targets on CLI. ALIGNERS set to: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+            f'''colr "...INFO: Auto-detected aligners from env: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
+    else:
+        _cli_aligner_codes = set()
+        for _arg in sys.argv:
+            if _arg in _ALIGNER_TARGET_MAP:
+                _cli_aligner_codes.add(_ALIGNER_TARGET_MAP[_arg])
+        if _cli_aligner_codes:
+            ALIGNERS = sorted(_cli_aligner_codes)
+            os.system(
+                f'''colr "...INFO: Auto-detected aligner targets on CLI. ALIGNERS set to: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+            )
 
 os.system(
     f"""colr 'aligners (final): {ALIGNERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
@@ -181,29 +189,38 @@ else:
             f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
 
-# Fallback: auto-detect dedup targets from sys.argv
+# Fallback: auto-detect dedupers from env var set by bin/day_run,
+# or from sys.argv for direct snakemake invocations.
 _DEDUP_TARGET_MAP = {
     "dedup_doppelmark": "dmd",
     "dedup_sentieon": "smd",
     "dedup_none": "na",
 }
-_cli_dedup_codes = set()
-for _arg in sys.argv:
-    if _arg in _DEDUP_TARGET_MAP:
-        _cli_dedup_codes.add(_DEDUP_TARGET_MAP[_arg])
+_auto_dedup_codes = set()
 
-if _cli_dedup_codes:
+# Primary: env var from bin/day_run
+_auto_dedupers_env = os.environ.get('_DY_AUTO_DEDUPERS', '')
+if _auto_dedupers_env:
+    _auto_dedup_codes = set(_auto_dedupers_env.split(','))
+
+# Secondary: sys.argv scan (direct snakemake invocation)
+if not _auto_dedup_codes:
+    for _arg in sys.argv:
+        if _arg in _DEDUP_TARGET_MAP:
+            _auto_dedup_codes.add(_DEDUP_TARGET_MAP[_arg])
+
+if _auto_dedup_codes:
     _had_only_default = (set(DDUP) == {"na"}) and (
         'dedupers' not in config
         or config.get('dedupers') is None
         or len(config.get('dedupers', [])) == 0
     )
     if _had_only_default:
-        DDUP = sorted(_cli_dedup_codes)
+        DDUP = sorted(_auto_dedup_codes)
     else:
-        DDUP = sorted(set(DDUP) | _cli_dedup_codes)
+        DDUP = sorted(set(DDUP) | _auto_dedup_codes)
     os.system(
-        f'''colr "...INFO: Detected dedup targets on CLI. DDUP updated to: {DDUP}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        f'''colr "...INFO: Auto-detected dedupers. DDUP updated to: {DDUP}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 
 # PRINT INFO

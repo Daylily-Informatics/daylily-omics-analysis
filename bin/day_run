@@ -94,32 +94,22 @@ for _arg in "$@"; do
     esac
 done
 
-_extra_config_args=()
-
-# Build dedupers config if detected and not already explicit
+# Export auto-detected config as environment variables for common.smk.
+# This avoids Snakemake's --config nargs="*" consuming target names.
 if [[ ${#_dedup_codes[@]} -gt 0 ]] && [[ "$_has_dedupers_config" == "false" ]]; then
-    _dedup_str=$(printf ",'%s'" "${_dedup_codes[@]}")
-    _dedup_str="[${_dedup_str:1}]"
-    _extra_config_args+=("dedupers=${_dedup_str}")
-    colr "...AUTO-CONFIG: dedupers=${_dedup_str} (from target rules)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+    _dedup_csv=$(IFS=,; echo "${_dedup_codes[*]}")
+    export _DY_AUTO_DEDUPERS="$_dedup_csv"
+    colr "...AUTO-CONFIG: dedupers=${_dedup_csv} (from target rules → env)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
 fi
 
-# Build aligners config if detected and not already explicit
 if [[ ${#_aligner_codes[@]} -gt 0 ]] && [[ "$_has_aligners_config" == "false" ]]; then
-    _aligner_str=$(printf ",'%s'" "${_aligner_codes[@]}")
-    _aligner_str="[${_aligner_str:1}]"
-    _extra_config_args+=("aligners=${_aligner_str}")
-    colr "...AUTO-CONFIG: aligners=${_aligner_str} (from target rules)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+    _aligner_csv=$(IFS=,; echo "${_aligner_codes[*]}")
+    export _DY_AUTO_ALIGNERS="$_aligner_csv"
+    colr "...AUTO-CONFIG: aligners=${_aligner_csv} (from target rules → env)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
 fi
 
-# Build the snakemake command.
-# Auto-detected config is placed BEFORE "$@" so that any explicit
-# --config keys from the user override the auto-detected ones.
-if [[ ${#_extra_config_args[@]} -gt 0 ]]; then
-    snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "--config" "${_extra_config_args[@]}" "$@")
-else
-    snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "$@")
-fi
+# Build the snakemake command — targets pass through unchanged.
+snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "$@")
 
 snakecmd="${snakecmd_init[@]//\-\-keep-temp/\-\-notemp}"
 
