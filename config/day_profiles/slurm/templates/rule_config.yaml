@@ -586,7 +586,7 @@ sentdpb:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
     max_mem: "140G"
-
+    pop_vcf: ""
 
 sentdont:
     threads: 192
