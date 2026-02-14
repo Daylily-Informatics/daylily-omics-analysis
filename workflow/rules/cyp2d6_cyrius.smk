@@ -35,7 +35,7 @@ rule cp2d6_cyrius:
         """
 
 localrules: produce_cyp2d6,
-rule produce_cyp2d6:
+rule produce_cyp2d6:  # TARGET : Produce CYP2D6 Cyrius results
     input:
         expand(MDIR + "{sample}/align/{alnr}/htd/cyp2d6/cyp2d6_cyrius.manifest",  sample=SSAMPS, alnr=ALIGNERS)
     output:

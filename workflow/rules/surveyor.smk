@@ -85,8 +85,8 @@ rule surveyor_sort_index:
 localrules: produce_surveyor,
 
 
-rule produce_surveyor:
-    """TARGET: ensure all SurVeyor VCFs are generated."""
+rule produce_surveyor:  # TARGET : Produce SurVeyor SV VCFs
+    """Ensure all SurVeyor VCFs are generated."""
     input:
         expand(
             MDIR

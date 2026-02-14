@@ -122,7 +122,7 @@ rule genetocn:
 localrules: produce_genetocn
 
 
-rule produce_genetocn:
+rule produce_genetocn:  # TARGET : Produce GeneToCN copy-number results
     """Aggregate completion for all GeneToCN runs."""
     input:
         expand(MDIR + "{sample}/align/{alnr}/htd/genetocn/{sample}.{alnr}.genetocn.done", sample=SSAMPS, alnr=ALIGNERS)

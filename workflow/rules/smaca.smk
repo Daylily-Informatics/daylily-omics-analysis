@@ -129,7 +129,7 @@ PY
 
 localrules: produce_smaca
 
-rule produce_smaca:
+rule produce_smaca:  # TARGET : Produce SMAca results
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.done",

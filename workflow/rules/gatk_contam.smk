@@ -70,7 +70,7 @@ rule gatk_contam:
 localrules:
     produce_gatk_contam_estimate,
 
-rule produce_gatk_contam_estimate:
+rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estimates
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",

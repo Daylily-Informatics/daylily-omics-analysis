@@ -33,7 +33,7 @@ rule smn_copynumbercaller:
 
 localrules: produce_smn12
 
-rule produce_smn12:
+rule produce_smn12:  # TARGET : Produce SMN1/SMN2 copy-number results
     input:
         expand(MDIR + "{sample}/align/{alnr}/htd/smn12/{sample}.{alnr}.smn12.summary.json", sample=SSAMPS, alnr=ALIGNERS)
     output:

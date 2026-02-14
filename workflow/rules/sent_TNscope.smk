@@ -250,7 +250,7 @@ rule sent_TNscope_concat_index_chunks:
         """
 
 
-rule produce_sent_TNscope_vcf:
+rule produce_sent_TNscope_vcf:  # TARGET : Produce Sentieon TNscope somatic VCFs
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
