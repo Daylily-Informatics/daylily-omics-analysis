@@ -11,8 +11,6 @@ dependencies:
   - curl
   - mbuffer
   - samtools
-  - bedtools
-  - mosdepth
   - bcftools
   - htslib
   - mosdepth
@@ -26,4 +24,4 @@ dependencies:
   - git
   - pip
   - pip:
-    - git+https://github.com/Sentieon/sentieon-cli.git@v1.5.2
+    - git+https://github.com/Sentieon/sentieon-cli.git@v1.3.0
