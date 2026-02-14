@@ -522,6 +522,7 @@ sentdhio:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT1.1.bundle"
     mem_mb: 200000
     max_mem: "4G"
+    pop_vcf: ""
 
 sentdhip:
     threads: 7
@@ -538,6 +539,7 @@ sentdhip:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio2.3.bundle"
     mem_mb: 200000
     max_mem: "4G"
+    pop_vcf: ""
 
 sentdhuo:
     threads: 7
@@ -554,6 +556,7 @@ sentdhuo:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.0.model.bundle"
     mem_mb: 200000
     max_mem: "4G"
+    pop_vcf: ""
 
 sentdug:
     threads: 7
@@ -618,6 +621,7 @@ sentdont:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle"
     dna_scope_apply_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle"
     mem_mb: 200000
+    pop_vcf: ""
 
 sentdontr:
     threads: 8
