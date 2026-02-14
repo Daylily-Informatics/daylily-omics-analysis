@@ -124,7 +124,6 @@ rule sent_snv_pacbio:
             -r {params.huref} \
             -i {input.cram} \
             -m "{params.model}" \
-            -d "{params.pop_vcf}" \
             -t {threads} \
             --tech HiFi \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;

@@ -581,8 +581,8 @@ sentdpb:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.3.bundle"
-    dna_scope_apply_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.3.bundle"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
+    dna_scope_apply_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
     max_mem: "140G"
