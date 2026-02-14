@@ -135,28 +135,30 @@ else:
     )
 
 # Handle dedupers
-# Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), nmd (no dedup)
+# Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), na (no dedup / skip)
 # Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
+# If no dedupers specified, defaults to ['na'] (no dedup).
 DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
-DDUP_VALID_CODES = {"dmd", "smd", "nmd"}
+DDUP_VALID_CODES = {"dmd", "smd", "na"}
 
 DDUP = []
-if 'dedupers' not in config:
+if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
+    DDUP = ["na"]
     os.system(
-        f'''colr "...WARNING: No dedupers set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        f'''colr "...INFO: No dedupers set in config. Defaulting to na (no dedup)." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 else:
-    _raw_ddup = sorted(set([] if config.get('dedupers') is None else config["dedupers"]))
+    _raw_ddup = sorted(set(config["dedupers"]))
     DDUP = sorted(set(DDUP_LEGACY_MAP.get(d, d) for d in _raw_ddup))
     _unknown = set(DDUP) - DDUP_VALID_CODES
     if _unknown:
         os.system(
             f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
-    # PRINT INFO
-    os.system(
-        f"""colr 'deduper: {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
-    )
+# PRINT INFO
+os.system(
+    f"""colr 'deduper: {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+)
 
 snv_CALLERS = []
 if 'snv_callers' not in config:

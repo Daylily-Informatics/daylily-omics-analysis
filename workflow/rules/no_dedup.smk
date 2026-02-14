@@ -1,6 +1,6 @@
-#########  no dedup (nmd)
+#########  no dedup (na)
 # --------------------------
-# code=nmd
+# code=na
 # comment="Skip duplicate marking. Convert sorted BAM to CRAM directly."
 #
 # No conditional guard — rule is always defined.
@@ -14,13 +14,13 @@ rule no_dedup:
         bai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.sort.bam.bai",
     priority: 3
     output:
-        cram="{MDIR}{sample}/align/{alnr}/nmd/{sample}.{alnr}.nmd.cram",
-        crai="{MDIR}{sample}/align/{alnr}/nmd/{sample}.{alnr}.nmd.cram.crai",
+        cram="{MDIR}{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram",
+        crai="{MDIR}{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram.crai",
     wildcard_constraints:
         alnr="|".join(OG_ALIGNERS)
     threads: config.get("no_dedup", {}).get("threads", 4)
     benchmark:
-        repeat("{MDIR}{sample}/benchmarks/{sample}.{alnr}.nmd.mrkdup.bench.tsv", 0)
+        repeat("{MDIR}{sample}/benchmarks/{sample}.{alnr}.na.mrkdup.bench.tsv", 0)
     resources:
         threads=config.get("no_dedup", {}).get("threads", 4),
         partition=config.get("no_dedup", {}).get("partition", "i192"),
@@ -33,7 +33,7 @@ rule no_dedup:
         cram_compression=config.get("no_dedup", {}).get("cram_compression", "7"),
         view_threads=config.get("no_dedup", {}).get("view_threads", "4"),
     log:
-        "{MDIR}{sample}/align/{alnr}/nmd/logs/dedupe.nmd.{sample}.{alnr}.log",
+        "{MDIR}{sample}/align/{alnr}/na/logs/dedupe.na.{sample}.{alnr}.log",
     shell:
         """
         set -euo pipefail
