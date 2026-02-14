@@ -99,8 +99,8 @@ def _quickmer2_command(wildcards, input, threads):
 rule quickmer2:
     """Run QuicK-mer2 against a per-sample CRAM."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         archive=MDIR + "{sample}/align/{alnr}/cnv/quickmer2/{sample}.{alnr}.quickmer2.tar.gz",
         done=MDIR + "{sample}/align/{alnr}/cnv/quickmer2/{sample}.{alnr}.quickmer2.done",

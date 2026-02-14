@@ -11,8 +11,8 @@ import os
 
 rule calc_coverage_evenness:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         # tsv=MDIR  + "{sample}/align/{alnr}/norm_cov_eveness/{sample}.{alnr}.norm_cov_eveness.mqc.tsv",
         mos_pre=MDIR   + "{sample}/align/{alnr}/alignqc/norm_cov_eveness/{sample}.{alnr}.md",

@@ -15,12 +15,12 @@ rule mutect2_bams:
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam"),
-        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam.bai"),
-        normal_bam=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam"),
-        normal_bai=temp(MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai"),
+        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam"),
+        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam.bai"),
+        normal_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam"),
+        normal_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai"),
     log:
-        MDIR + "{sample}/align/{alnr}/snv/mutect2/log/{sample}.{alnr}.mutect2.{m2chrm}.bamify.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.mutect2.{m2chrm}.bamify.log",
     threads: config['mutect2']['threads']
     conda: "../envs/vanilla_v0.1.yaml"
     params:
@@ -152,17 +152,17 @@ rule mutect2:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam",
-        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam.bai",
-        normal_bam=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam",
-        normal_bai=MDIR + "{sample}/align/{alnr}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai",
+        tumor_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam",
+        tumor_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.tumor.bam.bai",
+        normal_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam",
+        normal_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai",
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
-        d=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.ready",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/mutect2/log/{sample}.{alnr}.mutect2.{m2chrm}.snv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.mutect2.{m2chrm}.snv.log",
     threads: config['mutect2']['threads']
     container:
         config['mutect2']['container']
@@ -213,16 +213,16 @@ rule mutect2_sort_index_chunk_vcf:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.vcf",
     priority: 46
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz.tbi",
     conda:
         config['mutect2']['conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/log/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/log/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -244,19 +244,20 @@ rule mutect2_concat_index_chunks:
         sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             m2chrm=M2_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz.tbi",
     threads: 4
     conda:
         config['mutect2']['conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/mutect2/log/{sample}.{alnr}.mutect2.snv.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.mutect2.snv.merge.log",
     params:
         cluster_sample=ret_sample,
     shell:
@@ -271,14 +272,16 @@ rule produce_mutect2_vcf:  # Target: produce mutect2
         sample=TUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/{sample}.{alnr}.mutect2.snv.sort.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.mutect2",
@@ -305,16 +308,16 @@ rule produce_mutect2_vcf:  # Target: produce mutect2
 
 rule prep_mutect2_chunkdirs:
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/mutect2/vcfs/{dvchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/mutect2/vcfs/{dvchrm}/{{sample}}.ready",
             dvchrm=M2_CHRMS,
         ),
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/snv/mutect2/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.chunkdirs.log",
 
     shell:
         """

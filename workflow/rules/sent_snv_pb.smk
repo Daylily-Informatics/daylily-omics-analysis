@@ -14,20 +14,20 @@ ALIGNERS_PB = ["sentmm2"]
 
 rule sent_snv_pacbio:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz.tbi",
         svvcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.sv.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/{sample}.{alnr}.sentdpb.sv.vcf.gz",
         svvcfgztbi=MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.sv.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/{sample}.{alnr}.sentdpb.sv.vcf.gz.tbi",
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/sentdpb/log/{sample}.{alnr}.sentdpb.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/log/{sample}.{alnr}.sentdpb.snv.log",
     threads: config['sentdpb']['threads']
     conda:
         config["sentdpb"]["env_yaml"]
@@ -170,9 +170,10 @@ localrules:
 rule clear_combined_sentdpb_vcf:  # TARGET:  clear combined sentdpb vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS_PB,
+            ddup=DDUP,
         ),
     threads: 2
     priority: 42
@@ -190,9 +191,10 @@ rule produce_sentdpb_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdpb/{sample}.{alnr}.sentdpb.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_PB,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.sentdpb",

@@ -45,8 +45,8 @@ def _parascopy_reference():
 rule parascopy:
     """Run Parascopy on the CRAM alignment for a sample/aligner pair."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/parascopy/results/{sample}.{alnr}.parascopy"),
         done=MDIR + "{sample}/align/{alnr}/htd/parascopy/{sample}.{alnr}.parascopy.done",
@@ -119,6 +119,7 @@ rule produce_parascopy:
             MDIR + "{sample}/align/{alnr}/htd/parascopy/{sample}.{alnr}.parascopy.done",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         )
     output:
         "./logs/parascopy.done"

@@ -6,16 +6,16 @@ import os
 
 rule strelka2_germline_chunkdirs:
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/slk2g/vcfs/{strelkachrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/slk2g/vcfs/{strelkachrm}/{{sample}}.ready",
             strelkachrm=STRELKA2_CHRMS,
         ),
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/snv/slk2g/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/log/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output}; mkdir -p $(dirname {output}); touch {output}; ls {output}; ) > {log} 2>&1;
@@ -24,15 +24,15 @@ rule strelka2_germline_chunkdirs:
 
 rule strelka2_germline:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        d=MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/{sample}.ready",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/vcfs/{strelkachrm}/{sample}.ready",
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz.tbi",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/log/{sample}.{alnr}.strelka2.{strelkachrm}.germline.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/vcfs/{strelkachrm}/log/{sample}.{alnr}.strelka2.{strelkachrm}.germline.log",
     threads: config['strelka2']['threads']
     container:
         config['strelka2']['container']
@@ -42,7 +42,7 @@ rule strelka2_germline:
         partition=config['strelka2']['partition'],
         mem_mb=config['strelka2']['mem_mb'],
     params:
-        run_dir=MDIR + "{sample}/align/{alnr}/snv/slk2g/work/{sample}.germline.{strelkachrm}",
+        run_dir=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/work/{sample}.germline.{strelkachrm}",
         schrm=get_strelka_chrm_day,
         cluster_sample=ret_sample,
         cpre="" if "b37" == config['genome_build'] else "chr",
@@ -89,14 +89,15 @@ rule strelka2_germline:
 rule strelka2_germline_concat:
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.germline.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             strelkachrm=STRELKA2_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz.tbi",
     threads: 4
     resources:
         vcpu=4,
@@ -105,7 +106,7 @@ rule strelka2_germline_concat:
         mem_mb=config['strelka2']['mem_mb'],
     conda: "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/slk2g/log/{sample}.{alnr}.strelka2.germline.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/log/{sample}.{alnr}.strelka2.germline.merge.log",
     params:
         cluster_sample=ret_sample,
     shell:
@@ -123,16 +124,16 @@ rule strelka2_somatic_chunkdirs:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/slk2s/vcfs/{strelkachrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/slk2s/vcfs/{strelkachrm}/{{sample}}.ready",
             strelkachrm=STRELKA2_CHRMS,
         ),
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/snv/slk2s/log/{sample}.{alnr}.somatic.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/log/{sample}.{alnr}.somatic.chunkdirs.log",
     shell:
         """
         ( echo {output}; mkdir -p $(dirname {output}); touch {output}; ls {output}; ) > {log} 2>&1;
@@ -148,14 +149,14 @@ rule strelka2_somatic:
         normal_cram=get_somcall_normal_cram,
         normal_crai=get_somcall_normal_crai,
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        d=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.ready",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.ready",
     output:
-        snv=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz",
-        snvtbi=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz.tbi",
-        indel=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.indels.vcf.gz",
-        indeltbi=MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.indels.vcf.gz.tbi",
+        snv=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz",
+        snvtbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz.tbi",
+        indel=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.indels.vcf.gz",
+        indeltbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.indels.vcf.gz.tbi",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/log/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/log/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.log",
     threads: config['strelka2']['threads']
     container:
         config['strelka2']['container']
@@ -165,7 +166,7 @@ rule strelka2_somatic:
         partition=config['strelka2']['partition'],
         mem_mb=config['strelka2']['mem_mb'],
     params:
-        run_dir=MDIR + "{sample}/align/{alnr}/snv/slk2s/work/{sample}.somatic.{strelkachrm}",
+        run_dir=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/work/{sample}.somatic.{strelkachrm}",
         schrm=get_strelka_chrm_day,
         cluster_sample=ret_sample,
         cpre="" if "b37" == config['genome_build'] else "chr",
@@ -231,22 +232,24 @@ rule strelka2_somatic_concat:
         sample=TUMORS_REGEX
     input:
         snv_vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.snvs.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             strelkachrm=STRELKA2_CHRMS,
         ),
         indel_vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.indels.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/vcfs/{strelkachrm}/{sample}.{alnr}.strelka2.{strelkachrm}.somatic.indels.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             strelkachrm=STRELKA2_CHRMS,
         ),
     output:
-        snv=MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz",
-        snvtbi=MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz.tbi",
-        indel=MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz",
-        indeltbi=MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz.tbi",
+        snv=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz",
+        snvtbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz.tbi",
+        indel=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz",
+        indeltbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz.tbi",
     threads: 4
     resources:
         vcpu=4,
@@ -255,7 +258,7 @@ rule strelka2_somatic_concat:
         mem_mb=config['strelka2']['mem_mb'],
     conda: "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/slk2s/log/{sample}.{alnr}.strelka2.somatic.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/log/{sample}.{alnr}.strelka2.somatic.merge.log",
     params:
         cluster_sample=ret_sample,
     shell:
@@ -278,14 +281,16 @@ rule strelka2_somatic_concat:
 rule produce_strelka2_germline_vcf:
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/{sample}.{alnr}.strelka2.germline.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.strelka2.germline",
@@ -304,24 +309,28 @@ rule produce_strelka2_germline_vcf:
 rule produce_strelka2_somatic_vcf:
     input:
         snv=expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         snvtbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.snvs.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         indel=expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         indeltbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/{sample}.{alnr}.strelka2.somatic.indels.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.strelka2.somatic",

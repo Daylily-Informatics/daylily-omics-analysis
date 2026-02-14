@@ -55,12 +55,12 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             ctbi=get_in_rtg_tbi,
         priority: 48
         output:
-            s=touch(MDIR + "{sample}/align/{alnr}/snv/{snv}/concordance/concordance.done"),
-            fofn=touch(MDIR + "{sample}/align/{alnr}/snv/{snv}/concordance/concordance.fofn"),
-            fin_cmds=touch( MDIR + "{sample}/align/{alnr}/snv/{snv}/concordance/concordance.fin.cmds"),
+            s=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done"),
+            fofn=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fofn"),
+            fin_cmds=touch( MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fin.cmds"),
         log:
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv}/concordance/logs/{sample}.{alnr}.{snv}.concordance.log",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/logs/{sample}.{alnr}.{snv}.concordance.log",
         benchmark:  MDIR+ "{sample}/benchmarks/{sample}.{alnr}.{snv}.concordance.bench.tsv",
         threads: config['rtg_vcfeval']['threads']
         resources:
@@ -167,9 +167,9 @@ else:
 
     rule no_concordance_data:
         input:
-            MDIR + "{sample}/align/{alnr}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz.tbi",
         output:
-            MDIR + "{sample}/align/{alnr}/snv/{snv}/concordance/concordance.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
         shell:
             "touch {output};"
 
@@ -178,9 +178,10 @@ localrules: produce_snv_concordances
 rule produce_snv_concordances:  # TARGET:  produce snv concordances
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/{snv}/concordance/concordance.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
             snv=snv_CALLERS
         )
     priority: 48

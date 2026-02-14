@@ -5,7 +5,7 @@
 
 rule gatk_contam:
     input:
-        cram = MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        cram = MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         # common sites VCF (gnomAD/common SNPs) and its index
         sites_vcf = config["supporting_files"]["files"]["gatk"]["af_sites"],
         sites_vcf_tbi = lambda wildcards: config["supporting_files"]["files"]["gatk"]["af_sites"] + ".tbi",
@@ -76,4 +76,5 @@ rule produce_gatk_contam_estimate:
             MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         )

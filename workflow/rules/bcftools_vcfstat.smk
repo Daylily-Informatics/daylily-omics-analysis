@@ -11,16 +11,16 @@ rule bcftools_vcfstat:
     input:
         snv_vcf=(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz"
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz"
         ),
         snv_vcf_tbi=(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz.tbi"
         ),
     output:
-        MDIR + "{sample}/align/{alnr}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/{snv_caller}/bcfstats/logs/{sample}.{alnr}.{snv_caller}.bcfstats.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/logs/{sample}.{alnr}.{snv_caller}.bcfstats.log",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv_caller}.bcfstat.bench.tsv",
     conda:
@@ -43,8 +43,9 @@ localrules:
 rule produce_bcfvcfstats:  # TARGET:  jusg genvcfstats
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
             snv_caller=snv_CALLERS
         ),

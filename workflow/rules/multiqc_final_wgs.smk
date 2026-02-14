@@ -54,9 +54,10 @@ rule aggregate_report_components:
         f"{MDIR}other_reports/giab_concordance_mqc.tsv",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
             snv_caller=snv_CALLERS,
         ),
         f"{MDIR}other_reports/normcovevenness_combo_mqc.tsv",
@@ -64,23 +65,27 @@ rule aggregate_report_components:
             MDIR + "{sample}/align/{alnr}/alignqc/cov_calcs_complete.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(
             MDIR
             + "{sample}/align/{alnr}/alignqc/picard/picard/{sample}.{alnr}.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(
             MDIR
             + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}.mosdepth.summary.sort.bed",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(
             MDIR + "{sample}/align/{alnr}/alignqc/goleft.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         #expand(
         #    MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
@@ -96,10 +101,12 @@ rule aggregate_report_components:
             MDIR + "{sample}/align/{alnr}/alignqc/qmap/{sample}.{alnr}/{sample}.{alnr}.qmap.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.complete",
                sample=SSAMPS,
                alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         MDIR + "other_reports/samtools_metrics_gather.done",
         "logs/peddy_gathered.done",
@@ -107,9 +114,10 @@ rule aggregate_report_components:
         #f"{MDIR}logs/all_svVCF_dupheld.done",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{snv_caller}.rtg.vcfstats.txt",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{snv_caller}.rtg.vcfstats.txt",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
             snv_caller=snv_CALLERS,
         ),
     threads: 2

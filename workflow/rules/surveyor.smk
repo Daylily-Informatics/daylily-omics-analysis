@@ -19,9 +19,9 @@ rule surveyor:
         bai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam.bai",
         reference=lambda wildcards: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/sv/surveyor/{sample}.{alnr}.surveyor.sv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/{sample}.{alnr}.surveyor.sv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/sv/surveyor/logs/{sample}.{alnr}.surveyor.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/logs/{sample}.{alnr}.surveyor.log",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.surveyor.sv.vcf.bench.tsv",
     threads: config["surveyor"]["threads"]
@@ -52,13 +52,13 @@ rule surveyor:
 
 rule surveyor_sort_index:
     input:
-        MDIR + "{sample}/align/{alnr}/sv/surveyor/{sample}.{alnr}.surveyor.sv.vcf",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/{sample}.{alnr}.surveyor.sv.vcf",
     output:
-        sortvcf=MDIR + "{sample}/align/{alnr}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf",
-        sortgz=MDIR + "{sample}/align/{alnr}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf.gz",
-        sorttbi=MDIR + "{sample}/align/{alnr}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf.gz.tbi",
+        sortvcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf",
+        sortgz=MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf.gz",
+        sorttbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf.gz.tbi",
     log:
-        MDIR + "{sample}/align/{alnr}/sv/surveyor/logs/{sample}.{alnr}.surveyor.sv.sort.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/surveyor/logs/{sample}.{alnr}.surveyor.sv.sort.log",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.surveyor.sv.sort.bench.tsv",
     threads: config["surveyor_sort_index"]["threads"]
@@ -90,7 +90,8 @@ rule produce_surveyor:
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/sv/surveyor/{sample}.{alnr}.surveyor.sv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         )
