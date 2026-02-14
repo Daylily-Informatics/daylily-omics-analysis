@@ -21,7 +21,6 @@ dependencies:
   - sambamba
   - jemalloc
   - isa-l=2.31.0
-  - git
   - pip
   - pip:
     - git+https://github.com/Sentieon/sentieon-cli.git@v1.5.2
