@@ -46,5 +46,5 @@ localrules:
 rule produce_mosdepth:  # TARGET:  jusg gen mosdepth
     input:
         expand(MDIR
-        + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}.mosdepth.summary.sort.bed", sample=SSAMPS, alnr=CRAM_ALIGNERS),
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed", sample=SSAMPS, alnr=CRAM_ALIGNERS, ddup=DDUP),
     

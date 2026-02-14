@@ -13,10 +13,10 @@ rule alignstats_gather:
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/alignstats/{sample}.{alnr}.alignstats.tsv",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
-            caller=sv_CALLERS,
+            ddup=DDUP,
         ),
     output:
         f"{MDIR}other_reports/alignstats_summary_gather.done",
@@ -59,8 +59,8 @@ rule alignstats_compile:
     shell:
         "(mkdir -p {MDIR}logs/as;"
         "echo STARTcompileAstats > {log};"
-        "find {MDIR}*/align/*/alignqc/alignstats/*alignstats.tsv | head -n 1 | parallel -j 1 'head -n 1 {params.l}{params.r} > {output[0]}; echo a_{params.l}{params.r} >> {log}' >> {log} 2>&1; "
-        "find {MDIR}*/align/*/alignqc/alignstats/*alignstats.tsv | parallel -j 1 'tail -n 1 {params.l}{params.r} >> {output[0]}; echo b_{params.l}{params.r}  >> {log} ' >> {log} 2>&1;  "
+        "find {MDIR}*/align/*/*/alignqc/alignstats/*alignstats.tsv | head -n 1 | parallel -j 1 'head -n 1 {params.l}{params.r} > {output[0]}; echo a_{params.l}{params.r} >> {log}' >> {log} 2>&1; "
+        "find {MDIR}*/align/*/*/alignqc/alignstats/*alignstats.tsv | parallel -j 1 'tail -n 1 {params.l}{params.r} >> {output[0]}; echo b_{params.l}{params.r}  >> {log} ' >> {log} 2>&1;  "
         "cp {output[0]} {output[1]};"
         "cp {output[0]} {output[2]};" #         "perl -pi -e 's/_DBC0_0//g;' {output};"
         ") || touch logs/ALIGNSTATSCOMPIEFAILEDw_$? ; "

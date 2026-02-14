@@ -68,7 +68,7 @@ localrules: produce_gauchian
 rule produce_gauchian:  # TARGET : Produce Gauchian results
     """Aggregate completion for all Gauchian runs."""
     input:
-        expand(MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.done", sample=SSAMPS, alnr=ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
     output:
         "./logs/gauchian.done"
     shell:
