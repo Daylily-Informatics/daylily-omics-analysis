@@ -12,7 +12,7 @@ def get_snv_caller(wildcards):
     return wildcards.snv
 
 def get_cdir(wildcards):
-    ret_d =  MDIR+f"{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/concordance/"
+    ret_d =  MDIR+f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/concordance/"
 
     if ret_d.startswith('/marigo'):
         ret_d = f"results"+ret_d
@@ -26,25 +26,25 @@ if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
 def get_in_rtg_vcf(wildcards):
     if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true': 
         r1 = get_raw_R1s(wildcards)[0]
-        dvcfgz= f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.snv.sort.vcf.gz"
+        dvcfgz= f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
         os.system(f"mkdir -p {os.path.dirname(dvcfgz)}")
         os.system(f"ln -s {r1} {dvcfgz}")
         os.system('sleep 2')
         return dvcfgz
     else:
-        return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.snv.sort.vcf.gz"
+        return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
 
 
 def get_in_rtg_tbi(wildcards):
     if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
         r2 = get_raw_R2s(wildcards)[0]
-        dvcfgztbi = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+        dvcfgztbi = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
         os.system(f"mkdir -p {os.path.dirname(dvcfgztbi)}")
         os.system(f"ln -s {r2} {dvcfgztbi}")
         os.system('sleep 2')
         return dvcfgztbi
     else:
-        return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+        return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
 
 
 if len(CONCORDANCE_SAMPLES.keys()) > 0:
@@ -60,7 +60,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             fin_cmds=touch( MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fin.cmds"),
         log:
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/logs/{sample}.{alnr}.{snv}.concordance.log",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/logs/{sample}.{alnr}.{ddup}.{snv}.concordance.log",
         benchmark:  MDIR+ "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.concordance.bench.tsv",
         threads: config['rtg_vcfeval']['threads']
         resources:
@@ -167,7 +167,7 @@ else:
 
     rule no_concordance_data:
         input:
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz.tbi",
         output:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
         shell:
