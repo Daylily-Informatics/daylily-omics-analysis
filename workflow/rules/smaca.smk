@@ -3,12 +3,12 @@
 rule smaca:  # TARGET : Run SMAca copy-number estimation for SMN genes.
     """Execute SMAca on a CRAM/CRAI pair."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/smaca/results/{sample}.{alnr}"),
-        summary=MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.summary.tsv",
-        done=MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.done",
+        results_dir=directory(MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/results/{sample}.{alnr}"),
+        summary=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.summary.tsv",
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",
     params:
         cluster_sample=ret_sample,
         command=lambda wildcards: config.get("smaca", {}).get("command", "SMAca.py"),
@@ -26,7 +26,7 @@ rule smaca:  # TARGET : Run SMAca copy-number estimation for SMN genes.
         flag_threads=lambda wildcards: config.get("smaca", {}).get("flags", {}).get("threads", "--threads"),
         summary_filename=lambda wildcards: config.get("smaca", {}).get("summary_filename", "SMAca_results.tsv"),
     log:
-        MDIR + "{sample}/align/{alnr}/htd/smaca/logs/{sample}.{alnr}.smaca.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/logs/{sample}.{alnr}.{ddup}.smaca.log",
     threads: config["go_left"]["threads"]
     conda:
         "workflow/envs/smaca_v0.1.yaml"
@@ -129,12 +129,13 @@ PY
 
 localrules: produce_smaca
 
-rule produce_smaca:
+rule produce_smaca:  # TARGET : Produce SMAca results
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.done",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         )
     output:
         "./logs/smaca.done"

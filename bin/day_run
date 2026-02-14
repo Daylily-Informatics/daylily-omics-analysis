@@ -60,7 +60,55 @@ fi
 
 
 
-# Build the snakemake command
+# ---------------------------------------------------------------------------
+# Auto-detect aligner / deduper config from target rule names on the CLI.
+# If the user specifies target rules like dedup_doppelmark or
+# produce_bwa_mem2_sort_bam, we inject the corresponding --config values
+# so downstream expand() calls see a populated ALIGNERS / DDUP list.
+# Explicit --config aligners=... / dedupers=... always takes priority.
+# ---------------------------------------------------------------------------
+_dedup_codes=()
+_aligner_codes=()
+_has_dedupers_config=false
+_has_aligners_config=false
+
+for _arg in "$@"; do
+    # Detect dedup targets
+    case "$_arg" in
+        dedup_doppelmark)       _dedup_codes+=("dmd")   ;;
+        dedup_sentieon)         _dedup_codes+=("smd")   ;;
+        dedup_none)             _dedup_codes+=("na")    ;;
+    esac
+    # Detect aligner targets
+    case "$_arg" in
+        produce_bwa_mem2_sort_bam)      _aligner_codes+=("bwa2a")       ;;
+        produce_sentieon_bwa_sort_bam)  _aligner_codes+=("sent")        ;;
+        produce_strobe_align_sort_bam)  _aligner_codes+=("strobe")      ;;
+        produce_sentmm2_align_sort)     _aligner_codes+=("sentmm2")     ;;
+        produce_sentmm2ont_align_sort)  _aligner_codes+=("sentmm2ont")  ;;
+    esac
+    # Check if user already specified these config keys
+    case "$_arg" in
+        dedupers=*)  _has_dedupers_config=true  ;;
+        aligners=*)  _has_aligners_config=true  ;;
+    esac
+done
+
+# Export auto-detected config as environment variables for common.smk.
+# This avoids Snakemake's --config nargs="*" consuming target names.
+if [[ ${#_dedup_codes[@]} -gt 0 ]] && [[ "$_has_dedupers_config" == "false" ]]; then
+    _dedup_csv=$(IFS=,; echo "${_dedup_codes[*]}")
+    export _DY_AUTO_DEDUPERS="$_dedup_csv"
+    colr "...AUTO-CONFIG: dedupers=${_dedup_csv} (from target rules → env)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+fi
+
+if [[ ${#_aligner_codes[@]} -gt 0 ]] && [[ "$_has_aligners_config" == "false" ]]; then
+    _aligner_csv=$(IFS=,; echo "${_aligner_codes[*]}")
+    export _DY_AUTO_ALIGNERS="$_aligner_csv"
+    colr "...AUTO-CONFIG: aligners=${_aligner_csv} (from target rules → env)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+fi
+
+# Build the snakemake command — targets pass through unchanged.
 snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "$@")
 
 snakecmd="${snakecmd_init[@]//\-\-keep-temp/\-\-notemp}"

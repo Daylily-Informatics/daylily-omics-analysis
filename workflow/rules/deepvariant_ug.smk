@@ -7,13 +7,13 @@ import os
  
 rule deepvariant_ultima_make_examples:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-        d=MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.ready",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.ready",
     output:
-        examples=MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.{dvchrm}.examples.tfrecord@"+f"{config['deepvariant']['threads']}.gz"
+        examples=MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.{dvchrm}.examples.tfrecord@"+f"{config['deepvariant']['threads']}.gz"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/deepug/log/{sample}.{alnr}.make_examples.{dvchrm}."+f"{config['deepvariant']['threads']}.log"
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/log/{sample}.{alnr}.make_examples.{dvchrm}."+f"{config['deepvariant']['threads']}.log"
     threads: config['deepvariant']['threads']
     container:
         config['deepvariant']['deepug_me_container']
@@ -24,7 +24,7 @@ rule deepvariant_ultima_make_examples:
         partition=config['deepvariant']['partition'],
         mem_mb=config['deepvariant']['mem_mb'],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.{dvchrm}."+f"{config['deepvariant']['threads']}.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}."+f"{config['deepvariant']['threads']}.bench.tsv"
     params:
         dchrm=get_dvchrm_day,
         deep_model="WGS",
@@ -97,17 +97,17 @@ rule deepvariant_ultima_make_examples:
 
 rule deepvariant_ultima_call_variants:
     input:
-       examples=MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.{dvchrm}.examples.tfrecord@"+f"{config['deepvariant']['threads']}.gz"
+       examples=MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.{dvchrm}.examples.tfrecord@"+f"{config['deepvariant']['threads']}.gz"
     output:
-        trf=MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.vars.tfrecord.gz",
+        trf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.vars.tfrecord.gz",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/log/{sample}.{alnr}.call_variants.{dvchrm}."+f"{config['deepvariant']['threads']}.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/log/{sample}.{alnr}.call_variants.{dvchrm}."+f"{config['deepvariant']['threads']}.log",
     threads: config['deepvariant']['threads']
     container:
         config['deepvariant']['deepug_cv_container']
     priority: 44  # slightly lower priority to ensure examples first
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.{dvchrm}.cv."+f"{config['deepvariant']['threads']}.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}.cv."+f"{config['deepvariant']['threads']}.bench.tsv"
     resources:
         vcpu=config['deepvariant']['threads'],
         threads=config['deepvariant']['threads'],
@@ -166,21 +166,21 @@ rule deepvariant_ultima_call_variants:
 
 rule dvug_sort_index_chunk_vcf:
     input:
-        trf=MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.vars.tfrecord.gz",
+        trf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.vars.tfrecord.gz",
     priority: 46
     output:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz",
         vcftbi=MDIR
-        + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz.tbi",
-        trftmp=temp(MDIR + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.vars@1.tfrecord.gz"),
+        + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz.tbi",
+        trftmp=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/{sample}.{alnr}.deepug.{dvchrm}.snv.vars@1.tfrecord.gz"),
     container:
         config['deepvariant']['deepug_cv_container']
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/deepug/vcfs/{dvchrm}/log/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/deepug/vcfs/{dvchrm}/log/{sample}.{alnr}.deepug.{dvchrm}.snv.sort.vcf.gz.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.{dvchrm}.srt."+f"{config['deepvariant']['threads']}.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}.srt."+f"{config['deepvariant']['threads']}.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -219,15 +219,15 @@ rule deepug_concat_fofn:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/snv/deepug/vcfs/{dvchm}/{{sample}}.{{alnr}}.deepug.{dvchm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/deepug/vcfs/{dvchm}/{{sample}}.{{alnr}}.deepug.{dvchm}.snv.sort.vcf.gz.tbi",
                 dvchm=DEEPD_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),    # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th dvchrm wildcard is effectively being constrained by the values in the DEEPD_CHRMS array;  So you produce 1 input array of files for every sample+dvchrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first deepdvchrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
     priority: 44
     output:
         fin_fofn=MDIR
-        + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn.tmp",
-        #gfin_fofn=MDIR+ "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn",
-        #gtmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn.tmp",
+        #gfin_fofn=MDIR+ "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn",
+        #gtmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn.tmp",
     threads: 2
     resources:
         vcpu=2,
@@ -237,11 +237,11 @@ rule deepug_concat_fofn:
         fn_stub="{sample}.{alnr}.deepug.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.concat.fofn.bench.tsv"
     conda:
         config['deepvariant']['deepug_conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/deepug/log/{sample}.{alnr}.deepug.cocncat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/log/{sample}.{alnr}.deepug.cocncat.fofn.log",
     shell:
         """
 
@@ -257,22 +257,22 @@ rule deepug_concat_fofn:
 rule deepug_concat_index_chunks:
     input:
         fofn=MDIR
-        + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.concat.vcf.gz.fofn.tmp",
         #gfofn=MDIR
-        #+ "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn",
-        #gtmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn.tmp",
+        #+ "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn",
+        #gtmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.concat.vcf.gz.fofn.tmp",
     output:
         vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz"
         ),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.temp.vcf.gz"
         ),
         vcfgztbi=touch(
             MDIR
-            + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz.tbi"
-        ),   #gvcf=touch(            MDIR + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf"),        #gvcfgz=touch(            MDIR + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf.gz"),
+            + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz.tbi"
+        ),   #gvcf=touch(            MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf"),        #gvcfgz=touch(            MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf.gz"),
     threads: 4
     resources:
         vcpu=4,
@@ -285,12 +285,12 @@ rule deepug_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.deepug.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.merge.bench.tsv"
     conda:
         config['deepvariant']['deepug_conda']
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/deepug/log/{sample}.{alnr}.deepug.snv.merge.sort.gatherered.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/deepug/log/{sample}.{alnr}.deepug.snv.merge.sort.gatherered.log",
     shell:
         """
  
@@ -314,9 +314,10 @@ rule deepug_concat_index_chunks:
 rule clear_combined_deepug_vcf:  # TARGET:  clear combined deep vcf so the chunks can be re-evaluated if needed.
     input:
         vcf=expand(
-            MDIR + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     priority: 42
     conda:
@@ -333,27 +334,31 @@ rule produce_deepug_vcf:  # TARGET: deep variant vcf
     input:
         vcftb=expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz",
+            + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         #gvcf=expand(
         #    MDIR
-        #    + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf.gzi",
+        #    + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf.gzi",
         #    sample=SSAMPS,
         #    alnr=ALIGNERS,
+        #    ddup=DDUP,
         #),
         #gvcftbi=expand(
         #    MDIR
-        #    + "{sample}/align/{alnr}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf.gz.tbi",
+        #    + "{sample}/align/{alnr}/{ddup}/snv/deepug/{sample}.{alnr}.deepug.snv.g.sort.vcf.gz.tbi",
         #    sample=SSAMPS,
         #    alnr=ALIGNERS,
+        #    ddup=DDUP,
         #),
     output:
         "gatheredall.deep",
@@ -390,16 +395,16 @@ localrules:
 
 rule prep_deepug_chunkdirs:
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/deepug/vcfs/{dvchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/deepug/vcfs/{dvchrm}/{{sample}}.ready",
             dvchrm=DEEPD_CHRMS,
         ),
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/snv/deepug/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/deepug/log/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;

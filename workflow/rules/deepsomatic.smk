@@ -36,11 +36,11 @@ rule dvsom:
         normal_crai=get_somcall_normal_crai,      
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
-        d=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.log",
     threads: config['deepsomatic']['threads']
     container:
         config['deepsomatic']['container']
@@ -52,7 +52,7 @@ rule dvsom:
         mem_mb=config['deepsomatic']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.dvsom.{dvsomchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dvsom.{dvsomchrm}.bench.tsv",
             0 if "bench_repeat" not in config["deepsomatic"] else config["deepsomatic"]["bench_repeat"],
         )
     params:
@@ -136,16 +136,16 @@ rule dvsom_sort_index_chunk_vcf:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.vcf",
     priority: 46
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.tbi",
     conda:
         config['deepsomatic']['dvsom_conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -167,14 +167,15 @@ rule dvsom_concat_index_chunks:
         sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             dvsomchrm=DVSOM_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
     threads: 4,
     resources:
         vcpu=4,
@@ -184,7 +185,7 @@ rule dvsom_concat_index_chunks:
     conda:
         config['deepsomatic']['dvsom_conda'],
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.dvsom.snv.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/log/{sample}.{alnr}.dvsom.snv.merge.log",
     params:
         cluster_sample=ret_sample,
     shell:
@@ -198,18 +199,20 @@ rule dvsom_concat_index_chunks:
         """
 
 
-rule produce_dvsom_vcf:  # Target: produce deep-somatic
+rule produce_dvsom_vcf:  # TARGET : Produce DeepSomatic VCFs
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",           sample=TN_TUMOR_SAMPS,
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz",           sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/{sample}.{alnr}.dvsom.snv.sort.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
-            alnr=ALIGNERS
+            alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.dvsom",
@@ -248,18 +251,18 @@ rule prep_dvsom_chunkdirs:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/dvsom/vcfs/{dvsomchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/dvsom/vcfs/{dvsomchrm}/{{sample}}.ready",
             dvsomchrm=DVSOM_CHRMS,
         ),
     threads: 1
     params:
         cluster_sample=ret_sample,
     log:
-        MDIR + "{sample}/align/{alnr}/snv/dvsom/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/log/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;

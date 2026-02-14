@@ -7,12 +7,12 @@ import os
 
 rule vpot:
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
     output:
-        report=MDIR + "{sample}/align/{alnr}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.tsv",
-        done=touch(MDIR + "{sample}/align/{alnr}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done"),
+        report=MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.tsv",
+        done=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done"),
     log:
-        MDIR + "{sample}/align/{alnr}/snv/{snv}/vpot/log/{sample}.{alnr}.{snv}.vpot.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/log/{sample}.{alnr}.{snv}.vpot.log",
     threads: config["vpot"]["threads"]
     resources:
         vcpu=config["vpot"]["threads"],
@@ -40,9 +40,10 @@ localrules:
 rule produce_vpot:  # TARGET: run VPOT across all samples
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
             snv=snv_CALLERS,
         ),
     output:

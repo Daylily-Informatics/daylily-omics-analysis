@@ -3,21 +3,21 @@
 rule gauchian:
     """Run the Gauchian caller on an input CRAM/CRAI pair."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        manifest=temp(MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.manifest"),
-        results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/gauchian/results/{sample}.{alnr}"),
-        done=MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.done",
+        manifest=temp(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.manifest"),
+        results_dir=directory(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/results/{sample}.{alnr}"),
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done",
     params:
         cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         genome="37" if config["genome_build"] == "b37" else "38",
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.alnr}.gauchian",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.gauchian.benchmark.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gauchian.benchmark.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/htd/gauchian/logs/gauchian.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/logs/gauchian.log",
     threads: config["go_left"]["threads"]
     conda:
          "workflow/envs/gba_v0.1.yaml"
@@ -65,10 +65,10 @@ MANIFEST
 
 localrules: produce_gauchian
 
-rule produce_gauchian:
+rule produce_gauchian:  # TARGET : Produce Gauchian results
     """Aggregate completion for all Gauchian runs."""
     input:
-        expand(MDIR + "{sample}/align/{alnr}/htd/gauchian/{sample}.{alnr}.gauchian.done", sample=SSAMPS, alnr=ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
     output:
         "./logs/gauchian.done"
     shell:
@@ -77,7 +77,7 @@ rule produce_gauchian:
 
 localrules: produce_all_htd
 
-rule produce_all_htd:
+rule produce_all_htd:  # TARGET : Produce all HTD results (Gauchian, SMN, CYP2D6, Parascopy)
     input:
         "./logs/gauchian.done",
         "./logs/smn12.done",

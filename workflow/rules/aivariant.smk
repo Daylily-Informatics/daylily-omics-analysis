@@ -39,13 +39,13 @@ rule aiv_bams:
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        region_bed=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.region.bed"),
-        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam"),
-        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam.bai"),
-        normal_bam=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam"),
-        normal_bai=temp(MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai"),
+        region_bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.region.bed"),
+        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam"),
+        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam.bai"),
+        normal_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam"),
+        normal_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai"),
     log:
-        MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.aiv.{aivchrm}.bamify.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.aiv.{aivchrm}.bamify.log",
     threads: config['aiv']['threads'],
     conda: "../envs/vanilla_v0.1.yaml"
     params:
@@ -175,15 +175,15 @@ rule aiv:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam",
-        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam.bai",
-        normal_bam=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam",
-        normal_bai=MDIR + "{sample}/align/{alnr}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai",
-        d=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.ready",
+        tumor_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam",
+        tumor_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.tumor.bam.bai",
+        normal_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam",
+        normal_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.aiv.{aivchrm}.som.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.aiv.{aivchrm}.som.log",
     threads: config['aiv']['threads'],
     container:
         config['aiv']['aiv_container'],
@@ -195,7 +195,7 @@ rule aiv:
         mem_mb=config['aiv']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.aiv.{aivchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.aiv.{aivchrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('aiv', {}) else config['aiv']['bench_repeat'],
         ),
     params:
@@ -262,16 +262,16 @@ rule aiv_sort_index_chunk_vcf:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.vcf",
     priority: 46,
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz.tbi",
     conda:
         config['aiv']['conda'],
     log:
-        MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/log/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/log/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -294,14 +294,15 @@ rule aiv_concat_index_chunks:
         sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             aivchrm=AIV_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz.tbi",
     threads: 4,
     conda:
         config['aiv']['conda'],
@@ -313,7 +314,7 @@ rule aiv_concat_index_chunks:
         partition=config['aiv'].get('partition_other', config['aiv']['partition']),
         mem_mb=config['aiv']['mem_mb'],
     log:
-        MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.aiv.som.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.aiv.som.merge.log",
     shell:
         """
         bcftools concat -a -O z -o {output.vcfgz} {input.vcfs} >> {log} 2>&1;
@@ -326,14 +327,16 @@ rule produce_aiv_vcf:  # TARGET: aiv vcf
         sample=TUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/{sample}.{alnr}.aiv.som.sort.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.aiv",
@@ -374,18 +377,18 @@ rule prep_aiv_chunkdirs:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/aiv/vcfs/{aivchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/aiv/vcfs/{aivchrm}/{{sample}}.ready",
             aivchrm=AIV_CHRMS,
         ),
     threads: 1,
     params:
         cluster_sample=ret_sample,
     log:
-        MDIR + "{sample}/align/{alnr}/snv/aiv/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output} ;

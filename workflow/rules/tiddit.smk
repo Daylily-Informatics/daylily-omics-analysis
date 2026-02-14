@@ -10,11 +10,11 @@
 
 rule tiddit:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        stub = MDIR + "{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv",
-        vcf = temp(MDIR + "{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv.vcf"),
+        stub = MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv",
+        vcf = temp(MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.vcf"),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         min_sv_size=config["tiddit"]["min_sv_size"],
@@ -26,9 +26,9 @@ rule tiddit:
         partition=config["tiddit"]["partition"],
         threads=config["tiddit"]["threads"]
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.tiddit.sv.vcf.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.tiddit.sv.vcf.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/sv/tiddit/logs/{sample}.{alnr}.tiddit.sv.vcf.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/logs/{sample}.{alnr}.tiddit.sv.vcf.log",
     container:
         "docker://quay.io/biocontainers/tiddit:3.7.0--py39h24fbfe6_0"
     shell:
@@ -55,11 +55,11 @@ rule tiddit:
 
 rule tiddit_sort_index:
     input:
-        MDIR + "{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv.vcf"
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.vcf"
     output:
-        sortvcf = touch(MDIR + "{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf"),
-        sortgz = touch(MDIR + "{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz"),
-        sorttbi = touch(MDIR + "{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz.tbi"),
+        sortvcf = touch(MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf"),
+        sortgz = touch(MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz"),
+        sorttbi = touch(MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz.tbi"),
     threads: config["tiddit"]["threads"]
     priority: 8
     resources:
@@ -67,9 +67,9 @@ rule tiddit_sort_index:
         partition="i192,i192mem",
         threads=config["tiddit"]["threads"]
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.tiddit.sv.vcf.sort.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.tiddit.sv.vcf.sort.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/sv/tiddit/logs/{sample}.{alnr}.tiddit.sv.vcf.sort.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/tiddit/logs/{sample}.{alnr}.tiddit.sv.vcf.sort.log",
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
@@ -94,4 +94,4 @@ rule produce_tiddit:  # TARGET: Produce All Tiddit
     priority: 45
     threads: 1
     input:
-        expand(MDIR +"{sample}/align/{alnr}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS)
+        expand(MDIR +"{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)

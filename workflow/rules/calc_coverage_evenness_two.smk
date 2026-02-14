@@ -1,19 +1,19 @@
 rule calc_coverage_evenness_two:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        metrics=MDIR + "{sample}/align/{alnr}/alignqc/coverage_evenness_two/{sample}.{alnr}.coverage_evenness_two.tsv",
+        metrics=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/{sample}.{alnr}.{ddup}.coverage_evenness_two.tsv",
     conda:
         "../envs/coverage_evenness_two.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.coverage_evenness_two.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.coverage_evenness_two.bench.tsv"
     threads: config['calc_coverage_evenness_two']['threads']
     resources:
         vcpu=config['calc_coverage_evenness_two']['threads'],
         partition=config['calc_coverage_evenness_two']['partition'],
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/coverage_evenness_two/logs/coverage_evenness_two.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/logs/coverage_evenness_two.log",
     params:
         window=config['calc_coverage_evenness_two'].get('window', 100000),
         cluster_sample=ret_sample,
@@ -32,7 +32,7 @@ localrules:
 
 rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
     input:
-            expand(MDIR + "{sample}/align/{alnr}/alignqc/coverage_evenness_two/{sample}.{alnr}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS)
+            expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/{sample}.{alnr}.{ddup}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS, ddup=DDUP)
     container: None
     threads: 8
     output:

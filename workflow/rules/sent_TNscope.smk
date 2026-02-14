@@ -12,17 +12,17 @@ rule sent_TNscope:
         tumor_crai=get_somcall_tumor_crai,
         normal_cram=get_somcall_normal_cram,
         normal_crai=get_somcall_normal_crai,
-        d=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.ready",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/senttn/log/{sample}.{alnr}.senttn.{senttnchrm}.snv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/log/{sample}.{alnr}.senttn.{senttnchrm}.snv.log",
     threads: config['senttn']['threads']
     conda: config['senttn']['env_yaml']
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.senttn.{senttnchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.senttn.{senttnchrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('senttn', {}) else config['senttn']['bench_repeat'],
         )
     resources:
@@ -196,16 +196,16 @@ rule sent_TNscope_sort_index_chunk_vcf:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.vcf",
     priority: 46
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.tbi",
     conda:
         config['senttn']['conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/log/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/log/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -227,19 +227,20 @@ rule sent_TNscope_concat_index_chunks:
         sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             senttnchrm=SENTTN_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz.tbi",
     threads: 4
     conda:
         config['senttn']['conda']
     log:
-        MDIR + "{sample}/align/{alnr}/snv/senttn/log/{sample}.{alnr}.senttn.snv.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/log/{sample}.{alnr}.senttn.snv.merge.log",
     params:
         cluster_sample=ret_sample,
     shell:
@@ -249,19 +250,21 @@ rule sent_TNscope_concat_index_chunks:
         """
 
 
-rule produce_sent_TNscope_vcf:
+rule produce_sent_TNscope_vcf:  # TARGET : Produce Sentieon TNscope somatic VCFs
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/{sample}.{alnr}.senttn.snv.sort.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.senttn",

@@ -5,7 +5,7 @@
 
 rule gatk_contam:
     input:
-        cram = MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        cram = MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         # common sites VCF (gnomAD/common SNPs) and its index
         sites_vcf = config["supporting_files"]["files"]["gatk"]["af_sites"],
         sites_vcf_tbi = lambda wildcards: config["supporting_files"]["files"]["gatk"]["af_sites"] + ".tbi",
@@ -15,16 +15,16 @@ rule gatk_contam:
         ref_dict = lambda w: os.path.splitext(config["supporting_files"]["files"]["huref"]["fasta"]["name"])[0] + ".dict",
     output:
         # per-tool prefix directory
-        pile_merged = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.pileups.table",
-        contam      = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.contam.tsv",
-        selfSM      = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.selfSM",
-        tsv         = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",
-        mqc         = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk_mqc.tsv",
-        stamp       = MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.done",
+        pile_merged = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table",
+        contam      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.contam.tsv",
+        selfSM      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.selfSM",
+        tsv         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
+        mqc         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk_mqc.tsv",
+        stamp       = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.done",
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/logs/{sample}.{alnr}.gatk_contam.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/logs/{sample}.{alnr}.{ddup}.gatk_contam.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.gatk_contam.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk_contam.bench.tsv"
     conda:
         config["gatk_contam"]["env_yaml"]   # env must provide gatk and coreutils
     threads: config["gatk_contam"]["threads"]
@@ -70,10 +70,11 @@ rule gatk_contam:
 localrules:
     produce_gatk_contam_estimate,
 
-rule produce_gatk_contam_estimate:
+rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estimates
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         )

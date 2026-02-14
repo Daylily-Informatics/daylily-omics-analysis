@@ -10,7 +10,7 @@ GENETOCN_MEM_MB = GENETOCN_CFG.get("mem_mb", 32000)
 
 def genetocn_inputs(wildcards):
     """Return the required and optional inputs for GeneToCN."""
-    cram = MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+    cram = MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
     crai = f"{cram}.crai"
     inputs = {"cram": cram, "crai": crai}
 
@@ -92,13 +92,13 @@ rule genetocn:
     input:
         genetocn_inputs
     output:
-        results_dir=directory(MDIR + "{sample}/align/{alnr}/htd/genetocn/results/{sample}.{alnr}"),
-        done=MDIR + "{sample}/align/{alnr}/htd/genetocn/{sample}.{alnr}.genetocn.done",
+        results_dir=directory(MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/results/{sample}.{alnr}"),
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done",
     params:
         cluster_sample=ret_sample,
         command=genetocn_command,
     log:
-        MDIR + "{sample}/align/{alnr}/htd/genetocn/logs/{sample}.{alnr}.genetocn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/logs/{sample}.{alnr}.{ddup}.genetocn.log",
     threads: GENETOCN_THREADS
     resources:
         mem_mb=GENETOCN_MEM_MB
@@ -122,10 +122,10 @@ rule genetocn:
 localrules: produce_genetocn
 
 
-rule produce_genetocn:
+rule produce_genetocn:  # TARGET : Produce GeneToCN copy-number results
     """Aggregate completion for all GeneToCN runs."""
     input:
-        expand(MDIR + "{sample}/align/{alnr}/htd/genetocn/{sample}.{alnr}.genetocn.done", sample=SSAMPS, alnr=ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
     output:
         "./logs/genetocn.done"
     shell:

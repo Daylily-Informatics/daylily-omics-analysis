@@ -6,17 +6,17 @@ import os
 
 rule picard_cram:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
     output:
-        sent=touch(MDIR + "{sample}/align/{alnr}/alignqc/picard/picard/{sample}.{alnr}.done"),
+        sent=touch(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done"),
     threads: config["picard"]["threads"]
     resources:
         vcpu=config["picard"]["threads"],
         partition=config["picard"]["partition"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.picard.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.picard.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/picard/logs/{sample}.{alnr}.stats.log"
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/logs/{sample}.{alnr}.{ddup}.stats.log"
     conda:
         "../envs/picard_v0.1.yaml"
     params:
@@ -44,6 +44,6 @@ localrules: produce_picard_cram,
 
 rule produce_picard_cram:  # TARGET: produce picard QC data
     input:
-        expand(MDIR + "{sample}/align/{alnr}/alignqc/picard/picard/{sample}.{alnr}.done", sample=SSAMPS,alnr=ALL_ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done", sample=SSAMPS,alnr=ALL_ALIGNERS, ddup=DDUP)
     output:
         touch(MDIR + "other_reports/picard_summary_gather.done"),

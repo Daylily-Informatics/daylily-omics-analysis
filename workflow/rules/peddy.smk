@@ -29,17 +29,17 @@ def gen_ped_file(wildcards):
 rule peddy:
     input:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
         # Generalize this for other var callers
         ped_f=gen_ped_file,
     output:
         prefix=MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.",
         done=MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done",
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/peddy/log/{sample}.{alnr}.{snv}.peddy.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/log/{sample}.{alnr}.{snv}.peddy.log",
     threads: config["peddy"]["threads"]
     resources:
         vcpu=config["peddy"]["threads"],
@@ -48,7 +48,7 @@ rule peddy:
         cluster_sample=ret_sample,
         ld_preload=config["malloc_alt"]["ld_preload"],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv}.peddy.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.peddy.bench.tsv"
     container:
         None
     conda:
@@ -75,9 +75,10 @@ rule produce_peddy:  # TARGET: just produce peddy results
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
             snv=snv_CALLERS,
         ),
     output:

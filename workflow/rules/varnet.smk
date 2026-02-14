@@ -37,13 +37,13 @@ rule varn_bams:
         ref_fa=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ref_fai=lambda wc: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        region_bed=temp(MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.region.bed"),
-        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam"),
-        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam.bai"),
-        normal_bam=temp(MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam"),
-        normal_bai=temp(MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai"),
+        region_bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.region.bed"),
+        tumor_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam"),
+        tumor_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam.bai"),
+        normal_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam"),
+        normal_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai"),
     log:
-        MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.bamify.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.bamify.log",
     threads: config['varn']['threads'],
     conda: "../envs/vanilla_v0.1.yaml"
     params:
@@ -125,16 +125,16 @@ rule varn:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        region_bed=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.region.bed",
-        tumor_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam",
-        tumor_bai=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam.bai",
-        normal_bam=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam",
-        normal_bai=MDIR + "{sample}/align/{alnr}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai",
-        d=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
+        region_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.region.bed",
+        tumor_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam",
+        tumor_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.tumor.bam.bai",
+        normal_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam",
+        normal_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.snv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.snv.log",
     threads: config['varn']['threads'],
     container: config['varn']['varn_container'],
     priority: 45,
@@ -145,7 +145,7 @@ rule varn:
         mem_mb=config['varn']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.varn.{varnchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.varn.{varnchrm}.bench.tsv",
             0 if 'bench_repeat' not in config.get('varn', {}) else config['varn']['bench_repeat'],
         ),
     params:
@@ -204,20 +204,20 @@ rule varn_sort_index_chunk_vcf:
         sample=TUMORS_REGEX
     input:
         vcf=MDIR
-        + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.vcf",
     priority: 46,
     output:
         vcfsort=MDIR
-        + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf",
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz",
         vcftbi=MDIR
-        + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz.tbi",
     conda:
         config['varn']['conda'],
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/log/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/log/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -240,22 +240,23 @@ rule varn_concat_index_chunks:
         sample=TUMORS_REGEX
     input:
         vcfs=lambda wildcards: expand(
-            MDIR + "{sample}/align/{alnr}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz",
             sample=wildcards.sample,
             alnr=wildcards.alnr,
+            ddup=wildcards.ddup,
             varnchrm=VARN_CHRMS,
         ),
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/{alnr}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz.tbi",
     threads: 4,
     params:
         cluster_sample=ret_sample,
     conda:
         config['varn']['conda'],
     log:
-        MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.varn.snv.merge.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.varn.snv.merge.log",
     shell:
         """
         bcftools concat -a -O z -o {output.vcfgz} {input.vcfs} >> {log} 2>&1;
@@ -269,15 +270,17 @@ rule produce_varn_vcf:  # TARGET: varn vcf
     input:
         vcftb=expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz",
+            + "{sample}/align/{alnr}/{ddup}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/varn/{sample}.{alnr}.varn.snv.sort.vcf.gz.tbi",
             sample=TN_TUMOR_SAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.varn",
@@ -313,16 +316,16 @@ rule prep_varn_chunkdirs:
     wildcard_constraints:
         sample=TUMORS_REGEX
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/varn/vcfs/{varnchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/varn/vcfs/{varnchrm}/{{sample}}.ready",
             varnchrm=VARN_CHRMS,
         ),
     threads: 1,
     log:
-        MDIR + "{sample}/align/{alnr}/snv/varn/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.chunkdirs.log",
     params:
         cluster_sample=ret_sample,
     shell:

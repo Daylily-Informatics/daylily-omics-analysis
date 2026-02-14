@@ -11,22 +11,22 @@ rule sent_snv_ontr:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
-        d=MDIR + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.ready",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.ready",
     output:
         vcf=MDIR
-        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz",
          vcftbi=MDIR
-        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz.tbi",
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/sentdontr/log/vcfs/{sample}.{alnr}.sentdontr.{dchrm}.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/log/vcfs/{sample}.{alnr}.sentdontr.{dchrm}.snv.log",
     threads: config['sentdontr']['threads']
     conda:
         "../envs/sentieonHybrid_v0.1.yaml"
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdontr.{dchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdontr.{dchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["sentdontr"]
             else config["sentdontr"]["bench_repeat"],
@@ -137,20 +137,20 @@ rule sent_snv_ontr:
 #rule sentdontr_sort_index_chunk_vcf:
 #    input:
 #        vcf=MDIR
-#        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.t.vcf.gz",
+#        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.t.vcf.gz",
 #    priority: 46
 #    output:
 #        vcfsort=touch(MDIR
-#        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf"),
+#        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf"),
 #        vcfgz=touch(MDIR
-#        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz"),
+#        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz"),
 #        vcftbi=touch(MDIR
-#        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz.tbi"),
+#        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz.tbi"),
 #    conda:
 #        "../envs/vanilla_v0.1.yaml"
 #    log:
 #        MDIR
-#        + "{sample}/align/{alnr}/snv/sentdontr/vcfs/{dchrm}/log/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz.log",
+#        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/vcfs/{dchrm}/log/{sample}.{alnr}.sentdontr.{dchrm}.snv.sort.vcf.gz.log",
 #    resources:
 #        vcpu=1,
 #        threads=1,
@@ -189,25 +189,25 @@ rule sentdontr_concat_fofn:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/snv/sentdontr/vcfs/{ochm}/{{sample}}.{{alnr}}.sentdontr.{ochm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdontr/vcfs/{ochm}/{{sample}}.{{alnr}}.sentdontr.{ochm}.snv.sort.vcf.gz.tbi",
                 ochm=SENTDONTR_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),
     # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th dchrm wildcard is effectively being constrained by the values in the sentdontr_CHRMS array;  So you produce 1 input array of files for every sample+dchrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first sentdontrchrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
     priority: 44
     output:
         fin_fofn=MDIR
-        + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.concat.vcf.gz.fofn.tmp",
     threads: 1
     resources:
         threads=1
     params:
         fn_stub="{sample}.{alnr}.sentdontr."
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdontr.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdontr.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/sentdontr/log/{sample}.{alnr}.sentdontr.cocncat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/log/{sample}.{alnr}.sentdontr.cocncat.fofn.log",
     shell:
         """
 
@@ -223,17 +223,17 @@ rule sentdontr_concat_fofn:
 rule sentdontr_concat_index_chunks:
     input:
         fofn=MDIR
-        + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.concat.vcf.gz.fofn",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.concat.vcf.gz.fofn",
     output:
         vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz"
         ),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.temp.vcf.gz"
         ),
         vcfgztbi=touch(
             MDIR
-            + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz.tbi"
         ),
     threads: 64
     resources:
@@ -247,12 +247,12 @@ rule sentdontr_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdontr.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdontr.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/sentdontr/log/{sample}.{alnr}.sentdontr.snv.merge.sort.gatherered.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/log/{sample}.{alnr}.sentdontr.snv.merge.sort.gatherered.log",
     shell:
         """
 
@@ -279,9 +279,10 @@ localrules:
 rule clear_combined_sentdontr_vcf:  # TARGET:  clear combined sentdontr vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS_ONT,
+            ddup=DDUP,
         ),
     threads: 2
     priority: 42
@@ -299,9 +300,10 @@ rule produce_sentdontr_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/{sample}.{alnr}.sentdontr.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_ONT,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.sentdontr",
@@ -326,12 +328,12 @@ rule prep_sentdontr_chunkdirs:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/sentdontr/vcfs/{dchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdontr/vcfs/{dchrm}/{{sample}}.ready",
             dchrm=SENTDONTR_CHRMS,
         ),
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/snv/sentdontr/logs/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdontr/logs/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;

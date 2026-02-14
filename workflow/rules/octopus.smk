@@ -75,22 +75,22 @@ def ret_oct_clust_samp(wildcards):
 rule octopus:
     """https://github.com/luntergroup/octopus"""
     input:
-        c=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-        d=MDIR + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/{sample}.ready",
+        c=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/{sample}.ready",
     output:
-        #oct_tmpd=directory(MDIR + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/oct_tmp"),
+        #oct_tmpd=directory(MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/oct_tmp"),
         vcf=MDIR
-        + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.vcf",
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/oct/log/vcfs/{sample}.{alnr}.oct.{ochrm}.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/log/vcfs/{sample}.{alnr}.oct.{ochrm}.snv.log",
     threads: config['octopus']['threads']
     container:
         "docker://daylilyinformatics/octopus-skylake:0.7.4" 
     priority: 45
     benchmark:
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.oct.{ochrm}.bench.tsv"
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct.{ochrm}.bench.tsv"
     resources:
         vcpu= config['octopus']['threads'],
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
@@ -144,20 +144,20 @@ rule octopus:
 rule oct_sort_index_chunk_vcf:
     input:
         vcf=MDIR
-        + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.vcf",
     priority: 46
     output:
         vcfsort=temp(MDIR
-        + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf"),
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf"),
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf.gz",
         vcftbi=MDIR
-        + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf.gz.tbi",
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/oct/vcfs/{ochrm}/log/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf.gz.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/log/{sample}.{alnr}.oct.{ochrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=8,
         threads=8,
@@ -186,14 +186,14 @@ rule oct_concat_fofn:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/snv/oct/vcfs/{ochm}/{{sample}}.{{alnr}}.oct.{ochm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/oct/vcfs/{ochm}/{{sample}}.{{alnr}}.oct.{ochm}.snv.sort.vcf.gz.tbi",
                 ochm=OCTO_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),
     # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th ochrm wildcard is effectively being constrained by the values in the OCTO_CHRMS array;  So you produce 1 input array of files for every sample+ochrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first octochrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
     priority: 44
     output:
         fin_fofn=MDIR
-        + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.concat.vcf.gz.fofn.tmp",
     threads: 2
     resources:
         threads=2
@@ -201,11 +201,11 @@ rule oct_concat_fofn:
         fn_stub="{sample}.{alnr}.oct.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.oct.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/oct/log/{sample}.{alnr}.oct.cocncat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/log/{sample}.{alnr}.oct.cocncat.fofn.log",
     shell:
         """
 
@@ -221,17 +221,17 @@ rule oct_concat_fofn:
 rule oct_concat_index_chunks:
     input:
         fofn=MDIR
-        + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.concat.vcf.gz.fofn",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.concat.vcf.gz.fofn",
     output:
         vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz"
         ),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.sort.temp.vcf.gz"
         ),
         vcfgztbi=touch(
             MDIR
-            + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz.tbi"
         ),
     threads: 8
     resources:
@@ -245,12 +245,12 @@ rule oct_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.oct.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct.merge.bench.tsv"
     conda:
         config["octopus"]["oct_gather_env"]
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/oct/log/{sample}.{alnr}.oct.snv.merge.sort.gatherered.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/oct/log/{sample}.{alnr}.oct.snv.merge.sort.gatherered.log",
     shell:
         """
 
@@ -277,9 +277,10 @@ localrules:
 rule clear_combined_octovcf:  # TARGET:  clear combined octo vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     priority: 42
     threads: 2
@@ -295,9 +296,10 @@ rule produce_oct_vcf:  # TARGET: octopus vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/oct/{sample}.{alnr}.oct.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.oct",
@@ -318,16 +320,16 @@ localrules:
 
 rule oct_prep_chunkdirs:
     input:
-        c=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        i=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        c=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/oct/vcfs/{ochrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/oct/vcfs/{ochrm}/{{sample}}.ready",
             ochrm=OCTO_CHRMS,
         ),
     threads: 2
     log:
-        MDIR + "{sample}/align/{alnr}/snv/oct/logs/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/logs/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;

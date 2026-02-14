@@ -12,7 +12,7 @@ rule dysgu:
         bam=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam",
         bai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam.bai",
     output:
-        vcf = MDIR + "{sample}/align/{alnr}/sv/dysgu/{sample}.{alnr}.dysgu.sv.vcf",
+        vcf = MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.vcf",
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         min_sv_size="30" if "dysgu" not in config else config["dysgu"]["min_sv_size"],
@@ -23,9 +23,9 @@ rule dysgu:
         threads=config['dysgu']['threads'],
         partition=config['dysgu']['partition'],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.dysgu.sv.vcf.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dysgu.sv.vcf.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/sv/dysgu/logs/{sample}.{alnr}.dysgu.sv.vcf.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/logs/{sample}.{alnr}.dysgu.sv.vcf.log",
     conda:
         "../envs/dysgu_sv_v0.2.yaml"
     shell:
@@ -57,20 +57,20 @@ rule dysgu:
 
 rule dysgu_sort_index:
     input:
-        MDIR + "{sample}/align/{alnr}/sv/dysgu/{sample}.{alnr}.dysgu.sv.vcf"
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.vcf"
     output:
-        sortvcf = touch(MDIR + "{sample}/align/{alnr}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf"),
-        sortgz = touch(MDIR + "{sample}/align/{alnr}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz"),
-        sorttbi = touch(MDIR + "{sample}/align/{alnr}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz.tbi"),
+        sortvcf = touch(MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf"),
+        sortgz = touch(MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz"),
+        sorttbi = touch(MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz.tbi"),
     priority: 35
     threads: config["dysgu_sort_index"]["threads"]
     resources:
         threads=config['dysgu_sort_index']['threads'],
         partition=config['dysgu_sort_index']['partition']
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.dysgu.sv.vcf.sort.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dysgu.sv.vcf.sort.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/sv/dysgu/logs/{sample}.{alnr}.dysgu.sv.vcf.sort.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/dysgu/logs/{sample}.{alnr}.dysgu.sv.vcf.sort.log",
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
@@ -95,4 +95,4 @@ localrules: produce_dysgu,
 rule produce_dysgu:  # TARGET: Produce All Dysgu
     priority: 39
     input:
-        expand(MDIR +"{sample}/align/{alnr}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS)
+        expand(MDIR +"{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)

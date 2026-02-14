@@ -5,9 +5,10 @@ rule multiqc_cov_aln:  # TARGET : Run Alignment and Generate Alignment and Cover
     input:
         f"{MDIR}other_reports/normcovevenness_combo_mqc.tsv",
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/cov_calcs_complete.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         html=f"{MDIRreportsd}ALNandSeqQC_{RU[0]}_{EX[0]}.multiqc.html",
@@ -37,29 +38,31 @@ localrules:
 
 rule cov_aln_qc:
     input:
-        expand(MDIR + "{sample}/align/{alnr}/alignqc/samtmetrics/{sample}.{alnr}.complete",
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
                sample=SSAMPS,
                alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/norm_cov_eveness/{sample}.{alnr}.md",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/alignstats/{sample}.{alnr}.alignstats.json",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
-            snv_caller=snv_CALLERS,
+            ddup=DDUP,
         ),
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/alignstats/{sample}.{alnr}.alignstats.tsv",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
-            snv_caller=snv_CALLERS,
+            ddup=DDUP,
         ),
         #expand(
         #    MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
@@ -67,20 +70,22 @@ rule cov_aln_qc:
         #    alnr=ALL_ALIGNERS,
         #),
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
-        MDIR + "{sample}/align/{alnr}/alignqc/qmap/{sample}.{alnr}/{sample}.{alnr}.qmap.done",
-        expand(
-            MDIR 
-            + "{sample}/align/{alnr}/alignqc/picard/picard/{sample}.{alnr}.done", sample=SSAMPS,alnr=ALL_ALIGNERS),
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/alignqc/mosdepth/{sample}.{alnr}.mosdepth.summary.sort.bed",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done", sample=SSAMPS,alnr=ALL_ALIGNERS, ddup=DDUP),
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/goleft.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
+            ddup=DDUP,
         ),
 	#        expand(
         #    MDIR + "{sample}/align/{alnr}/alignqc/sentmetrics/sm/{sample}.{alnr}.mrkdup.metrics.complete",
@@ -93,10 +98,10 @@ rule cov_aln_qc:
         #expand(MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done", sample=SSAMPS),
         #MDIR+"logs/seqfu.done",
     output:
-        MDIR + "{sample}/align/{alnr}/alignqc/cov_calcs_complete.done",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/alignqc/mosdepth/logs/",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/logs/",
     conda:
         config["vanilla"]["env_yaml"]
     shell:

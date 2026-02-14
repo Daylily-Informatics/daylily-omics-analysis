@@ -18,24 +18,24 @@ rule manta_get_centos_env:
 rule manta:
     """https://github.com/Illumina/manta"""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        vcf=f"{MDIR}" + "{sample}/align/{alnr}/sv/manta/{sample}.{alnr}.manta.sv.vcf",
+        vcf=f"{MDIR}" + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.vcf",
     threads: config["manta"]["threads"]
     priority: 36
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.manta.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.manta.bench.tsv"
     log:
-        MDIR + "{sample}/align/{alnr}/sv/manta/logs/{sample}.{alnr}.manta.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/logs/{sample}.{alnr}.manta.log",
     resources:
         vcpu=config["manta"]["threads"],
         partition=config["manta"]["partition"],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        work_dir=MDIR + "{sample}/align/{alnr}/sv/manta/manta_work/",
+        work_dir=MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/manta_work/",
         mdir=MDIR,
-        log=MDIR + "{sample}/align/{alnr}/sv/manta/logs/{sample}.{alnr}.manta.log",
+        log=MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/logs/{sample}.{alnr}.manta.log",
         tb=os.popen("which tabix").readline().rstrip(),
         bg=os.popen("which bgzip").readline().rstrip(),
         cluster_sample=ret_sample_alnr,
@@ -64,14 +64,14 @@ rule manta:
 
 rule manta_sort_and_index:
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/sv/manta/{sample}.{alnr}.manta.sv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.vcf",
     priority:37
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz.tbi",
     log:
-        MDIR+ "{sample}/align/{alnr}/sv/manta/logs/{sample}.{alnr}.manta.sv.sort.vcf.log",
+        MDIR+ "{sample}/align/{alnr}/{ddup}/sv/manta/logs/{sample}.{alnr}.manta.sv.sort.vcf.log",
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
@@ -93,4 +93,4 @@ localrules: produce_manta,
 rule produce_manta:   # TARGET: just produce manta vcfs
     priority: 38
     input:
-        expand(MDIR + "{sample}/align/{alnr}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz.tbi",sample=SSAMPS,alnr=ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz.tbi",sample=SSAMPS,alnr=ALIGNERS,ddup=DDUP)

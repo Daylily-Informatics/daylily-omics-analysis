@@ -22,23 +22,23 @@ rule sent_snv_ont:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/{alnr}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz.tbi",
         svvcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/sentdont/{sample}.{alnr}.sentdont.sv.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.sv.vcf.gz",
         svvcfgztbi=MDIR
-        + "{sample}/align/{alnr}/snv/sentdont/{sample}.{alnr}.sentdont.sv.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.sv.vcf.gz.tbi",
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/sentdont/log/{sample}.{alnr}.sentdont.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/log/{sample}.{alnr}.sentdont.snv.log",
     threads: config['sentdont']['threads']
     conda:
         config["sentdont"]["env_yaml"]
     priority: 45
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.sentdont.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdont.bench.tsv",
             0
             if "bench_repeat" not in config["sentdont"]
             else config["sentdont"]["bench_repeat"],
@@ -175,9 +175,10 @@ localrules:
 rule clear_combined_sentdont_vcf:  # TARGET:  clear combined sentdont vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS_ONT,
+            ddup=DDUP,
         ),
     threads: 2
     priority: 42
@@ -193,9 +194,10 @@ rule produce_sentdont_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_ONT,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.sentdont",

@@ -7,15 +7,15 @@
 rule vep:
     input:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
     output:
         ovcfgz=MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.vcf",
         done=touch(MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.done"),
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.done"),
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/{snv}/vep/log/{sample}.{alnr}.{snv}.vep.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/log/{sample}.{alnr}.{snv}.vep.log",
     threads: config["vep"]["threads"]
     resources:
         vcpu=config["vep"]["threads"],
@@ -27,7 +27,7 @@ rule vep:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         vep_cache=config["supporting_files"]["files"]["vep"]["vep_cache"]['name'],
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{snv}.vep.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep.bench.tsv"
     container:
         "docker://ensemblorg/ensembl-vep:release_114.2"        
     shell:
@@ -62,9 +62,10 @@ rule produce_vep:  # TARGET: just produce vep results
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.done",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.done",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
             snv=snv_CALLERS,
         ),
     output:

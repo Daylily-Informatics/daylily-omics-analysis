@@ -99,11 +99,11 @@ def _quickmer2_command(wildcards, input, threads):
 rule quickmer2:
     """Run QuicK-mer2 against a per-sample CRAM."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        archive=MDIR + "{sample}/align/{alnr}/cnv/quickmer2/{sample}.{alnr}.quickmer2.tar.gz",
-        done=MDIR + "{sample}/align/{alnr}/cnv/quickmer2/{sample}.{alnr}.quickmer2.done",
+        archive=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/quickmer2/{sample}.{alnr}.{ddup}.quickmer2.tar.gz",
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/quickmer2/{sample}.{alnr}.{ddup}.quickmer2.done",
     threads: _quickmer2_cfg().get("threads", 8)
     resources:
         threads=lambda wildcards, attempt: _quickmer2_cfg().get("threads", 8),
@@ -111,9 +111,9 @@ rule quickmer2:
         partition=lambda wildcards, attempt: _quickmer2_cfg().get("partition", "i8"),
         time=lambda wildcards, attempt: _quickmer2_cfg().get("time", "24:00:00"),
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.quickmer2.bench.tsv",
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.quickmer2.bench.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/cnv/quickmer2/logs/{sample}.{alnr}.quickmer2.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/cnv/quickmer2/logs/{sample}.{alnr}.{ddup}.quickmer2.log",
     params:
         repo_dir=lambda wildcards: _quickmer2_repo_dir(),
         repo_url=lambda wildcards: _quickmer2_cfg().get(
@@ -168,7 +168,7 @@ localrules:
     produce_quickmer2,
 
 
-rule produce_quickmer2:
+rule produce_quickmer2:  # TARGET : Produce QuicK-mer2 copy-number results
     """Target rule to ensure QuicK-mer2 outputs exist for all CRAM alignments."""
     input:
         expand(

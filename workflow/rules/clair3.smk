@@ -74,14 +74,14 @@ def get_clair3_chrom(wildcards):
 
 rule clair3:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
-        d=MDIR + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/{sample}.ready",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.ready",
     output:
         vcf=MDIR
-        + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.vcf.gz"
+        + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.vcf.gz"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/clair3/log/{sample}.{alnr}.clair3.{clairchrm}.snv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/log/{sample}.{alnr}.clair3.{clairchrm}.snv.log",
     threads: config['clair3']['threads'] if get_instrument in ['na',None,'None'] else config['clair3']['ont_threads']
     container:
         "docker://hkubal/clair3:v1.1.0"
@@ -93,7 +93,7 @@ rule clair3:
         mem_mb=config['clair3']['mem_mb'],
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.clair3.{clairchrm}.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.clair3.{clairchrm}.bench.tsv",
             0
             if "bench_repeat" not in config["clair3"]
             else config["clair3"]["bench_repeat"],
@@ -173,16 +173,16 @@ rule clair3:
 
 rule clair3_sort_index_chunk_vcf:
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.vcf.gz"
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.vcf.gz"
     priority: 46
     output:
-        vcfsort=MDIR + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf.gz.tbi",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf.gz.tbi",
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/clair3/vcfs/{clairchrm}/log/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/log/{sample}.{alnr}.clair3.{clairchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
@@ -212,7 +212,7 @@ rule clair3_concat_fofn:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/snv/clair3/vcfs/{clairchm}/{{sample}}.{{alnr}}.clair3.{clairchm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/clair3/vcfs/{clairchm}/{{sample}}.{{alnr}}.clair3.{clairchm}.snv.sort.vcf.gz.tbi",
                 clairchm=CLAIR3_CHRMS,
             ),
             key=lambda x: float(
@@ -225,8 +225,8 @@ rule clair3_concat_fofn:
     priority: 44
     output:
         fin_fofn=MDIR
-        + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn.tmp",
     threads: 2
     resources:
         threads=2,
@@ -235,11 +235,11 @@ rule clair3_concat_fofn:
         fn_stub="{sample}.{alnr}.clair3.",
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.clair3.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.clair3.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/snv/clair3/log/{sample}.{alnr}.clair3.concat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/log/{sample}.{alnr}.clair3.concat.fofn.log",
     shell:
         """
         (rm {output} 1> /dev/null  2> /dev/null ) || echo rmFailOK >> {log} && ls ./ >> {log};
@@ -254,18 +254,18 @@ rule clair3_concat_fofn:
 rule clair3_concat_index_chunks:
     input:
         fofn=MDIR
-        + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.concat.vcf.gz.fofn.tmp",
     output:
         vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz"
         ),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.temp.vcf.gz"
         ),
         vcfgztbi=touch(
             MDIR
-            + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz.tbi"
         ),
     threads: 4
     resources:
@@ -279,12 +279,12 @@ rule clair3_concat_index_chunks:
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.clair3.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.clair3.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/snv/clair3/log/{sample}.{alnr}.clair3.snv.merge.sort.gathered.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/clair3/log/{sample}.{alnr}.clair3.snv.merge.sort.gathered.log",
     shell:
         """
 
@@ -307,12 +307,13 @@ rule clair3_concat_index_chunks:
 localrules:
     clear_combined_clair3_vcf,
 
-rule clear_combined_clair3_vcf:
+rule clear_combined_clair3_vcf:  # TARGET : Clear combined Clair3 VCFs for re-evaluation
     input:
         vcf=expand(
-            MDIR + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     priority: 42
     shell:
@@ -322,15 +323,17 @@ rule produce_clair3_vcf:  # TARGET: clair3 vcf
     input:
         vcftb=expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz",
+            + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
         vcftbi=expand(
             MDIR
-            + "{sample}/align/{alnr}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/clair3/{sample}.{alnr}.clair3.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
+            ddup=DDUP,
         ),
     output:
         "gatheredall.clair3",
@@ -364,16 +367,16 @@ localrules:
 
 rule prep_clair3_chunkdirs:
     input:
-        b=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        ba=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        ba=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/snv/clair3/vcfs/{clairchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/clair3/vcfs/{clairchrm}/{{sample}}.ready",
             clairchrm=CLAIR3_CHRMS,
         ),
     threads: 2
     log:
-        MDIR + "{sample}/align/{alnr}/snv/clair3/log/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/log/{sample}.{alnr}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;

@@ -119,33 +119,114 @@ SENTDHIP_CHRMS = config["sentdhip"][f"{config['genome_build']}_sentdhip_chrms"].
 
 
 # Handle aligners
-
+# ------------------------------------------------------------------
+# Primary auto-detection happens in bin/day_run (bash, before snakemake).
+# The sys.argv fallback below covers edge cases where bin/day_run
+# is bypassed (e.g. direct snakemake invocation).
+# ------------------------------------------------------------------
 
 ALIGNERS = []
-if 'aligners' not in config:
-    
+if 'aligners' not in config or config.get('aligners') is None or len(config.get('aligners', [])) == 0:
     os.system(
         f'''colr "...WARNING: No aligners set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 else:
-    ALIGNERS = sorted(set([] if config.get('aligners') is None else config["aligners"]))
-    # PRINT INFO
+    ALIGNERS = sorted(set(config["aligners"]))
     os.system(
         f"""colr 'aligners: {ALIGNERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
 
+# Fallback: auto-detect aligners from env var set by bin/day_run,
+# or from sys.argv for direct snakemake invocations.
+_ALIGNER_TARGET_MAP = {
+    "produce_bwa_mem2_sort_bam": "bwa2a",
+    "produce_sentieon_bwa_sort_bam": "sent",
+    "produce_strobe_align_sort_bam": "strobe",
+    "produce_sentmm2_align_sort": "sentmm2",
+    "produce_sentmm2ont_align_sort": "sentmm2ont",
+}
+if not ALIGNERS:
+    _auto_aligners_env = os.environ.get('_DY_AUTO_ALIGNERS', '')
+    if _auto_aligners_env:
+        ALIGNERS = sorted(set(_auto_aligners_env.split(',')))
+        os.system(
+            f'''colr "...INFO: Auto-detected aligners from env: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
+    else:
+        _cli_aligner_codes = set()
+        for _arg in sys.argv:
+            if _arg in _ALIGNER_TARGET_MAP:
+                _cli_aligner_codes.add(_ALIGNER_TARGET_MAP[_arg])
+        if _cli_aligner_codes:
+            ALIGNERS = sorted(_cli_aligner_codes)
+            os.system(
+                f'''colr "...INFO: Auto-detected aligner targets on CLI. ALIGNERS set to: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+            )
+
+os.system(
+    f"""colr 'aligners (final): {ALIGNERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+)
+
 # Handle dedupers
+# Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), na (no dedup / skip)
+# Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
+# If no dedupers specified, defaults to ['na'] (no dedup).
+DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
+DDUP_VALID_CODES = {"dmd", "smd", "na"}
+
 DDUP = []
-if 'dedupers' not in config:
+if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
+    DDUP = ["na"]
     os.system(
-        f'''colr "...WARNING: No dedupers set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        f'''colr "...INFO: No dedupers set in config. Defaulting to na (no dedup)." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 else:
-    DDUP = sorted(set([] if config.get('dedupers') is None else config["dedupers"]))
-    # PRINT INFO
-    os.system(
-        f"""colr 'deduper: {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+    _raw_ddup = sorted(set(config["dedupers"]))
+    DDUP = sorted(set(DDUP_LEGACY_MAP.get(d, d) for d in _raw_ddup))
+    _unknown = set(DDUP) - DDUP_VALID_CODES
+    if _unknown:
+        os.system(
+            f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
+
+# Fallback: auto-detect dedupers from env var set by bin/day_run,
+# or from sys.argv for direct snakemake invocations.
+_DEDUP_TARGET_MAP = {
+    "dedup_doppelmark": "dmd",
+    "dedup_sentieon": "smd",
+    "dedup_none": "na",
+}
+_auto_dedup_codes = set()
+
+# Primary: env var from bin/day_run
+_auto_dedupers_env = os.environ.get('_DY_AUTO_DEDUPERS', '')
+if _auto_dedupers_env:
+    _auto_dedup_codes = set(_auto_dedupers_env.split(','))
+
+# Secondary: sys.argv scan (direct snakemake invocation)
+if not _auto_dedup_codes:
+    for _arg in sys.argv:
+        if _arg in _DEDUP_TARGET_MAP:
+            _auto_dedup_codes.add(_DEDUP_TARGET_MAP[_arg])
+
+if _auto_dedup_codes:
+    _had_only_default = (set(DDUP) == {"na"}) and (
+        'dedupers' not in config
+        or config.get('dedupers') is None
+        or len(config.get('dedupers', [])) == 0
     )
+    if _had_only_default:
+        DDUP = sorted(_auto_dedup_codes)
+    else:
+        DDUP = sorted(set(DDUP) | _auto_dedup_codes)
+    os.system(
+        f'''colr "...INFO: Auto-detected dedupers. DDUP updated to: {DDUP}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+    )
+
+# PRINT INFO
+os.system(
+    f"""colr 'deduper (final): {DDUP}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+)
 
 snv_CALLERS = []
 if 'snv_callers' not in config:
@@ -1318,7 +1399,7 @@ def get_somcall_normal_cram(wildcards):
         nsamp = TN_PAIRS[wildcards.sample]
     except KeyError:
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram"
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{wildcards.ddup}/{nsamp}.{wildcards.alnr}.{wildcards.ddup}.cram"
 
 
 def get_somcall_normal_crai(wildcards):
@@ -1326,10 +1407,10 @@ def get_somcall_normal_crai(wildcards):
         nsamp = TN_PAIRS[wildcards.sample]
     except KeyError:
         raise ValueError(f"No matched normal sample for {wildcards.sample}")
-    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{nsamp}.{wildcards.alnr}.cram.crai"
+    return MDIR + f"{nsamp}/align/{wildcards.alnr}/{wildcards.ddup}/{nsamp}.{wildcards.alnr}.{wildcards.ddup}.cram.crai"
 
 def get_somcall_tumor_cram(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
 
 def get_somcall_tumor_crai(wildcards):
-    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram.crai"
