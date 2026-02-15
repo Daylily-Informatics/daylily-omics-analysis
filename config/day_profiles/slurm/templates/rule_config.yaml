@@ -214,7 +214,7 @@ deepvariant_1_9_roche:
     ld_preload: " "
     partition: "i192,i128,i192mem"
     partition_other: "i192,i128,i192mem"
-    mem_mb: 85000
+    mem_mb: 200000
     hg38_deep_chrms: "20,21"
     hg38_broad_deep_chrms: "20,21"
     b37_deep_chrms: "20,21"
