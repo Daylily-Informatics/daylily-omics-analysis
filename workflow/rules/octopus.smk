@@ -310,7 +310,7 @@ rule produce_oct_vcf:  # TARGET: octopus vcf
     shell:
         """( touch {output} ;
 
-        {latency_wait}; ls {output} ) >> {log} 2>&1;
+        ls {output} ) >> {log} 2>&1;
         """
 
 

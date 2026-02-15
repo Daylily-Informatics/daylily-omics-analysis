@@ -201,7 +201,6 @@ rule clair3_sort_index_chunk_vcf:
         
         ls {output} >> {log} 2>&1 ;
         
-        {latency_wait};
         """
 
 localrules:
@@ -355,10 +354,8 @@ rule produce_clair3_vcf:  # TARGET: clair3 vcf
         touch {output};
 
         # Log completion and list output
-        {latency_wait};
         ls {output} >> {log} 2>&1;
 
-        {latency_wait}; 
         ls {output}  >> {log} 2>&1;
         """
 

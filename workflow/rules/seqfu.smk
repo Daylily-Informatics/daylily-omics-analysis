@@ -41,7 +41,7 @@ rule seqfu:
         cat <(zcat {input.f2} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r2} - &
         wait;
         touch {output.sent};) > {log}
-        {latency_wait}; ls {output};
+        ls {output};
         """
 
 
@@ -77,7 +77,6 @@ rule compile_seqfu:
         fi;
         touch {output.d};
 
-        {latency_wait};
         """
 
 

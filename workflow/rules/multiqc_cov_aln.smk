@@ -107,4 +107,4 @@ rule cov_aln_qc:
     shell:
         "echo 'Coverage Calcs Complete' > {log} 2>&1;"
         "touch {output};"
-        "{latency_wait}; ls {output};"
+        "ls {output};"

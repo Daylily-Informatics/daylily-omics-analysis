@@ -41,7 +41,6 @@ rule fastv:
         "fastv -i <(zcat {input.fpq1} ) -I <(zcat {input.fpq2} ) -o {output.fv1} -O {output.fv2} --reads_to_process 100000000 --detect_adapter_for_pe --low_complexity_filter -h {output.html} -j {output.json} -w {threads} -y -k {params.covid_kmer} -g {params.covid_genome} -c {params.microbial_kmers} >> {log} 2>&1;"
         " perl -pe 's/http\:\/\/opengene\.org\/plotly/plotly/g;' {output.html} >> {log} 2>&1; "
         " perl -pe 's/http\:\/\/opengene\.org\/fastv\///g;' {output.html} >> {log} 2>&1; "
-        "{latency_wait};"
         "ls {output};"
 
 

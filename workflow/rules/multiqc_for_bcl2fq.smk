@@ -125,7 +125,6 @@ rule multiqc_bcl2fq:
        ### export LD_LIBRARY_PATH=./resources/lib/ && interop_plot_qscore_heatmap  {params.iop_d}| perl -pe "s/(output \')(.*)(\.png)/\$1{params.odir2}\$2\$3_mqc\.png/g" | gnuplot;
        multiqc --interactive -m custom_content  -m interop -m bcl2fastq -x '*/mod/*' -x '*.js' -x '*.bam' -x '*.fastq.gz' -x '*multiqc*' -x '*pyc' -x '*.fastq.gz' -v -x '*/impute/*'  -i '{params.ru} BCL2FQ/Interop REPORT' -p  -b '{params.ru} ___ {params.gbranch} {params.gtag} {params.ghash}' -n {params.fn} -o {params.odir} --profile-runtime  -c {params.macro_cfg} -f results/ ;
         touch {params.mdir}benchmarks/bcl2fq_{params.ru}_multiqc.bench.tsv ;
-        {latency_wait};
         ls {output}; """
         # in lieu of the command line latency wait
         # fail hard if anyting is missing, don't trigger the wait for file cycle as it's buggy. latency wait built in abve

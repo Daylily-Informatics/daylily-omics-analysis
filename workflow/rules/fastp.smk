@@ -43,7 +43,6 @@ rule fastp:
         """mkdir -p {params.odir} >> {log.a} 2>&1;
         fastp -i <(zcat {input.r1} )  -I <(zcat {input.r2} ) -o {output.fp1} -O {output.fp2} --unpaired1 {output.up1} --unpaired2 {output.up2}  --failed_out {output.fail} -q 10 -u 60 --trim_poly_g   --detect_adapter_for_pe   --dont_overwrite    --verbose  -D   --overrepresentation_analysis  --overrepresentation_sampling 100 --low_complexity_filter --detect_adapter_for_pe  --reads_to_process 100000000 --dup_calc_accuracy 6  --trim_tail1=1 -p -j {output.json} -h {output.html} -w {threads} -z 1  >> {log.a} ;"""
         "touch {output.proceed} {output.bench} {output.done};"
-        "{latency_wait};"
         "ls {output}; "
 
 

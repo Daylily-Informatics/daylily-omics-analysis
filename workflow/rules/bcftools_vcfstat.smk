@@ -32,7 +32,6 @@ rule bcftools_vcfstat:
     shell:
         """
         bcftools stats --threads {threads} {input.snv_vcf} -F {params.huref} > {output};
-        {latency_wait};
         ls {output};
         """
 

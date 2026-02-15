@@ -236,9 +236,7 @@ rule produce_dvsom_vcf:  # TARGET : Produce DeepSomatic VCFs
             bcftools view -O b -o $bcf --threads {threads} $vcf && bcftools index --threads 4 $bcf;
         done;
         touch {output};
-        {latency_wait};
         ls {output} >> {log} 2>&1;
-        {latency_wait};
         ls {output}  >> {log} 2>&1;
         """
 

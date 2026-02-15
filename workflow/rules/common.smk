@@ -262,6 +262,7 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_strelka2_germline_vcf": "slk2g",
     "produce_strelka2_somatic_vcf": "slk2s",
     "produce_sent_TNscope_vcf": "senttn",
+    "produce_rochehc_vcf": "rochehc",
 }
 if not snv_CALLERS:
     _auto_snv_env = os.environ.get('_DY_AUTO_SNV_CALLERS', '')
@@ -554,8 +555,8 @@ def _select_reads(row):
         if r1_path:
             return r1_path, r2_path if r2_path else "na"
 
-    # Check for CRAM/BAM-only samples (Ultima, ONT, PacBio)
-    for cram_col in ["ULTIMA_CRAM", "ONT_CRAM", "PB_BAM", "ONT_BAM"]:
+    # Check for CRAM/BAM-only samples (Ultima, ONT, PacBio, Roche)
+    for cram_col in ["ULTIMA_CRAM", "ONT_CRAM", "PB_BAM", "ONT_BAM", "ROCHE_BAM"]:
         cram_path = _clean_component(row.get(cram_col, ""))
         if cram_path:
             # Return dummy FASTQ paths for CRAM-only samples
@@ -625,6 +626,10 @@ for col, default in {
     "ONT_BAM": "na",
     "ONT_BAM_ALIGNER": "na",
     "ONT_BAM_SNV_CALLER": "na",
+    "ROCHE_BAM": "na",
+    "ROCHE_BAM_ALIGNER": "na",
+    "ROCHE_BAM_SNV_CALLER": "na",
+    "ROCHE_DOWNSAMPLE_RATIO": "na",
     "LONGREADTRIM_READ_LENGTH": "na",
     "LONGREADTRIM_MODE": "na",
     "DEEP_MODEL": "WGS",
@@ -715,6 +720,7 @@ cluster_config["sub_user"] = os.environ.get("USER", "na")
 
 CONCORDANCE_SAMPLES = {}
 CRAM_ALIGNERS = []
+BAM_ALIGNERS = []
 sample_info = {}
 sample_lane_seen = set()
 
@@ -788,6 +794,9 @@ for _, row in samples.iterrows():
         ("ONT_CRAM", "ont_cram"),
         ("ULTIMA_CRAM_SNV_CALLER", "ultima_cram_snv_caller"),
         ("ONT_CRAM_SNV_CALLER", "ont_cram_snv_caller"),
+        ("ROCHE_BAM", "roche_bam"),
+        ("ROCHE_BAM_SNV_CALLER", "roche_bam_snv_caller"),
+        ("ROCHE_DOWNSAMPLE_RATIO", "roche_downsample_ratio"),
         ("SAMPLE_TYPE", "sample_type"),
         ("IS_POSITIVE_CONTROL", "is_positive_control"),
         ("IS_NEGATIVE_CONTROL", "is_negative_control"),
@@ -834,8 +843,15 @@ for _, row in samples.iterrows():
         if aval and aval.lower() not in {"na", "none", "hyb"}:
             CRAM_ALIGNERS.append(aval)
 
-# De-duplicate CRAM aligners
+    # Track BAM-only aligners (Roche stays as BAM, not CRAM)
+    for aligner_col in ("ROCHE_BAM_ALIGNER",):
+        aval = str(row.get(aligner_col, "") or "").strip()
+        if aval and aval.lower() not in {"na", "none", "hyb"}:
+            BAM_ALIGNERS.append(aval)
+
+# De-duplicate CRAM and BAM aligners
 CRAM_ALIGNERS = sorted(set(CRAM_ALIGNERS))
+BAM_ALIGNERS = sorted(set(BAM_ALIGNERS))
 
 config["sample_info"] = sample_info
 
@@ -1445,8 +1461,14 @@ for _a in ALIGNERS:
         CRAM_ALIGNERS.append(_a)
 CRAM_ALIGNERS = sorted(set(CRAM_ALIGNERS))
 
-OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS))
-ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS))
+_KNOWN_BAM_ALIGNERS = {"roche"}
+for _a in ALIGNERS:
+    if _a in _KNOWN_BAM_ALIGNERS and _a not in BAM_ALIGNERS:
+        BAM_ALIGNERS.append(_a)
+BAM_ALIGNERS = sorted(set(BAM_ALIGNERS))
+
+OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS)-set(BAM_ALIGNERS))
+ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
 
 # ---------------------------------------------------------------------------
 # SNV caller → valid output aligners mapping.
@@ -1463,6 +1485,7 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdpb":   ["sentmm2"],             # PacBio-only caller
     "sentdhuo":  ["ug"],                   # Hybrid Ultima+ONT → emits alnr=ug
     "sentdhio":  ["ont"],                  # Hybrid Ilmn+ONT  → emits alnr=ont
+    "rochehc":   ["roche"],               # Roche SBX Duplex HaplotypeCaller
 }
 
 

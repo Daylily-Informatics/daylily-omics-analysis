@@ -50,7 +50,6 @@ rule calc_coverage_evenness:
             touch {output.mos_pre}.{params.chrm}$i.regions.bed.gz;
             Rscript workflow/scripts/calc_norm_cov_sd.R {output.mos_pre}.{params.chrm}$i.regions.bed.gz  "{params.cluster_sample}" {params.chrm}$i $alnr | sed 's/\\"//g;' >> {output.mos_pre}.norm_cov_eveness.mqc.tsv ;
         done;
-        {latency_wait};
         ls {output};
         rm $(dirname {output.mos_pre})/*per-base* || echo 'rm perbase failed';
         """
@@ -76,6 +75,5 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
             head -n 1 $single_file > {output.mqc};
             find results | grep .norm_cov_eveness.mqc.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
         fi;
-        {latency_wait};
         ls {input};
         """

@@ -156,7 +156,6 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             cat {output.fofn} | env bash ;
 
             touch {output};
-            {latency_wait};
             ls {output};
             """
 

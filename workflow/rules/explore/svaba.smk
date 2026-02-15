@@ -129,7 +129,7 @@ rule svaba_sort_index:
         bgzip -f -@ {threads} {output.isortvcf}; \
         touch {output.isortvcf}; \
         tabix -f -p vcf {output.isortgz} ; \
-        {latency_wait} ) > {log};
+        ) > {log};
         """
 
 localrules: produce_svaba,
