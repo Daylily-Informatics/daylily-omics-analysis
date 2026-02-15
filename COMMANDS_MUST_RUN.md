@@ -8,8 +8,8 @@ units= .test_data/data/hybrid/ultima_ont_full_cov.units.tsv
 command= dy-r produce_sentdhuo_vcf produce_alignstats produce_snv_concordances  -p -j 20 -k  -n
 
 Hybrid Ilmn+ONT
-samples= .test_data/data/hybrid/hybrid_ilmn_ont.samples.tsv
-units= .test_data/data/hybrid/hybrid_ilmn_ont.units.tsv
+samples= .test_data/data/hybrid/ilmn_ont_full_cov.samples.tsv
+units= .test_data/data/hybrid/ilmn_ont_full_cov.units.tsv
 command= dy-r produce_sentdhio_vcf produce_alignstats produce_snv_concordances  -p -j 20 -k  -n
 
 ONT only
