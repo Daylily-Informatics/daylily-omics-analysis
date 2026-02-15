@@ -6,7 +6,28 @@ import os
 # using sentieon-cli dnascope-longread --tech ONT
 #
 
-ALIGNERS_ONT = ["ont"]
+ALIGNERS_ONT = ["ont", "sentmm2ont"]
+
+
+def get_sentdont_cram(wildcards):
+    """Return CRAM input for sentdont SNV calling.
+
+    - 'ont' (pre-aligned): raw CRAM in align dir ({sample}.cram).
+    - 'sentmm2ont' (from uBAM): deduped via no_dedup_cram passthrough
+      ({sample}.{alnr}.{ddup}.cram).
+    """
+    if wildcards.alnr == "ont":
+        return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.cram"
+    return (
+        MDIR
+        + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
+        + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
+    )
+
+
+def get_sentdont_crai(wildcards):
+    """Return CRAM index for sentdont SNV calling (mirrors get_sentdont_cram)."""
+    return get_sentdont_cram(wildcards) + ".crai"
 
 
 # ---------------------------------------------------------------------------
@@ -18,8 +39,8 @@ ALIGNERS_ONT = ["ont"]
 
 rule sent_snv_ont:
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=get_sentdont_cram,
+        crai=get_sentdont_crai,
     output:
         vcfgz=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz",
