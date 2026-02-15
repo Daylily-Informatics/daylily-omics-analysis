@@ -891,8 +891,8 @@ roche_downsample_bam:
     env_yaml: "../envs/vanilla_v0.1.yaml"
 
 roche_gatk_haplotypecaller:
-    threads: 32
-    mem_mb: 64000
+    threads: 192
+    mem_mb: 200000
     partition: "i192,i192mem,i128"
     container: "docker://broadinstitute/gatk-nightly:2025-08-19-4.6.2.0-17-g2a1f41bf3-NIGHTLY-SNAPSHOT"
     env_yaml: "../envs/sentieon_v0.3.yaml"

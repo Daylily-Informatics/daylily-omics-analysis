@@ -115,12 +115,13 @@ rule roche_gatk_haplotypecaller:
         echo "Running GATK HaplotypeCaller (Roche SBX Duplex)" >> {log} 2>&1;
         mkdir -p $(dirname {output.vcfgz});
 
-        
-        gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=$TMPDIR" \
-            HaplotypeCaller \
-            -I {input.bam} \
-            -R {params.huref} \
-            -O {output.vcfgz} \
+
+        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
+            -t {threads} \
+            -r {params.huref} \
+            -i {input.bam} \
+            --algo Haplotyper \
+            --emit_mode confident \
             -OVI \
             -bamout {output.bamout} \
             -OBI \
@@ -135,7 +136,8 @@ rule roche_gatk_haplotypecaller:
             --min-base-quality-score 6 \
             --native-pair-hmm-threads {params.native_hmm_threads} \
             --smith-waterman FASTEST_AVAILABLE \
-            --tmp-dir $TMPDIR >> {log} 2>&1;
+            --tmp-dir $TMPDIR \
+            {output.vcfgz} >> {log} 2>&1; 
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
@@ -167,8 +169,8 @@ rule roche_filter_variants:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/rochehc/log/{sample}.{alnr}.{ddup}.rochehc.filt.log",
     threads: config['roche_filter_variants']['threads']
-    conda:
-        config["roche_filter_variants"]["env_yaml"]
+    container:
+        container=config['roche_filter_variants']['container'],
     priority: 46
     benchmark:
         repeat(
@@ -188,7 +190,6 @@ rule roche_filter_variants:
         gnomad=config["supporting_files"]["files"]["roche"]["gnomad_af_vcf"],
         model_snv=config["supporting_files"]["files"]["roche"]["filter_model_snv"],
         model_indel=config["supporting_files"]["files"]["roche"]["filter_model_indel"],
-        container=config['roche_filter_variants']['container'],
         cluster_sample=ret_sample,
     shell:
         """
@@ -196,8 +197,8 @@ rule roche_filter_variants:
         echo "Running Roche filter_variants" > {log} 2>&1;
         mkdir -p $(dirname {output.vcfgz});
 
-        apptainer exec {params.container} \
-            filter_variants \
+
+        filter_variants \
             --bam-input {input.bamout} \
             --vcf-input {input.vcfgz} \
             --pop-af-vcf {params.gnomad} \
