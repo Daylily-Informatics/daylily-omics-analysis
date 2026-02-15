@@ -126,6 +126,7 @@ rule sent_snv_pacbio:
             -m "{params.model}" \
             -t {threads} \
             --tech HiFi \
+            --temp_dir $TMPDIR \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
         cli_rc=$?;
         set -e;

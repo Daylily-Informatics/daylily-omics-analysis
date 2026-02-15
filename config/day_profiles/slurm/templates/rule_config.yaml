@@ -515,7 +515,7 @@ sentdhio:
     partition: "i192mem,i192bigmem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
-    mem_mb: 200000
+    mem_mb: 300000
     max_mem: "140G"
 
 sentdhuo:
@@ -532,7 +532,7 @@ sentdhuo:
     partition: "i192mem,i192bigmem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
-    mem_mb: 200000
+    mem_mb: 300000
     max_mem: "140G"
 
 
@@ -549,7 +549,7 @@ sentdhip:
     numactl: " "
     partition: "i192mem,i192bigmem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
-    mem_mb: 200000
+    mem_mb: 300000
     max_mem: "140G"
 
 
@@ -566,7 +566,7 @@ sentdug:
     numactl: " "
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle/dnascope.model"
-    mem_mb: 200000
+    mem_mb: 300000
     max_mem: "140G"
 
 sentdpb:
@@ -584,7 +584,7 @@ sentdpb:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
     dna_scope_apply_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
-    mem_mb: 200000
+    mem_mb: 300000
     max_mem: "140G"
     pop_vcf: ""
 
@@ -603,7 +603,7 @@ sentdont:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
     dna_scope_apply_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
-    mem_mb: 200000
+    mem_mb: 300000
     max_mem: "140G"
 
 sentD:
@@ -616,7 +616,7 @@ sentD:
     sentD_gather_env: "../envs/vanilla_v0.1.yaml"
     bench_repeat: 0
     numactl: " "
-    partition: "i192,i192mem"
+    partition: "i192,i192mem,i192bigmem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
     mem_mb: 200000
 
@@ -712,9 +712,9 @@ sentieon:
     max_mem: "180G"
     sent_opts: "  -k 19 -Y -M -K 10000000 "
     env_yaml: "../envs/sentieon_v0.1.yaml"
-    mem_mb: 200000
+    mem_mb: 300000
     block_size: 8G
-    partition: "i192mem"
+    partition: "i192mem,i192bigmem"
     sort_threads: 96
     igz: "  igzip -cd -T 32 "
     sort_thread_mem: "3G"
@@ -745,10 +745,10 @@ sentieon_gatk:
     max_mem: "240G"
     sent_opts: " -k 19 -Y -M -K 10000000  "
     env_yaml: "../envs/sentieon_gatk_v0.1.yaml"
-    partition: "i192mem"
+    partition: "i192mem,i192bigmem"
     sort_thread_mem: "100M"
     sort_threads: 32
-    mem_mb: 200000
+    mem_mb: 300000
     igz:   " igzip -cd -T 2 "
     mbuffer: " | mbuffer -m 1G -q -s 128k "
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
@@ -761,9 +761,9 @@ sentieon_markdups:
     glances: " "
     ld_preload: " "
     numactl: "  OMP_NUM_THREADS=192 OMP_PROC_BIND=close OMP_PLACES=threads OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
-    partition: "i192,i192mem"
-    max_mem: "200G"
-    sort_thread_mem: "100M"
+    partition: "i192mem,i192bigmem"
+    max_mem: "300G"
+    sort_thread_mem: "150M"
 
 stargazer:
     threads: 16
