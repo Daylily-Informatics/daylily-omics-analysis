@@ -52,7 +52,7 @@ rule sentdhio_snv:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR=/dev/shm/sentdhio_tmp_$timestamp;
+        export TMPDIR=/fsx/tmp/sentdhio_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
