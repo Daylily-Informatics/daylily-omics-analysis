@@ -263,6 +263,7 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_strelka2_somatic_vcf": "slk2s",
     "produce_sent_TNscope_vcf": "senttn",
     "produce_rochehc_vcf": "rochehc",
+    "produce_deep19_r_vcf": "deep19r",
 }
 if not snv_CALLERS:
     _auto_snv_env = os.environ.get('_DY_AUTO_SNV_CALLERS', '')
@@ -1486,6 +1487,7 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdhuo":  ["ug"],                   # Hybrid Ultima+ONT → emits alnr=ug
     "sentdhio":  ["ont"],                  # Hybrid Ilmn+ONT  → emits alnr=ont
     "rochehc":   ["roche"],               # Roche SBX Duplex HaplotypeCaller
+    "deep19r":   ["roche"],               # DeepVariant 1.9 on Roche BAMs
 }
 
 

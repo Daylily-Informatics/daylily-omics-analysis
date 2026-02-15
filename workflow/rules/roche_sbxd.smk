@@ -54,7 +54,7 @@ rule no_dedup_roche_bam:
 # ---------------------------------------------------------------------------
 # roche_gatk_haplotypecaller: GATK HC with duplex-optimised parameters
 # ---------------------------------------------------------------------------
-# Runs inside the GATK container via apptainer.
+# Uses container: directive — bind mounts handled by profile singularity-args.
 # -OVI / -OBI flags tell GATK to create the VCF and BAM indices.
 
 rule roche_gatk_haplotypecaller:
@@ -77,6 +77,8 @@ rule roche_gatk_haplotypecaller:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/rochehc/log/{sample}.{alnr}.{ddup}.rochehc.snv.log",
     threads: config['roche_gatk_haplotypecaller']['threads']
+    container:
+        config['roche_gatk_haplotypecaller']['container']
     conda:
         config["roche_gatk_haplotypecaller"]["env_yaml"]
     priority: 45
@@ -96,7 +98,6 @@ rule roche_gatk_haplotypecaller:
     params:
         huref=config["supporting_files"]["files"]["roche"]["grch38_noalt_fasta"],
         native_hmm_threads=config['roche_gatk_haplotypecaller']['native_pair_hmm_threads'],
-        container=config['roche_gatk_haplotypecaller']['container'],
         cluster_sample=ret_sample,
     shell:
         """
@@ -115,13 +116,11 @@ rule roche_gatk_haplotypecaller:
         echo "Running GATK HaplotypeCaller (Roche SBX Duplex)" >> {log} 2>&1;
         mkdir -p $(dirname {output.vcfgz});
 
-
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
-            -t {threads} \
-            -r {params.huref} \
-            -i {input.bam} \
-            --algo Haplotyper \
-            --emit_mode confident \
+        gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=$TMPDIR" \
+            HaplotypeCaller \
+            -I {input.bam} \
+            -R {params.huref} \
+            -O {output.vcfgz} \
             -OVI \
             -bamout {output.bamout} \
             -OBI \
@@ -136,8 +135,7 @@ rule roche_gatk_haplotypecaller:
             --min-base-quality-score 6 \
             --native-pair-hmm-threads {params.native_hmm_threads} \
             --smith-waterman FASTEST_AVAILABLE \
-            --tmp-dir $TMPDIR \
-            {output.vcfgz} >> {log} 2>&1; 
+            --tmp-dir $TMPDIR >> {log} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
@@ -148,7 +146,7 @@ rule roche_gatk_haplotypecaller:
 # ---------------------------------------------------------------------------
 # roche_filter_variants: Roche Small Variant Caller post-filtering
 # ---------------------------------------------------------------------------
-# Uses the Roche sbxd-small-variant-caller container via apptainer.
+# Uses container: directive — bind mounts handled by profile singularity-args.
 # Model files at /resources/ are inside the container image.
 
 rule roche_filter_variants:
@@ -170,7 +168,9 @@ rule roche_filter_variants:
         + "{sample}/align/{alnr}/{ddup}/snv/rochehc/log/{sample}.{alnr}.{ddup}.rochehc.filt.log",
     threads: config['roche_filter_variants']['threads']
     container:
-        config['roche_filter_variants']['container'],
+        config['roche_filter_variants']['container']
+    conda:
+        config["roche_filter_variants"]["env_yaml"]
     priority: 46
     benchmark:
         repeat(
