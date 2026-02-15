@@ -24,7 +24,7 @@ if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
 
 
 def get_in_rtg_vcf(wildcards):
-    if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true': 
+    if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
         r1 = get_raw_R1s(wildcards)[0]
         dvcfgz= f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
         os.system(f"mkdir -p {os.path.dirname(dvcfgz)}")
@@ -199,8 +199,8 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         set +euo pipefail;
         export wcv=$(find  results/ | grep concord | grep fofn | wc -l);
 
-        (find results/day/{params.genome_build}/*/align/*/snv/*/concordance/ | grep  concordance.mqc  | head -n 1 | parallel 'head -n 1 {{}} > {output}';) || echo 'GetHeaderFAILS' 1>&2;
-        (find {params.mdir}*/align/*/snv/*/concordance/ | grep  .mqc | parallel ' tail -n +2 {{}} >> {output}';) || echo "GETCONCORDANCECALLSfails"  1>&2;
+        (find results/day/{params.genome_build}/*/align/*/*/snv/*/concordance/ | grep  concordance.mqc  | head -n 1 | parallel 'head -n 1 {{}} > {output}';) || echo 'GetHeaderFAILS' 1>&2;
+        (find {params.mdir}*/align/*/*/snv/*/concordance/ | grep  .mqc | parallel ' tail -n +2 {{}} >> {output}';) || echo "GETCONCORDANCECALLSfails"  1>&2;
 
         (perl -pi -e 's/^(.+?)(\t)(.+?)(\t)(.+)$/$3\t$1\t$5/g;' {output} ) || echo "perl regsub failed"  1>&2;
 	    perl -pi -e 's/^([^\t]+?)-None\t([^\t]+)/$1-$2\t$2/g;' {output}  1>&2;

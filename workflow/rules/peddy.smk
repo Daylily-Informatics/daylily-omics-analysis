@@ -18,7 +18,7 @@ def gen_ped_file(wildcards):
         ped_sex = 1
     else:
         ped_sex = 0
-    ped_f = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/peddy/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.peddy.ped"
+    ped_f = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/peddy/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.peddy.ped"
     os.system(f"mkdir -p $(dirname {ped_f});")
     ped_fh = open(ped_f, "w")
     ped_fh.write(f"{wildcards.sample}\t{wildcards.sample}\t0\t0\t{ped_sex}\t0\n")
