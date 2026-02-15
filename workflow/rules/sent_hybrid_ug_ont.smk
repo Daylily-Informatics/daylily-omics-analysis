@@ -159,6 +159,8 @@ rule sentdhuo_sort_index_chunk_vcf:
     input:
         vcf=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.gz",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_UG)
     priority: 46
     output:
         vcfsort=touch(MDIR
@@ -202,6 +204,8 @@ rule sentdhuo_concat_fofn:
                 + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhuo/vcfs/{ochm}/{{sample}}.{{alnr}}.{{ddup}}.sentdhuo.{ochm}.snv.sort.vcf.gz.tbi",
                 ochm=SENTDHUO_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),
     # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th dchrm wildcard is effectively being constrained by the values in the sentdhuo_CHRMS array;  So you produce 1 input array of files for every sample+dchrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first sentdhuochrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_UG)
     priority: 44
     output:
         fin_fofn=MDIR
@@ -234,6 +238,8 @@ rule sentdhuo_concat_index_chunks:
     input:
         fofn=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.concat.vcf.gz.fofn",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_UG)
     output:
         vcfgz=touch(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.sort.vcf.gz"
