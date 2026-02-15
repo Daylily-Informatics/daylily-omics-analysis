@@ -208,8 +208,8 @@ deepvariant:
     deepug_me_container: "docker://google/deepvariant:1.9.0"  #"docker://ultimagenomics/call_variants"
 
 deepvariant_1_9_roche:
-    threads: 42
-    deep_threads: 42
+    threads: 192
+    deep_threads: 192
     deep_cmd: " "
     ld_preload: " "
     partition: "i192,i128,i192mem"
