@@ -99,6 +99,7 @@ rule deepvariant_19_r:
         --regions=$dchr \
         --output_vcf={output.vcf} \
         --num_shards={params.deep_threads} \
+        --gbz_shared_memory_size_gb=50 \
         --logging_dir=$(dirname {log}) \
         --customized_model resources/model/model.ckpt \
         --make_examples_extra_args="alt_aligned_pileup=single_row,create_complex_alleles=true,enable_strict_insertion_filter=true,keep_legacy_allele_counter_behavior=true,keep_only_window_spanning_haplotypes=true,keep_supplementary_alignments=true,min_mapping_quality=0,normalize_reads=true,pileup_image_height_pangenome=100,pileup_image_height_reads=100,pileup_image_width=301,sort_by_haplotypes=true,trim_reads_for_pileup=true,vsc_min_fraction_indels=0.08,ws_min_base_quality=25" \
