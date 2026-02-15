@@ -73,14 +73,12 @@ localrules:
 
 rule produce_peddy:  # TARGET: just produce peddy results
     input:
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done",
-            sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
-            snv=snv_CALLERS,
-        ),
+        [
+            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
     output:
         "logs/peddy_gathered.done",
     shell:

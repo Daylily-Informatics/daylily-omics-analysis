@@ -177,13 +177,12 @@ else:
 localrules: produce_snv_concordances
 rule produce_snv_concordances:  # TARGET:  produce snv concordances
     input:
-        expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
-            sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
-            snv=snv_CALLERS
-        )
+        [
+            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ]
     priority: 48
     conda:
         "../envs/vanilla_v0.1.yaml"

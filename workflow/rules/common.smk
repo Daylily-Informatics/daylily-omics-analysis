@@ -1448,6 +1448,39 @@ CRAM_ALIGNERS = sorted(set(CRAM_ALIGNERS))
 OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS))
 
+# ---------------------------------------------------------------------------
+# SNV caller → valid output aligners mapping.
+#
+# Most callers emit VCFs for every aligner in ALL_ALIGNERS.  Platform-specific
+# and hybrid callers only produce VCFs for a subset.  This dict is consumed by
+# the helper ``valid_snv_alnr_pairs()`` which replaces the blind Cartesian
+# expand(alnr=ALL_ALIGNERS, snv=snv_CALLERS) in downstream target rules
+# (concordance, peddy, duphold, etc.).
+# ---------------------------------------------------------------------------
+_SNV_CALLER_VALID_ALIGNERS = {
+    "sentdont":  ["ont", "sentmm2ont"],   # ONT-only caller
+    "sentdug":   ["ug"],                   # Ultima-only caller
+    "sentdpb":   ["sentmm2"],             # PacBio-only caller
+    "sentdhuo":  ["ug"],                   # Hybrid Ultima+ONT → emits alnr=ug
+    "sentdhio":  ["ont"],                  # Hybrid Ilmn+ONT  → emits alnr=ont
+}
+
+
+def valid_snv_alnr_pairs(all_aligners, callers):
+    """Return list of (alnr, snv) tuples restricted to valid combinations.
+
+    For callers listed in _SNV_CALLER_VALID_ALIGNERS, only the declared
+    aligners are paired.  All other callers are paired with every aligner
+    in *all_aligners*.
+    """
+    pairs = []
+    for snv in callers:
+        valid_alnrs = _SNV_CALLER_VALID_ALIGNERS.get(snv, all_aligners)
+        for a in valid_alnrs:
+            if a in all_aligners:
+                pairs.append((a, snv))
+    return pairs
+
 
 def get_somcall_normal_cram(wildcards):
     try:

@@ -101,15 +101,13 @@ localrules:
 
 rule produce_all_svs:   # TARGET: gather cnvs calls and duphold
     input:
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi",
-            sample=SSAMPS,
-            alnr=ALIGNERS,
-            ddup=DDUP,
-            s_v_caller=sv_CALLERS,
-            snv_caller=snv_CALLERS,
-        ),
+        [
+            MDIR + f"{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for s_v_caller in sv_CALLERS
+            for alnr, snv_caller in valid_snv_alnr_pairs(ALIGNERS, snv_CALLERS)
+        ],
     output:
         MDIR + "logs/all_svVCF_dupheld.done",
     threads: 1
