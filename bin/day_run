@@ -69,8 +69,10 @@ fi
 # ---------------------------------------------------------------------------
 _dedup_codes=()
 _aligner_codes=()
+_snv_caller_codes=()
 _has_dedupers_config=false
 _has_aligners_config=false
+_has_snv_callers_config=false
 
 for _arg in "$@"; do
     # Detect dedup targets
@@ -87,10 +89,33 @@ for _arg in "$@"; do
         produce_sentmm2_align_sort)     _aligner_codes+=("sentmm2")     ;;
         produce_sentmm2ont_align_sort)  _aligner_codes+=("sentmm2ont")  ;;
     esac
+    # Detect SNV caller targets
+    case "$_arg" in
+        produce_sentD_vcf)              _snv_caller_codes+=("sentd")     ;;
+        produce_sentdpb_vcf)            _snv_caller_codes+=("sentdpb")   ;;
+        produce_sentdont_vcf)           _snv_caller_codes+=("sentdont")  ;;
+        produce_sentdug_vcf)            _snv_caller_codes+=("sentdug")   ;;
+        produce_sentdhio_vcf)           _snv_caller_codes+=("sentdhio")  ;;
+        produce_sentdhuo_vcf)           _snv_caller_codes+=("sentdhuo")  ;;
+        produce_sentpg_vcf)             _snv_caller_codes+=("sentpg")    ;;
+        produce_deep19_vcf)             _snv_caller_codes+=("deep19")    ;;
+        produce_deep15_vcf)             _snv_caller_codes+=("deep15")    ;;
+        produce_oct_vcf)                _snv_caller_codes+=("oct")       ;;
+        produce_clair3_vcf)             _snv_caller_codes+=("clair3")    ;;
+        produce_lofreq2_vcf)            _snv_caller_codes+=("lfq2")      ;;
+        produce_varn_vcf)               _snv_caller_codes+=("varn")      ;;
+        produce_aiv_vcf)                _snv_caller_codes+=("aiv")       ;;
+        produce_mutect2_vcf)            _snv_caller_codes+=("mutect2")   ;;
+        produce_dvsom_vcf)              _snv_caller_codes+=("dvsom")     ;;
+        produce_strelka2_germline_vcf)  _snv_caller_codes+=("slk2g")     ;;
+        produce_strelka2_somatic_vcf)   _snv_caller_codes+=("slk2s")     ;;
+        produce_sent_TNscope_vcf)       _snv_caller_codes+=("senttn")    ;;
+    esac
     # Check if user already specified these config keys
     case "$_arg" in
-        dedupers=*)  _has_dedupers_config=true  ;;
-        aligners=*)  _has_aligners_config=true  ;;
+        dedupers=*)      _has_dedupers_config=true      ;;
+        aligners=*)      _has_aligners_config=true       ;;
+        snv_callers=*)   _has_snv_callers_config=true    ;;
     esac
 done
 
@@ -106,6 +131,12 @@ if [[ ${#_aligner_codes[@]} -gt 0 ]] && [[ "$_has_aligners_config" == "false" ]]
     _aligner_csv=$(IFS=,; echo "${_aligner_codes[*]}")
     export _DY_AUTO_ALIGNERS="$_aligner_csv"
     colr "...AUTO-CONFIG: aligners=${_aligner_csv} (from target rules → env)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+fi
+
+if [[ ${#_snv_caller_codes[@]} -gt 0 ]] && [[ "$_has_snv_callers_config" == "false" ]]; then
+    _snv_csv=$(IFS=,; echo "${_snv_caller_codes[*]}")
+    export _DY_AUTO_SNV_CALLERS="$_snv_csv"
+    colr "...AUTO-CONFIG: snv_callers=${_snv_csv} (from target rules → env)" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
 fi
 
 # Build the snakemake command — targets pass through unchanged.

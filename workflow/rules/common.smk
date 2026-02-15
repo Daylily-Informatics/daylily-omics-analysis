@@ -240,6 +240,51 @@ else:
         f"""colr 'SNV Callers:{snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )
 
+# Fallback: auto-detect SNV callers from env var set by bin/day_run,
+# or from sys.argv for direct snakemake invocations.
+_SNV_CALLER_TARGET_MAP = {
+    "produce_sentD_vcf": "sentd",
+    "produce_sentdpb_vcf": "sentdpb",
+    "produce_sentdont_vcf": "sentdont",
+    "produce_sentdug_vcf": "sentdug",
+    "produce_sentdhio_vcf": "sentdhio",
+    "produce_sentdhuo_vcf": "sentdhuo",
+    "produce_sentpg_vcf": "sentpg",
+    "produce_deep19_vcf": "deep19",
+    "produce_deep15_vcf": "deep15",
+    "produce_oct_vcf": "oct",
+    "produce_clair3_vcf": "clair3",
+    "produce_lofreq2_vcf": "lfq2",
+    "produce_varn_vcf": "varn",
+    "produce_aiv_vcf": "aiv",
+    "produce_mutect2_vcf": "mutect2",
+    "produce_dvsom_vcf": "dvsom",
+    "produce_strelka2_germline_vcf": "slk2g",
+    "produce_strelka2_somatic_vcf": "slk2s",
+    "produce_sent_TNscope_vcf": "senttn",
+}
+if not snv_CALLERS:
+    _auto_snv_env = os.environ.get('_DY_AUTO_SNV_CALLERS', '')
+    if _auto_snv_env:
+        snv_CALLERS = sorted(set(_auto_snv_env.split(',')))
+        os.system(
+            f'''colr "...INFO: Auto-detected SNV callers from env: {snv_CALLERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
+    else:
+        _cli_snv_codes = set()
+        for _arg in sys.argv:
+            if _arg in _SNV_CALLER_TARGET_MAP:
+                _cli_snv_codes.add(_SNV_CALLER_TARGET_MAP[_arg])
+        if _cli_snv_codes:
+            snv_CALLERS = sorted(_cli_snv_codes)
+            os.system(
+                f'''colr "...INFO: Auto-detected SNV caller targets on CLI. snv_CALLERS set to: {snv_CALLERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+            )
+
+os.system(
+    f"""colr 'SNV Callers (final): {snv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+)
+
 somatic_snv_CALLERS = []
 if 'snv_callers_somatic' not in config:
     os.system(
