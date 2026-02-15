@@ -159,7 +159,7 @@ rule deep19_r_concat_fofn:
             expand(
                 MDIR
                 + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/deep19r/vcfs/{dvchm}/{{sample}}.{{alnr}}.{{ddup}}.deep19r.{dvchm}.snv.sort.vcf.gz.tbi",
-                dvchm=DEEPD_CHRMS,
+                dvchm=DEEP19R_CHRMS,
             ),
             key=lambda x: float(
                 str(x.replace("~", ".").replace(":", "."))
@@ -332,7 +332,7 @@ rule prep_deep19_r_chunkdirs:
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/deep19r/vcfs/{dvchrm}/{{sample}}.ready",
-            dvchrm=DEEPD_CHRMS,
+            dvchrm=DEEP19R_CHRMS,
         ),
     threads: 1
     log:

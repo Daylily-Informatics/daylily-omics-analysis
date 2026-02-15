@@ -89,6 +89,7 @@ else:
 # SNV caller chunk arrays
 SENTD_CHRMS = config["sentD"][f"{config['genome_build']}_sentD_chrms"].split(",")
 DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].split(",")
+DEEP19R_CHRMS = config["deepvariant_1_9_roche"][f"{config['genome_build']}_deep_chrms"].split(",")
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
 CLAIR3_CHRMS = config["clair3"][f"{config['genome_build']}_clair3_chrms"].split(",")
 LOFREQ_CHRMS = config["lofreq2"][f"{config['genome_build']}_lofreq_chrms"].split(",")
