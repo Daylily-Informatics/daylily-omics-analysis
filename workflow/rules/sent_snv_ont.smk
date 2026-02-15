@@ -22,16 +22,16 @@ rule sent_snv_ont:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz.tbi",
         svvcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.sv.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.sv.vcf.gz",
         svvcfgztbi=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.sv.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.sv.vcf.gz.tbi",
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/log/{sample}.{alnr}.sentdont.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdont/log/{sample}.{alnr}.{ddup}.sentdont.snv.log",
     threads: config['sentdont']['threads']
     conda:
         config["sentdont"]["env_yaml"]
@@ -175,7 +175,7 @@ localrules:
 rule clear_combined_sentdont_vcf:  # TARGET:  clear combined sentdont vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS_ONT,
             ddup=DDUP,
@@ -194,7 +194,7 @@ rule produce_sentdont_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.sentdont.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_ONT,
             ddup=DDUP,

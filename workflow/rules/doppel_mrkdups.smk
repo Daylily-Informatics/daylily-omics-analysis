@@ -19,7 +19,7 @@ rule doppelmark_dups:
         cram=MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram",
         crai=MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram.crai",
     wildcard_constraints:
-        alnr="|".join(OG_ALIGNERS)
+        alnr="|".join(OG_ALIGNERS) if OG_ALIGNERS else r"(?!x)x"
     threads: config["doppelmark"]["threads"]
     benchmark:
         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.dmd.mrkdup.bench.tsv", 0)
