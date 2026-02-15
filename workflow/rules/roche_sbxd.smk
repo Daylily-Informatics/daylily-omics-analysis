@@ -170,7 +170,7 @@ rule roche_filter_variants:
         + "{sample}/align/{alnr}/{ddup}/snv/rochehc/log/{sample}.{alnr}.{ddup}.rochehc.filt.log",
     threads: config['roche_filter_variants']['threads']
     container:
-        container=config['roche_filter_variants']['container'],
+        config['roche_filter_variants']['container'],
     priority: 46
     benchmark:
         repeat(
