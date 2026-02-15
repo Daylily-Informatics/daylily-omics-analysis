@@ -15,7 +15,7 @@ command= dy-r produce_sentdhio_vcf produce_alignstats produce_snv_concordances  
 ONT only
 samples= .test_data/data/ont/ont_full_cov.samples.tsv
 units= .test_data/data/ont/ont_full_cov.units.tsv
-command= dy-r produce_sentD_vcf produce_alignstats produce_snv_concordances -p -j 20 -k  -n
+command= dy-r produce_sentdont_vcf produce_alignstats produce_snv_concordances -p -j 20 -k  -n
 
 ILMN ONLY
 samples= .test_data/data/ilmn/ilmn_full_cov.samples.tsv
