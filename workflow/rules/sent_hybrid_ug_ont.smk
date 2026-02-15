@@ -144,7 +144,7 @@ rule sentdhuo_snv:
             --skip_cnv \
             --skip_multiqc \
 	    --rgsm {params.alt_samp_name} \
-            {params.diploid_bed} {params.haploid_bed} {output.vcf} >> {log} 2>&1;
+            {params.diploid_bed} {output.vcf} >> {log} 2>&1;
 
 
         end_time=$(date +%s);
