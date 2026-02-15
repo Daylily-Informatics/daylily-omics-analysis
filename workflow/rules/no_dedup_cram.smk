@@ -20,7 +20,7 @@ rule no_dedup_cram:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
     priority: 3
     params:
-	cluster_sample=ret_sample,
+        cluster_sample=ret_sample,
     output:
         cram=MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram",
         crai=MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram.crai",
