@@ -1,23 +1,51 @@
 #########  no dedup – CRAM passthrough (na)
 # -------------------------------------------
 # code=na
-# For CRAM-producing aligners (sentmm2, sentmm2ont, etc.) that output
-# directly to {sample}/align/{alnr}/{sample}.{alnr}.cram, this rule
-# symlinks into the /{ddup}/ directory structure expected by downstream
-# rules:  {sample}/align/{alnr}/na/{sample}.{alnr}.na.cram
+# For CRAM-producing aligners, this rule symlinks into the /{ddup}/
+# directory structure expected by downstream rules:
+#   {sample}/align/{alnr}/na/{sample}.{alnr}.na.cram
 #
-# PacBio HiFi PCR-free and ONT long reads do not require deduplication,
-# so the only valid dedup code for these aligners is "na".
+# Handles two input naming conventions:
+#   - Pre-aligned (ont, ug, pb): input is {sample}.cram  (no aligner infix)
+#   - Pipeline   (sentmm2, sentmm2ont): input is {sample}.{alnr}.cram
 #
 # No conditional guard — rule is always defined.
 # Selection is via wildcard_constraints restricting alnr to CRAM_ALIGNERS.
+
+# Pre-aligned CRAM aligners produce {sample}.cram (no aligner infix)
+_PRE_ALIGNED_CRAM_ALIGNERS = {"ont", "ug", "pb"}
+
+
+def _no_dedup_cram_input(wildcards):
+    """Return CRAM input path for the no_dedup_cram passthrough.
+
+    Pre-aligned (ont, ug, pb): {sample}/align/{alnr}/{sample}.cram
+    Pipeline (sentmm2, sentmm2ont): {sample}/align/{alnr}/{sample}.{alnr}.cram
+    """
+    if wildcards.alnr in _PRE_ALIGNED_CRAM_ALIGNERS:
+        return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.cram"
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram"
+
+
+def _no_dedup_crai_input(wildcards):
+    """Return CRAI input path (mirrors _no_dedup_cram_input)."""
+    if wildcards.alnr in _PRE_ALIGNED_CRAM_ALIGNERS:
+        return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.cram.crai"
+    return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.{wildcards.alnr}.cram.crai"
+
+
+# Prefer no_dedup_cram over the pre_prep_*_cram rules whose unconstrained
+# {sample_lane} wildcard can accidentally match paths containing /na/.
+ruleorder: no_dedup_cram > pre_prep_ont_cram
+ruleorder: no_dedup_cram > pre_prep_ultima_cram
+ruleorder: no_dedup_cram > pre_prep_pb_cram
 
 
 rule no_dedup_cram:
     """Symlink CRAM-producing aligner output into the /na/ dedup directory."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.cram.crai",
+        cram=_no_dedup_cram_input,
+        crai=_no_dedup_crai_input,
     priority: 3
     params:
         cluster_sample=ret_sample,
