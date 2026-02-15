@@ -301,9 +301,7 @@ rule produce_varn_vcf:  # TARGET: varn vcf
 
         touch {output};
 
-        {latency_wait};
         ls {output} >> {log} 2>&1;
-        {latency_wait};
         ls {output} >> {log} 2>&1;
         """
 

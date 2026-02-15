@@ -10,7 +10,7 @@ import os
 # remote source via rclone, but then can be reused as long as the credntials are valid.
 # ---------
 
-    
+
 def ret_all_local_R1_R2_lane_fqs(wildcards):
     ret_str = []
 
@@ -190,7 +190,6 @@ else:
                 combs=1 gz=1 level=2 inputformat=sam inputbuffersize=192M \
                 inputbuffersize=10000000000 ;
                 echo ok;
-                {latency_wait};
                 ls {output}; ) > {log};
                 """
 
@@ -282,13 +281,12 @@ else:
                     -h -@ {params.write_threads} \
                     -O BAM --write-index \
                     -o {output.bamo}##idx##{output.bami} - ;
-                    {latency_wait};
                     (pigz -5 {output.singletons}; touch {output.singletons}:   ") & # these can go off to the background to run locally in parallel, with the wait command holding progress until they all return.
                     (pigz -5 {output.ur1}; touch {output.ur1};   ") &
                     (pigz -5 {output.ur2}; touch {output.ur2}:   ") &
                     (pigz -5 {output.interleaved}; touch {output.interleaved}; ") &
                     wait;
-                    {latency_wait}; ) > {log} 2>&1
+                    ) > {log} 2>&1
                     """
 
                     # The manual command I first experimented with
@@ -394,8 +392,8 @@ def get_ont_cramsx(wildcards):
         pass
     else:
         raise Exception(f"ERROR:  {cram_aligner} is not a valid CRAM aligner. Only 'ont' is supported. Please check your manifest and try again.")
-  
-    
+
+
     if os.path.exists(cram) and os.path.exists(crai):
         pass
     else:
@@ -424,7 +422,7 @@ def get_ultima_cramsx(wildcards):
         pass
     else:
         raise Exception(f"ERROR:  {cram_aligner} is not a valid CRAM aligner. Only 'ug' is supported. Please check your manifest and try again.")
-    
+
     if os.path.exists(cram) and os.path.exists(crai):
         pass
     else:
@@ -449,10 +447,10 @@ def get_ultima_downsample(wildcards):
     except:
         print(f"WARNING: ULTIMA_SUBSAMPLE_PCT for {wildcards.sample} not found in manifest. Please correct your manifest if this is not expected.",file=sys.stderr)
 
-    
+
     if ss_pct in ['na','',None,'None',"1","1.0",1.0,1]:
         ss_pct = "na"
- 
+
     else:
         try:
             ss_pct = float(ss_pct)
@@ -462,12 +460,12 @@ def get_ultima_downsample(wildcards):
             raise Exception(f"ERROR:  {ss_pct} is not a valid downsample percentage or 'na'. Please check your manifest and try again.")
 
     return ss_pct_as_int
-    
+
 
 def get_ont_downsample(wildcards):
     ss_pct = 'na'
     ss_pct_as_int = 'na'
-    
+
     try:
         ss_pct = samples.loc[(wildcards.sample), "ONT_SUBSAMPLE_PCT"][0]
     except:
@@ -475,7 +473,7 @@ def get_ont_downsample(wildcards):
 
     if ss_pct in ['na','',None,'None',"1","1.0",1.0,1]:
         ss_pct = "na"
- 
+
     else:
         try:
             ss_pct = float(ss_pct)
@@ -483,7 +481,7 @@ def get_ont_downsample(wildcards):
 
         except:
             raise Exception(f"ERROR:  {ss_pct} is not a valid downsample percentage or 'na'. Please check your manifest and try again.")
-        
+
     return ss_pct_as_int
 
 rule pre_prep_ultima_cram:
@@ -515,9 +513,9 @@ rule pre_prep_ultima_cram:
         mkdir -p $TMPDIR || echo {log} dir exists >> {log} 2>&1;
 
         if [[ '{params.downsample}' != 'na' ]]; then
-            echo 'downsampling to {params.downsample}' >> {log} 2>&1;            
+            echo 'downsampling to {params.downsample}' >> {log} 2>&1;
             samtools view -@ {params.use_threads} -T {params.huref} -C -s 33.{params.downsample} {input[0]} -o {output.cram} >> {log} 2>&1;
-            
+
             sleep 5;
             samtools index {output.cram} >> {log} 2>&1;
 
@@ -742,3 +740,109 @@ rule pre_prep_pb_cram:
         "sleep 2;"
         "{params.c} {input[1]} {output.crai} >> {log} 2>&1;"
 
+
+
+
+def get_roche_bam(wildcards):
+    """Return path to pre-aligned Roche SBX Duplex BAM from ROCHE_BAM manifest column.
+
+    These are BWA-aligned BAMs; they have a .bai index alongside them.
+    Accepts 'roche' as the aligner value.
+    """
+    bam_path = os.path.abspath(
+        samples[samples['sample_lane'] == wildcards.sample]['ROCHE_BAM'][0]
+    )
+    bam_aligner = samples[
+        samples['sample_lane'] == wildcards.sample
+    ]['ROCHE_BAM_ALIGNER'][0]
+
+    if bam_aligner in ['na', '', None, 'None']:
+        return []
+    elif bam_aligner in ['roche']:
+        pass
+    else:
+        raise Exception(
+            f"ERROR: ROCHE_BAM_ALIGNER='{bam_aligner}' is not valid. "
+            f"Only 'roche' is supported. Check your manifest."
+        )
+
+    if not os.path.exists(bam_path):
+        raise Exception(
+            f"ERROR: ROCHE_BAM path '{bam_path}' does not exist. "
+            f"Check your manifest."
+        )
+
+    bam_aligner_dir = f"{MDIR}/{wildcards.sample}/align/{bam_aligner}/"
+    print(f"PREP ROCHE BAM:: {bam_aligner_dir} ... ", file=sys.stderr)
+    os.system(f"mkdir -p {bam_aligner_dir}")
+    os.system(f"touch {bam_aligner_dir}/.ok")
+
+    return [bam_path]
+
+
+def get_roche_downsample_ratio(wildcards):
+    """Return the downsample ratio for a Roche sample from ROCHE_DOWNSAMPLE_RATIO column."""
+    ratio = 'na'
+    try:
+        ratio = samples[samples['sample_lane'] == wildcards.sample]['ROCHE_DOWNSAMPLE_RATIO'][0]
+    except Exception:
+        print(
+            f"WARNING: ROCHE_DOWNSAMPLE_RATIO for {wildcards.sample} not found in manifest.",
+            file=sys.stderr,
+        )
+    if ratio in ['na', '', None, 'None']:
+        ratio = "na"
+    return ratio
+
+
+rule pre_prep_roche_bam:
+    """Stage and optionally downsample a pre-aligned Roche SBX Duplex BAM.
+
+    Output is a BAM (not CRAM) because downstream GATK HaplotypeCaller
+    needs BAM input with the --bamout flag.
+    """
+    input:
+        get_roche_bam,
+    output:
+        bam=MDIR + "{sample}/align/roche/{sample_lane}.roche.bam",
+        bai=MDIR + "{sample}/align/roche/{sample_lane}.roche.bam.bai",
+    threads: config["roche_downsample_bam"]["threads"]
+    resources:
+        partition=config['roche_downsample_bam']['partition'],
+        threads=config['roche_downsample_bam']['threads'],
+        vcpu=config['roche_downsample_bam']['threads'],
+        mem_mb=config['roche_downsample_bam']['mem_mb'],
+    params:
+        downsample=get_roche_downsample_ratio,
+        cluster_sample=ret_sample,
+    log:
+        MDIR + "{sample}/align/roche/logs/{sample_lane}.roche.bam.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample_lane}.roche.downsample.bench.tsv"
+    conda:
+        config["roche_downsample_bam"]["env_yaml"]
+    shell:
+        """
+        (mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;
+
+        if [[ '{params.downsample}' != 'na' ]]; then
+            echo 'Downsampling Roche BAM to ratio {params.downsample}' >> {log} 2>&1;
+            samtools view \
+                -@ {threads} \
+                -s {params.downsample} \
+                --subsample-seed 1234 \
+                -b \
+                --write-index \
+                -o {output.bam}##idx##{output.bai} \
+                {input[0]} >> {log} 2>&1;
+        else
+            echo 'No downsampling: symlinking Roche BAM' >> {log} 2>&1;
+            ln -sf {input[0]} {output.bam} >> {log} 2>&1;
+            sleep 2;
+            if [[ -f "{input[0]}.bai" ]]; then
+                ln -sf {input[0]}.bai {output.bai} >> {log} 2>&1;
+            else
+                samtools index -@ {threads} {output.bam} >> {log} 2>&1;
+            fi
+        fi
+        """

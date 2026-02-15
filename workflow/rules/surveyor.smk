@@ -45,7 +45,6 @@ rule surveyor:
             --threads {threads} \
             --output {output.vcf} \
             {params.extra} >> {log} 2>&1;
-        {latency_wait};
         ls {output.vcf};
         """
 
@@ -77,7 +76,6 @@ rule surveyor_sort_index:
         bgzip -f -@ {threads} {output.sortvcf};
         touch {output.sortvcf};
         tabix -p vcf -f {output.sortgz};
-        {latency_wait};
         ls {output.sortgz} {output.sorttbi};) > {log} 2>&1;
         """
 

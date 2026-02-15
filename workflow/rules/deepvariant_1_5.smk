@@ -303,10 +303,8 @@ rule produce_deep15_vcf:  # TARGET: deep variant vcf
         touch {output};
 
         # Log completion and list output
-        {latency_wait};
         ls {output} >> {log} 2>&1;
 
-        {latency_wait}; 
         ls {output}  >> {log} 2>&1;
         """
 

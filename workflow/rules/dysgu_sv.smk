@@ -48,7 +48,6 @@ rule dysgu:
         {params.huref} \
         $work_dir \
         {input.bam} ) > {log} 2>&1;
-        {latency_wait};
         ls {output};
         rm -rf $(dirname {output.vcf})/*bin || echo 'dysgu bins rmFailed' >> {log} 2>&1;
         rm $(dirname {output.vcf})/*_tmp.bam || echo 'rm bam failed' >> {log} 2>&1;
@@ -81,10 +80,8 @@ rule dysgu_sort_index:
         bgzip -f -@ {threads} {output.sortvcf};
         touch {output.sortvcf};
         tabix -p vcf -f {output.sortgz};
-        {latency_wait} || echo passOn;
         ls {output} || echo passOn ;
         ) > {log} 2>&1;
-        {latency_wait};
         ls {output};
         """
 

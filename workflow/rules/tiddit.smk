@@ -82,7 +82,7 @@ rule tiddit_sort_index:
         bgzip -f -@ {threads} {output.sortvcf};
         touch {output.sortvcf};
         tabix -p vcf -f {output.sortgz};
-        {latency_wait} || echo passOn;
+        echo passOn;
         ls {output} || echo passOn ;
         """
 

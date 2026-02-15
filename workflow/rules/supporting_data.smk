@@ -47,4 +47,3 @@ rule stage_supporting_data:  # TARGET : Create resources/fsx Link via Method Cho
         config["vanilla"]["env_yaml"]
     shell:
         "touch {output};"
-        "{latency_wait};"

@@ -23,7 +23,6 @@ rule calc_coverage_evenness_two:
         mkdir -p $(dirname {output.metrics}) $(dirname {log});
         samtools depth -a {input.cram} 2> {log} | \
             bin/calc_coverage_evenness_two.py --window {params.window} > {output.metrics};
-        {latency_wait};
         ls {output.metrics};
     """
 
@@ -47,6 +46,5 @@ rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
             head -n 1 $single_file > {output.mqc};
             find results | grep .coverage_evenness_two.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
         fi;
-        {latency_wait};
         ls {input};
         """

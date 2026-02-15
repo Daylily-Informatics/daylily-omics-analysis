@@ -50,7 +50,6 @@ rule duphold:
         ( (rm -rf {output}) || echo rmFailedDUPHOLD;
         mkdir -p $( dirname {output.vcf} ) ;
         {params.duphold_bin} -s {input.snv_vcf} -t {threads} -v {input.sv_vcf}  -b {input.bam} -f {params.huref} -o {output.vcf} ;
-        {latency_wait};
         ls {output}; ) > {log};
         """
 
@@ -91,7 +90,7 @@ rule duphold_sort_index:
         touch {output.vcfsort};
         tabix  -p vcf -f {output.vcfgz} ;
         ls {output.vcfgztbi} ;
-        {latency_wait}; ) > {log} 2>&1;
+        ) > {log} 2>&1;
         """
 
 

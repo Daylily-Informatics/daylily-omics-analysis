@@ -11,8 +11,7 @@ resource_scopes:
     disk_mb='local',
     time='local'
 
-# no longer necessary keeping for the time being, but set to 0
-latency_wait = "sleep 0.01"
+
 
 
 # configfile: can be multiply declared.
@@ -295,6 +294,7 @@ include: "rules/sentieon.smk"
 include: "rules/sent_aln_sort_snv.smk"
 include: "rules/sent_snv_ug.smk"
 include: "rules/sent_snv_pb.smk"
+include: "rules/roche_sbxd.smk"
 #include: "rules/sent_snv_pbr.smk"
 include: "rules/sent_snv_ont.smk"
 #include: "rules/sent_snv_ontr.smk"

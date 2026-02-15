@@ -49,6 +49,14 @@ properties:
         type: string
     ONT_BAM_SNV_CALLER:
         type: string
+    ROCHE_BAM:
+        type: string
+    ROCHE_BAM_ALIGNER:
+        type: string
+    ROCHE_BAM_SNV_CALLER:
+        type: string
+    ROCHE_DOWNSAMPLE_RATIO:
+        type: string
     AMPLIFICATION_TYPE:
         type: string
     ALIGNED_REF_UID:

@@ -198,4 +198,11 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       dnascope_model:
         class: file_only
         name: resources/sentieon/SentieonDNAscopeModel1.1.model
- 
+    roche:
+      gnomad_af_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/af-only-gnomad.hg38.vcf.gz
+      grch38_noalt_fasta: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta
+      rtg_sdf: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf
+      filter_model_snv: /resources/model-germline-sbxd-multisample-snv.txt.gz
+      filter_model_indel: /resources/model-germline-sbxd-multisample-indel.txt.gz
+      giab_truth_base: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1
+

@@ -103,7 +103,6 @@ rule config_check:
         config["bcl2fq"]["env_yaml"]
     shell:
         "touch {output};"
-        "{latency_wait};"
 
 def gen_lanedirs(roots,ru):
     #for r in roots:
@@ -141,7 +140,6 @@ rule prep_bcl2fq_lane_dirs:
         (cp {params.orig_sample_sheet} {params.cp_sample_sheet} &>> {log} ) || echo "cpFailed-filealradycp";
         perl -pi -e 's/(.*\,)(XL.*\-SQ)(\d+)(-.*)/$1SQ$3$4/g;' {params.cp_sample_sheet};
         perl -pi -e 's/(.*)(XL.*\-SQ)(\d+)(-.*)/$1SQ$3$4/g;' {params.cp_sample_sheet}  ;
-        {latency_wait};
         """
 
 
@@ -246,7 +244,6 @@ rule multiqc_bcl2fq_ready:
     shell:
         """
         touch {output};
-        {latency_wait};
         """
 
 rule bcl2fastq_run:  # TARGET : Target to run BCL2FQ
@@ -273,5 +270,4 @@ rule bcl2fastq_run:  # TARGET : Target to run BCL2FQ
         $cmd;
         colr '  ANALYSIS UNIT TABLE READY IN config/units.tsv' 'yellow' 'green' 'b' 2>&1;
         touch {output};
-        {latency_wait};
         """

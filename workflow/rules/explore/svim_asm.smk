@@ -52,6 +52,6 @@ rule svim_asm_sort_index:
         perl -pi -e 's/\\t\\*\\t/\\tN\\t/g;' {input} >> {log} || echo nomatch! ;
         bcftools sort -T {output.tmpd} -O z -o {output.sortgz} {input} || echo passOn;
         bcftools index  -f -t --threads {threads} {output.sortgz} -o {output.sorttbi} || echo passOn ;
-        {latency_wait} || echo passOn;
+        echo passOn;
         ls {output} || echo passOn ;
         """

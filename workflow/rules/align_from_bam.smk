@@ -117,7 +117,6 @@ if True:
                 combs=1 gz=1 level=2 inputformat=sam inputbuffersize=192M \
                 inputbuffersize=10000000000 ;
                 echo ok;
-                {latency_wait};
                 ls {output}; ) > {log};
                 """
 
@@ -209,13 +208,12 @@ if True:
                     -h -@ {params.write_threads} \
                     -O BAM --write-index \
                     -o {output.bamo}##idx##{output.bami} - ;
-                    {latency_wait};
                     (pigz -5 {output.singletons}; touch {output.singletons}:   ") & # these can go off to the background to run locally in parallel, with the wait command holding progress until they all return.
                     (pigz -5 {output.ur1}; touch {output.ur1};   ") &
                     (pigz -5 {output.ur2}; touch {output.ur2}:   ") &
                     (pigz -5 {output.interleaved}; touch {output.interleaved}; ") &
                     wait;
-                    {latency_wait}; ) > {log} 2>&1
+                    ) > {log} 2>&1
                     """
 
                     # The manual command I first experimented with

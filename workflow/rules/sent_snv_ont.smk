@@ -229,5 +229,5 @@ rule produce_sentdont_vcf:  # TARGET: sentieon dnascope vcf
     shell:
         """( touch {output} ;
 
-        {latency_wait}; ls {output} ) >> {log} 2>&1;
+        ls {output} ) >> {log} 2>&1;
         """

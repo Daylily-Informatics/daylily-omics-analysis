@@ -55,7 +55,6 @@ rule paragraph:
         bgzip -f {output.vcfsort};
         touch {output.vcfsort}
         tabix -p vcf -f {output.vcfsortgz};
-        {latency_wait} ;
         ls {output};  >> {log} ;
         """
 
@@ -83,7 +82,7 @@ rule paragraph:
 #        bgzip -f -@ {threads} {output.sortvcf};
 #        touch {output.sortvcf};
 #        tabix -p vcf -f {output.sortgz};
-#        {latency_wait} || echo passOn;
+#        echo passOn;
 #        ls {output} || echo passOn ;
 #        """
 

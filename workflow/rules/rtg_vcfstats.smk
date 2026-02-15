@@ -39,7 +39,6 @@ rule rtg_vcfstats:
         """
         mkdir -p {params.work_dir} > {log} 2>&1 ;
         rtg vcfstats --allele-lengths {input.svgz} > {output}  ;
-        {latency_wait};
         ls {output};
         """
 

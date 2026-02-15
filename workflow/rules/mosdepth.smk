@@ -38,7 +38,7 @@ rule mosdepth:
         "mosdepth --threads {threads} --by {params.core_bed} --use-median  -n --fast-mode --mapq {params.mapq} -f {params.huref} -T {params.T} $(dirname {log.b}) {input.cram} > {log.a} 2>&1; "
         "touch {output};"
         "(rm  $(dirname {log.b})/*per-base* || echo 'rm perbase failed' >> {log.a} 2>&1);"
-        "{latency_wait}; ls {output};"
+        "ls {output};"
 
 localrules:
     produce_mosdepth,
