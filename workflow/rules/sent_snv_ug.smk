@@ -11,14 +11,14 @@ rule sent_snv_ug:
         d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.ready",
     output:
         vcf=temp(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.vcf"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.vcf"),
         gvcf=temp(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.gvcf"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.gvcf"),
         gvcfindex=temp(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.gvcf.idx"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.gvcf.idx"),
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/log/vcfs/{sample}.{alnr}.sentdug.{dchrm}.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/log/vcfs/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.log",
     threads: config['sentdug']['threads']
     priority: 45
     conda:
@@ -137,20 +137,20 @@ rule sent_snv_ug:
 rule sentdug_sort_index_chunk_vcf:
     input:
         vcf=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.vcf",
     priority: 46
     output:
         vcfsort=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.sort.vcf"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.sort.vcf"),
         vcfgz=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.sort.vcf.gz"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.sort.vcf.gz"),
         vcftbi=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.sentdug.{dchrm}.snv.sort.vcf.gz.tbi"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.sort.vcf.gz.tbi"),
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/log/{sample}.{alnr}.sentdug.{dchrm}.snv.sort.vcf.gz.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/log/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=64,
         threads=64,
@@ -186,25 +186,25 @@ rule sentdug_concat_fofn:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdug/vcfs/{ochm}/{{sample}}.{{alnr}}.sentdug.{ochm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdug/vcfs/{ochm}/{{sample}}.{{alnr}}.{{ddup}}.sentdug.{ochm}.snv.sort.vcf.gz.tbi",
                 ochm=SENTDUG_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),
     # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th dchrm wildcard is effectively being constrained by the values in the SENTDUG_CHRMS array;  So you produce 1 input array of files for every sample+dchrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first sentdugchrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
     priority: 44
     output:
         fin_fofn=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.concat.vcf.gz.fofn.tmp",
     threads: 1
     resources:
         threads=1
     params:
-        fn_stub="{sample}.{alnr}.sentdug."
+        fn_stub="{sample}.{alnr}.{ddup}.sentdug."
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdug.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/log/{sample}.{alnr}.sentdug.cocncat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/log/{sample}.{alnr}.{ddup}.sentdug.cocncat.fofn.log",
     shell:
         """
 
@@ -212,7 +212,7 @@ rule sentdug_concat_fofn:
             ii=$(echo $i | perl -pe 's/\.tbi$//g'; );
             echo $ii >> {output.tmp_fofn};
         done;
-        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.sentdug. {output.fin_fofn}) >> {log} 2>&1;
+        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdug. {output.fin_fofn}) >> {log} 2>&1;
 
         """
 
@@ -220,17 +220,17 @@ rule sentdug_concat_fofn:
 rule sentdug_concat_index_chunks:
     input:
         fofn=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.concat.vcf.gz.fofn",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.concat.vcf.gz.fofn",
     output:
         vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.sort.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.sort.vcf.gz"
         ),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.sort.temp.vcf.gz"
         ),
         vcfgztbi=touch(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.sort.vcf.gz.tbi"
         ),
     threads: 64
     resources:
@@ -249,7 +249,7 @@ rule sentdug_concat_index_chunks:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/log/{sample}.{alnr}.sentdug.snv.merge.sort.gatherered.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdug/log/{sample}.{alnr}.{ddup}.sentdug.snv.merge.sort.gatherered.log",
     shell:
         """
 
@@ -276,7 +276,7 @@ localrules:
 rule clear_combined_sentdug_vcf:  # TARGET:  clear combined sentdug vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS_UG,
             ddup=DDUP,
@@ -297,7 +297,7 @@ rule produce_sentdug_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.sentdug.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdug/{sample}.{alnr}.{ddup}.sentdug.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_UG,
             ddup=DDUP,
