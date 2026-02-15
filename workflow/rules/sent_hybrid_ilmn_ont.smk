@@ -131,7 +131,6 @@ rule sentdhio_snv:
             --skip_mosdepth \
             --skip_cnv \
             --skip_multiqc \
-            --temp_dir $TMPDIR \
             -m {params.model} \
             {params.diploid_bed} {params.haploid_bed} {output.vcf} >> {log} 2>&1;
 
