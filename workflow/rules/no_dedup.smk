@@ -17,7 +17,7 @@ rule no_dedup:
         cram=MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram",
         crai=MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram.crai",
     wildcard_constraints:
-        alnr="|".join(OG_ALIGNERS)
+        alnr="|".join(OG_ALIGNERS) if OG_ALIGNERS else r"(?!x)x"
     threads: config.get("no_dedup", {}).get("threads", 4)
     benchmark:
         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.na.mrkdup.bench.tsv", 0)

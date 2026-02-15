@@ -19,7 +19,7 @@ rule doppelmark_sentieon_dups:
         cram=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram",
         crai=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram.crai",
     wildcard_constraints:
-        alnr="|".join(OG_ALIGNERS)
+        alnr="|".join(OG_ALIGNERS) if OG_ALIGNERS else r"(?!x)x"
     threads: DOPPEL_SENT_CFG.get("threads", 1)
     benchmark:
         repeat(
