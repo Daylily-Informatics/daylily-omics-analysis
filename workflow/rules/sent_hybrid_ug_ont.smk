@@ -13,14 +13,14 @@ rule sentdhuo_snv:
         d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.ready",
     output:
      vcf=temp(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.gz"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.gz"),
      tvcf=temp(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.tmp"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.tmp"),
     wildcard_constraints:
         alnr="|".join(ALIGNERS_UG)
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/log/vcfs/{sample}.{alnr}.sentdhuo.{dchrm}.snv.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/log/vcfs/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.log",
     threads: config['sentdhuo']['threads']
     conda:
         "../envs/sentieon_v0.2b.yaml"
@@ -158,20 +158,20 @@ rule sentdhuo_snv:
 rule sentdhuo_sort_index_chunk_vcf:
     input:
         vcf=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.gz",
     priority: 46
     output:
         vcfsort=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.sort.vcf"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.sort.vcf"),
         vcfgz=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.sort.vcf.gz"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.sort.vcf.gz"),
         vcftbi=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.sentdhuo.{dchrm}.snv.sort.vcf.gz.tbi"),
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.sort.vcf.gz.tbi"),
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/log/{sample}.{alnr}.sentdhuo.{dchrm}.snv.sort.vcf.gz.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/log/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=1,
         threads=1,
@@ -199,25 +199,25 @@ rule sentdhuo_concat_fofn:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhuo/vcfs/{ochm}/{{sample}}.{{alnr}}.sentdhuo.{ochm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhuo/vcfs/{ochm}/{{sample}}.{{alnr}}.{{ddup}}.sentdhuo.{ochm}.snv.sort.vcf.gz.tbi",
                 ochm=SENTDHUO_CHRMS,            ),            key=lambda x: float(                str(x.replace("~", ".").replace(":", "."))               .split("vcfs/")[1]                .split("/")[0]                .split("-")[0]            ),        ),
     # This expand pattern is neat.  the escaped {} remain acting as a snakemake wildcard and expect to be derived from the dag, while th dchrm wildcard is effectively being constrained by the values in the sentdhuo_CHRMS array;  So you produce 1 input array of files for every sample+dchrm parir, with one list string/file name per array.  The rule will only begin when all array members are produced. It's then sorted by first sentdhuochrm so they can be concatenated w/out another soort as all the chunks had been sorted already.
     priority: 44
     output:
         fin_fofn=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.concat.vcf.gz.fofn.tmp",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.concat.vcf.gz.fofn.tmp",
     threads: 1
     resources:
         threads=1
     params:
-        fn_stub="{sample}.{alnr}.sentdhuo."
+        fn_stub="{sample}.{alnr}.{ddup}.sentdhuo."
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuo.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/log/{sample}.{alnr}.sentdhuo.cocncat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/log/{sample}.{alnr}.{ddup}.sentdhuo.cocncat.fofn.log",
     shell:
         """
 
@@ -225,7 +225,7 @@ rule sentdhuo_concat_fofn:
             ii=$(echo $i | perl -pe 's/\.tbi$//g'; );
             echo $ii >> {output.tmp_fofn};
         done;
-        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.sentdhuo. {output.fin_fofn}) >> {log} 2>&1;
+        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdhuo. {output.fin_fofn}) >> {log} 2>&1;
 
         """
 
@@ -233,17 +233,17 @@ rule sentdhuo_concat_fofn:
 rule sentdhuo_concat_index_chunks:
     input:
         fofn=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.concat.vcf.gz.fofn",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.concat.vcf.gz.fofn",
     output:
         vcfgz=touch(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.sort.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.sort.vcf.gz"
         ),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.sort.temp.vcf.gz"
         ),
         vcfgztbi=touch(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.sort.vcf.gz.tbi"
         ),
     threads: 64
     resources:
@@ -262,7 +262,7 @@ rule sentdhuo_concat_index_chunks:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/log/{sample}.{alnr}.sentdhuo.snv.merge.sort.gatherered.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/log/{sample}.{alnr}.{ddup}.sentdhuo.snv.merge.sort.gatherered.log",
     shell:
         """
 
@@ -290,7 +290,7 @@ localrules:
 rule clear_combined_sentdhuo_vcf:  # TARGET:  clear combined sentdhuo vcf so the chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS_UG,
             ddup=DDUP,
@@ -311,7 +311,7 @@ rule produce_sentdhuo_vcf:  # TARGET: sentieon dnascope vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.sentdhuo.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/{sample}.{alnr}.{ddup}.sentdhuo.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_UG,
             ddup=DDUP,
@@ -348,7 +348,7 @@ rule prep_sentdhuo_chunkdirs:
         alnr="|".join(ALIGNERS_UG)
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/logs/{sample}.{alnr}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;
