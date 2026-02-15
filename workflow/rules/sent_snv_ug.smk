@@ -117,7 +117,6 @@ rule sent_snv_ug:
             --algo DNAscope --model "{params.model}" \
             --pcr_indel_model none \
             --emit_mode variant \
-            --temp_dir $TMPDIR \
             {output.gvcf} >> {log} 2>&1;
 
         LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \

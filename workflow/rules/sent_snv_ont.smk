@@ -153,7 +153,6 @@ rule sent_snv_ont:
             -d "{params.pop_vcf}" \
             -t {threads} \
             --tech ONT \
-            --temp_dir $TMPDIR \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
 
         cli_rc=$?;
