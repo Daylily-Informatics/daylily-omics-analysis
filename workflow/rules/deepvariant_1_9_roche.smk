@@ -1,12 +1,12 @@
 import sys
 import os
 
-##### deepvariant
+##### deepvariant roche
 # ---------------------------
 #
  
 
-rule deepvariant_19:
+rule deepvariant_19_r:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
@@ -90,6 +90,9 @@ rule deepvariant_19:
         --output_vcf={output.vcf} \
         --num_shards={params.deep_threads} \
         --logging_dir=$(dirname {log}) \
+        --customized_model resources/model/model.ckpt \
+        --make_examples_extra_args="alt_aligned_pileup=single_row,create_complex_alleles=true,enable_strict_insertion_filter=true,keep_legacy_allele_counter_behavior=true,keep_only_window_spanning_haplotypes=true,keep_supplementary_alignments=true,min_mapping_quality=0,normalize_reads=true,pileup_image_height_pangenome=100,pileup_image_height_reads=100,pileup_image_width=301,sort_by_haplotypes=true,trim_reads_for_pileup=true,vsc_min_fraction_indels=0.08,ws_min_base_quality=25" \
+        --postprocess_variants_extra_args="multiallelic_mode=product"
         --dry_run=false >> {log} 2>&1;  
 
         end_time=$(date +%s);
@@ -101,7 +104,7 @@ rule deepvariant_19:
 
 
 
-rule deep19_sort_index_chunk_vcf:
+rule deep19_r_sort_index_chunk_vcf:
     input:
         vcf=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19/vcfs/{dvchrm}/{sample}.{alnr}.deep19.{dvchrm}.snv.vcf",
@@ -177,7 +180,7 @@ rule deep19_concat_fofn:
         """
 
 
-rule deep19_concat_index_chunks:
+rule deep19_r_concat_index_chunks:
     input:
         fofn=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19/{sample}.{alnr}.deep19.snv.concat.vcf.gz.fofn",
@@ -234,7 +237,7 @@ rule deep19_concat_index_chunks:
         """
 
 
-rule clear_combined_deep19_vcf:  # TARGET:  clear combined deep vcf so the chunks can be re-evaluated if needed.
+rule clear_combined_deep19_r_vcf:  # TARGET:  clear combined deep vcf so the chunks can be re-evaluated if needed.
     input:
         vcf=expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/deep19/{sample}.{alnr}.deep19.snv.sort.vcf.gz",
@@ -253,7 +256,7 @@ rule clear_combined_deep19_vcf:  # TARGET:  clear combined deep vcf so the chunk
         "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 
 
-rule produce_deep19_vcf:  # TARGET: deep variant vcf
+rule produce_deep19_r_vcf:  # TARGET: deep variant vcf
     input:
         vcftb=expand(
             MDIR
@@ -311,10 +314,10 @@ rule produce_deep19_vcf:  # TARGET: deep variant vcf
 
 
 localrules:
-    prep_deep19_chunkdirs,
+    prep_deep19_r_chunkdirs,
 
 
-rule prep_deep19_chunkdirs:
+rule prep_deep19_r_chunkdirs:
     input:
         b=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         i=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
