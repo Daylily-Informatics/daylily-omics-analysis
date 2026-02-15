@@ -63,9 +63,9 @@ rule roche_gatk_haplotypecaller:
         bai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.bam.bai",
     output:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.gatk_raw.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.gatk_raw.vcf.gz.tbi",
         bamout=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.bamout.bam",
         bamouti=MDIR
@@ -152,14 +152,14 @@ rule roche_gatk_haplotypecaller:
 rule roche_filter_variants:
     input:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.gatk_raw.vcf.gz",
         bamout=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.bamout.bam",
     output:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.filt.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.filt.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.vcf.gz.tbi",
     wildcard_constraints:
         alnr="roche",
         ddup="na",
@@ -224,7 +224,7 @@ rule produce_rochehc_vcf:  # TARGET: Roche GATK HaplotypeCaller filtered VCF
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.filt.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/rochehc/{sample}.{alnr}.{ddup}.rochehc.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS_ROCHE,
             ddup=["na"],
