@@ -140,7 +140,7 @@ rule deep19_r_sort_index_chunk_vcf:
         """
 
 
-rule deep19_concat_fofn:
+rule deep19_r_concat_fofn:
     input:
         chunk_tbi=sorted(
             expand(
