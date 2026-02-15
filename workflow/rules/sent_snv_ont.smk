@@ -198,7 +198,7 @@ rule clear_combined_sentdont_vcf:  # TARGET:  clear combined sentdont vcf so the
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz",
             sample=SSAMPS,
-            alnr=ALIGNERS_ONT,
+            alnr=[a for a in ALIGNERS_ONT if a in ALL_ALIGNERS],
             ddup=DDUP,
         ),
     threads: 2
@@ -217,7 +217,7 @@ rule produce_sentdont_vcf:  # TARGET: sentieon dnascope vcf
             MDIR
             + "{sample}/align/{alnr}/{ddup}/snv/sentdont/{sample}.{alnr}.{ddup}.sentdont.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
-            alnr=ALIGNERS_ONT,
+            alnr=[a for a in ALIGNERS_ONT if a in ALL_ALIGNERS],
             ddup=DDUP,
         ),
     output:
