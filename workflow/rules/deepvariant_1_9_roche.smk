@@ -321,6 +321,7 @@ rule produce_deep19_r_vcf:  # TARGET: DeepVariant 1.9 Roche VCF
 
 localrules:
     prep_deep19_r_chunkdirs,
+    produce_deep19_r_vcf,
 
 
 rule prep_deep19_r_chunkdirs:
