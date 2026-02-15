@@ -204,5 +204,6 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       rtg_sdf: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf
       filter_model_snv: /resources/model-germline-sbxd-multisample-snv.txt.gz
       filter_model_indel: /resources/model-germline-sbxd-multisample-indel.txt.gz
+      pangenome_gbz: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz
       giab_truth_base: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1
 

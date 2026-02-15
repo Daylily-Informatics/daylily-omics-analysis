@@ -26,34 +26,35 @@ rule deepvariant_19_r:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/log/{sample}.{alnr}.{ddup}.deep19r.{dvchrm}.snv.log",
-    threads: config['deepvariant']['threads']
+    threads: config['deepvariant_1_9_roche']['threads']
     container:
-        config['deepvariant']['deep19_container']
+        config['deepvariant_1_9_roche']['container']
     priority: 45
     resources:
-        vcpu=config['deepvariant']['threads'],
-        threads=config['deepvariant']['threads'],
-        partition=config['deepvariant']['partition'],
-        mem_mb=config['deepvariant']['mem_mb'],
+        vcpu=config['deepvariant_1_9_roche']['threads'],
+        threads=config['deepvariant_1_9_roche']['threads'],
+        partition=config['deepvariant_1_9_roche']['partition'],
+        mem_mb=config['deepvariant_1_9_roche']['mem_mb'],
     benchmark:
         repeat(
             MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deep19r.{dvchrm}.bench.tsv",
             0
-            if "bench_repeat" not in config["deepvariant"]
-            else config["deepvariant"]["bench_repeat"],
+            if "bench_repeat" not in config["deepvariant_1_9_roche"]
+            else config["deepvariant_1_9_roche"]["bench_repeat"],
         )
     params:
         dchrm=get_dvchrm_day,
         cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         mdir=MDIR,
-        mem_mb=config['deepvariant']['mem_mb'],
-        numa=config['deepvariant']['numa'],
+        mem_mb=config['deepvariant_1_9_roche']['mem_mb'],
+        numa=config['deepvariant_1_9_roche']['numa'],
         cpre="" if "b37" == config['genome_build'] else "chr",
-        deep_threads=config['deepvariant']['deep_threads'],
+        deep_threads=config['deepvariant_1_9_roche']['deep_threads'],
         mito_code="MT" if "b37" == config['genome_build'] else "M",
         deep_model=get_deep_model,
         instrument=get_instrument,
+        pangenome_gbz=config["supporting_files"]["files"]["roche"]["pangenome_gbz"],
     shell:
         """
         TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
@@ -91,9 +92,10 @@ rule deepvariant_19_r:
         echo "BAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         {params.numa} \
-        /opt/deepvariant/bin/run_deepvariant \
+        /opt/deepvariant/bin/run_pangenome_aware_deepvariant \
         --model_type={params.deep_model} --ref={params.huref} \
         --reads={input.bam} \
+        --pangenome={params.pangenome_gbz} \
         --regions=$dchr \
         --output_vcf={output.vcf} \
         --num_shards={params.deep_threads} \
@@ -128,14 +130,14 @@ rule deep19_r_sort_index_chunk_vcf:
         vcftbi=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/vcfs/{dvchrm}/{sample}.{alnr}.{ddup}.deep19r.{dvchrm}.snv.sort.vcf.gz.tbi",
     conda:
-        config['deepvariant']['deep19_conda']
+        config['deepvariant_1_9_roche']['conda']
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/vcfs/{dvchrm}/log/{sample}.{alnr}.{ddup}.deep19r.{dvchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=4,
-        partition=config['deepvariant']['partition_other'],
+        partition=config['deepvariant_1_9_roche']['partition_other'],
     params:
         cluster_sample=ret_sample,
     threads: 4
@@ -186,7 +188,7 @@ rule deep19_r_concat_fofn:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deep19r.concat.fofn.bench.tsv"
     conda:
-        config['deepvariant']['deep19_conda']
+        config['deepvariant_1_9_roche']['conda']
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/deep19r/log/{sample}.{alnr}.{ddup}.deep19r.concat.fofn.log",
     shell:
@@ -225,7 +227,7 @@ rule deep19_r_concat_index_chunks:
     resources:
         vcpu=4,
         threads=4,
-        partition=config['deepvariant']['partition_other'],
+        partition=config['deepvariant_1_9_roche']['partition_other'],
     priority: 47
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -235,7 +237,7 @@ rule deep19_r_concat_index_chunks:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deep19r.merge.bench.tsv"
     conda:
-        config['deepvariant']['deep19_conda']
+        config['deepvariant_1_9_roche']['conda']
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/log/{sample}.{alnr}.{ddup}.deep19r.snv.merge.sort.gathered.log",
@@ -267,7 +269,7 @@ rule clear_combined_deep19_r_vcf:  # TARGET: clear combined deep19r vcf so chunk
         ),
     priority: 42
     conda:
-        config['deepvariant']['deep19_conda']
+        config['deepvariant_1_9_roche']['conda']
     resources:
         vcpu=2,
         threads=2,
@@ -299,7 +301,7 @@ rule produce_deep19_r_vcf:  # TARGET: DeepVariant 1.9 Roche VCF
     log:
         "gatheredall.deep19r.log",
     conda:
-        config['deepvariant']['deep19_conda']
+        config['deepvariant_1_9_roche']['conda']
     shell:
         """
         # Convert VCF to BCF and index it
