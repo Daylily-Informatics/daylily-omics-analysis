@@ -115,8 +115,8 @@ rule roche_gatk_haplotypecaller:
         echo "Running GATK HaplotypeCaller (Roche SBX Duplex)" >> {log} 2>&1;
         mkdir -p $(dirname {output.vcfgz});
 
-        apptainer exec {params.container} \
-            gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=$TMPDIR" \
+        
+        gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=$TMPDIR" \
             HaplotypeCaller \
             -I {input.bam} \
             -R {params.huref} \

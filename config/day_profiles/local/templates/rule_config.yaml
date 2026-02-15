@@ -931,7 +931,7 @@ roche_gatk_haplotypecaller:
     mem_mb: 32000
     partition: "i8"
     container: "docker://broadinstitute/gatk-nightly:2025-08-19-4.6.2.0-17-g2a1f41bf3-NIGHTLY-SNAPSHOT"
-    env_yaml: "../envs/vanilla_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml""
     native_pair_hmm_threads: 4
 
 roche_filter_variants:
@@ -939,10 +939,10 @@ roche_filter_variants:
     mem_mb: 16000
     partition: "i8"
     container: "docker://roche/sbxd-small-variant-caller:latest"
-    env_yaml: "../envs/vanilla_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
 
 roche_rtg_vcfeval:
     threads: 4
     mem_mb: 16000
     partition: "i8"
-    env_yaml: "../envs/rtgtools_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
