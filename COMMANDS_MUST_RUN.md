@@ -20,7 +20,7 @@ command= dy-r produce_sentdont_vcf produce_alignstats produce_snv_concordances -
 ILMN ONLY
 samples= .test_data/data/ilmn/ilmn_full_cov.samples.tsv
 units= .test_data/data/ilmn/ilmn_full_cov.units.tsv
-command= dy-r produce_sentieon_bwa_sort_bam produce_bwa_mem2_sort_bam dedup_doppelmark dedup_sentieon produce_sentD_vcf produce_alignstats produce_snv_concordances -p -j 20 -k  -n
+command= dy-r produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf dedup_doppelmark produce_alignstats -p -k -j 20 -n
 
 PB only
 samples= .test_data/data/pacbio/pacbio_full_cov.samples.tsv 
