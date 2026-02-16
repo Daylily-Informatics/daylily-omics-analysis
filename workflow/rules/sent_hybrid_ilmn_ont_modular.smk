@@ -171,6 +171,12 @@ rule sentdhiom_pass1:
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
 
+        # Ensure VCF index exists (sentieon should create it, but be explicit)
+        if [ ! -f "{output.tbi}" ]; then
+            echo "Creating VCF index with tabix" >> {log}
+            tabix -p vcf {output.vcf} >> {log} 2>&1
+        fi
+
         echo "Pass 1 completed at $(date)" >> {log}
         """
 
