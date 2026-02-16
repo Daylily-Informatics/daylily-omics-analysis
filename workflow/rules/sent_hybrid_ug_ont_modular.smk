@@ -524,7 +524,14 @@ rule sentdhuom_stage3:
 
         echo "Starting Stage 3 at $(date)" >> {log}
 
+        # Get read group info from ONT CRAM to use with --replace_rg
+        # This fixes @PG PP chain validation errors in ONT CRAM files
+        ont_rg_id=$(samtools view -H {input.ont_cram} | grep '^@RG' | head -1 | tr '\t' '\n' | grep '^ID:' | cut -f2 -d':')
+        ont_rg_sm=$(samtools view -H {input.ont_cram} | grep '^@RG' | head -1 | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':')
+        echo "Using --replace_rg for ONT CRAM: ID=$ont_rg_id SM=$ont_rg_sm" >> {log}
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --replace_rg "${{ont_rg_id}}=ID:${{ont_rg_id}}\tSM:${{ont_rg_sm}}\tLR:1" \
             -i {input.ont_cram} -i {input.ug_cram} \
             -i {input.unmap_bam} -i {input.alt_bam} \
             --interval {input.bed} \
@@ -578,7 +585,14 @@ rule sentdhuom_pass2:
 
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
 
+        # Get read group info from ONT CRAM to use with --replace_rg
+        # This fixes @PG PP chain validation errors in ONT CRAM files
+        ont_rg_id=$(samtools view -H {input.ont_cram} | grep '^@RG' | head -1 | tr '\t' '\n' | grep '^ID:' | cut -f2 -d':')
+        ont_rg_sm=$(samtools view -H {input.ont_cram} | grep '^@RG' | head -1 | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':')
+        echo "Using --replace_rg for ONT CRAM: ID=$ont_rg_id SM=$ont_rg_sm" >> {log}
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --replace_rg "${{ont_rg_id}}=ID:${{ont_rg_id}}\tSM:${{ont_rg_sm}}\tLR:1" \
             -i {input.ont_cram} -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
