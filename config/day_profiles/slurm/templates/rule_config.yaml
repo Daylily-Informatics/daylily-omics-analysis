@@ -904,14 +904,6 @@ roche_downsample_bam:
     threads: 16
     mem_mb: 32000
     partition: "i192,i192mem,i128"
-<<<<<<< HEAD
-    env_yaml: "../envs/roche_v0.1.yaml"
-
-roche_gatk_haplotypecaller:
-    threads: 192
-    mem_mb: 320
-    partition: "i192mem,i192bigmem"
-    container: "docker://broadinstitute/gatk-nightly:2025-08-19-4.6.2.0-17-g2a1f41bf3-NIGHTLY-SNAPSHOT"
     env_yaml: "../envs/roche_v0.1.yaml"
 
 roche_gatk_haplotypecaller:
@@ -920,18 +912,9 @@ roche_gatk_haplotypecaller:
     partition: "i192,i192mem,i128"
     container: "docker://broadinstitute/gatk-nightly:2025-08-19-4.6.2.0-17-g2a1f41bf3-NIGHTLY-SNAPSHOT"
     env_yaml: "../envs/sentieon_v0.3.yaml"
->>>>>>> feat/roche-sbxd-support
     native_pair_hmm_threads: 16
 
 roche_filter_variants:
-    threads: 16
-<<<<<<< HEAD
-    mem_mb: 3200
-    partition: "i192,i192mem,i128"
-    container: "docker://roche/sbxd-small-variant-caller:latest"
-    env_yaml: "../envs/roche_v0.1.yaml"
-
-roche_rtg_vcfeval:
     threads: 16
     mem_mb: 32000
     partition: "i192,i192mem,i128"
@@ -943,4 +926,3 @@ roche_rtg_vcfeval:
     mem_mb: 32000
     partition: "i192,i192mem,i128"
     env_yaml: "../envs/rtgtools_v0.1.yaml"
->>>>>>> feat/roche-sbxd-support
