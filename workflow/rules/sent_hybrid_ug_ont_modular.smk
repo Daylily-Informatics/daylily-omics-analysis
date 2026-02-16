@@ -367,8 +367,12 @@ rule sentdhuom_stage1:
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
             echo "WARNING: merged_diff.bed is empty - no haplotype regions to process" >> {log}
-            echo "Creating empty hap_bam, hap_bed, hap_vcf files" >> {log}
-            touch {output.hap_bam} {output.hap_bed} {output.hap_vcf}
+            echo "Creating empty hap_bam (with header), hap_bed, hap_vcf files" >> {log}
+            # Create empty BED and VCF
+            touch {output.hap_bed} {output.hap_vcf}
+            # Create proper empty BAM with header from reference so it can be indexed
+            samtools view -H {input.ont_cram} | samtools view -bo {output.hap_bam} -
+            samtools index {output.hap_bam}
 
             # Only run insertion detection (no interval restriction)
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
