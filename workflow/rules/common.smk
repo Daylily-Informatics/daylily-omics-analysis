@@ -112,6 +112,9 @@ SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].spl
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
 SENTDHIO_CHRMS = config["sentdhio"][f"{config['genome_build']}_sentdhio_chrms"].split(",")
+# Modular hybrid workflows reuse the same chromosome configs as the monolithic ones
+SENTDHUOM_CHRMS = SENTDHUO_CHRMS  # Modular Ultima+ONT hybrid
+SENTDHIOM_CHRMS = SENTDHIO_CHRMS  # Modular Illumina+ONT hybrid
 SENTDPB_CHRMS = config["sentdpb"][f"{config['genome_build']}_sentdpb_chrms"].split(",")
 SENTDHIP_CHRMS = config["sentdhip"][f"{config['genome_build']}_sentdhip_chrms"].split(",")
 
@@ -1501,6 +1504,8 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdpb":   ["sentmm2"],             # PacBio-only caller
     "sentdhuo":  ["ug"],                   # Hybrid Ultima+ONT → emits alnr=ug
     "sentdhio":  ["ont"],                  # Hybrid Ilmn+ONT  → emits alnr=ont
+    "sentdhuom": ["ug"],                   # Modular Hybrid Ultima+ONT → emits alnr=ug
+    "sentdhiom": ["ont"],                  # Modular Hybrid Ilmn+ONT  → emits alnr=ont
     "rochehc":   ["roche"],               # Roche SBX Duplex HaplotypeCaller
     "deep19r":   ["roche"],               # DeepVariant 1.9 on Roche BAMs
 }
