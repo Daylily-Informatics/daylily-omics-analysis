@@ -432,11 +432,12 @@ rule sentdhiom_stage1:
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
             echo "WARNING: merged_diff.bed is empty - no haplotype regions to process" >> {log}
-            echo "Creating empty hap_bam (with header), hap_bed, hap_vcf files" >> {log}
+            echo "Creating empty hap_bam (with minimal header), hap_bed, hap_vcf files" >> {log}
             # Create empty BED and VCF
             touch {output.hap_bed} {output.hap_vcf}
-            # Create proper empty BAM with header from reference so it can be indexed
-            samtools view -H {input.lr_cram} | samtools view -bo {output.hap_bam} -
+            # Create proper empty BAM with minimal header (only @HD and @SQ lines, no @PG/@RG)
+            # This avoids issues with PP chain references to non-existent programs
+            samtools view -H {input.lr_cram} | grep -E '^@(HD|SQ)' | samtools view -bo {output.hap_bam} -
             samtools index {output.hap_bam}
 
             # Only run insertion detection (no interval restriction)
