@@ -40,6 +40,7 @@ rule sent_snv_ug:
         schrm_mod=get_dchrm_day,
         huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdug"]["dna_scope_snv_model"],
+        pop_vcf=config["sentdug"]["pop_vcf"],
         cluster_sample=ret_sample,
         use_threads=config["sentdug"]["use_threads"],
     shell:
@@ -114,7 +115,7 @@ rule sent_snv_ug:
             -i {input.cram} \
             --interval {params.schrm_mod} \
             --read_filter UltimaReadFilter \
-            --algo DNAscope --model "{params.model}" \
+            --algo DNAscope -d "{params.pop_vcf}" --model "{params.model}" \
             --pcr_indel_model none \
             --emit_mode variant \
             {output.gvcf} >> {log} 2>&1;

@@ -126,6 +126,7 @@ rule sent_snv_pacbio:
             -r {params.huref} \
             -i {input.cram} \
             -m "{params.model}" \
+            -d "{params.pop_vcf}" \
             -t {threads} \
             --tech HiFi \
             {params.diploid_bed} {params.haploid_bed} \

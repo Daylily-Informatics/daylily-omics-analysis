@@ -39,6 +39,7 @@ rule sent_DNAscope:
         schrm_mod=get_dchrm_day,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentD"]["dna_scope_snv_model"],
+        pop_vcf=config["sentD"]["pop_vcf"],
         cluster_sample=ret_sample,
         max_mem="100G"
     shell:
@@ -84,7 +85,7 @@ rule sent_DNAscope:
         fi
         echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
-        /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver --thread_count {threads} --interval {params.schrm_mod} --reference {params.huref} --input {input.c} --algo DNAscope --pcr_indel_model none --emit_mode variant --model {params.model}  {output.tvcf} >> {log} 2>&1;
+        /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver --thread_count {threads} --interval {params.schrm_mod} --reference {params.huref} --input {input.c} --algo DNAscope -d {params.pop_vcf} --pcr_indel_model none --emit_mode variant --model {params.model}  {output.tvcf} >> {log} 2>&1;
 
         /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} -r {params.huref} --algo DNAModelApply --model {params.model} -v {output.tvcf} {output.vcf} >> {log} 2>&1;
 
