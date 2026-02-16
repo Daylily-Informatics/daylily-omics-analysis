@@ -1,3 +1,4 @@
 #!/bin/bash
 
-watch squeue  -o "%.18i %.9P %.20j %.8u %.2t %.10M %.6D %R %Z"
+
+watch -n 2 squeue -o \"%.8i %.10P %.24j %.8u %.2t %.10M %.4C %.10m %.6Q %.8p %R %Z\"
