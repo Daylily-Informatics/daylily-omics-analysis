@@ -13,23 +13,10 @@ import os
 def fetch_alnr(wildcards):
     return wildcards.alnr
 
-
-def _alignstats_input(wildcards):
-    """Return alignment file + index, choosing BAM for BAM_ALIGNERS else CRAM."""
-    base = MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}"
-    if wildcards.alnr in BAM_ALIGNERS:
-        return {"aln": base + ".bam", "idx": base + ".bam.bai"}
-    return {"aln": base + ".cram", "idx": base + ".cram.crai"}
-
-
-def _alignstats_format(wildcards):
-    """Return 'bam' or 'cram' for the alignstats -j flag."""
-    return "bam" if wildcards.alnr in BAM_ALIGNERS else "cram"
-
-
 rule alignstats:
     input:
-        unpack(_alignstats_input),
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
         json=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
@@ -47,7 +34,6 @@ rule alignstats:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         n=config["alignstats"]["num_reads_in_mem"],
         cluster_sample=ret_sample,
-        aln_format=_alignstats_format,
         ld_preload=" "
         if "ld_preload" not in config["malloc_alt"]
         else config["malloc_alt"]["ld_preload"],
@@ -56,7 +42,7 @@ rule alignstats:
     conda:
         config["alignstats"]["env_yaml"]
     shell:
-        "alignstats  -C -U  -i {input.aln} -T {params.huref} -o {output.json}  -j {params.aln_format} -v -P {threads} -p {threads} > {log};"
+        "alignstats  -C -U  -i {input.cram} -T {params.huref} -o {output.json}  -j cram -v -P {threads} -p {threads} > {log};"
 
 
 localrules:
