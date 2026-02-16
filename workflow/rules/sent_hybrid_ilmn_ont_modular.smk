@@ -136,8 +136,8 @@ rule sentdhiom_pass1:
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz"),
-        tbi=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
@@ -187,11 +187,9 @@ rule sentdhiom_pass1:
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
 
-        # Ensure VCF index exists (sentieon should create it, but be explicit)
-        if [ ! -f "{output.tbi}" ]; then
-            echo "Creating VCF index with tabix" >> {log}
-            tabix -p vcf {output.vcf} >> {log} 2>&1
-        fi
+        # Create VCF index with tabix (required for hybrid_select)
+        echo "Creating VCF index with tabix" >> {log}
+        tabix -f -p vcf {output.vcf} >> {log} 2>&1
 
         echo "Pass 1 completed at $(date)" >> {log}
         """
