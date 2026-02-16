@@ -364,35 +364,63 @@ rule sentdhuom_stage1:
         # Get sample ID for read group
         cram_sid=$(samtools view -H {input.ont_cram} | grep '^@RG' | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':' | sort -u | head -1)
 
-        # Haplotype assembly driver command
-        HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} --interval {input.diff_bed} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1.model \
-            --hap_bam {output.hap_bam} \
-            --hap_bed {output.hap_bed} \
-            --hap_vcf {output.hap_vcf} \
-            -"
+        # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
+        if [ ! -s {input.diff_bed} ]; then
+            echo "WARNING: merged_diff.bed is empty - no haplotype regions to process" >> {log}
+            echo "Creating empty hap_bam, hap_bed, hap_vcf files" >> {log}
+            touch {output.hap_bam} {output.hap_bed} {output.hap_vcf}
 
-        # Insertion detection driver command
-        INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1_ins.model \
-            --fa_file {output.ins_fa} \
-            --bed_file {output.ins_bed} \
-            -"
+            # Only run insertion detection (no interval restriction)
+            INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                -i {input.ont_cram} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1_ins.model \
+                --fa_file {output.ins_fa} \
+                --bed_file {output.ins_bed} \
+                -"
 
-        # Cat both FASTQ streams → bwa mem → util sort
-        cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
-        sentieon bwa mem \
-            -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
-            -t {params.use_threads} \
-            -x {params.model}/HybridStage1_bwa.model \
-            {params.huref} - 2>> {log} | \
-        sentieon util sort \
-            -i - -t {params.use_threads} \
-            -o {output.bam} --sam2bam >> {log} 2>&1
+            $INS_CMD 2>> {log} | \
+            sentieon bwa mem \
+                -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
+                -t {params.use_threads} \
+                -x {params.model}/HybridStage1_bwa.model \
+                {params.huref} - 2>> {log} | \
+            sentieon util sort \
+                -i - -t {params.use_threads} \
+                -o {output.bam} --sam2bam >> {log} 2>&1
+        else
+            echo "Processing $(wc -l < {input.diff_bed}) regions from merged_diff.bed" >> {log}
+
+            # Haplotype assembly driver command
+            HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                -i {input.ont_cram} --interval {input.diff_bed} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1.model \
+                --hap_bam {output.hap_bam} \
+                --hap_bed {output.hap_bed} \
+                --hap_vcf {output.hap_vcf} \
+                -"
+
+            # Insertion detection driver command
+            INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                -i {input.ont_cram} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1_ins.model \
+                --fa_file {output.ins_fa} \
+                --bed_file {output.ins_bed} \
+                -"
+
+            # Cat both FASTQ streams → bwa mem → util sort
+            cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
+            sentieon bwa mem \
+                -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
+                -t {params.use_threads} \
+                -x {params.model}/HybridStage1_bwa.model \
+                {params.huref} - 2>> {log} | \
+            sentieon util sort \
+                -i - -t {params.use_threads} \
+                -o {output.bam} --sam2bam >> {log} 2>&1
+        fi
 
         echo "Stage 1 completed at $(date)" >> {log}
         """
