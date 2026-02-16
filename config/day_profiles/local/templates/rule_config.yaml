@@ -208,6 +208,21 @@ deepvariant:
     deepug_conda: "../envs/vanilla_v0.1.yaml"
     deepug_me_container: "docker://google/deepvariant:1.9.0"  #"docker://ultimagenomics/call_variants"
 
+deepvariant_1_9_roche:
+    threads: 7
+    deep_threads: 7
+    deep_cmd: " "
+    ld_preload: " "
+    partition: "i8"
+    partition_other: "i96,i192,i192"
+    mem_mb: 60000
+    hg38_deep_chrms: "21"
+    hg38_broad_deep_chrms: "21"
+    b37_deep_chrms: "19,21"
+    numa: " OMP_NUM_THREADS=8 OMP_PROC_BIND=close OMP_PLACES=threads OMP_PROC_BIND=TRUE OMP_DYNAMIC=TRUE OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
+    conda: "../envs/vanilla_v0.1.yaml"
+    container: "docker://google/deepvariant:pangenome_aware_deepvariant-sbx"
+
 deepsomatic:
     threads: 7
     deep_threads: 7
@@ -931,7 +946,7 @@ roche_gatk_haplotypecaller:
     mem_mb: 32000
     partition: "i8"
     container: "docker://broadinstitute/gatk-nightly:2025-08-19-4.6.2.0-17-g2a1f41bf3-NIGHTLY-SNAPSHOT"
-    env_yaml: "../envs/vanilla_v0.1.yaml"
+    env_yaml: "../envs/roche_v0.1.yaml"
     native_pair_hmm_threads: 4
 
 roche_filter_variants:
@@ -939,10 +954,10 @@ roche_filter_variants:
     mem_mb: 16000
     partition: "i8"
     container: "docker://roche/sbxd-small-variant-caller:latest"
-    env_yaml: "../envs/vanilla_v0.1.yaml"
+    env_yaml: "../envs/roche_v0.1.yaml"
 
 roche_rtg_vcfeval:
     threads: 4
     mem_mb: 16000
     partition: "i8"
-    env_yaml: "../envs/rtgtools_v0.1.yaml"
+    env_yaml: "../envs/roche_v0.1.yaml"

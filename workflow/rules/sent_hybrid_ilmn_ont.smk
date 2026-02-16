@@ -45,14 +45,14 @@ rule sentdhio_snv:
         model=config["sentdhio"]["dna_scope_snv_model"],
         pop_vcf=config["sentdhio"]["pop_vcf"],
         cluster_sample=ret_sample,
-        haploid_bed=get_haploid_bed_arg,
+        haploid_bed="",  # dnascope-hybrid does not support --haploid_bed
         diploid_bed=get_diploid_bed_arg,
     shell:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR=/dev/shm/sentdhio_tmp_$timestamp;
+        export TMPDIR=/fsx/tmp/sentdhio_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
@@ -132,7 +132,7 @@ rule sentdhio_snv:
             --skip_cnv \
             --skip_multiqc \
             -m {params.model} \
-            {params.diploid_bed} {params.haploid_bed} {output.vcf} >> {log} 2>&1;
+            {params.diploid_bed} {output.vcf} >> {log} 2>&1;
 
 
         end_time=$(date +%s);

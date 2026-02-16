@@ -1,0 +1,21 @@
+pipeline_name	giab_id	day_id	aligned_cov	R1fq	R2fq	inBAM	inCRAM
+ilmn	HG001	Ifull-HG001-X1-7-D7	117.06	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX-TSPF-NA12878-UDI/NA12878_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX-TSPF-NA12878-UDI/NA12878_R2.fastq.gz
+ilmn	HG002	Ifull-HG002-X1-1-D1	121.46	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24385_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24385_R2.fastq.gz
+ilmn	HG003	Ifull-HG003-X1-3-D3	129.69	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24149_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24149_R2.fastq.gz
+ilmn	HG004	Ifull-HG004-X1-2-D2	110.01	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24143_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24143_R2.fastq.gz
+ilmn	HG005	Ifull-HG005-X1-4-D4	123.52	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24631_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24631_R2.fastq.gz
+ilmn	HG006	Ifull-HG006-X1-5-D5	120.99	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24694_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24694_R2.fastq.gz
+ilmn	HG007	Ifull-HG007-X1-6-D6	121.55	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24695_R1.fastq.gz	/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24695_R2.fastq.gz
+ont	HG001	R0-HG001-D0-0-D0	35.47			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG001/PAW81754.calls.sorted.bam
+ont	HG002	R0-HG002-D0-0-D0	46.33			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG002/PAW70337.calls.sorted.bam
+ont	HG002	R0-HG002-D0-1-D0	42.61			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG002/PAW71238.calls.sorted.bam
+ont	HG003	R0-HG003-D0-0-D0	37.32			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87794.calls.sorted.bam
+ont	HG003	R0-HG003-D0-1-D0	31.17			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam
+pacbio	HG002	R0-HG002-rep1-0-rep1	36.77			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/pacbio/revio_2024Q4/GIAB_trio/HG002_rep1.bc2018.bam
+pacbio	HG002	R0-HG002-rep2-0-rep2	36.84			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/pacbio/revio_2024Q4/GIAB_trio/HG002_rep2.bc2024.bam
+pacbio	HG003	R0-HG003-D0-0-D0	35.14			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/pacbio/revio_2024Q4/GIAB_trio/HG003.bc2020.bam
+pacbio	HG004	R0-HG004-D0-0-D0	35.35			/fsx/data/genomic_data/organism_reads/H_sapiens/giab/pacbio/revio_2024Q4/GIAB_trio/HG004.bc2021.bam
+ultima	HG002	R0-HG002-D0-0-D0	93.46				/fsx/data/ug/Jan-2026-Sample-run/428437-L9349_L9350-Z0114-CAACATACATCAGAT.cram
+ultima	HG003	R0-HG003-D0-0-D0	88.89				/fsx/data/ug/Jan-2026-Sample-run/428437-L9353_L9354-Z0016-CATCCTGTGCGCATGAT.cram
+ultima	HG004	R0-HG004-D0-0-D0	86.69				/fsx/data/ug/Jan-2026-Sample-run/428437-L9357_L9358-Z0116-CAGTTATGTGCTGAT.cram
+

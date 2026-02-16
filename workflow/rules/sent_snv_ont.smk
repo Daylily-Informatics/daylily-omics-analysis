@@ -75,6 +75,8 @@ rule sent_snv_ont:
         model=config["sentdont"]["dna_scope_snv_model"],
         pop_vcf=config["sentdont"]["pop_vcf"],
         cluster_sample=ret_sample,
+        haploid_bed=get_haploid_bed_arg,
+        diploid_bed=get_diploid_bed_arg,
     shell:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
@@ -153,6 +155,7 @@ rule sent_snv_ont:
             -d "{params.pop_vcf}" \
             -t {threads} \
             --tech ONT \
+            {params.diploid_bed} {params.haploid_bed} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
 
         cli_rc=$?;

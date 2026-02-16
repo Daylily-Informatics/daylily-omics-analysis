@@ -44,8 +44,8 @@ rule sentdhuo_snv:
         model=config["sentdhuo"]["dna_scope_snv_model"],
         pop_vcf=config["sentdhuo"]["pop_vcf"],
         cluster_sample=ret_sample,
-        haploid_bed="", #get_haploid_bed_arg,
-        diploid_bed="", #get_diploid_bed_arg,
+        haploid_bed="",  # dnascope-hybrid does not support --haploid_bed
+        diploid_bed=get_diploid_bed_arg,
         use_threads=config["sentdhuo"]["use_threads"],
 	alt_samp_name=get_alt_sample_name
     shell:
@@ -143,8 +143,8 @@ rule sentdhuo_snv:
             --skip_mosdepth \
             --skip_cnv \
             --skip_multiqc \
-    	    --rgsm {params.alt_samp_name} \
-            {params.diploid_bed} {params.haploid_bed} {output.vcf} >> {log} 2>&1;
+	    --rgsm {params.alt_samp_name} \
+            {params.diploid_bed} {output.vcf} >> {log} 2>&1;
 
 
         end_time=$(date +%s);
