@@ -1299,10 +1299,19 @@ def _resolve_sample_sex(wildcards):
 
 
 def get_diploid_bed_arg(wildcards):
+    """Return diploid BED arg for sentieon-cli (-b shorthand)."""
     sex = _resolve_sample_sex(wildcards)
     if sex == "male":
         return f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
     return f' -b {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
+
+
+def get_diploid_bed_interval_arg(wildcards):
+    """Return diploid BED arg for sentieon driver (--interval flag)."""
+    sex = _resolve_sample_sex(wildcards)
+    if sex == "male":
+        return f' --interval {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
+    return f' --interval {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
 
 
 def get_haploid_bed_arg(wildcards):

@@ -76,7 +76,7 @@ rule sentdhuom_pass1:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_arg,
+        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
         alt_samp_name=get_alt_sample_name,
@@ -501,7 +501,7 @@ rule sentdhuom_pass2:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_arg,
+        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
@@ -720,7 +720,7 @@ rule sentdhuom_model_apply:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_arg,
+        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
