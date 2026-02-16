@@ -121,7 +121,14 @@ rule sentdhuom_pass1:
 # Rule 2: Hybrid Select - Region selection from pass-1 VCF
 # ---------------------------------------------------------------------------
 rule sentdhuom_hybrid_select:
-    """Select regions for hybrid re-analysis based on pass-1 variants"""
+    """Select regions for hybrid re-analysis based on pass-1 variants.
+
+    This replicates the sentieon-cli hybrid_select pipeline:
+    1. hybrid_select.py filters VCF based on long/short read confidence
+    2. bcftools view filters for PASS variants
+    3. bcftools query converts to BED format
+    4. bedtools slop adds 1000bp padding
+    """
     input:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/initial.vcf.gz",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
@@ -144,23 +151,29 @@ rule sentdhuom_hybrid_select:
     params:
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
+        slop_size=1000,
     shell:
         """
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        echo "Starting hybrid_select at $(date)" >> {log}
+        echo "Starting hybrid_select pipeline at $(date)" >> {log}
 
+        # Find hybrid_select.py script
         HYBRID_SELECT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
 
+        # Pipeline: hybrid_select.py -> bcftools view -> bcftools query -> bedtools slop
+        # This replicates sentieon-cli's cmd_pyexec_hybrid_select() function
         sentieon pyexec "$HYBRID_SELECT" \
             -v {input.vcf} \
             -t {params.use_threads} \
-            --ref_fai {input.ref_fai} \
-            --slop 1000 \
-            -o {output.bed} >> {log} 2>&1
+            - 2>> {log} \
+        | bcftools view -f 'PASS,.' - 2>> {log} \
+        | bcftools query -f '%CHROM\t%POS0\t%END\n' - 2>> {log} \
+        | bedtools slop -b {params.slop_size} -g {input.ref_fai} -i - \
+        > {output.bed} 2>> {log}
 
-        echo "hybrid_select completed at $(date)" >> {log}
+        echo "hybrid_select pipeline completed at $(date)" >> {log}
         """
 
 
