@@ -50,6 +50,8 @@ rule sent_snv_pacbio:
         model=config["sentdpb"]["dna_scope_snv_model"],
         pop_vcf=config["sentdpb"]["pop_vcf"],
         cluster_sample=ret_sample,
+        haploid_bed=get_haploid_bed_arg,
+        diploid_bed=get_diploid_bed_arg,
     shell:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
@@ -126,6 +128,7 @@ rule sent_snv_pacbio:
             -m "{params.model}" \
             -t {threads} \
             --tech HiFi \
+            {params.diploid_bed} {params.haploid_bed} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
         cli_rc=$?;
         set -e;

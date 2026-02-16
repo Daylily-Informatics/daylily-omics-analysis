@@ -1254,47 +1254,61 @@ def get_instrument(wildcards):
     return samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0]
 
 
-def get_diploid_bed_arg(wildcards):
+def _resolve_sample_sex(wildcards):
+    """Resolve biological sex for a sample.
 
-    diploid_bed = ""
+    Priority:
+      1. N_X / N_Y columns  (2/0 → female, 1/1 → male)
+      2. BIOLOGICAL_SEX column
+      3. Default → "male"
+    """
     try:
-        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
+        row = samples[samples["analysis_unit_uid"] == wildcards.sample].iloc[0]
 
-        if "male" == sample_bsex:
-            diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
-        elif "female" == sample_bsex:
-            diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
-        else:
-            diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["core_bed"]["name"]} '
+        # --- 1. Try N_X and N_Y columns ---
+        n_x = str(row.get("N_X", "na")).strip().lower()
+        n_y = str(row.get("N_Y", "na")).strip().lower()
+        if n_x not in ("na", "", "none") and n_y not in ("na", "", "none"):
+            try:
+                n_x_int, n_y_int = int(n_x), int(n_y)
+                if n_x_int == 2 and n_y_int == 0:
+                    return "female"
+                if n_x_int == 1 and n_y_int == 1:
+                    return "male"
+            except (ValueError, TypeError):
+                pass
+
+        # --- 2. Fall back to BIOLOGICAL_SEX ---
+        bsex = str(row.get("BIOLOGICAL_SEX", "na")).strip().lower()
+        if bsex == "male":
+            return "male"
+        if bsex == "female":
+            return "female"
+
+        # --- 3. Default to male ---
+        return "male"
     except Exception as e:
         print(
-            f"ERROR:::  Unable to get biological_sex from samples dataframe for sample {wildcards.sample} for diploid bed-- {e}",
+            f"WARNING::: Unable to resolve sex for sample {wildcards.sample}, defaulting to male -- {e}",
             file=sys.stderr,
         )
-        diploid_bed = f' -b {config["supporting_files"]["files"]["huref"]["bed"]["name"]} '
+        return "male"
 
-    return f" {diploid_bed} "
+
+def get_diploid_bed_arg(wildcards):
+    sex = _resolve_sample_sex(wildcards)
+    if sex == "male":
+        return f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
+    return f' -b {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
 
 
 def get_haploid_bed_arg(wildcards):
-    haploid_bed = " "
-
-    try:
-        sample_bsex = samples[samples["analysis_unit_uid"] == wildcards.sample]["BIOLOGICAL_SEX"][0].lower()
-
-        if "male" == sample_bsex:
-            haploid_bed = f' --haploid_bed {config["supporting_files"]["files"]["huref"]["male_haploid"]["name"]} '
-        elif "female" == sample_bsex:
-            haploid_bed = ' '
-    
-    except Exception as e:
-        print(
-            f"ERROR:::  Unable to get biological_sex from samples dataframe for sample {wildcards.sample} for haploid bed-- {e}",
-            file=sys.stderr,
-        )
-        haploid_bed = ' '
-
-    return f" {haploid_bed} "
+    sex = _resolve_sample_sex(wildcards)
+    if sex == "male":
+        haploid_path = config["supporting_files"]["files"]["huref"]["male_haploid"]["name"]
+        if haploid_path:
+            return f' --haploid_bed {haploid_path} '
+    return ' '
 
 
 def print_wildcards_etc(wildcards):
