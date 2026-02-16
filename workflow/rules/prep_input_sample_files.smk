@@ -498,7 +498,7 @@ rule pre_prep_ultima_cram:
     params:
         c=config["prep_input_sample_files"]["source_read_method"],
         downsample=get_ultima_downsample,
-        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta",  # Hardcoded for Ultima CRAM compatibility
         cluster_sample=ret_sample,
         use_threads=config["prep_input_sample_files"]["use_threads"],
     threads: config["prep_input_sample_files"]["threads"],
