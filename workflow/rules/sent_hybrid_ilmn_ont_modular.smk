@@ -58,9 +58,9 @@ rule sentdhiom_sr_align:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.sr_align.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -72,11 +72,19 @@ rule sentdhiom_sr_align:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR=/fsx/tmp/sentdhiom_sr_$timestamp
-        export SENTIEON_TMPDIR=$TMPDIR
-        mkdir -p $TMPDIR $(dirname {output.bam})
-        trap "rm -rf \"$TMPDIR\" || true" EXIT
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhiom_sr_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR" $(dirname {output.bam});
+        if [ ! -d "$TMPDIR" ]; then
+            echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
+            exit 5;
+        fi
+        echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" >> {log} 2>&1;
+        df -h /dev/shm >> {log} 2>&1;
+        export APPTAINER_HOME="$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
 
         # License check
         if [ -z "$SENTIEON_LICENSE" ] || [ ! -f "$SENTIEON_LICENSE" ]; then
@@ -140,9 +148,9 @@ rule sentdhiom_pass1:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.pass1.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -155,11 +163,19 @@ rule sentdhiom_pass1:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR=/fsx/tmp/sentdhiom_p1_$timestamp
-        export SENTIEON_TMPDIR=$TMPDIR
-        mkdir -p $TMPDIR
-        trap "rm -rf \"$TMPDIR\" || true" EXIT
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhiom_p1_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        if [ ! -d "$TMPDIR" ]; then
+            echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
+            exit 5;
+        fi
+        echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" >> {log} 2>&1;
+        df -h /dev/shm >> {log} 2>&1;
+        export APPTAINER_HOME="$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
 
         echo "Starting Pass 1 DNAscope at $(date)" >> {log}
 
@@ -208,9 +224,9 @@ rule sentdhiom_hybrid_select:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.hybrid_select.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         use_threads=config["sentdhio"]["use_threads"],
@@ -261,9 +277,9 @@ rule sentdhiom_mapq0_bed:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.mapq0_bed.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -305,10 +321,10 @@ rule sentdhiom_mapq0_slop:
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
-        partition="i192,i192mem,i128",
-        threads=2,
-        vcpu=2,
-        mem_mb=8000,
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
+        mem_mb=config['sentdhio']['mem_mb'],
     params:
         cluster_sample=ret_sample,
     shell:
@@ -340,10 +356,10 @@ rule sentdhiom_merge_beds:
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
-        partition="i192,i192mem,i128",
-        threads=2,
-        vcpu=2,
-        mem_mb=8000,
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
+        mem_mb=config['sentdhio']['mem_mb'],
     params:
         cluster_sample=ret_sample,
     shell:
@@ -382,9 +398,9 @@ rule sentdhiom_stage1:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage1.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -396,11 +412,19 @@ rule sentdhiom_stage1:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR=/fsx/tmp/sentdhiom_s1_$timestamp
-        export SENTIEON_TMPDIR=$TMPDIR
-        mkdir -p $TMPDIR
-        trap "rm -rf \"$TMPDIR\" || true" EXIT
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhiom_s1_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        if [ ! -d "$TMPDIR" ]; then
+            echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
+            exit 5;
+        fi
+        echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" >> {log} 2>&1;
+        df -h /dev/shm >> {log} 2>&1;
+        export APPTAINER_HOME="$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
 
         echo "Starting Stage 1 at $(date)" >> {log}
 
@@ -465,9 +489,9 @@ rule sentdhiom_stage2:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage2.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -517,9 +541,9 @@ rule sentdhiom_stage3:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage3.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -570,9 +594,9 @@ rule sentdhiom_pass2:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.pass2.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -619,10 +643,10 @@ rule sentdhiom_subset:
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
-        partition="i192,i192mem,i128",
-        threads=4,
-        vcpu=4,
-        mem_mb=16000,
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
+        mem_mb=config['sentdhio']['mem_mb'],
     params:
         cluster_sample=ret_sample,
     shell:
@@ -662,10 +686,10 @@ rule sentdhiom_concat_pass:
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
-        partition="i192,i192mem,i128",
-        threads=4,
-        vcpu=4,
-        mem_mb=16000,
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
+        mem_mb=config['sentdhio']['mem_mb'],
     params:
         cluster_sample=ret_sample,
     shell:
@@ -695,9 +719,9 @@ rule sentdhiom_anno:
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         use_threads=config["sentdhio"]["use_threads"],
@@ -739,9 +763,9 @@ rule sentdhiom_transfer:
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         pop_vcf=config["sentdhio"]["pop_vcf"],
@@ -793,9 +817,9 @@ rule sentdhiom_model_apply:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.model_apply.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -841,9 +865,9 @@ rule sentdhiom_final_norm:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.final_norm.bench.tsv"
     resources:
-        partition=config['sentdhio']['partition'],
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
+        partition="i192mem,i192bigmem",
+        threads=192,
+        vcpu=192,
         mem_mb=config['sentdhio']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -924,11 +948,12 @@ rule sentdhiom_concat_index_chunks:
         vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz"),
         vcfgztemp=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.temp.vcf.gz"),
         vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz.tbi"),
-    threads: 64
+    threads: 192
     resources:
-        vcpu=64,
-        threads=64,
-        partition="i192,i192mem,i128"
+        vcpu=192,
+        threads=192,
+        partition="i192mem,i192bigmem",
+        mem_mb=config['sentdhio']['mem_mb'],
     priority: 47
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
