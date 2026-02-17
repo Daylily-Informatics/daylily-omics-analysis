@@ -719,7 +719,7 @@ rule sentdhuom_anno:
             -v {input.vcf} \
             -b {input.hap_bed} \
             -t {params.use_threads} \
-            -o {output.vcf} >> {log} 2>&1
+            {output.vcf} >> {log} 2>&1
 
         echo "Annotation completed at $(date)" >> {log}
         """
