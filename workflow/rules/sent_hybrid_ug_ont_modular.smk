@@ -602,8 +602,9 @@ rule sentdhuom_pass2:
         # NOTE: Input ONT BAM must have clean @PG headers (no broken PP chain).
         # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
 
-        # Reheader ONT CRAM to use consistent sample name with stage3_bam
-        # This ensures Pass2 DNAscope produces a single-sample VCF
+        # Reheader ONT CRAM and stage3 BAM to use consistent sample name
+        # Both must have identical RG attributes for shared read group IDs,
+        # otherwise sentieon driver rejects the inputs as "Invalid input BAM files"
         TMPDIR=$(dirname {output.vcf})
         echo "Reheadering ONT CRAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
         samtools view -H {input.ont_cram} | \
@@ -611,8 +612,14 @@ rule sentdhuom_pass2:
         samtools reheader "$TMPDIR/ont_pass2_header.txt" {input.ont_cram} > "$TMPDIR/ont_pass2_reheadered.bam"
         samtools index -@ {params.use_threads} "$TMPDIR/ont_pass2_reheadered.bam" >> {log} 2>&1
 
+        echo "Reheadering stage3 BAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
+        samtools view -H {input.stage3_bam} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/stage3_pass2_header.txt"
+        samtools reheader "$TMPDIR/stage3_pass2_header.txt" {input.stage3_bam} > "$TMPDIR/stage3_pass2_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/stage3_pass2_reheadered.bam" >> {log} 2>&1
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i "$TMPDIR/ont_pass2_reheadered.bam" -i {input.stage3_bam} \
+            -i "$TMPDIR/ont_pass2_reheadered.bam" -i "$TMPDIR/stage3_pass2_reheadered.bam" \
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
@@ -622,6 +629,7 @@ rule sentdhuom_pass2:
 
         # Cleanup temp files
         rm -f "$TMPDIR/ont_pass2_header.txt" "$TMPDIR/ont_pass2_reheadered.bam" "$TMPDIR/ont_pass2_reheadered.bam.bai"
+        rm -f "$TMPDIR/stage3_pass2_header.txt" "$TMPDIR/stage3_pass2_reheadered.bam" "$TMPDIR/stage3_pass2_reheadered.bam.bai"
 
         echo "Pass 2 completed at $(date)" >> {log}
         """
