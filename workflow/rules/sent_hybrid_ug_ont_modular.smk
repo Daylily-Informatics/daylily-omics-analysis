@@ -145,7 +145,7 @@ rule sentdhuom_hybrid_select:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/initial.vcf.gz",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/selected.bed"),
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/selected.bed",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -198,7 +198,7 @@ rule sentdhuom_mapq0_bed:
         ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
     output:
-        bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed"),
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -244,7 +244,7 @@ rule sentdhuom_mapq0_slop:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed"),
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -278,7 +278,7 @@ rule sentdhuom_merge_beds:
         mapq0=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/merged_diff.bed"),
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/merged_diff.bed",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -314,12 +314,12 @@ rule sentdhuom_stage1:
         ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
         diff_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/merged_diff.bed",
     output:
-        bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage1.bam"),
-        hap_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bam"),
-        hap_bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bed"),
-        hap_vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.vcf"),
-        ins_fa=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_ins.fa"),
-        ins_bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_ins.bed"),
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
+        hap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bam",
+        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bed",
+        hap_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.vcf",
+        ins_fa=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_ins.fa",
+        ins_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_ins.bed",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -442,9 +442,9 @@ rule sentdhuom_stage2:
         hap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bam",
         hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bed",
     output:
-        bed=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2.bed"),
-        unmap_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam"),
-        alt_bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam"),
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
+        unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
+        alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -497,7 +497,7 @@ rule sentdhuom_stage3:
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
-        bam=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage3.bam"),
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -552,8 +552,8 @@ rule sentdhuom_pass2:
         stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz"),
-        tbi=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -606,7 +606,8 @@ rule sentdhuom_subset:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/initial.vcf.gz",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -635,6 +636,11 @@ rule sentdhuom_subset:
             sentieon util vcfconvert {input.vcf} {output.vcf} >> {log} 2>&1
         fi
 
+        # Ensure index exists (sentieon util vcfconvert should create it, but verify)
+        if [ ! -f {output.tbi} ]; then
+            tabix -p vcf {output.vcf} >> {log} 2>&1
+        fi
+
         echo "Subset completed at $(date)" >> {log}
         """
 
@@ -646,9 +652,11 @@ rule sentdhuom_concat_pass:
     """Concatenate subset + pass2 VCFs"""
     input:
         subset=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
+        subset_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
         pass2=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
+        pass2_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -682,7 +690,7 @@ rule sentdhuom_anno:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
         hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/stage1_hap.bed",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -725,7 +733,7 @@ rule sentdhuom_transfer:
     input:
         anno_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -775,7 +783,7 @@ rule sentdhuom_model_apply:
     input:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
     output:
-        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_apply.vcf.gz"),
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     log:
@@ -915,9 +923,9 @@ rule sentdhuom_concat_index_chunks:
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     output:
-        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz"),
-        vcfgztemp=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.temp.vcf.gz"),
-        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz.tbi"),
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz",
+        vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.temp.vcf.gz",
+        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz.tbi",
     threads: 192
     resources:
         vcpu=192,
