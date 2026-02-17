@@ -113,8 +113,25 @@ rule sentdhuom_pass1:
         _sq_count_ont=$(samtools view -H {input.ont_cram} 2>/dev/null | grep -c '^@SQ' || true)
         echo "ONT CRAM @SQ header count: $_sq_count_ont" >> {log} 2>&1
 
+        # Reheader input CRAMs to use consistent sample name (cluster_sample)
+        # This ensures DNAscope produces a single-sample VCF
+        echo "Reheadering CRAMs to use sample name: {params.cluster_sample}" >> {log} 2>&1
+
+        # Create temporary BAMs with corrected sample names
+        samtools view -H {input.ug_cram} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ug_header.txt"
+        samtools reheader "$TMPDIR/ug_header.txt" {input.ug_cram} > "$TMPDIR/ug_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/ug_reheadered.bam" >> {log} 2>&1
+
+        samtools view -H {input.ont_cram} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ont_header.txt"
+        samtools reheader "$TMPDIR/ont_header.txt" {input.ont_cram} > "$TMPDIR/ont_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/ont_reheadered.bam" >> {log} 2>&1
+
+        echo "Using reheadered BAMs for DNAscope" >> {log} 2>&1
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.ug_cram} \
+            -i "$TMPDIR/ont_reheadered.bam" -i "$TMPDIR/ug_reheadered.bam" \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
@@ -759,16 +776,21 @@ rule sentdhuom_transfer:
 
         TMPDIR=$(dirname {output.vcf})
 
-        # Reheader anno_vcf to use cluster_sample name
-        echo "{params.cluster_sample}" > "$TMPDIR/sample_name.txt"
-        bcftools reheader -s "$TMPDIR/sample_name.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
+        # Reheader anno_vcf to use cluster_sample name (use old\tnew format)
+        anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
+        echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
+        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
+        bcftools reheader -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
         bcftools index -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
 
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
-            # Reheader pop_vcf to use same cluster_sample name (so merge treats them as same sample)
-            bcftools reheader -s "$TMPDIR/sample_name.txt" -o "$TMPDIR/pop_reheadered.vcf.gz" {params.pop_vcf} >> {log} 2>&1
+            # Reheader pop_vcf to use same cluster_sample name (use old\tnew format)
+            pop_old_sample=$(bcftools query -l {params.pop_vcf} | head -n1)
+            echo "Pop VCF original sample: $pop_old_sample" >> {log}
+            echo -e "${{pop_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/pop_rename.txt"
+            bcftools reheader -s "$TMPDIR/pop_rename.txt" -o "$TMPDIR/pop_reheadered.vcf.gz" {params.pop_vcf} >> {log} 2>&1
             bcftools index -t "$TMPDIR/pop_reheadered.vcf.gz" >> {log} 2>&1
 
             # bcftools merge + trimalt, then compress with bgzip
@@ -782,15 +804,15 @@ rule sentdhuom_transfer:
 
             # Cleanup temp files
             rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/pop_reheadered.vcf.gz" "$TMPDIR/pop_reheadered.vcf.gz.tbi"
+                  "$TMPDIR/pop_reheadered.vcf.gz" "$TMPDIR/pop_reheadered.vcf.gz.tbi" \
+                  "$TMPDIR/anno_rename.txt" "$TMPDIR/pop_rename.txt"
         else
             echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
             mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
             bcftools index -t {output.vcf} >> {log} 2>&1
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi"
+            rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
         fi
 
-        rm -f "$TMPDIR/sample_name.txt"
         echo "Transfer completed at $(date)" >> {log}
         """
 
