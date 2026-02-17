@@ -923,9 +923,9 @@ rule sentdhuom_concat_index_chunks:
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHUOM)
     output:
-        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz",
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz"),
         vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.temp.vcf.gz",
-        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz.tbi",
+        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz.tbi"),
     threads: 192
     resources:
         vcpu=192,
