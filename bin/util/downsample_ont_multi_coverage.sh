@@ -11,8 +11,8 @@ OUTPUT_DIR="/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003"
 SEED=33
 INPUT_COVERAGE=60.0  # Assumed input coverage
 
-# Coverage levels to generate
-COVERAGES=(1 3 7 10 15 20 30 40 50)
+# Coverage levels to generate (skip 7x per user request)
+COVERAGES=(1 3 10 15 20 30 40 50)
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
@@ -33,10 +33,11 @@ for COV in "${COVERAGES[@]}"; do
     cat > "$JOB_SCRIPT" << EOF
 #!/bin/bash
 #SBATCH --job-name=ont_ds_${COV}x
-#SBATCH --partition=i192
+#SBATCH --partition=i192mem,i192bigmem
+#SBATCH --comment=RnD
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=48
-#SBATCH --mem=50G
+#SBATCH --cpus-per-task=96
+#SBATCH --mem=100G
 #SBATCH --time=4:00:00
 #SBATCH --output=$JOB_DIR/ont_ds_${COV}x.%j.out
 #SBATCH --error=$JOB_DIR/ont_ds_${COV}x.%j.err
@@ -55,7 +56,7 @@ FIXED_HEADER="$OUTPUT_DIR/tmp_${COV}x.fixed_header.sam"
 
 # Step 1: Downsample
 echo "[1/5] Downsampling to ${COV}x..."
-samtools view -@ 32 -b -s ${SEED}.${FRACTION} "$INPUT_BAM" > "\$TMP_BAM"
+samtools view -@ 64 -b -s ${SEED}.${FRACTION} "$INPUT_BAM" > "\$TMP_BAM"
 echo "Downsampled BAM size: \$(ls -lh \$TMP_BAM | awk '{print \$5}')"
 
 # Step 2: Extract and fix header (remove all @PG lines)
