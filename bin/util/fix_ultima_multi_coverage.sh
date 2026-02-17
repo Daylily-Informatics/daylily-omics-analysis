@@ -10,7 +10,8 @@ OUTPUT_BASE="/fsx/scratch/downsamples/ultima_reencoded/HG003/R0-HG003-D0-0-D0"
 REFERENCE="/fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
 
 # Coverage levels to process (skip 5x and 7x)
-COVERAGES=(1 3 10 15 20 30 40 50)
+# Use Np0x naming convention (e.g., 1p0x, 10p0x, 3p0x)
+COVERAGES=("1p0" "3p0" "10p0" "15p0" "20p0" "30p0" "40p0" "50p0")
 
 # Create job directory
 JOB_DIR="$OUTPUT_BASE/jobs"
@@ -33,9 +34,12 @@ for COV in "${COVERAGES[@]}"; do
     
     mkdir -p "$OUTPUT_DIR"
     
+    # Create a short name for slurm job (replace p0 with nothing for display)
+    SHORT_COV="${COV//p0/}"
+
     cat > "$JOB_SCRIPT" << EOF
 #!/bin/bash
-#SBATCH --job-name=ug_fix_${COV}x
+#SBATCH --job-name=ug_fix_${SHORT_COV}x
 #SBATCH --partition=i192mem,i192bigmem
 #SBATCH --comment=RnD
 #SBATCH --nodes=1
