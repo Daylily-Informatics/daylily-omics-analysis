@@ -1,6 +1,6 @@
 headnode=ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@44.231.76.175
 
-to clone a new working dir for the following tests, use `day-clone -w ssh -t main -d <analysis_description>`, which when done will clone the daylily-omics-analysis repo to `/fsx/analysis_results/ubuntu/<analysis_description>/daylily-omics-analysis/`. You can then cd to that dir, and copy the described `<samples.tsv>` and `<units.tsv>` files to `config/` and run the command shown in dry-run mode with `source ~/.bashrc && <command>`
+to clone a new working dir for the following tests, use `day-clone -w ssh -t <branch> -d <analysis_description>`, which when done will clone the daylily-omics-analysis repo to `/fsx/analysis_results/ubuntu/<analysis_description>/daylily-omics-analysis/`. You can then cd to that dir, and copy the described `<samples.tsv>` and `<units.tsv>` files to `config/` and run the command shown in dry-run mode with `source ~/.bashrc && <command>`
 
 
 # HG003 Test Data samples.tsv and units.tsv files
