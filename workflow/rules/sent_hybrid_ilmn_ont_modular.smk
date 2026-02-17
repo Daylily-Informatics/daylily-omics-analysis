@@ -828,11 +828,16 @@ rule sentdhiom_transfer:
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
+            # Note: bcftools concat -W=tbi requires indexed inputs, but we're reading from stdin
+            # So we write the VCF first, then create the index separately
             bcftools merge --no-version --regions-overlap pos -m all \
                 {input.anno_vcf} {params.pop_vcf} 2>> {log} | \
             sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
-            bcftools concat -W=tbi --output {output.vcf} \
+            bcftools concat --output {output.vcf} \
                 --no-version --threads {params.use_threads} -aD - >> {log} 2>&1
+
+            # Create tabix index separately
+            bcftools index -t {output.vcf} >> {log} 2>&1
         else
             echo "No pop_vcf configured, copying anno VCF directly" >> {log}
             cp {input.anno_vcf} {output.vcf}
