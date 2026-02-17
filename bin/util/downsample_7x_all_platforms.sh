@@ -17,7 +17,7 @@ echo "=========================================="
 # ============================================
 # 1. ONT 7x (from 60x source)
 # ============================================
-ONT_INPUT="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAW81754.calls.sorted.bam"
+ONT_INPUT="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
 ONT_OUTPUT_DIR="/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003"
 ONT_OUTPUT="$ONT_OUTPUT_DIR/HG003_7x.cleaned.cram"
 ONT_FRACTION=$(awk "BEGIN {printf \"%.6f\", 7 / 60}" | sed 's/^0//')
