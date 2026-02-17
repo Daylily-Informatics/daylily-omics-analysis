@@ -40,7 +40,7 @@ rule sentdhuo_snv:
 	    mem_mb=config['sentdhuo']['mem_mb'],
     params:
         schrm_mod=get_dchrm_day,
-        huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
         pop_vcf=config["sentdhuo"]["pop_vcf"],
         cluster_sample=ret_sample,
@@ -258,7 +258,7 @@ rule sentdhuo_concat_index_chunks:
         partition="i192,i192mem,i128"
     priority: 47
     params:
-        huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)

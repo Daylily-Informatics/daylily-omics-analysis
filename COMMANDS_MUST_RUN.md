@@ -48,6 +48,11 @@ Hybrid Mod Ultima+ONT (uses hg38_broad - Ultima CRAM aligned to hg38_broad)
 copy  .test_data/data/hybrid/ug_ont/hg003/3x/{samples,units}.tsv files to config/
 command= source dyoainit && source bin/day_activate slurm hg38_broad &&  bin/day_run produce_sentdhuom_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
 
+
+Hybrid Mod Ultima+PB (uses hg38_broad - Ultima CRAM aligned to hg38_broad)
+copy  .test_data/data/hybrid/ug_pb/hg003/3x/{samples,units}.tsv files to config/
+command= source dyoainit && source bin/day_activate slurm hg38_broad &&  bin/day_run produce_sentdhupm_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
+
 Hybrid Mod Ilmn+ONT
 copy  .test_data/data/hybrid/ilmn_ont/hg003/3x/{samples,units}.tsv files to config/
 command= source dyoainit && source bin/day_activate slurm hg38 &&  bin/day_run produce_sentdhiom_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
@@ -64,9 +69,6 @@ Hybrid CLI Ultima+PB (uses hg38_broad - Ultima CRAM aligned to hg38_broad)
 copy  .test_data/data/hybrid/ug_pb/hg003/3x/{samples,units}.tsv files to config/
 command= source dyoainit && source bin/day_activate slurm hg38_broad &&  bin/day_run produce_sentdhup_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
 
-Hybrid Mod Ultima+PB (uses hg38_broad - Ultima CRAM aligned to hg38_broad)
-copy  .test_data/data/hybrid/ug_pb/hg003/3x/{samples,units}.tsv files to config/
-command= source dyoainit && source bin/day_activate slurm hg38_broad &&  bin/day_run produce_sentdhupm_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
 
 Hybrid CLI Roche+ONT
 **the cli does not support this combination**
