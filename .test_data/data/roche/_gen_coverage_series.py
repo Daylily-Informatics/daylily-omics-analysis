@@ -21,7 +21,7 @@ SCOLS = [
     "N_X", "N_Y", "TRUTH_DATA_DIR",
 ]
 
-BASE_COV = 43.5
+BASE_COV = 58.15
 BAM_DIR = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa"
 TRUTH_BASE = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1"
 OUTDIR = os.path.dirname(os.path.abspath(__file__))
