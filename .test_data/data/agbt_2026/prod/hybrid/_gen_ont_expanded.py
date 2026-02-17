@@ -52,18 +52,17 @@ def write_tsv(path: str, header: list, rows: list):
     print(f"Wrote {path} ({len(rows)} rows)")
 
 
-def sample_id(sr_cov: int, ont_cov: int, prefix: str = "HG003") -> str:
-    """Generate sample ID encoding both coverages."""
-    return f"{prefix}-SR{sr_cov}x-ONT{ont_cov}x"
+def experiment_id(sr_cov: int, ont_cov: int) -> str:
+    """Generate experiment ID encoding both coverages."""
+    return f"SR{sr_cov}x-ONT{ont_cov}x"
 
 
 def ilmn_ont_units_row(sr_cov: int, ont_cov: int, lane_id: int) -> list:
     """Generate ILMN+ONT hybrid units row."""
-    sid = sample_id(sr_cov, ont_cov)
     return [
-        f"HIO-i{sr_cov}xo{ont_cov}x",  # RUNID
-        sid,  # SAMPLEID
-        f"ILMN{sr_cov}x-ONT{ont_cov}x",  # EXPERIMENTID
+        "HIOa",  # RUNID
+        "HG003",  # SAMPLEID
+        experiment_id(sr_cov, ont_cov),  # EXPERIMENTID
         lane_id,  # LANEID
         "D0",  # BARCODEID
         "PF",  # LIBPREP
@@ -84,22 +83,20 @@ def ilmn_ont_units_row(sr_cov: int, ont_cov: int, lane_id: int) -> list:
     ]
 
 
-def ilmn_ont_samples_row(sr_cov: int, ont_cov: int) -> list:
-    """Generate ILMN+ONT hybrid samples row."""
-    sid = sample_id(sr_cov, ont_cov)
+def ilmn_ont_samples_row() -> list:
+    """Generate ILMN+ONT hybrid samples row (single HG003)."""
     return [
-        sid, "blood", "research", "male", TRUTH_HG38,
+        "HG003", "blood", "research", "male", TRUTH_HG38,
         "true", "false", "gdna", "", "HG003", "1", "1", TRUTH_HG38,
     ]
 
 
 def ug_ont_units_row(sr_cov: int, ont_cov: int, lane_id: int) -> list:
     """Generate Ultima+ONT hybrid units row."""
-    sid = sample_id(sr_cov, ont_cov, "HG003-UG")
     return [
-        f"HUO-u{sr_cov}xo{ont_cov}x",  # RUNID
-        sid,  # SAMPLEID
-        f"UG{sr_cov}x-ONT{ont_cov}x",  # EXPERIMENTID
+        "HUOa",  # RUNID
+        "HG003",  # SAMPLEID
+        experiment_id(sr_cov, ont_cov),  # EXPERIMENTID
         lane_id,  # LANEID
         "D0",  # BARCODEID
         "PF",  # LIBPREP
@@ -121,11 +118,10 @@ def ug_ont_units_row(sr_cov: int, ont_cov: int, lane_id: int) -> list:
     ]
 
 
-def ug_ont_samples_row(sr_cov: int, ont_cov: int) -> list:
-    """Generate Ultima+ONT hybrid samples row."""
-    sid = sample_id(sr_cov, ont_cov, "HG003-UG")
+def ug_ont_samples_row() -> list:
+    """Generate Ultima+ONT hybrid samples row (single HG003)."""
     return [
-        sid, "blood", "research", "male", TRUTH_HG38_BROAD,
+        "HG003", "blood", "research", "male", TRUTH_HG38_BROAD,
         "true", "false", "gdna", "", "HG003", "1", "1", TRUTH_HG38_BROAD,
     ]
 
@@ -134,30 +130,26 @@ def main():
     # Generate ILMN+ONT expanded
     ilmn_ont_dir = os.path.join(SCRIPT_DIR, "ilmn_ont_expanded")
     ilmn_units = []
-    ilmn_samples = []
     lane = 0
     for sr in SR_COVS:
         for ont in ONT_COVS:
             ilmn_units.append(ilmn_ont_units_row(sr, ont, lane))
-            ilmn_samples.append(ilmn_ont_samples_row(sr, ont))
             lane += 1
 
     write_tsv(f"{ilmn_ont_dir}/units.tsv", UNITS_HEADER, ilmn_units)
-    write_tsv(f"{ilmn_ont_dir}/samples.tsv", SAMPLES_HEADER, ilmn_samples)
+    write_tsv(f"{ilmn_ont_dir}/samples.tsv", SAMPLES_HEADER, [ilmn_ont_samples_row()])
 
     # Generate Ultima+ONT expanded
     ug_ont_dir = os.path.join(SCRIPT_DIR, "ultima_ont_expanded")
     ug_units = []
-    ug_samples = []
     lane = 0
     for sr in SR_COVS:
         for ont in ONT_COVS:
             ug_units.append(ug_ont_units_row(sr, ont, lane))
-            ug_samples.append(ug_ont_samples_row(sr, ont))
             lane += 1
 
     write_tsv(f"{ug_ont_dir}/units.tsv", UNITS_HEADER, ug_units)
-    write_tsv(f"{ug_ont_dir}/samples.tsv", SAMPLES_HEADER, ug_samples)
+    write_tsv(f"{ug_ont_dir}/samples.tsv", SAMPLES_HEADER, [ug_ont_samples_row()])
 
     print(f"\nGenerated {len(ilmn_units)} ILMN+ONT combinations")
     print(f"Generated {len(ug_units)} Ultima+ONT combinations")
