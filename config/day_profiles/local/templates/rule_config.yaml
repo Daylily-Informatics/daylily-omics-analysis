@@ -659,7 +659,7 @@ sentdug:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle/dnascope.model"
     mem_mb: 200000
-
+    pop_vcf: ""
 
 sentdpb:
     threads: 7
@@ -692,6 +692,7 @@ sentdpbr:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.3.bundle"
     mem_mb: 200000
+    pop_vcf: ""    
 
 sentdont:
     threads: 7
@@ -724,7 +725,8 @@ sentdontr:
     partition: "i192,i192mem"
     dnascope_model: /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle
     mem_mb: 200000
-
+    pop_vcf: ""
+    
 sentdugr:
     threads: 8
     use_threads: 7
@@ -739,6 +741,7 @@ sentdugr:
     partition: "i192,i192mem"
     dnascope_model: /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle
     mem_mb: 200000
+    pop_vcf: ""
 
 sentD:
     regions_to_call: '  '  # testing:' --regions 11:1-115169878 MT:1-16569  '
@@ -755,6 +758,7 @@ sentD:
     partition: "i8"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
     mem_mb: 200000
+    pop_vcf: ""
 
 sort_index_sentD_chunk_vcf:
     threads: 7
@@ -806,6 +810,7 @@ run_concordance:
 sentieon_haplocaller:
     threads: 7
     partition: "i8"
+    pop_vcf: ""
 
 rtg_vcfstats:
     threads: 7
@@ -878,6 +883,7 @@ sentieon_gatk:
     mbuffer: " | mbuffer -m 1G -q -s 128k "
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""
+    pop_vcf: ""
 
 sentieon_markdups:
     threads: 7

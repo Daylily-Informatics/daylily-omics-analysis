@@ -154,7 +154,7 @@ echo "SMK> D:$cmddt / U:$USER / PWD:$PWD / CMD: (${snakecmd[*]})" >> "$cmd_log"
 
 # Run snakemake command
 colr "Executing: ${snakecmd[*]}"  "$DY_IT0" "$DY_IB0" "$DY_IS1"  1>&2
-( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run && bash bin/util/benchmarks/collect_day_benchmark_data.sh  $DAY_GENOME_BUILD ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
+( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run && bash bin/util/benchmarks/collect_day_benchmark_data.sh  $DAY_GENOME_BUILD > /dev/null 2>&1 ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
 ret_code=$?
 
 colr "RETURN CODE: $ret_code" "$DY_IB0" "$DY_IT0" "$DY_IS0" 1>&2
