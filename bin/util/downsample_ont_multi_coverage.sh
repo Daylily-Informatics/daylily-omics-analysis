@@ -24,7 +24,9 @@ mkdir -p "$JOB_DIR"
 
 # Submit jobs for each coverage level
 for COV in "${COVERAGES[@]}"; do
-    FRACTION=$(awk "BEGIN {printf \"%.4f\", $COV / $INPUT_COVERAGE}")
+    # Calculate fraction and format for samtools -s SEED.FRAC
+    # samtools expects FRAC as decimal without leading zero (e.g., 0.0167 -> .0167)
+    FRACTION=$(awk "BEGIN {printf \"%.6f\", $COV / $INPUT_COVERAGE}" | sed 's/^0//')
     OUTPUT_CRAM="$OUTPUT_DIR/HG003_${COV}x.cleaned.cram"
     JOB_SCRIPT="$JOB_DIR/downsample_${COV}x.sh"
     
@@ -61,7 +63,7 @@ FIXED_HEADER="$OUTPUT_DIR/tmp_${COV}x.fixed_header.sam"
 
 # Step 1: Downsample
 echo "[1/5] Downsampling to ${COV}x..."
-samtools view -@ 64 -b -s ${SEED}.${FRACTION} "$INPUT_BAM" > "\$TMP_BAM"
+samtools view -@ 64 -b -s ${SEED}${FRACTION} "$INPUT_BAM" > "\$TMP_BAM"
 echo "Downsampled BAM size: \$(ls -lh \$TMP_BAM | awk '{print \$5}')"
 
 # Step 2: Extract and fix header (remove all @PG lines)

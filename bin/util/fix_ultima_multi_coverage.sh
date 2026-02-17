@@ -28,15 +28,14 @@ echo "=========================================="
 
 # Submit jobs for each coverage level
 for COV in "${COVERAGES[@]}"; do
-    # Calculate downsample fraction
-    FRACTION=$(echo "scale=6; $COV / $INPUT_COVERAGE" | bc)
-    # Convert to integer for samtools (multiply by 1000000, take integer part)
-    FRACTION_INT=$(echo "scale=0; $FRACTION * 1000000 / 1" | bc)
+    # Calculate fraction and format for samtools -s SEED.FRAC
+    # samtools expects FRAC as decimal without leading zero (e.g., 0.0101 -> .0101)
+    FRACTION=$(awk "BEGIN {printf \"%.6f\", $COV / $INPUT_COVERAGE}" | sed 's/^0//')
 
     OUTPUT_CRAM="$OUTPUT_BASE/HG003_${COV}x.cleaned.cram"
     JOB_SCRIPT="$JOB_DIR/ug_ds_${COV}x.sh"
 
-    echo "Creating job for ${COV}x (fraction: 0.${FRACTION_INT})"
+    echo "Creating job for ${COV}x (fraction: ${FRACTION})"
     echo "  Output: $OUTPUT_CRAM"
 
     cat > "$JOB_SCRIPT" << EOF
@@ -70,7 +69,7 @@ FIXED_HEADER="$OUTPUT_BASE/tmp_${COV}x.fixed_header.sam"
 
 # Step 1: Downsample
 echo "[1/5] Downsampling to ${COV}x..."
-samtools view -@ 64 -T "$REFERENCE" -b -s ${SEED}.${FRACTION_INT} "$INPUT_CRAM" > "\$TMP_BAM"
+samtools view -@ 64 -T "$REFERENCE" -b -s ${SEED}${FRACTION} "$INPUT_CRAM" > "\$TMP_BAM"
 echo "Downsampled BAM size: \$(ls -lh \$TMP_BAM | awk '{print \$5}')"
 
 # Step 2: Extract header and remove @PG lines
