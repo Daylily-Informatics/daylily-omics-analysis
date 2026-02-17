@@ -59,8 +59,8 @@ rule sentdhipm_sr_align:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.sr_align.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -150,8 +150,8 @@ rule sentdhipm_pass1:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.pass1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -224,8 +224,8 @@ rule sentdhipm_hybrid_select:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.hybrid_select.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         use_threads=config["sentdhio"]["use_threads"],
@@ -277,8 +277,8 @@ rule sentdhipm_mapq0_bed:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.mapq0_bed.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -321,8 +321,8 @@ rule sentdhipm_mapq0_slop:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -356,8 +356,8 @@ rule sentdhipm_merge_beds:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -398,8 +398,8 @@ rule sentdhipm_stage1:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.stage1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -524,8 +524,8 @@ rule sentdhipm_stage2:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.stage2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -576,8 +576,8 @@ rule sentdhipm_stage3:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.stage3.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -632,8 +632,8 @@ rule sentdhipm_pass2:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.pass2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -685,8 +685,8 @@ rule sentdhipm_subset:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -735,8 +735,8 @@ rule sentdhipm_concat_pass:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -768,8 +768,8 @@ rule sentdhipm_anno:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         use_threads=config["sentdhio"]["use_threads"],
@@ -812,8 +812,8 @@ rule sentdhipm_transfer:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         pop_vcf=config["sentdhio"]["pop_vcf"],
@@ -886,8 +886,8 @@ rule sentdhipm_model_apply:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.model_apply.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -934,8 +934,8 @@ rule sentdhipm_final_norm:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.final_norm.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -1016,10 +1016,10 @@ rule sentdhipm_concat_index_chunks:
         vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/{sample}.{alnr}.{ddup}.sentdhipm.snv.sort.vcf.gz",
         vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/{sample}.{alnr}.{ddup}.sentdhipm.snv.sort.temp.vcf.gz",
         vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/{sample}.{alnr}.{ddup}.sentdhipm.snv.sort.vcf.gz.tbi",
-    threads: 192
+    threads: config['sentdhipm']['threads']
     resources:
-        vcpu=192,
-        threads=192,
+        vcpu=config['sentdhipm']['threads'],
+        threads=config['sentdhipm']['threads'],
         partition="i192mem,i192bigmem",
         mem_mb=config['sentdhipm']['mem_mb'],
     priority: 47

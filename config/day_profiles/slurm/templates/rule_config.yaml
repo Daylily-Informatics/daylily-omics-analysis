@@ -532,6 +532,8 @@ sentdhio:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
+
 
 sentdhuo:
     threads: 192
@@ -567,6 +569,8 @@ sentdhip:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
+
 
 # Hybrid CLI Ultima+PacBio
 sentdhup:
@@ -585,6 +589,7 @@ sentdhup:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 # Hybrid Modular Illumina+PacBio
 sentdhipm:
@@ -603,6 +608,7 @@ sentdhipm:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 # Hybrid Modular Ultima+PacBio
 sentdhupm:
@@ -621,6 +627,7 @@ sentdhupm:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 # Hybrid Modular Roche+ONT (uses HybridUltimaONT model with Roche short-read data)
 sentdhrom:
@@ -639,6 +646,7 @@ sentdhrom:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 sentdhrpm:
     threads: 192
@@ -656,7 +664,7 @@ sentdhrpm:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
-
+    igz: "  igzip -cd -T 32 "
 
 sentdug:
     threads: 192
@@ -674,6 +682,7 @@ sentdug:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 sentdpb:
     threads: 192
@@ -692,6 +701,7 @@ sentdpb:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 sentdont:
     threads: 192
@@ -710,6 +720,7 @@ sentdont:
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
 
 sentD:
     threads: 192

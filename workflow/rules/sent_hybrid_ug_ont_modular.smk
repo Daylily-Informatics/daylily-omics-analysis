@@ -70,8 +70,8 @@ rule sentdhuom_pass1:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.pass1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -174,8 +174,8 @@ rule sentdhuom_hybrid_select:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.hybrid_select.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         use_threads=config["sentdhuo"]["use_threads"],
@@ -227,8 +227,8 @@ rule sentdhuom_mapq0_bed:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.mapq0_bed.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -271,8 +271,8 @@ rule sentdhuom_mapq0_slop:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -305,8 +305,8 @@ rule sentdhuom_merge_beds:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -348,8 +348,8 @@ rule sentdhuom_stage1:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.stage1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -474,8 +474,8 @@ rule sentdhuom_stage2:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.stage2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -527,8 +527,8 @@ rule sentdhuom_stage3:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.stage3.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -583,8 +583,8 @@ rule sentdhuom_pass2:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.pass2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -647,8 +647,8 @@ rule sentdhuom_subset:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -696,8 +696,8 @@ rule sentdhuom_concat_pass:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         cluster_sample=ret_sample,
@@ -730,8 +730,8 @@ rule sentdhuom_anno:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         use_threads=config["sentdhuo"]["use_threads"],
@@ -773,8 +773,8 @@ rule sentdhuom_transfer:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         pop_vcf=config["sentdhuo"]["pop_vcf"],
@@ -847,8 +847,8 @@ rule sentdhuom_model_apply:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.model_apply.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -895,8 +895,8 @@ rule sentdhuom_final_norm:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuom.{dchrm}.final_norm.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=192,
-        vcpu=192,
+        threads=config['sentdhuo']['threads'],
+        vcpu=config['sentdhuo']['threads'],
         mem_mb=config['sentdhuo']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -978,10 +978,10 @@ rule sentdhuom_concat_index_chunks:
         vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz",
         vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.temp.vcf.gz",
         vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhuom/{sample}.{alnr}.{ddup}.sentdhuom.snv.sort.vcf.gz.tbi",
-    threads: 192
+    threads: config['sentdhuo']['threads']
     resources:
-        vcpu=192,
-        threads=192,
+        vcpu=config['sentdhuo']['threads'],
+        threads=config['sentdhuo']['threads'],
         partition="i192mem,i192bigmem",
         mem_mb=config['sentdhuo']['mem_mb'],
     priority: 47
