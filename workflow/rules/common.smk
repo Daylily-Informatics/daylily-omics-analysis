@@ -1516,15 +1516,24 @@ ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
 # (concordance, peddy, duphold, etc.).
 # ---------------------------------------------------------------------------
 _SNV_CALLER_VALID_ALIGNERS = {
+    # Solo platform callers
     "sentdont":  ["ont", "sentmm2ont"],   # ONT-only caller
     "sentdug":   ["ug"],                   # Ultima-only caller
     "sentdpb":   ["sentmm2"],             # PacBio-only caller
-    "sentdhuo":  ["ug"],                   # Hybrid Ultima+ONT → emits alnr=ug
-    "sentdhio":  ["ont"],                  # Hybrid Ilmn+ONT  → emits alnr=ont
-    "sentdhuom": ["ug"],                   # Modular Hybrid Ultima+ONT → emits alnr=ug
-    "sentdhiom": ["ont"],                  # Modular Hybrid Ilmn+ONT  → emits alnr=ont
     "rochehc":   ["roche"],               # Roche SBX Duplex HaplotypeCaller
     "deep19r":   ["roche"],               # DeepVariant 1.9 on Roche BAMs
+    # Hybrid CLI callers (ILMN+LR or Ultima+LR)
+    "sentdhio":  ["ont"],                  # Hybrid CLI Ilmn+ONT  → emits alnr=ont
+    "sentdhuo":  ["ug"],                   # Hybrid CLI Ultima+ONT → emits alnr=ug
+    "sentdhip":  ["sentmm2"],             # Hybrid CLI Ilmn+PB   → emits alnr=sentmm2
+    "sentdhup":  ["sentmm2"],             # Hybrid CLI Ultima+PB → emits alnr=sentmm2
+    # Hybrid modular callers
+    "sentdhiom": ["ont"],                  # Modular Hybrid Ilmn+ONT  → emits alnr=ont
+    "sentdhuom": ["ug"],                   # Modular Hybrid Ultima+ONT → emits alnr=ug
+    "sentdhipm": ["sentmm2"],             # Modular Hybrid Ilmn+PB   → emits alnr=sentmm2
+    "sentdhupm": ["sentmm2"],             # Modular Hybrid Ultima+PB → emits alnr=sentmm2
+    "sentdhrom": ["roche"],               # Modular Hybrid Roche+ONT → emits alnr=roche
+    "sentdhrpm": ["roche"],               # Modular Hybrid Roche+PB  → emits alnr=roche
 }
 
 
