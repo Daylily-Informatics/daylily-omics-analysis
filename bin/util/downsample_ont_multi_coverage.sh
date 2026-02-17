@@ -44,7 +44,12 @@ for COV in "${COVERAGES[@]}"; do
 
 set -euo pipefail
 
+# Source conda environment for samtools
+source /fsx/data/cached_envs/mambaforge/etc/profile.d/conda.sh
+conda activate SAM
+
 echo "=== Starting ${COV}x downsample at \$(date) ==="
+echo "samtools version: \$(samtools --version | head -1)"
 echo "Input: $INPUT_BAM"
 echo "Output: $OUTPUT_CRAM"
 echo "Fraction: $FRACTION (seed: $SEED)"

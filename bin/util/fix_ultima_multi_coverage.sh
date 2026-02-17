@@ -51,9 +51,14 @@ for COV in "${COVERAGES[@]}"; do
 
 set -euo pipefail
 
+# Source conda environment for samtools
+source /fsx/data/cached_envs/mambaforge/etc/profile.d/conda.sh
+conda activate SAM
+
 echo "=== Starting ${COV}x Ultima header fix at \$(date) ==="
 echo "Input: $INPUT_CRAM"
 echo "Output: $OUTPUT_CRAM"
+echo "samtools version: \$(samtools --version | head -1)"
 
 # Check input exists
 if [ ! -f "$INPUT_CRAM" ]; then
