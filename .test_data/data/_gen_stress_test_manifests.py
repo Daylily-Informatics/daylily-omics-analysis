@@ -26,7 +26,7 @@ UNITS_HEADER = "RUNID\tSAMPLEID\tEXPERIMENTID\tLANEID\tBARCODEID\tLIBPREP\tSEQ_V
 # Data paths
 ILMN_R1_3X = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_3x_R1.fastq.gz"
 ILMN_R2_3X = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_3x_R2.fastq.gz"
-ONT_CRAM_3X = "/fsx/scratch/downsamples/ont_cleaned_hg38/HG003/HG003_3x.cleaned.cram"
+ONT_CRAM_3X = "/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003/HG003_3x.cleaned.cram"
 UG_CRAM_3X = "/fsx/scratch/downsamples/ultima_cleaned_hg38_broad/HG003/HG003_3x.cleaned.cram"
 PB_BAM_3X = "/fsx/scratch/downsamples/pacbio/HG003/R0-HG003-D0-0-D0/3p0x/HG003_3p0x.bam"
 ROCHE_BAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam"
