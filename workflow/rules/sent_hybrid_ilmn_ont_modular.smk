@@ -158,7 +158,7 @@ rule sentdhiom_sr_align:
             -o {output.bam} \
             --intermediate_compress_level 1  \
             --temp_dir $TMPDIR \
-            --block_size {params.sort_thread_mem}  
+            --block_size {params.sort_thread_mem} \
             --sam2bam --bam_compression 1 >> {log} 2>&1
 
         # Index the BAM
