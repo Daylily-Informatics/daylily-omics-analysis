@@ -378,8 +378,9 @@ rule sentdhuom_stage1:
 
         echo "Starting Stage 1 at $(date)" >> {log}
 
-        # Get sample ID for read group
-        cram_sid=$(samtools view -H {input.ont_cram} | grep '^@RG' | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':' | sort -u | head -1)
+        # Use cluster_sample for consistent @RG SM tag across entire pipeline
+        # This matches the pattern used in sentieon_bwa_sort and other alignment rules
+        epocsec=$(date +%s)
 
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
@@ -404,7 +405,7 @@ rule sentdhuom_stage1:
 
             $INS_CMD 2>> {log} | \
             sentieon bwa mem \
-                -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
+                -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:HYBRID" \
                 -t {params.use_threads} \
                 -x {params.model}/HybridStage1_bwa.model \
                 {params.huref} - 2>> {log} | \
@@ -436,7 +437,7 @@ rule sentdhuom_stage1:
             # Cat both FASTQ streams → bwa mem → util sort
             cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
             sentieon bwa mem \
-                -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
+                -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:HYBRID" \
                 -t {params.use_threads} \
                 -x {params.model}/HybridStage1_bwa.model \
                 {params.huref} - 2>> {log} | \
@@ -601,14 +602,26 @@ rule sentdhuom_pass2:
         # NOTE: Input ONT BAM must have clean @PG headers (no broken PP chain).
         # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
 
+        # Reheader ONT CRAM to use consistent sample name with stage3_bam
+        # This ensures Pass2 DNAscope produces a single-sample VCF
+        TMPDIR=$(dirname {output.vcf})
+        echo "Reheadering ONT CRAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
+        samtools view -H {input.ont_cram} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ont_pass2_header.txt"
+        samtools reheader "$TMPDIR/ont_pass2_header.txt" {input.ont_cram} > "$TMPDIR/ont_pass2_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/ont_pass2_reheadered.bam" >> {log} 2>&1
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.stage3_bam} \
+            -i "$TMPDIR/ont_pass2_reheadered.bam" -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
+
+        # Cleanup temp files
+        rm -f "$TMPDIR/ont_pass2_header.txt" "$TMPDIR/ont_pass2_reheadered.bam" "$TMPDIR/ont_pass2_reheadered.bam.bai"
 
         echo "Pass 2 completed at $(date)" >> {log}
         """
@@ -783,19 +796,17 @@ rule sentdhuom_transfer:
         bcftools reheader -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
         bcftools index -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
 
+        # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
+        # Note: pop_vcf is a sites-only VCF (no samples) - don't try to reheader it
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
-            # Reheader pop_vcf to use same cluster_sample name (use old\tnew format)
-            pop_old_sample=$(bcftools query -l {params.pop_vcf} | head -n1)
-            echo "Pop VCF original sample: $pop_old_sample" >> {log}
-            echo -e "${{pop_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/pop_rename.txt"
-            bcftools reheader -s "$TMPDIR/pop_rename.txt" -o "$TMPDIR/pop_reheadered.vcf.gz" {params.pop_vcf} >> {log} 2>&1
-            bcftools index -t "$TMPDIR/pop_reheadered.vcf.gz" >> {log} 2>&1
+            echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
 
-            # bcftools merge + trimalt, then compress with bgzip
+            # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
+            # Then trimalt processes the merged output
             bcftools merge --no-version --regions-overlap pos -m all \
-                "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/pop_reheadered.vcf.gz" 2>> {log} | \
+                "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
             sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
             bgzip -c -@ {params.use_threads} > {output.vcf} 2>> {log}
 
@@ -804,8 +815,7 @@ rule sentdhuom_transfer:
 
             # Cleanup temp files
             rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/pop_reheadered.vcf.gz" "$TMPDIR/pop_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/anno_rename.txt" "$TMPDIR/pop_rename.txt"
+                  "$TMPDIR/anno_rename.txt"
         else
             echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
             mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}

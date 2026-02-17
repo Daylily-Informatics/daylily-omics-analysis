@@ -94,9 +94,36 @@ rule sentdhiom_sr_align:
 
         echo "Starting SR alignment at $(date)" >> {log}
 
-        # Get sample ID from ONT CRAM for read group
-        cram_sid=$(samtools view -H {input.cram} | grep '^@RG' | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':' | sort -u | head -1)
-        echo "Sample ID from CRAM: $cram_sid" >> {log}
+        # Find the jemalloc library in the active conda environment
+        jemalloc_path="";
+        for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
+            if [[ -d "$_dir" ]]; then
+                for _ext in so dylib; do
+                    _candidate=$(find "$_dir" -maxdepth 1 -name "libjemalloc*.$_ext*" 2>/dev/null | head -n 1);
+                    if [[ -n "$_candidate" && -r "$_candidate" ]]; then
+                        jemalloc_path="$_candidate";
+                        break 2;
+                    fi
+                done
+            fi
+        done
+
+        # Check if jemalloc was found and set LD_PRELOAD accordingly
+        if [[ -n "$jemalloc_path" ]]; then
+            export LD_PRELOAD="$jemalloc_path";
+            export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
+            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+            echo "MALLOC_CONF set to: $MALLOC_CONF" >> {log};
+        else
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu)." >> {log};
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
+            exit 3;
+        fi
+
+        # Use cluster_sample for consistent @RG SM tag across entire pipeline
+        # This matches the pattern used in sentieon_bwa_sort and other alignment rules
+        epocsec=$(date +%s)
+        echo "Using cluster_sample: {params.cluster_sample}" >> {log}
 
         # Build R1 and R2 file lists
         R1_FILES="{input.r1}"
@@ -104,7 +131,7 @@ rule sentdhiom_sr_align:
 
         # Align with bwa mem → util sort
         sentieon bwa mem \
-            -R "@RG\\tID:${{cram_sid}}-ilmn\\tSM:${{cram_sid}}\\tLB:${{cram_sid}}-LB\\tPL:ILLUMINA" \
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.use_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -176,6 +203,34 @@ rule sentdhiom_pass1:
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+
+        ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
+
+        # Find the jemalloc library in the active conda environment
+        jemalloc_path="";
+        for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
+            if [[ -d "$_dir" ]]; then
+                for _ext in so dylib; do
+                    _candidate=$(find "$_dir" -maxdepth 1 -name "libjemalloc*.$_ext*" 2>/dev/null | head -n 1);
+                    if [[ -n "$_candidate" && -r "$_candidate" ]]; then
+                        jemalloc_path="$_candidate";
+                        break 2;
+                    fi
+                done
+            fi
+        done
+
+        # Check if jemalloc was found and set LD_PRELOAD accordingly
+        if [[ -n "$jemalloc_path" ]]; then
+            export LD_PRELOAD="$jemalloc_path";
+            export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
+            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+            echo "MALLOC_CONF set to: $MALLOC_CONF" >> {log};
+        else
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu)." >> {log};
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
+            exit 3;
+        fi
 
         echo "Starting Pass 1 DNAscope at $(date)" >> {log}
 
@@ -426,8 +481,9 @@ rule sentdhiom_stage1:
 
         echo "Starting Stage 1 at $(date)" >> {log}
 
-        # Get sample ID for read group
-        cram_sid=$(samtools view -H {input.lr_cram} | grep '^@RG' | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':' | sort -u | head -1)
+        # Use cluster_sample for consistent @RG SM tag across entire pipeline
+        # This matches the pattern used in sentieon_bwa_sort and other alignment rules
+        epocsec=$(date +%s)
 
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
@@ -452,7 +508,7 @@ rule sentdhiom_stage1:
 
             $INS_CMD 2>> {log} | \
             sentieon bwa mem \
-                -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
+                -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:HYBRID" \
                 -t {params.use_threads} \
                 -x {params.model}/HybridStage1_bwa.model \
                 {params.huref} - 2>> {log} | \
@@ -484,7 +540,7 @@ rule sentdhiom_stage1:
             # Cat both FASTQ streams → bwa mem → util sort
             cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
             sentieon bwa mem \
-                -R "@RG\tID:hybrid-${{cram_sid}}\tSM:${{cram_sid}}" \
+                -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:HYBRID" \
                 -t {params.use_threads} \
                 -x {params.model}/HybridStage1_bwa.model \
                 {params.huref} - 2>> {log} | \
@@ -833,20 +889,17 @@ rule sentdhiom_transfer:
         bcftools reheader -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
         bcftools index -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
 
-        # If pop_vcf is set and non-empty, do transfer; otherwise just copy
+        # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
+        # Note: pop_vcf is a sites-only VCF (no samples) - don't try to reheader it
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
-            # Reheader pop_vcf to use same cluster_sample name (use old\tnew format)
-            pop_old_sample=$(bcftools query -l {params.pop_vcf} | head -n1)
-            echo "Pop VCF original sample: $pop_old_sample" >> {log}
-            echo -e "${{pop_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/pop_rename.txt"
-            bcftools reheader -s "$TMPDIR/pop_rename.txt" -o "$TMPDIR/pop_reheadered.vcf.gz" {params.pop_vcf} >> {log} 2>&1
-            bcftools index -t "$TMPDIR/pop_reheadered.vcf.gz" >> {log} 2>&1
+            echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
 
-            # bcftools merge + trimalt, then compress with bgzip
+            # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
+            # Then trimalt processes the merged output
             bcftools merge --no-version --regions-overlap pos -m all \
-                "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/pop_reheadered.vcf.gz" 2>> {log} | \
+                "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
             sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
             bgzip -c -@ {params.use_threads} > {output.vcf} 2>> {log}
 
@@ -855,8 +908,7 @@ rule sentdhiom_transfer:
 
             # Cleanup temp files
             rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/pop_reheadered.vcf.gz" "$TMPDIR/pop_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/anno_rename.txt" "$TMPDIR/pop_rename.txt"
+                  "$TMPDIR/anno_rename.txt"
         else
             echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
             mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
