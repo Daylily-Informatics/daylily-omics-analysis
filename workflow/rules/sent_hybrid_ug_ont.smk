@@ -14,7 +14,7 @@ rule sentdhuo_snv:
     output:
      vcf=temp(MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.gz"),
-     tvcf=temp(MDIR
+     tvcf=touch(MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.tmp"),
     wildcard_constraints:
         alnr="|".join(ALIGNERS_UG)
