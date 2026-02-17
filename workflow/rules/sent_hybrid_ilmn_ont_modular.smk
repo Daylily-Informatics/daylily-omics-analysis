@@ -75,6 +75,7 @@ rule sentdhiom_sr_align:
         sort_thread_mem=config['sentieon']['sort_thread_mem'],
         sort_threads=config['sentieon']['sort_threads'],
         cluster_sample=ret_sample,
+        trim_head=get_ilmn_trim_head,
     shell:
         """
         set -euo pipefail
