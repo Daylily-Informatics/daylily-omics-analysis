@@ -7,7 +7,7 @@ set -euo pipefail
 # Configuration
 INPUT_BASE="/fsx/scratch/downsamples/ultima_reheadered/HG003/R0-HG003-D0-0-D0"
 OUTPUT_BASE="/fsx/scratch/downsamples/ultima_reencoded/HG003/R0-HG003-D0-0-D0"
-REFERENCE="/fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
+REFERENCE="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
 
 # Coverage levels to process (skip 5x and 7x)
 # Use Np0x naming convention (e.g., 1p0x, 10p0x, 3p0x)

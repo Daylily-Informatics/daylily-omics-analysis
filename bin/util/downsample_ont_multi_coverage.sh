@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Configuration
 INPUT_BAM="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAW81754.calls.sorted.bam"
-REFERENCE="/fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
+REFERENCE="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
 OUTPUT_DIR="/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003"
 SEED=33
 INPUT_COVERAGE=60.0  # Assumed input coverage
