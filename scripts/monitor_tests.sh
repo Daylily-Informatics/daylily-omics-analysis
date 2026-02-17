@@ -21,10 +21,10 @@ echo "=== Test Session Status ==="
 for sess in $(tmux ls 2>/dev/null | grep "^test-" | cut -d: -f1); do
     output=$(tmux capture-pane -t "$sess" -p 2>/dev/null | tail -30)
     
-    # Check for errors
-    if echo "$output" | grep -qiE "error|failed|exception|traceback"; then
+    # Check for errors (excluding false positives like "|| touch" error handlers)
+    if echo "$output" | grep -viE "touch.*FAILED|\|\| touch" | grep -qiE "^error|MissingInput|Exception|Traceback|Exiting because"; then
         echo "❌ $sess - HAS ERRORS:"
-        echo "$output" | grep -iE "error|failed|exception|traceback" | tail -5
+        echo "$output" | grep -viE "touch.*FAILED|\|\| touch" | grep -iE "^error|MissingInput|Exception|Traceback|Exiting because" | tail -5
     elif echo "$output" | grep -qE "Nothing to be done|complete"; then
         echo "✅ $sess - COMPLETE"
     elif echo "$output" | grep -q "Submitted job"; then

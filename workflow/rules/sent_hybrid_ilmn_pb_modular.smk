@@ -42,8 +42,8 @@ rule sentdhipm_sr_align:
     input:
         r1=getR1s,
         r2=getR2s,
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",  # ONT CRAM must exist
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",  # PacBio CRAM must exist
+        crai=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram.crai",
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/sr_aligned.bam",
@@ -133,8 +133,8 @@ rule sentdhipm_pass1:
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/sr_aligned.bam",
         sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/sr_aligned.bam.bai",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
+        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram.crai",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/initial.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi",
@@ -262,7 +262,7 @@ rule sentdhipm_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/sr_aligned.bam",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
     wildcard_constraints:
@@ -377,7 +377,7 @@ rule sentdhipm_merge_beds:
 rule sentdhipm_stage1:
     """Stage1: insertion detection + haplotype assembly piped through bwa"""
     input:
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
         diff_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/merged_diff.bed",
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
@@ -557,7 +557,7 @@ rule sentdhipm_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/sr_aligned.bam",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
@@ -613,7 +613,7 @@ rule sentdhipm_stage3:
 rule sentdhipm_pass2:
     """Second-pass variant calling on stage3 BAM + LR reads"""
     input:
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
         stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
@@ -1086,8 +1086,8 @@ rule prep_sentdhipm_chunkdirs:
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
         r1=getR1s,
         r2=getR2s,
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram.crai",
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhipm/vcfs/{dchrm}/{{sample}}.ready",

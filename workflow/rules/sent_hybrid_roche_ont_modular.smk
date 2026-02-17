@@ -49,8 +49,8 @@ ALIGNERS_DHROM = ["roche"]
 rule sentdhrom_pass1:
     """First-pass DNAscope variant calling on combined Roche + ONT reads"""
     input:
-        roche_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        roche_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        roche_bam=MDIR + "{sample}/align/{alnr}/{sample}.roche.bam",
+        roche_bai=MDIR + "{sample}/align/{alnr}/{sample}.roche.bam.bai",
         ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
         ont_crai=MDIR + "{sample}/align/ont/{sample}.cram.crai",
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
@@ -101,11 +101,11 @@ rule sentdhrom_pass1:
 
         echo "Starting Pass 1 DNAscope (Roche+ONT) at $(date)" >> {log}
 
-        # Validate Roche CRAM
-        echo "Validating Roche CRAM: {input.roche_cram}" >> {log} 2>&1
-        samtools quickcheck -v {input.roche_cram} >> {log} 2>&1
-        _sq_count=$(samtools view -H {input.roche_cram} 2>/dev/null | grep -c '^@SQ' || true)
-        echo "Roche CRAM @SQ header count: $_sq_count" >> {log} 2>&1
+        # Validate Roche BAM
+        echo "Validating Roche BAM: {input.roche_bam}" >> {log} 2>&1
+        samtools quickcheck -v {input.roche_bam} >> {log} 2>&1
+        _sq_count=$(samtools view -H {input.roche_bam} 2>/dev/null | grep -c '^@SQ' || true)
+        echo "Roche BAM @SQ header count: $_sq_count" >> {log} 2>&1
 
         # Validate ONT CRAM
         echo "Validating ONT CRAM: {input.ont_cram}" >> {log} 2>&1
@@ -114,7 +114,7 @@ rule sentdhrom_pass1:
         echo "ONT CRAM @SQ header count: $_sq_count_ont" >> {log} 2>&1
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.roche_cram} \
+            -i {input.ont_cram} -i {input.roche_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
@@ -195,7 +195,7 @@ rule sentdhrom_hybrid_select:
 rule sentdhrom_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
-        roche_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        roche_bam=MDIR + "{sample}/align/{alnr}/{sample}.roche.bam",
         ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhrom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
@@ -226,7 +226,7 @@ rule sentdhrom_mapq0_bed:
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.roche_cram} \
+            -i {input.ont_cram} -i {input.roche_bam} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
@@ -489,7 +489,7 @@ rule sentdhrom_stage2:
 rule sentdhrom_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
-        roche_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        roche_bam=MDIR + "{sample}/align/{alnr}/{sample}.roche.bam",
         ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhrom/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhrom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
@@ -523,7 +523,7 @@ rule sentdhrom_stage3:
         echo "Starting Stage 3 at $(date)" >> {log}
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.roche_cram} \
+            -i {input.ont_cram} -i {input.roche_bam} \
             -i {input.unmap_bam} -i {input.alt_bam} \
             --interval {input.bed} \
             --algo HybridStage3 \
@@ -1007,8 +1007,8 @@ rule prep_sentdhrom_chunkdirs:
     """Prepare chunk directories for modular hybrid workflow"""
     input:
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
-        roche_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        roche_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        roche_bam=MDIR + "{sample}/align/{alnr}/{sample}.roche.bam",
+        roche_bai=MDIR + "{sample}/align/{alnr}/{sample}.roche.bam.bai",
         ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
         ont_crai=MDIR + "{sample}/align/ont/{sample}.cram.crai",
     output:

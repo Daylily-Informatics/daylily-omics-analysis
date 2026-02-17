@@ -51,8 +51,8 @@ rule sentdhupm_pass1:
     input:
         ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         ug_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
-        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
-        ont_crai=MDIR + "{sample}/align/ont/{sample}.cram.crai",
+        pb_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
+        pb_crai=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram.crai",
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
         d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/{sample}.ready",
     output:
@@ -107,14 +107,14 @@ rule sentdhupm_pass1:
         _sq_count=$(samtools view -H {input.ug_cram} 2>/dev/null | grep -c '^@SQ' || true)
         echo "Ultima CRAM @SQ header count: $_sq_count" >> {log} 2>&1
 
-        # Validate ONT CRAM
-        echo "Validating ONT CRAM: {input.ont_cram}" >> {log} 2>&1
-        samtools quickcheck -v {input.ont_cram} >> {log} 2>&1
-        _sq_count_ont=$(samtools view -H {input.ont_cram} 2>/dev/null | grep -c '^@SQ' || true)
-        echo "ONT CRAM @SQ header count: $_sq_count_ont" >> {log} 2>&1
+        # Validate PacBio CRAM
+        echo "Validating PacBio CRAM: {input.pb_cram}" >> {log} 2>&1
+        samtools quickcheck -v {input.pb_cram} >> {log} 2>&1
+        _sq_count_pb=$(samtools view -H {input.pb_cram} 2>/dev/null | grep -c '^@SQ' || true)
+        echo "PacBio CRAM @SQ header count: $_sq_count_pb" >> {log} 2>&1
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.ug_cram} \
+            -i {input.pb_cram} -i {input.ug_cram} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
@@ -196,7 +196,7 @@ rule sentdhupm_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
         ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
+        pb_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
     wildcard_constraints:
@@ -226,7 +226,7 @@ rule sentdhupm_mapq0_bed:
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.ug_cram} \
+            -i {input.pb_cram} -i {input.ug_cram} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
@@ -311,7 +311,7 @@ rule sentdhupm_merge_beds:
 rule sentdhupm_stage1:
     """Stage1: insertion detection + haplotype assembly piped through bwa"""
     input:
-        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
+        pb_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
         diff_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/merged_diff.bed",
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
@@ -362,7 +362,7 @@ rule sentdhupm_stage1:
         echo "Starting Stage 1 at $(date)" >> {log}
 
         # Get sample ID for read group
-        cram_sid=$(samtools view -H {input.ont_cram} | grep '^@RG' | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':' | sort -u | head -1)
+        cram_sid=$(samtools view -H {input.pb_cram} | grep '^@RG' | tr '\t' '\n' | grep '^SM:' | cut -f2 -d':' | sort -u | head -1)
 
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
@@ -373,12 +373,12 @@ rule sentdhupm_stage1:
             # Create proper empty BAM with clean header: @HD, @SQ, and @RG lines only (no @PG)
             # Include @RG because sentieon driver requires it
             # Exclude @PG to avoid PP chain references to non-existent programs
-            samtools view -H {input.ont_cram} | grep -E '^@(HD|SQ|RG)' | samtools view -bo {output.hap_bam} -
+            samtools view -H {input.pb_cram} | grep -E '^@(HD|SQ|RG)' | samtools view -bo {output.hap_bam} -
             samtools index {output.hap_bam}
 
             # Only run insertion detection (no interval restriction)
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-                -i {input.ont_cram} \
+                -i {input.pb_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -399,7 +399,7 @@ rule sentdhupm_stage1:
 
             # Haplotype assembly driver command
             HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-                -i {input.ont_cram} --interval {input.diff_bed} \
+                -i {input.pb_cram} --interval {input.diff_bed} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1.model \
                 --hap_bam {output.hap_bam} \
@@ -409,7 +409,7 @@ rule sentdhupm_stage1:
 
             # Insertion detection driver command
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-                -i {input.ont_cram} \
+                -i {input.pb_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -492,7 +492,7 @@ rule sentdhupm_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
         ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
+        pb_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
@@ -524,11 +524,10 @@ rule sentdhupm_stage3:
 
         echo "Starting Stage 3 at $(date)" >> {log}
 
-        # NOTE: Input ONT BAM must have clean @PG headers (no broken PP chain).
-        # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
+        # NOTE: Input PacBio CRAM must have clean @PG headers (no broken PP chain).
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.ug_cram} \
+            -i {input.pb_cram} -i {input.ug_cram} \
             -i {input.unmap_bam} -i {input.alt_bam} \
             --interval {input.bed} \
             --algo HybridStage3 \
@@ -548,7 +547,7 @@ rule sentdhupm_stage3:
 rule sentdhupm_pass2:
     """Second-pass variant calling on stage3 BAM + ONT reads"""
     input:
-        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
+        pb_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
         stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupm/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
@@ -581,11 +580,10 @@ rule sentdhupm_pass2:
 
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
 
-        # NOTE: Input ONT BAM must have clean @PG headers (no broken PP chain).
-        # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
+        # NOTE: Input PacBio CRAM must have clean @PG headers (no broken PP chain).
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.ont_cram} -i {input.stage3_bam} \
+            -i {input.pb_cram} -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
@@ -1017,8 +1015,8 @@ rule prep_sentdhupm_chunkdirs:
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
         ug_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         ug_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
-        ont_cram=MDIR + "{sample}/align/ont/{sample}.cram",
-        ont_crai=MDIR + "{sample}/align/ont/{sample}.cram.crai",
+        pb_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
+        pb_crai=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram.crai",
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhupm/vcfs/{dchrm}/{{sample}}.ready",
