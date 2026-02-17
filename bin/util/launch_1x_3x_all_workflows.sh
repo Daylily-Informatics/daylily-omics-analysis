@@ -11,8 +11,9 @@ MANIFEST_DIR=".test_data/data/agbt_2026/1x_3x"
 # Workflow definitions: name, target, config_args, units_dir
 # For ILMN solo: need aligners, dedupers, snv_callers
 # For platform-specific: use produce_*_vcf targets
+# NOTE: Config args use single quotes around the whole list to avoid shell parsing issues
 declare -A WORKFLOWS=(
-    ["ilmn-solo"]="produce_snv_concordances|--config aligners=\"['bwa2a']\" dedupers=\"['dppl']\" snv_callers=\"['deep19']\"|ilmn-solo"
+    ["ilmn-solo"]="produce_snv_concordances|--config aligners=[bwa2a] dedupers=[dppl] snv_callers=[deep19]|ilmn-solo"
     ["pacbio-solo"]="produce_sentdpb_vcf||pacbio-solo"
     ["ultima-solo"]="produce_sentdug_vcf||ultima-solo"
     ["ont-solo"]="produce_sentdont_vcf||ont-solo"
