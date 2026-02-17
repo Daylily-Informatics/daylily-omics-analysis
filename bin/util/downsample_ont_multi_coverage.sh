@@ -45,7 +45,7 @@ for COV in "${COVERAGES[@]}"; do
 set -euo pipefail
 
 # Source conda environment for samtools
-source /fsx/data/cached_envs/mambaforge/etc/profile.d/conda.sh
+source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
 conda activate SAM
 
 echo "=== Starting ${COV}x downsample at \$(date) ==="
