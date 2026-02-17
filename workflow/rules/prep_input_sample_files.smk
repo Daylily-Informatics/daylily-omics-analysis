@@ -384,7 +384,7 @@ def get_ont_cramsx(wildcards):
     crams = []
 
     cram=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['ONT_CRAM'][0])
-    crai=f"{cram}.csi"  # ONT BAM files use .csi index, not .crai
+    crai=f"{cram}.crai"  # ONT CRAM files use .crai index
     cram_aligner=samples[samples['sample_lane'] == wildcards.sample]['ONT_CRAM_ALIGNER'][0]
     if cram_aligner in ['na','',None,'None']:
         return []
