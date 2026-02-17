@@ -2,15 +2,15 @@ headnode=ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@44.231.76.175
 
 to clone a new working dir for the following tests, use `day-clone -w ssh -t main -d <analysis_description>`, which when done will clone the daylily-omics-analysis repo to `/fsx/analysis_results/ubuntu/<analysis_description>/daylily-omics-analysis/`. You can then cd to that dir, and copy the described `<samples.tsv>` and `<units.tsv>` files to `config/` and run the command shown in dry-run mode with `source ~/.bashrc && <command>`
 
-Hybrid Ultima+ONT
-samples= .test_data/data/hybrid/
-units= .test_data/data/hybrid/
-command= source .dyoainit && source bin/day_activate slurm hg38 &&  bin/day_run produce_sentdhuo_vcf produce_alignstats produce_snv_concordances  -p -j 20 -k -T 1  -n
 
-Hybrid Ilmn+ONT
-samples= .test_data/data/hybrid/
-units= .test_data/data/hybrid/
-command= source .dyoainit && source bin/day_activate slurm hg38 &&  bin/day_run produce_sentdhio_vcf produce_alignstats produce_snv_concordances  -p -j 20 -k -T 1 -n
+# Test Data samples.tsv and units.tsv files
+# single platform 3x coverage for HG003
+.test_data/data/stress_tests/{ont,ilmn,pb,ug,roche}/hg003/3x/{samples,units}.tsv
+
+# hybrid 3x by 2 platforms
+.test_data/data/hybrid/{ilmn_ont,ilmn_pb,ug_ont,ug_pb,roche_ont,roche_pb}/hg003/3x/{samples,units}.tsv
+
+# Single-platform tests
 
 ONT only
 samples= .test_data/data/ont/
@@ -37,6 +37,18 @@ samples= .test_data/data/roche/
 units= .test_data/data/roche/
 command= source .dyoainit && source bin/day_activate slurm hg38 &&  bin/day_run  produce_deep19_r_vcf produce_alignstats produce_snv_concordances -p -j 25 -k -T 1 -n
 
+
+
+# Hybrid tests
+Hybrid Ultima+ONT
+samples= .test_data/data/hybrid/
+units= .test_data/data/hybrid/
+command= source .dyoainit && source bin/day_activate slurm hg38 &&  bin/day_run produce_sentdhuo_vcf produce_alignstats produce_snv_concordances  -p -j 20 -k -T 1  -n
+
+Hybrid Ilmn+ONT
+samples= .test_data/data/hybrid/
+units= .test_data/data/hybrid/
+command= source .dyoainit && source bin/day_activate slurm hg38 &&  bin/day_run produce_sentdhio_vcf produce_alignstats produce_snv_concordances  -p -j 20 -k -T 1 -n
 
 Hybrid CLI Ultima+ONT
 samples= .test_data/data/hybrid/
@@ -82,8 +94,20 @@ units= .test_data/data/hybrid/
 ( bundle /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle )
 command= source ~/.bashrc && source .dyoainit && source bin/day_activate slurm hg38 && source bin/day_run produce_sentdhupm_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
 
+Hybrid CLI Roche+ONT
+**the cli does not support this combination**
+
+Hybrid CLI Roche+PB
+**the cli does not support this combination**
+
 Hybrid Mod Roche+ONT (uses sentdhuo config but with Roche data instead of Ultima)
 samples= .test_data/data/hybrid/
 units= .test_data/data/hybrid/
 ( bundle /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle )
-command= source ~/.bashrc && source .dyoainit && source bin/day_activate slurm hg38 && source bin/day_run produce_sentdhro_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
+command= source ~/.bashrc && source .dyoainit && source bin/day_activate slurm hg38 && source bin/day_run produce_sentdhrom_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
+
+Hybrid Mod Roche+PB
+samples= .test_data/data/hybrid/
+units= .test_data/data/hybrid/
+( bundle /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle )
+command= source ~/.bashrc && source .dyoainit && source bin/day_activate slurm hg38 && source bin/day_run produce_sentdhrpm_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 -n
