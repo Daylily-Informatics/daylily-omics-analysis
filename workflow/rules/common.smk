@@ -112,11 +112,19 @@ SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].spl
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
 SENTDHIO_CHRMS = config["sentdhio"][f"{config['genome_build']}_sentdhio_chrms"].split(",")
-# Modular hybrid workflows reuse the same chromosome configs as the monolithic ones
+SENTDPB_CHRMS = config["sentdpb"][f"{config['genome_build']}_sentdpb_chrms"].split(",")
+
+# CLI hybrid workflows
+SENTDHIP_CHRMS = config["sentdhip"][f"{config['genome_build']}_sentdhip_chrms"].split(",")
+SENTDHUP_CHRMS = config["sentdhup"][f"{config['genome_build']}_sentdhup_chrms"].split(",")
+
+# Modular hybrid workflows reuse the same chromosome configs as their CLI counterparts
 SENTDHUOM_CHRMS = SENTDHUO_CHRMS  # Modular Ultima+ONT hybrid
 SENTDHIOM_CHRMS = SENTDHIO_CHRMS  # Modular Illumina+ONT hybrid
-SENTDPB_CHRMS = config["sentdpb"][f"{config['genome_build']}_sentdpb_chrms"].split(",")
-SENTDHIP_CHRMS = config["sentdhip"][f"{config['genome_build']}_sentdhip_chrms"].split(",")
+SENTDHIPM_CHRMS = SENTDHIP_CHRMS  # Modular Illumina+PacBio hybrid
+SENTDHUPM_CHRMS = SENTDHUP_CHRMS  # Modular Ultima+PacBio hybrid
+SENTDHROM_CHRMS = config["sentdhrom"][f"{config['genome_build']}_sentdhrom_chrms"].split(",")  # Modular Roche+ONT hybrid
+SENTDHRPM_CHRMS = config["sentdhrpm"][f"{config['genome_build']}_sentdhrpm_chrms"].split(",")  # Modular Roche+PacBio hybrid
 
 # ##### Setting the allowed aligners to run and to which deduper to use.
 # presently, 1+ aligners may run, but all must use the same deduper

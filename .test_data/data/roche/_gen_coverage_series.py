@@ -29,7 +29,7 @@ T = "\t"
 
 
 def make_row(sample, cov):
-    ratio = min(round(cov / BASE_COV, 3), 1.0)
+    ratio = min(round(cov / BASE_COV, 4), 1.0)
     bam = f"{BAM_DIR}/{sample}.bam"
     vals = {
         "RUNID": "R0", "SAMPLEID": sample, "EXPERIMENTID": f"{cov}x",
