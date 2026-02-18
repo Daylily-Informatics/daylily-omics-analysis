@@ -73,6 +73,7 @@ _snv_caller_codes=()
 _has_dedupers_config=false
 _has_aligners_config=false
 _has_snv_callers_config=false
+_is_dry_run=false
 
 for _arg in "$@"; do
     # Detect dedup targets
@@ -130,6 +131,10 @@ for _arg in "$@"; do
         aligners=*)      _has_aligners_config=true       ;;
         snv_callers=*)   _has_snv_callers_config=true    ;;
     esac
+    # Detect dry-run flags
+    case "$_arg" in
+        -n|--dry-run|--dryrun)  _is_dry_run=true  ;;
+    esac
 done
 
 # Export auto-detected config as environment variables for common.smk.
@@ -167,7 +172,11 @@ echo "SMK> D:$cmddt / U:$USER / PWD:$PWD / CMD: (${snakecmd[*]})" >> "$cmd_log"
 
 # Run snakemake command
 colr "Executing: ${snakecmd[*]}"  "$DY_IT0" "$DY_IB0" "$DY_IS1"  1>&2
-( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run && bash bin/util/benchmarks/collect_day_benchmark_data.sh  $DAY_GENOME_BUILD > /dev/null 2>&1 ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
+if [[ "$_is_dry_run" == "true" ]]; then
+    $snakecmd
+else
+    ( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run && bash bin/util/benchmarks/collect_day_benchmark_data.sh  $DAY_GENOME_BUILD > /dev/null 2>&1 ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
+fi
 ret_code=$?
 
 colr "RETURN CODE: $ret_code" "$DY_IB0" "$DY_IT0" "$DY_IS0" 1>&2
