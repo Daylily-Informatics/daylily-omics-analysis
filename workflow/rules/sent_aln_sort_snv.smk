@@ -90,7 +90,7 @@ rule sent_aln_sort_snv:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         # Find the jemalloc library in the active conda environment
         jemalloc_path="";

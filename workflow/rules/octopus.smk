@@ -110,9 +110,9 @@ rule octopus:
     shell:
         """ 
         touch {output.vcf};
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=$(dirname {log})/octo_tmp_$timestamp; #resources/dev/shm/octo_tmp_$timestamp;
-        trap "sleep 2 && rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'sleep 2; rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
         # --- Validate input CRAM contains aligned data ---

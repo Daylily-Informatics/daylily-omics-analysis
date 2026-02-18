@@ -83,12 +83,12 @@ rule doppelmark_sentieon_dups:
 
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base}/smd_sentieon_$timestamp;
         mkdir -p "$TMPDIR";
         export SENTIEON_TMPDIR=$TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         score_file=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.score.txt;
         metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.metrics.txt;

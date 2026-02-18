@@ -64,7 +64,7 @@ rule deepvariant_15:
         export TMPDIR=/fsx/scratch/deepvariant_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
 
         # --- Validate input CRAM contains aligned data ---

@@ -80,7 +80,7 @@ rule sentmm2ont_align_sort:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \"$TMPDIR\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         tdir="$TMPDIR";
         epocsec=$(date +'%s');

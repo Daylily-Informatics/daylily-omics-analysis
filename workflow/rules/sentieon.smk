@@ -73,13 +73,13 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
 
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/dev/shm/sentieon_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
 
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         tdir=$TMPDIR;
 
         # Find the jemalloc library in the active conda environment

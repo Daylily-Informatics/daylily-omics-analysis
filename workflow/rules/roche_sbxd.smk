@@ -101,10 +101,10 @@ rule roche_gatk_haplotypecaller:
         cluster_sample=ret_sample,
     shell:
         """
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/dev/shm/rochehc_tmp_$timestamp;
         mkdir -p $TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' \
             -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600' 2>/dev/null) || true;

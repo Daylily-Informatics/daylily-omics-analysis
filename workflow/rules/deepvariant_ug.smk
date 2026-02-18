@@ -57,7 +57,7 @@ rule deepvariant_ultima_make_examples:
 
         export TMPDIR=$(dirname {log})/dv_me_tmp_$timestamp;
         mkdir -p $TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
 
         # --- Validate input CRAM contains aligned data ---
@@ -143,7 +143,7 @@ rule deepvariant_ultima_call_variants:
         timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
         export TMPDIR=$(dirname {log})/deepvariantugcv_tmp_$timestamp;
         mkdir -p $TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
 
         {params.numa} \
