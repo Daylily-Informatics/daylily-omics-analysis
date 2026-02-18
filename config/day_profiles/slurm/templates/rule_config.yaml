@@ -62,7 +62,7 @@ malloc_alt:
     ld_preload: "  "
 
 alignstats:
-    threads: 32
+    threads: 16
     partition: "i192,i192mem,i128"
     num_reads_in_mem: " "  # 100000
     env_yaml: "../envs/alignstats_v0.2.yaml"
