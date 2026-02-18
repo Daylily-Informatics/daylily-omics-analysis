@@ -49,7 +49,7 @@ rule alignstats_bam:
     conda:
         config["alignstats"]["env_yaml"]
     shell:
-        "alignstats  -C -U  -i {input.bam} -T {params.huref} -o {output.json}  -j bam -v -P {threads} -p {threads} > {log};"
+        "resources/alignstats/alignstats  -C -U  -i {input.bam} -T {params.huref} -o {output.json}  -j bam -v -P {threads} -p {threads} > {log};"
 
 
 rule alignstats:
@@ -81,7 +81,7 @@ rule alignstats:
     conda:
         config["alignstats"]["env_yaml"]
     shell:
-        "alignstats  -C -U  -i {input.cram} -T {params.huref} -o {output.json}  -j cram -v -P {threads} -p {threads} > {log};"
+        "resources/alignstats/alignstats  -C -U  -i {input.cram} -T {params.huref} -o {output.json}  -j cram -v -P {threads} -p {threads} > {log};"
 
 
 localrules:
