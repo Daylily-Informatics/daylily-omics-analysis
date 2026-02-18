@@ -113,25 +113,20 @@ rule sentdhrom_pass1:
         _sq_count_ont=$(samtools view -H {input.ont_cram} 2>/dev/null | grep -c '^@SQ' || true)
         echo "ONT CRAM @SQ header count: $_sq_count_ont" >> {log} 2>&1
 
-        # Reheader input files to use consistent sample name (cluster_sample)
-        # This ensures DNAscope produces a single-sample VCF
-        echo "Reheadering input files to use sample name: {params.cluster_sample}" >> {log} 2>&1
-
-        # Create temporary BAMs with corrected sample names
-        samtools view -H {input.roche_bam} | \
-            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/roche_header.txt"
-        samtools reheader "$TMPDIR/roche_header.txt" {input.roche_bam} > "$TMPDIR/roche_reheadered.bam"
-        samtools index -@ {params.use_threads} "$TMPDIR/roche_reheadered.bam" >> {log} 2>&1
-
-        samtools view -H {input.ont_cram} | \
-            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ont_header.txt"
-        samtools reheader "$TMPDIR/ont_header.txt" {input.ont_cram} > "$TMPDIR/ont_reheadered.bam"
-        samtools index -@ {params.use_threads} "$TMPDIR/ont_reheadered.bam" >> {log} 2>&1
-
-        echo "Using reheadered BAMs for DNAscope" >> {log} 2>&1
+        # Build --replace_rg args: LR reads get LR:1 tag (critical for hybrid.model
+        # to distinguish long reads from short reads, especially for indel calling).
+        # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
+        REPLACE_RG_ARGS=""
+        for rgid in $(samtools view -H {input.ont_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+        for rgid in $(samtools view -H {input.roche_bam} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+        done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i "$TMPDIR/ont_reheadered.bam" -i "$TMPDIR/roche_reheadered.bam" \
+            -i {input.ont_cram} -i {input.roche_bam} \
+            $REPLACE_RG_ARGS \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
@@ -242,8 +237,18 @@ rule sentdhrom_mapq0_bed:
 
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
+        # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
+        REPLACE_RG_ARGS=""
+        for rgid in $(samtools view -H {input.ont_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+        for rgid in $(samtools view -H {input.roche_bam} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+        done
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             -i {input.ont_cram} -i {input.roche_bam} \
+            $REPLACE_RG_ARGS \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
@@ -540,9 +545,19 @@ rule sentdhrom_stage3:
 
         echo "Starting Stage 3 at $(date)" >> {log}
 
+        # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
+        REPLACE_RG_ARGS=""
+        for rgid in $(samtools view -H {input.ont_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+        for rgid in $(samtools view -H {input.roche_bam} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+        done
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             -i {input.ont_cram} -i {input.roche_bam} \
             -i {input.unmap_bam} -i {input.alt_bam} \
+            $REPLACE_RG_ARGS \
             --interval {input.bed} \
             --algo HybridStage3 \
             --model {params.model}/HybridStage3.model \
@@ -594,33 +609,23 @@ rule sentdhrom_pass2:
 
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
 
-        # Reheader ONT CRAM and stage3 BAM to use cluster_sample SM tag.
-        TMPDIR=$(dirname {output.vcf})
-
-        echo "Reheadering ONT CRAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
-        samtools view -H {input.ont_cram} | \
-            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ont_pass2_header.txt"
-        samtools reheader "$TMPDIR/ont_pass2_header.txt" {input.ont_cram} > "$TMPDIR/ont_pass2_reheadered.bam"
-        samtools index -@ {params.use_threads} "$TMPDIR/ont_pass2_reheadered.bam" >> {log} 2>&1
-
-        echo "Reheadering stage3 BAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
-        samtools view -H {input.stage3_bam} | \
-            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/stage3_pass2_header.txt"
-        samtools reheader "$TMPDIR/stage3_pass2_header.txt" {input.stage3_bam} > "$TMPDIR/stage3_pass2_reheadered.bam"
-        samtools index -@ {params.use_threads} "$TMPDIR/stage3_pass2_reheadered.bam" >> {log} 2>&1
+        # Build --replace_rg args: LR reads get LR:1 tag for hybrid model.
+        # This also unifies SM tags across ont_cram and stage3_bam so sentieon
+        # driver sees a single sample (stage3_bam inherits LR RGs from ONT input).
+        REPLACE_RG_ARGS=""
+        for rgid in $(samtools view -H {input.ont_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i "$TMPDIR/ont_pass2_reheadered.bam" -i "$TMPDIR/stage3_pass2_reheadered.bam" \
+            -i {input.ont_cram} -i {input.stage3_bam} \
+            $REPLACE_RG_ARGS \
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
-
-        # Cleanup temp files
-        rm -f "$TMPDIR/ont_pass2_header.txt" "$TMPDIR/ont_pass2_reheadered.bam" "$TMPDIR/ont_pass2_reheadered.bam.bai"
-        rm -f "$TMPDIR/stage3_pass2_header.txt" "$TMPDIR/stage3_pass2_reheadered.bam" "$TMPDIR/stage3_pass2_reheadered.bam.bai"
 
         echo "Pass 2 completed at $(date)" >> {log}
         """
