@@ -789,7 +789,7 @@ sentieon_haplocaller:
     partition: "i192,i192mem"
 
 rtg_vcfstats:
-    threads: 64
+    threads: 24
     env_yaml: "../envs/rtgtools_v0.1.yaml"
     ld_preload: " "
     partition: "i192,i192mem,i128"

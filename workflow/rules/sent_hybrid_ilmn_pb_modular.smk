@@ -115,6 +115,7 @@ rule sentdhipm_sr_align:
         sentieon util sort \
             -i - \
             -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             --reference {params.huref} \
             -o {output.bam} \
             --sam2bam --bam_compression 1 >> {log} 2>&1
@@ -193,6 +194,7 @@ rule sentdhipm_pass1:
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             $SR_RG_ARGS -i {input.sr_bam} \
             {params.diploid_bed} \
@@ -203,7 +205,7 @@ rule sentdhipm_pass1:
 
         # Create VCF index with tabix (required for hybrid_select)
         echo "Creating VCF index with tabix" >> {log}
-        tabix -f -p vcf {output.vcf} >> {log} 2>&1
+        tabix -f -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
 
         echo "Pass 1 completed at $(date)" >> {log}
         """
@@ -260,7 +262,7 @@ rule sentdhipm_hybrid_select:
             -v {input.vcf} \
             -t {params.use_threads} \
             - 2>> {log} \
-        | bcftools view -f 'PASS,.' - 2>> {log} \
+        | bcftools view --threads {threads} -f 'PASS,.' - 2>> {log} \
         | bcftools query -f '%CHROM\t%POS0\t%END\n' - 2>> {log} \
         | bedtools slop -b {params.slop_size} -g {input.ref_fai} -i - \
         > {output.bed} 2>> {log}
@@ -303,6 +305,12 @@ rule sentdhipm_mapq0_bed:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhipm_mq_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
@@ -316,6 +324,7 @@ rule sentdhipm_mapq0_bed:
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             $SR_RG_ARGS -i {input.sr_bam} \
             --algo HybridStage2 \
@@ -469,6 +478,7 @@ rule sentdhipm_stage1:
 
             # Only run insertion detection (no interval restriction)
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                --temp_dir $TMPDIR \
                 -i {input.lr_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
@@ -484,12 +494,14 @@ rule sentdhipm_stage1:
                 {params.huref} - 2>> {log} | \
             sentieon util sort \
                 -i - -t {params.use_threads} \
+                --temp_dir $TMPDIR \
                 -o {output.bam} --sam2bam >> {log} 2>&1
         else
             echo "Processing $(wc -l < {input.diff_bed}) regions from merged_diff.bed" >> {log}
 
             # Haplotype assembly driver command
             HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                --temp_dir $TMPDIR \
                 -i {input.lr_cram} --interval {input.diff_bed} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1.model \
@@ -500,6 +512,7 @@ rule sentdhipm_stage1:
 
             # Insertion detection driver command
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                --temp_dir $TMPDIR \
                 -i {input.lr_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
@@ -516,6 +529,7 @@ rule sentdhipm_stage1:
                 {params.huref} - 2>> {log} | \
             sentieon util sort \
                 -i - -t {params.use_threads} \
+                --temp_dir $TMPDIR \
                 -o {output.bam} --sam2bam >> {log} 2>&1
         fi
 
@@ -561,9 +575,16 @@ rule sentdhipm_stage2:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhipm_s2_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+
         echo "Starting Stage 2 at $(date)" >> {log}
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             -i {input.stage1_bam} -i {input.hap_bam} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2.model \
@@ -613,6 +634,12 @@ rule sentdhipm_stage3:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhipm_s3_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+
         echo "Starting Stage 3 at $(date)" >> {log}
 
         # NOTE: Input PB CRAM must have clean @PG headers (no broken PP chain).
@@ -628,6 +655,7 @@ rule sentdhipm_stage3:
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             $SR_RG_ARGS -i {input.sr_bam} \
             $LR_RG_ARGS -i {input.unmap_bam} \
@@ -638,6 +666,7 @@ rule sentdhipm_stage3:
             - 2>> {log} | \
         sentieon util sort \
             -i - -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             -o {output.bam} >> {log} 2>&1
 
         echo "Stage 3 completed at $(date)" >> {log}
@@ -681,6 +710,12 @@ rule sentdhipm_pass2:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhipm_p2_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model.
@@ -692,6 +727,7 @@ rule sentdhipm_pass2:
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             -i {input.stage3_bam} \
             --interval {input.bed} \
@@ -740,15 +776,15 @@ rule sentdhipm_subset:
 
         # If stage2 BED is empty, just copy; otherwise subset
         if [ -s {input.bed} ]; then
-            bcftools view -T ^{input.bed} {input.vcf} 2>> {log} | \
-            sentieon util vcfconvert - {output.vcf} >> {log} 2>&1
+            bcftools view --threads {threads} -T ^{input.bed} {input.vcf} 2>> {log} | \
+            sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
         else
-            sentieon util vcfconvert {input.vcf} {output.vcf} >> {log} 2>&1
+            sentieon util vcfconvert -t {threads} {input.vcf} {output.vcf} >> {log} 2>&1
         fi
 
         # Ensure index exists (sentieon util vcfconvert should create it, but verify)
         if [ ! -f {output.tbi} ]; then
-            tabix -p vcf {output.vcf} >> {log} 2>&1
+            tabix -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
         fi
 
         echo "Subset completed at $(date)" >> {log}
@@ -785,7 +821,7 @@ rule sentdhipm_concat_pass:
         """
         set -euo pipefail
         echo "Concatenating subset + pass2 VCFs at $(date)" >> {log}
-        bcftools concat -W=tbi --output {output.vcf} -aD {input.subset} {input.pass2} >> {log} 2>&1
+        bcftools concat --threads {threads} -W=tbi --output {output.vcf} -aD {input.subset} {input.pass2} >> {log} 2>&1
         echo "Concat completed at $(date)" >> {log}
         """
 
@@ -873,8 +909,8 @@ rule sentdhipm_transfer:
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
         echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
         echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
-        bcftools reheader -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
-        bcftools index -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
+        bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
+        bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
 
         # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
         # Note: pop_vcf is a sites-only VCF (no samples) - don't try to reheader it
@@ -885,13 +921,13 @@ rule sentdhipm_transfer:
 
             # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
             # Then trimalt processes the merged output
-            bcftools merge --no-version --regions-overlap pos -m all \
+            bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
                 "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
             sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
-            bgzip -c -@ {params.use_threads} > {output.vcf} 2>> {log}
+            bgzip -c -@ {threads} > {output.vcf} 2>> {log}
 
             # Create tabix index
-            bcftools index -t {output.vcf} >> {log} 2>&1
+            bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
 
             # Cleanup temp files
             rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
@@ -899,7 +935,7 @@ rule sentdhipm_transfer:
         else
             echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
             mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
-            bcftools index -t {output.vcf} >> {log} 2>&1
+            bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
             rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
         fi
 
@@ -941,9 +977,16 @@ rule sentdhipm_model_apply:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhipm_ma_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+
         echo "Starting DNAModelApply at $(date)" >> {log}
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
             {params.diploid_bed} \
             --algo DNAModelApply \
             --model {params.model}/hybrid.model \
@@ -988,9 +1031,9 @@ rule sentdhipm_final_norm:
 
         echo "Starting final normalization at $(date)" >> {log}
 
-        bcftools view -a -e 'GT="0/0"' {input.vcf} 2>> {log} | \
-        bcftools norm -f {params.huref} 2>> {log} | \
-        sentieon util vcfconvert - {output.vcf} >> {log} 2>&1
+        bcftools view --threads {threads} -a -e 'GT="0/0"' {input.vcf} 2>> {log} | \
+        bcftools norm --threads {threads} -f {params.huref} 2>> {log} | \
+        sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
 
         echo "Final normalization completed at $(date)" >> {log}
         """
@@ -1082,7 +1125,7 @@ rule sentdhipm_concat_index_chunks:
 
         export oldname=$(bcftools query -l {output.vcfgztemp} | head -n1) >> {log} 2>&1;
         echo -e "${{oldname}}\\t{params.cluster_sample}" > {output.vcfgz}.rename.txt
-        bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
+        bcftools reheader --threads {threads} -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
         bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
 
         rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
