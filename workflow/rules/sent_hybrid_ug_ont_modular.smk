@@ -465,6 +465,14 @@ rule sentdhuom_stage1:
                 --temp_dir $TMPDIR \
                 -o {output.bam} --sam2bam >> {log} 2>&1
 
+            # Wait for process substitutions to fully complete (ensures hap_bam is finalized)
+            wait
+            sync
+
+            # Verify hap_bam integrity before indexing
+            samtools quickcheck {output.hap_bam} >> {log} 2>&1 || \
+                (echo "ERROR: stage1_hap.bam failed integrity check - file may be truncated" >> {log} && exit 1)
+
             # Index the hap BAM produced by HybridStage1 - required by stage2
             samtools index {output.hap_bam} >> {log} 2>&1
         fi
