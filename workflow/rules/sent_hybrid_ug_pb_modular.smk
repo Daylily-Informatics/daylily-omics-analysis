@@ -117,10 +117,10 @@ rule sentdhupm_pass1:
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
         REPLACE_RG_ARGS=""
-        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-        for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}"
         done
 
@@ -239,10 +239,10 @@ rule sentdhupm_mapq0_bed:
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         REPLACE_RG_ARGS=""
-        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-        for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}"
         done
 
@@ -551,10 +551,10 @@ rule sentdhupm_stage3:
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         REPLACE_RG_ARGS=""
-        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-        for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}"
         done
 
@@ -617,7 +617,7 @@ rule sentdhupm_pass2:
         # This also unifies SM tags across pb_cram and stage3_bam so sentieon
         # driver sees a single sample (stage3_bam inherits LR RGs from PB input).
         REPLACE_RG_ARGS=""
-        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\1/'); do
+        for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
