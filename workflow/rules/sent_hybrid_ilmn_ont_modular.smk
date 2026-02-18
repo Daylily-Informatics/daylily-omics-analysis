@@ -250,13 +250,26 @@ rule sentdhiom_pass1:
 
         echo "Starting Pass 1 DNAscope at $(date)" >> {log}
 
+        # Reheader ONT CRAM to use cluster_sample SM tag so both inputs
+        # share the same sample name and sentieon produces a single-sample VCF.
+        # (The CLI uses --rgsm / --replace_rg internally to achieve this.)
+        TMPDIR=$(dirname {output.vcf})
+        echo "Reheadering ONT CRAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
+        samtools view -H {input.lr_cram} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ont_pass1_header.txt"
+        samtools reheader "$TMPDIR/ont_pass1_header.txt" {input.lr_cram} > "$TMPDIR/ont_pass1_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/ont_pass1_reheadered.bam" >> {log} 2>&1
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.lr_cram} -i {input.sr_bam} \
+            -i "$TMPDIR/ont_pass1_reheadered.bam" -i {input.sr_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
+
+        # Cleanup reheadered BAM
+        rm -f "$TMPDIR/ont_pass1_header.txt" "$TMPDIR/ont_pass1_reheadered.bam" "$TMPDIR/ont_pass1_reheadered.bam.bai"
 
         # Create VCF index with tabix (required for hybrid_select)
         echo "Creating VCF index with tabix" >> {log}
@@ -718,17 +731,35 @@ rule sentdhiom_pass2:
 
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
 
-        # NOTE: Input ONT BAM must have clean @PG headers (no broken PP chain).
-        # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
+        # Reheader ONT CRAM and stage3 BAM to use cluster_sample SM tag.
+        # stage3 BAM inherits the original ONT RG (SM:hg003) from its inputs,
+        # so both must be reheadered to produce a single-sample VCF.
+        TMPDIR=$(dirname {output.vcf})
+
+        echo "Reheadering ONT CRAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
+        samtools view -H {input.lr_cram} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/ont_pass2_header.txt"
+        samtools reheader "$TMPDIR/ont_pass2_header.txt" {input.lr_cram} > "$TMPDIR/ont_pass2_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/ont_pass2_reheadered.bam" >> {log} 2>&1
+
+        echo "Reheadering stage3 BAM to use sample name: {params.cluster_sample}" >> {log} 2>&1
+        samtools view -H {input.stage3_bam} | \
+            sed "s/SM:[^\\t]*/SM:{params.cluster_sample}/g" > "$TMPDIR/stage3_pass2_header.txt"
+        samtools reheader "$TMPDIR/stage3_pass2_header.txt" {input.stage3_bam} > "$TMPDIR/stage3_pass2_reheadered.bam"
+        samtools index -@ {params.use_threads} "$TMPDIR/stage3_pass2_reheadered.bam" >> {log} 2>&1
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.lr_cram} -i {input.stage3_bam} \
+            -i "$TMPDIR/ont_pass2_reheadered.bam" -i "$TMPDIR/stage3_pass2_reheadered.bam" \
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
+
+        # Cleanup temp files
+        rm -f "$TMPDIR/ont_pass2_header.txt" "$TMPDIR/ont_pass2_reheadered.bam" "$TMPDIR/ont_pass2_reheadered.bam.bai"
+        rm -f "$TMPDIR/stage3_pass2_header.txt" "$TMPDIR/stage3_pass2_reheadered.bam" "$TMPDIR/stage3_pass2_reheadered.bam.bai"
 
         echo "Pass 2 completed at $(date)" >> {log}
         """
