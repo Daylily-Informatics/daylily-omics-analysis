@@ -116,17 +116,18 @@ rule sentdhupm_pass1:
         # Build --replace_rg args: LR reads get LR:1 tag (critical for hybrid.model
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
-        REPLACE_RG_ARGS=""
+        LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
+        SR_RG_ARGS=""
         for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.pb_cram} -i {input.ug_cram} \
-            $REPLACE_RG_ARGS \
+            $LR_RG_ARGS -i {input.pb_cram} \
+            $SR_RG_ARGS -i {input.ug_cram} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
@@ -238,17 +239,18 @@ rule sentdhupm_mapq0_bed:
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
-        REPLACE_RG_ARGS=""
+        LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
+        SR_RG_ARGS=""
         for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.pb_cram} -i {input.ug_cram} \
-            $REPLACE_RG_ARGS \
+            $LR_RG_ARGS -i {input.pb_cram} \
+            $SR_RG_ARGS -i {input.ug_cram} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
@@ -550,18 +552,19 @@ rule sentdhupm_stage3:
         # NOTE: Input PacBio CRAM must have clean @PG headers (no broken PP chain).
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
-        REPLACE_RG_ARGS=""
+        LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
+        SR_RG_ARGS=""
         for rgid in $(samtools view -H {input.ug_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.pb_cram} -i {input.ug_cram} \
+            $LR_RG_ARGS -i {input.pb_cram} \
+            $SR_RG_ARGS -i {input.ug_cram} \
             -i {input.unmap_bam} -i {input.alt_bam} \
-            $REPLACE_RG_ARGS \
             --interval {input.bed} \
             --algo HybridStage3 \
             --model {params.model}/HybridStage3.model \
@@ -616,14 +619,14 @@ rule sentdhupm_pass2:
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model.
         # This also unifies SM tags across pb_cram and stage3_bam so sentieon
         # driver sees a single sample (stage3_bam inherits LR RGs from PB input).
-        REPLACE_RG_ARGS=""
+        LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.pb_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            REPLACE_RG_ARGS="$REPLACE_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.pb_cram} -i {input.stage3_bam} \
-            $REPLACE_RG_ARGS \
+            $LR_RG_ARGS -i {input.pb_cram} \
+            -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
