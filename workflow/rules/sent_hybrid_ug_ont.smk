@@ -184,11 +184,13 @@ rule sentdhuo_sort_index_chunk_vcf:
     threads: 64 #config["config"]["sort_index_sentdhuona_chunk_vcf"]['threads']
     shell:
         """
-        
-        cp {input.vcf} {output.vcfsort} 2>> {log};
-        bgzip  -@ {threads} {output.vcfsort} >> {log} 2>&1;
+
+        # Input is already bgzipped (.vcf.gz) from sentieon-cli.
+        # Copy directly to .sort.vcf.gz to avoid double-gzipping.
+        cp {input.vcf} {output.vcfgz} 2>> {log};
         tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
-        
+        touch {output.vcfsort};
+
         """
 
 
