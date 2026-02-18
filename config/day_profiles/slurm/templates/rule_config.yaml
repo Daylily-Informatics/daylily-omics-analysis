@@ -531,6 +531,12 @@ sentdhio:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
 
@@ -550,6 +556,12 @@ sentdhuo:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
     max_mem: "140G"
 
 
@@ -607,6 +619,12 @@ sentdhipm:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
 
@@ -626,6 +644,12 @@ sentdhupm:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
 
@@ -645,6 +669,12 @@ sentdhrom:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
 
@@ -663,6 +693,12 @@ sentdhrpm:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
 

@@ -536,6 +536,12 @@ sentdhio:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT1.1.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -570,6 +576,12 @@ sentdhuo:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -606,6 +618,12 @@ sentdhipm:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -624,6 +642,12 @@ sentdhupm:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -642,6 +666,12 @@ sentdhrom:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -659,6 +689,12 @@ sentdhrpm:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 

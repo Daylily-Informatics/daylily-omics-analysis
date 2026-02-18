@@ -95,7 +95,7 @@ rule sentdhiom_sr_align:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         # License check
         if [ -z "$SENTIEON_LICENSE" ] || [ ! -f "$SENTIEON_LICENSE" ]; then
@@ -218,7 +218,7 @@ rule sentdhiom_pass1:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
@@ -301,18 +301,18 @@ rule sentdhiom_hybrid_select:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.hybrid_select.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.hybrid_select.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_light'],
+        vcpu=config['sentdhio']['threads_light'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     params:
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_light"],
         cluster_sample=ret_sample,
         slop_size=1000,
     shell:
@@ -354,20 +354,20 @@ rule sentdhiom_mapq0_bed:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_bed.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.mapq0_bed.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_medium'],
+        vcpu=config['sentdhio']['threads_medium'],
+        mem_mb=config['sentdhio']['mem_mb_medium'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -378,7 +378,7 @@ rule sentdhiom_mapq0_bed:
         export TMPDIR="/dev/shm/sentdhiom_mq_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
@@ -423,9 +423,9 @@ rule sentdhiom_mapq0_slop:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=2,
+        vcpu=2,
+        mem_mb=4000,
     params:
         cluster_sample=ret_sample,
     shell:
@@ -458,9 +458,9 @@ rule sentdhiom_merge_beds:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=2,
+        vcpu=2,
+        mem_mb=4000,
     params:
         cluster_sample=ret_sample,
     shell:
@@ -493,20 +493,20 @@ rule sentdhiom_stage1:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_medium'],
+        vcpu=config['sentdhio']['threads_medium'],
+        mem_mb=config['sentdhio']['mem_mb_medium'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
         r"""
@@ -525,7 +525,7 @@ rule sentdhiom_stage1:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting Stage 1 at $(date)" >> {log}
 
@@ -624,20 +624,20 @@ rule sentdhiom_stage2:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage2.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_medium'],
+        vcpu=config['sentdhio']['threads_medium'],
+        mem_mb=config['sentdhio']['mem_mb_medium'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -648,7 +648,7 @@ rule sentdhiom_stage2:
         export TMPDIR="/dev/shm/sentdhiom_s2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting Stage 2 at $(date)" >> {log}
 
@@ -683,20 +683,20 @@ rule sentdhiom_stage3:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage3.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_medium'],
+        vcpu=config['sentdhio']['threads_medium'],
+        mem_mb=config['sentdhio']['mem_mb_medium'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -707,7 +707,7 @@ rule sentdhiom_stage3:
         export TMPDIR="/dev/shm/sentdhiom_s3_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting Stage 3 at $(date)" >> {log}
 
@@ -784,7 +784,7 @@ rule sentdhiom_pass2:
         export TMPDIR="/dev/shm/sentdhiom_p2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
 
@@ -827,14 +827,14 @@ rule sentdhiom_subset:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
-    threads: 4
+    threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_light'],
+        vcpu=config['sentdhio']['threads_light'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     params:
         cluster_sample=ret_sample,
     shell:
@@ -877,14 +877,14 @@ rule sentdhiom_concat_pass:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
-    threads: 4
+    threads: config['sentdhio']['threads_light']
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_light'],
+        vcpu=config['sentdhio']['threads_light'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     params:
         cluster_sample=ret_sample,
     shell:
@@ -910,16 +910,16 @@ rule sentdhiom_anno:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_light'],
+        vcpu=config['sentdhio']['threads_light'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     params:
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -954,17 +954,17 @@ rule sentdhiom_transfer:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_light'],
+        vcpu=config['sentdhio']['threads_light'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     params:
         pop_vcf=config["sentdhio"]["pop_vcf"],
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -1027,21 +1027,21 @@ rule sentdhiom_model_apply:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.model_apply.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.model_apply.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_medium'],
+        vcpu=config['sentdhio']['threads_medium'],
+        mem_mb=config['sentdhio']['mem_mb_medium'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
-        use_threads=config["sentdhio"]["use_threads"],
+        use_threads=config["sentdhio"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -1052,7 +1052,7 @@ rule sentdhiom_model_apply:
         export TMPDIR="/dev/shm/sentdhiom_ma_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting DNAModelApply at $(date)" >> {log}
 
@@ -1082,16 +1082,16 @@ rule sentdhiom_final_norm:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.final_norm.log",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.final_norm.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhio']['threads'],
-        vcpu=config['sentdhio']['threads'],
-        mem_mb=config['sentdhio']['mem_mb'],
+        threads=config['sentdhio']['threads_light'],
+        vcpu=config['sentdhio']['threads_light'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
@@ -1171,12 +1171,12 @@ rule sentdhiom_concat_index_chunks:
         vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz",
         vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.temp.vcf.gz",
         vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz.tbi",
-    threads: config['sentdhio']['threads']
+    threads: config['sentdhio']['threads_light']
     resources:
-        vcpu=config['sentdhio']['threads'],
-        threads=config['sentdhio']['threads'],
+        vcpu=config['sentdhio']['threads_light'],
+        threads=config['sentdhio']['threads_light'],
         partition="i192mem,i192bigmem",
-        mem_mb=config['sentdhio']['mem_mb'],
+        mem_mb=config['sentdhio']['mem_mb_light'],
     priority: 47
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
