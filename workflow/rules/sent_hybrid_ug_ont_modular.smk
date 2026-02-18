@@ -464,6 +464,9 @@ rule sentdhuom_stage1:
                 -i - -t {params.use_threads} \
                 --temp_dir $TMPDIR \
                 -o {output.bam} --sam2bam >> {log} 2>&1
+
+            # Index the hap BAM produced by HybridStage1 - required by stage2
+            samtools index {output.hap_bam} >> {log} 2>&1
         fi
 
         echo "Stage 1 completed at $(date)" >> {log}
