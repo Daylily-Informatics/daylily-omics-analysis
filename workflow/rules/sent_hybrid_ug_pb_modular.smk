@@ -564,7 +564,8 @@ rule sentdhupm_stage3:
         sentieon driver -r {params.huref} -t {params.use_threads} \
             $LR_RG_ARGS -i {input.pb_cram} \
             $SR_RG_ARGS -i {input.ug_cram} \
-            -i {input.unmap_bam} -i {input.alt_bam} \
+            $LR_RG_ARGS -i {input.unmap_bam} \
+            $LR_RG_ARGS -i {input.alt_bam} \
             --interval {input.bed} \
             --algo HybridStage3 \
             --model {params.model}/HybridStage3.model \
