@@ -157,6 +157,9 @@ rule hyb_rescue_regions:
         "../envs/bcftools_v0.1.yaml"
     shell:
         r"""
+        # Remove any stale .csi indexes so bcftools uses the .tbi we create
+        rm -f {input.sr_vcf}.csi {input.lr_vcf}.csi
+
         # Find variants private to short-read platform
         bcftools isec -n=1 -w1 {input.sr_vcf} {input.lr_vcf} \
           -Oz -o {output.bed}.tmp.vcf.gz >> {log} 2>&1

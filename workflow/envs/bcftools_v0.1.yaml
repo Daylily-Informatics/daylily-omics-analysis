@@ -9,4 +9,5 @@ dependencies:
   - samtools=1.21
   - htslib=1.21
   - tabix
+  - bedtools
 
