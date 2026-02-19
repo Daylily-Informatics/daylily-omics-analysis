@@ -1002,10 +1002,16 @@ rule sentdhiom_transfer:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
     threads: config['sentdhio']['threads_light']
+    resources:
+        partition="i192mem,i192bigmem,i182",
+        threads=config['sentdhio']['threads_medium'],
+        vcpu=config['sentdhio']['threads_medium'],
+        mem_mb=config['sentdhio']['mem_mb_medium'],
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
         pop_vcf=config["sentdhio"]["pop_vcf"],
+        cluster_sample=ret_sample,
     shell:
         r"""
         set -euo pipefail
