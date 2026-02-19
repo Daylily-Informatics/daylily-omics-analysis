@@ -991,7 +991,7 @@ rule sentdhiom_anno:
 # Rule 14: Transfer - Annotation transfer from population VCF (if pop_vcf set)
 # ---------------------------------------------------------------------------
 rule sentdhiom_transfer:
-    """Transfer annotations from population VCF using bcftools merge"""
+    """Transfer annotations from population VCF using bcftools merge (streaming optimized)"""
     input:
         anno_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
     output:
@@ -1010,61 +1010,51 @@ rule sentdhiom_transfer:
         mem_mb=config['sentdhio']['mem_mb_light'],
     params:
         pop_vcf=config["sentdhio"]["pop_vcf"],
-        use_threads=config["sentdhio"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:
-        """
+        r"""
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         echo "Starting annotation transfer at $(date)" >> {log}
 
-        #TMPDIR=$(dirname {output.vcf})
+        timestamp=$(date +%Y%m%d%H%M%S)
+        export TMPDIR="/dev/shm/sentdhiom_tr_${timestamp}_$$"
+        export SENTIEON_TMPDIR="$TMPDIR"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
-        timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_tr_${{timestamp}}_$$";
-        export SENTIEON_TMPDIR="$TMPDIR";
-        mkdir -p "$TMPDIR";
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
-
-        # Reheader anno_vcf to use cluster_sample name (use old\tnew format)
+        # Determine original sample name
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
         echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
-        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
-        bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
-        bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
 
-        # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
-        # Note: pop_vcf is a sites-only VCF (no samples) - don't try to reheader it
+        echo -e "${anno_old_sample}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
+
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
+
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
             echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
 
-            # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
-            # Then trimalt processes the merged output
+            # Streamed pipeline: reheader → merge → trimalt → bgzip
+            bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" {input.anno_vcf} 2>> {log} | \
             bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
-                "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
+                - {params.pop_vcf} 2>> {log} | \
             sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
             bgzip -c -@ {threads} > {output.vcf} 2>> {log}
 
-            # Create tabix index
-            bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
-
-            # Cleanup temp files
-            #rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-            #      "$TMPDIR/anno_rename.txt"
-   
         else
-            echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
-            mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
-            bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
-            #rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
+            echo "No pop_vcf configured — performing reheader only" >> {log}
+
+            bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" {input.anno_vcf} 2>> {log} | \
+            bgzip -c -@ {threads} > {output.vcf} 2>> {log}
         fi
 
-        mv $TMPDIR ./
+        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
+
         echo "Transfer completed at $(date)" >> {log}
         """
+
 
 
 
