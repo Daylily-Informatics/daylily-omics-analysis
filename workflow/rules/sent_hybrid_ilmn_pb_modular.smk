@@ -64,9 +64,18 @@ rule sentdhipm_sr_align:
         mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        max_mem="130G"
+        if "max_mem" not in config["sentieon"]
+        else config["sentieon"]["max_mem"],
         model=config["sentdhio"]["dna_scope_snv_model"],
         use_threads=config["sentdhio"]["use_threads"],
+        bwa_threads=config["sentieon"]["bwa_threads"],
+        igz=config['sentieon']['igz'],
+        mbuffer=config['sentieon']['mbuffer'],
+        sort_thread_mem=config['sentieon']['sort_thread_mem'],
+        sort_threads=config['sentieon']['sort_threads'],
         cluster_sample=ret_sample,
+        trim_head=get_ilmn_trim_head,
     shell:
         """
         set -euo pipefail
@@ -80,6 +89,8 @@ rule sentdhipm_sr_align:
             echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
             exit 5;
         fi
+        export bwt_max_mem={params.max_mem} ;
+
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
@@ -94,6 +105,32 @@ rule sentdhipm_sr_align:
 
         echo "Starting SR alignment at $(date)" >> {log}
 
+        # Find the jemalloc library in the active conda environment
+        jemalloc_path="";
+        for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
+            if [[ -d "$_dir" ]]; then
+                for _ext in so dylib; do
+                    _candidate=$(find "$_dir" -maxdepth 1 -name "libjemalloc*.$_ext*" 2>/dev/null | head -n 1);
+                    if [[ -n "$_candidate" && -r "$_candidate" ]]; then
+                        jemalloc_path="$_candidate";
+                        break 2;
+                    fi
+                done
+            fi
+        done
+
+        # Check if jemalloc was found and set LD_PRELOAD accordingly
+        if [[ -n "$jemalloc_path" ]]; then
+            export LD_PRELOAD="$jemalloc_path";
+            export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
+            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+            echo "MALLOC_CONF set to: $MALLOC_CONF" >> {log};
+        else
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu)." >> {log};
+            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
+            exit 3;
+        fi
+
         # Use cluster_sample for consistent @RG SM tag across entire pipeline
         # This matches the pattern used in sentieon_bwa_sort and other alignment rules
         epocsec=$(date +%s)
@@ -104,25 +141,30 @@ rule sentdhipm_sr_align:
         R2_FILES="{input.r2}"
 
         # Align with bwa mem → util sort
-        sentieon bwa mem \
+        LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
             -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
-            -t {params.use_threads} \
+            -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
             {params.huref} \
-            <(zcat $R1_FILES) \
-            <(zcat $R2_FILES) 2>> {log} | \
+             <( {params.igz} -q  {input.r1} {params.trim_head} )   \
+             <( {params.igz} -q  {input.r2} {params.trim_head} )   \
+             {params.mbuffer}  2>> {log} | \
         sentieon util sort \
             -i - \
             -t {params.use_threads} \
-            --temp_dir $TMPDIR \
             --reference {params.huref} \
+            --sortblock_thread_count {params.sort_threads} \
             -o {output.bam} \
+            --intermediate_compress_level 1  \
+            --temp_dir $TMPDIR \
+            --block_size {params.sort_thread_mem} \
             --sam2bam --bam_compression 1 >> {log} 2>&1
 
         # Index the BAM
         samtools index -@ {threads} {output.bam} >> {log} 2>&1
 
+        mv $TMPDIR ./
         echo "SR alignment completed at $(date)" >> {log}
         """
 
