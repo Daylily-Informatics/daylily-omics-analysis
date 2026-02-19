@@ -289,6 +289,7 @@ rule sentdhiom_sr_markdup:
         use_threads = config["sentdhio"]["use_threads"],
         cram_opts=" --cram_write_options version=3.0,compressor=rans ",
         tmp_base="/dev/shm",
+        cluster_sample=ret_sample,
     threads: config['sentdhio']['threads']
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.sr_markdup.bench.tsv"
