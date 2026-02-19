@@ -990,12 +990,18 @@ rule sentdhiom_anno:
 # ---------------------------------------------------------------------------
 # Rule 14: Transfer - Annotation transfer from population VCF (if pop_vcf set)
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Rule 14: Transfer - Annotation transfer from population VCF (if pop_vcf set)
+# ---------------------------------------------------------------------------
 rule sentdhiom_transfer:
-    """Transfer annotations from population VCF using bcftools merge (streaming optimized)"""
+    """Transfer annotations from population VCF using bcftools merge (stdin-safe)"""
     input:
         anno_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
+        # optional but makes failures obvious early
+        anno_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
@@ -1020,38 +1026,46 @@ rule sentdhiom_transfer:
 
         timestamp=$(date +%Y%m%d%H%M%S)
         export TMPDIR="/dev/shm/sentdhiom_tr_${{timestamp}}_$$"
-        export SENTIEON_TMPDIR="$TMPDIR"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
-        # Determine original sample name
+        # Determine sample name; only reheader if needed
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
         echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
 
-        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
+        SRC_VCF="{input.anno_vcf}"
 
-        if [ -n "{{params.pop_vcf}}" ] && [ -f "{params.pop_vcf}" ]; then
+        if [ "$anno_old_sample" != "{params.cluster_sample}" ]; then
+            echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
+            echo "Reheadering to $TMPDIR/anno_reheadered.vcf.gz" >> {log}
 
+            bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" \
+                -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
+            bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
+
+            SRC_VCF="$TMPDIR/anno_reheadered.vcf.gz"
+        fi
+
+        if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
             echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
 
-            # Streamed pipeline: reheader → merge → trimalt → bgzip
-            bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" {input.anno_vcf} 2>> {log} | \
+            # NOTE: merge needs indexed BGZF inputs -> SRC_VCF is a file, not stdin
             bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
-                - {params.pop_vcf} 2>> {log} | \
+                "$SRC_VCF" "{params.pop_vcf}" 2>> {log} | \
             sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
             bgzip -c -@ {threads} > {output.vcf} 2>> {log}
-
         else
-            echo "No pop_vcf configured — performing reheader only" >> {log}
-
-            bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" {input.anno_vcf} 2>> {log} | \
-            bgzip -c -@ {threads} > {output.vcf} 2>> {log}
+            echo "No pop_vcf configured, copying (plus possible reheader)" >> {log}
+            if [ "$SRC_VCF" = "{input.anno_vcf}" ]; then
+                cp -f {input.anno_vcf} {output.vcf}
+            else
+                cp -f "$SRC_VCF" {output.vcf}
+            fi
         fi
 
-        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
-
+        bcftools index --threads {threads} -t {output.vcf} -o {output.tbi} >> {log} 2>&1
         echo "Transfer completed at $(date)" >> {log}
         """
 
