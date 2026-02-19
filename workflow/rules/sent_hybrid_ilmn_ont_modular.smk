@@ -345,24 +345,19 @@ rule sentdhiom_sr_markdup:
         fi;
         
         LD_PRELOAD=$LD_PRELOAD sentieon driver \
-            --input {input.bam} \
-            --reference {params.huref} \
-            --thread_count {threads} \
-            --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
+        -r {params.huref} \
+        -t {threads} \
+        -i {input.bam} \
+        --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
 
         LD_PRELOAD=$LD_PRELOAD sentieon driver \
-            --input {input.bam} \
-            --reference {params.huref} \
-            --thread_count {threads} \
-            --algo Dedup \
-            --score_info "$score_file" \
-            --metrics "$metrics_tmp" \
-            {output.bam} >> {log} 2>&1;
-
-        #sentieon driver -r {params.huref} -t {params.use_threads} \
-        #    -i {input.bam} \
-        #    --algo MarkDuplicates \
-        #    {output.bam}
+        -r {params.huref} \
+        -t {threads} \
+        -i {input.bam} \
+        --algo Dedup \
+        --score_info "$score_file" \
+        --metrics "$metrics_tmp" \
+        {output.bam} >> {log} 2>&1;
 
         samtools index -@ {threads} {output.bam} {output.bai} >> {log} 2>&1;
         """
