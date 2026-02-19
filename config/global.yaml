@@ -5,6 +5,31 @@ profile_name: "global"  # this is over-ridden when profile specific config is in
 snv_callers_somatic:
   - "senttn"
 
+hyb_ensemble:
+  ref_fa: /path/to/hg38.fa
+
+  platforms:
+    ILMN:
+      callers:
+        DV:  "path/to/ilmn_dv.vcf.gz"
+        SENT: "path/to/ilmn_sent.vcf.gz"
+    ONT:
+      callers:
+        DV:  "path/to/ont_dv.vcf.gz"
+        SENT: "path/to/ont_sent.vcf.gz"
+
+  mode: "A"
+  pad_bp: 50
+
+  thresholds:
+    A:
+      ont_qual_min_snv: 60
+      ont_qual_min_indel: 80
+      allow_ont_snv: false
+    D:
+      ont_qual_min_snv: 30
+      ont_qual_min_indel: 50
+      allow_ont_snv: true
 
 parascopy:
   threads: 8

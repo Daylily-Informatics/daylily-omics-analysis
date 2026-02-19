@@ -69,7 +69,7 @@ rule hyb_norm_all:
     output:
         directory("results/day/hg38/{sample}/hyb/norm")
     conda:
-        "workflow/envs/bcftools_v0.1.yaml"
+        "../envs/bcftools_v0.1.yaml"
     shell:
         r"""
         mkdir -p {output}
@@ -92,7 +92,7 @@ rule hyb_platform_consensus:
         ilmn = "results/day/hg38/{sample}/hyb/consensus/ILMN.vcf.gz",
         ont  = "results/day/hg38/{sample}/hyb/consensus/ONT.vcf.gz"
     conda:
-        "workflow/envs/bcftools_v0.1.yaml"
+        "../envs/bcftools_v0.1.yaml"
     shell:
         r"""
         mkdir -p results/day/hg38/{wildcards.sample}/hyb/consensus
@@ -122,7 +122,7 @@ rule hyb_rescue_regions:
     output:
         bed = "results/day/hg38/{sample}/hyb/rescue_regions.bed"
     conda:
-        "workflow/envs/bcftools_v0.1.yaml"
+        "../envs/bcftools_v0.1.yaml"
     shell:
         r"""
         bcftools isec -n=1 -w1 {input.ilmn} {input.ont} -Oz -o tmp.private.vcf.gz
@@ -144,7 +144,7 @@ rule hyb_ensemble_core:
     output:
         core = "results/day/hg38/{sample}/hyb/ensemble/{sample}.ensemble.{mode}.core.vcf.gz"
     conda:
-        "workflow/envs/bcftools_v0.1.yaml"
+        "../envs/bcftools_v0.1.yaml"
     shell:
         r"""
         mkdir -p results/day/hg38/{wildcards.sample}/hyb/ensemble
@@ -179,7 +179,7 @@ rule hyb_add_provenance:
     output:
         final = "results/day/hg38/{sample}/hyb/ensemble/{sample}.ensemble.{mode}.prov.vcf.gz"
     conda:
-        "workflow/envs/bcftools_v0.1.yaml"
+        "../envs/bcftools_v0.1.yaml"
     shell:
         r"""
         bcftools annotate \
