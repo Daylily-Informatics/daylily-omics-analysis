@@ -1003,7 +1003,7 @@ rule sentdhiom_transfer:
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
     threads: config['sentdhio']['threads_light']
     resources:
-        partition="i192mem,i192bigmem,i182",
+        partition="i192mem,i192bigmem,i192",
         threads=config['sentdhio']['threads_medium'],
         vcpu=config['sentdhio']['threads_medium'],
         mem_mb=config['sentdhio']['mem_mb_medium'],
