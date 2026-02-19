@@ -188,15 +188,11 @@ rule sentdhipm_pass1:
         for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-        SR_RG_ARGS=""
-        for rgid in $(samtools view -H {input.sr_bam} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
-        done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
-            $SR_RG_ARGS -i {input.sr_bam} \
+            -i {input.sr_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
@@ -318,15 +314,11 @@ rule sentdhipm_mapq0_bed:
         for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-        SR_RG_ARGS=""
-        for rgid in $(samtools view -H {input.sr_bam} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
-        done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
-            $SR_RG_ARGS -i {input.sr_bam} \
+            -i {input.sr_bam} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
@@ -660,15 +652,11 @@ rule sentdhipm_stage3:
         for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-        SR_RG_ARGS=""
-        for rgid in $(samtools view -H {input.sr_bam} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
-        done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
-            $SR_RG_ARGS -i {input.sr_bam} \
+            -i {input.sr_bam} \
             $LR_RG_ARGS -i {input.unmap_bam} \
             $LR_RG_ARGS -i {input.alt_bam} \
             --interval {input.bed} \
