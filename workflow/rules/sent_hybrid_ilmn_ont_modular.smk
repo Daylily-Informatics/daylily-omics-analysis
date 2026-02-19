@@ -344,13 +344,13 @@ rule sentdhiom_sr_markdup:
             exit 5;
         fi;
         
-        LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
+        LD_PRELOAD=$LD_PRELOAD sentieon driver \
             --input {input.bam} \
             --reference {params.huref} \
             --thread_count {threads} \
             --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
 
-        LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
+        LD_PRELOAD=$LD_PRELOAD sentieon driver \
             --input {input.bam} \
             --reference {params.huref} \
             --thread_count {threads} \
