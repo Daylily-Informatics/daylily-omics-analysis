@@ -287,7 +287,6 @@ rule sentdhiom_sr_markdup:
     params:
         huref = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         use_threads = config["sentdhio"]["use_threads"],
-        cram_opts=" --cram_write_options version=3.0,compressor=rans ",
         tmp_base="/dev/shm",
         cluster_sample=ret_sample,
     threads: config['sentdhio']['threads']
@@ -358,7 +357,6 @@ rule sentdhiom_sr_markdup:
             --algo Dedup \
             --score_info "$score_file" \
             --metrics "$metrics_tmp" \
-            {params.cram_opts} \
             {output.bam} >> {log} 2>&1;
 
         #sentieon driver -r {params.huref} -t {params.use_threads} \
