@@ -620,7 +620,7 @@ rule sentdhiom_stage1:
 
         LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{params.cluster_sample}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
 
@@ -635,7 +635,7 @@ rule sentdhiom_stage1:
             # Exclude @PG to avoid PP chain references to non-existent programs
             samtools view -H {input.lr_cram} \
             | grep -E '^@(HD|SQ|RG)' \
-            | sed 's/\tSM:[^\t]*/\tSM:{params.cluster_sample}/g' \
+            | sed 's/\\tSM:[^\\t]*/\\tSM:{params.cluster_sample}/g' \
             | samtools view -bo {output.hap_bam} -
             
             samtools index {output.hap_bam}
