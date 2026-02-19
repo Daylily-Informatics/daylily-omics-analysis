@@ -59,29 +59,29 @@ thresholds = cfg.get("thresholds", {
 #############################################
 
 def get_sr_vcf(wildcards):
-    """Get short-read VCF path from units.tsv SR_VCF_PATH column."""
-    sample_units = units[units["SAMPLEID"] == wildcards.sample]
-    if sample_units.empty:
+    """Get short-read VCF path from SR_VCF_PATH column (same pattern as getR1sS/getR2sS)."""
+    row = samples[samples["analysis_unit_uid"] == wildcards.sample]
+    if row.empty:
         raise WorkflowError(f"No units found for sample {wildcards.sample}")
 
-    sr_vcf = sample_units.iloc[0].get("SR_VCF_PATH", "")
+    sr_vcf = str(row.iloc[0].get("SR_VCF_PATH", ""))
     if not sr_vcf or sr_vcf in ["", "na", "NA", "None"]:
         raise WorkflowError(f"SR_VCF_PATH not set for sample {wildcards.sample}")
 
-    return sr_vcf.format(sample=wildcards.sample)
+    return sr_vcf
 
 
 def get_lr_vcf(wildcards):
-    """Get long-read VCF path from units.tsv LR_VCF_PATH column."""
-    sample_units = units[units["SAMPLEID"] == wildcards.sample]
-    if sample_units.empty:
+    """Get long-read VCF path from LR_VCF_PATH column (same pattern as getR1sS/getR2sS)."""
+    row = samples[samples["analysis_unit_uid"] == wildcards.sample]
+    if row.empty:
         raise WorkflowError(f"No units found for sample {wildcards.sample}")
 
-    lr_vcf = sample_units.iloc[0].get("LR_VCF_PATH", "")
+    lr_vcf = str(row.iloc[0].get("LR_VCF_PATH", ""))
     if not lr_vcf or lr_vcf in ["", "na", "NA", "None"]:
         raise WorkflowError(f"LR_VCF_PATH not set for sample {wildcards.sample}")
 
-    return lr_vcf.format(sample=wildcards.sample)
+    return lr_vcf
 
 
 #############################################
