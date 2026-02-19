@@ -1534,6 +1534,8 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdhupm": ["sentmm2"],             # Modular Hybrid Ultima+PB → emits alnr=sentmm2
     "sentdhrom": ["roche"],               # Modular Hybrid Roche+ONT → emits alnr=roche
     "sentdhrpm": ["roche"],               # Modular Hybrid Roche+PB  → emits alnr=roche
+    # Ensemble callers
+    "ensemble":  ["ont", "pb", "sentmm2"],  # Multi-platform ensemble → emits alnr=ont, pb, or sentmm2
 }
 
 

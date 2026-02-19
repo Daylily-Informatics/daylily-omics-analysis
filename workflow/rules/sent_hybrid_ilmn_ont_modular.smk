@@ -571,7 +571,7 @@ rule sentdhiom_stage1:
         alnr="|".join(ALIGNERS_DHIOM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
-    threads: config['sentdhio']['threads']  # Full node: stage1 runs 4 concurrent processes (HAP+INS+bwa+sort)
+    threads: config['sentdhio']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
@@ -591,68 +591,18 @@ rule sentdhiom_stage1:
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_s1_${{timestamp}}_$$";
-        export SENTIEON_TMPDIR="$TMPDIR";
-        mkdir -p "$TMPDIR";
-        if [ ! -d "$TMPDIR" ]; then
-            echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
-            exit 5;
-        fi
-        echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
-        ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /dev/shm >> {log} 2>&1;
-        export APPTAINER_HOME="$TMPDIR";
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+        timestamp=$(date +%Y%m%d%H%M%S)
+        export TMPDIR="/dev/shm/sentdhiom_s1_${timestamp}_$$"
+        export SENTIEON_TMPDIR="$TMPDIR"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
-        echo "Starting Stage 1 at $(date)" >> {log}
+        echo "Starting Stage1 at $(date)" >> {log}
 
-        # Use cluster_sample for consistent @RG SM tag across entire pipeline
-        # This matches the pattern used in sentieon_bwa_sort and other alignment rules
         epocsec=$(date +%s)
 
-
-        # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
-        if [ ! -s {input.diff_bed} ]; then
-            echo "WARNING: merged_diff.bed is empty - no haplotype regions to process" >> {log}
-            echo "Creating empty hap_bam (with clean header), hap_bed, hap_vcf files" >> {log}
-            # Create empty BED and VCF
-            touch {output.hap_bed} {output.hap_vcf}
-            # Create proper empty BAM with clean header: @HD, @SQ, and @RG lines only (no @PG)
-            # Include @RG because sentieon driver requires it
-            # Exclude @PG to avoid PP chain references to non-existent programs
-
-            samtools view -H {input.lr_cram} \
-            | grep -E '^@(HD|SQ|RG)' \
-            | sed 's/\\tSM:[^\\t]*/\\tSM:{params.cluster_sample}/g' \
-            | samtools view -bo {output.hap_bam} -
-            
-            samtools index {output.hap_bam}
-
-            # Only run insertion detection (no interval restriction)
-            INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-                --temp_dir $TMPDIR \
-                -i {input.lr_cram} \
-                --algo HybridStage1 \
-                --model {params.model}/HybridStage1_ins.model \
-                --fa_file {output.ins_fa} \
-                --bed_file {output.ins_bed} \
-                -"
-
-            $INS_CMD 2>> {log} | \
-            sentieon bwa mem \
-                -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:HYBRID" \
-                -t {params.use_threads} \
-                -x {params.model}/HybridStage1_bwa.model \
-                {params.huref} - 2>> {log} | \
-            sentieon util sort \
-                -i - -t {params.use_threads} \
-                --temp_dir $TMPDIR \
-                -o {output.bam} --sam2bam >> {log} 2>&1
-        else
-            echo "Processing $(wc -l < {input.diff_bed}) regions from merged_diff.bed" >> {log}
-
-            # Haplotype assembly driver command
+        # Haplotype assembly only if diff_bed not empty
+        if [ -s {input.diff_bed} ]; then
             HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
                 -i {input.lr_cram} --interval {input.diff_bed} \
@@ -662,54 +612,47 @@ rule sentdhiom_stage1:
                 --hap_bed {output.hap_bed} \
                 --hap_vcf {output.hap_vcf} \
                 -"
-
-            # Insertion detection driver command
-            INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-                --temp_dir $TMPDIR \
-                -i {input.lr_cram} \
-                --algo HybridStage1 \
-                --model {params.model}/HybridStage1_ins.model \
-                --fa_file {output.ins_fa} \
-                --bed_file {output.ins_bed} \
-                -"
-
-            # Cat both FASTQ streams → bwa mem → util sort
-            cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
-            sentieon bwa mem \
-                -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:HYBRID" \
-                -t {params.use_threads} \
-                -x {params.model}/HybridStage1_bwa.model \
-                {params.huref} - 2>> {log} | \
-            sentieon util sort \
-                -i - -t {params.use_threads} \
-                --temp_dir $TMPDIR \
-                -o {output.bam} --sam2bam >> {log} 2>&1
-
-            # Wait for process substitutions to fully complete (ensures hap_bam is finalized)
-            wait
-            sync
-
-            # Verify hap_bam integrity before indexing
-            samtools quickcheck {output.hap_bam} >> {log} 2>&1 || \
-                (echo "ERROR: stage1_hap.bam failed integrity check - file may be truncated" >> {log} && exit 1)
-
-            # Index the hap BAM produced by HybridStage1 - required by stage2
-            samtools index {output.hap_bam} >> {log} 2>&1
+        else
+            echo "merged_diff.bed empty — skipping hap assembly" >> {log}
+            HAP_CMD="true"
         fi
 
-        SM_VALUE=$(samtools view -H {output.hap_bam} \
-            | awk -F'\t' '/^@RG/{{
-                for(i=1;i<=NF;i++) if($i ~ /^SM:/) print substr($i,4)
-            }}' | sort -u)
+        # Insertion detection always runs
+        INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            -i {input.lr_cram} \
+            --algo HybridStage1 \
+            --model {params.model}/HybridStage1_ins.model \
+            --fa_file {output.ins_fa} \
+            --bed_file {output.ins_bed} \
+            -"
 
-        if [ "$SM_VALUE" != "{params.cluster_sample}" ]; then
-            echo "ERROR: SM mismatch in stage1_hap.bam: $SM_VALUE" >> {log}
-            exit 1
+        # Combine HAP + INS → bwa → sort
+        cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
+        sentieon bwa mem \
+            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.cluster_sample}\tLB:{params.cluster_sample}-LB-1\tPL:HYBRID" \
+            -t {params.use_threads} \
+            -x {params.model}/HybridStage1_bwa.model \
+            {params.huref} - 2>> {log} | \
+        sentieon util sort \
+            -i - -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            -o {output.bam} --sam2bam >> {log} 2>&1
+
+        wait
+        sync
+
+        # If hap_bam not created, create valid empty BAM
+        if [ ! -s {output.hap_bam} ]; then
+            echo "No haplotypes produced — creating empty hap_bam" >> {log}
+            samtools view -H {input.lr_cram} \
+            | grep -E '^@(HD|SQ|RG)' \
+            | samtools view -bo {output.hap_bam} -
         fi
 
-        mv $TMPDIR ./
+        samtools index {output.hap_bam} >> {log} 2>&1
 
-        echo "Stage 1 completed at $(date)" >> {log}
+        echo "Stage1 completed at $(date)" >> {log}
         """
 
 

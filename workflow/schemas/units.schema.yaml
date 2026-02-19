@@ -53,6 +53,10 @@ properties:
         type: string
     ROCHE_BAM_ALIGNER:
         type: string
+    SR_VCF_PATH:
+        type: string
+    LR_VCF_PATH:
+        type: string
     ROCHE_BAM_SNV_CALLER:
         type: string
     ROCHE_DOWNSAMPLE_RATIO:
