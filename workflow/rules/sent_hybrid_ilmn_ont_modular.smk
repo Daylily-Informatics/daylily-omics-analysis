@@ -164,6 +164,7 @@ rule sentdhiom_sr_align:
         # Index the BAM
         samtools index -@ {threads} {output.bam} >> {log} 2>&1
 
+        mv $TMPDIR ./
         echo "SR alignment completed at $(date)" >> {log}
         """
 
@@ -275,6 +276,8 @@ rule sentdhiom_pass1:
         # Create VCF index with tabix (required for hybrid_select)
         echo "Creating VCF index with tabix" >> {log}
         tabix -f -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
+
+        mv $TMPDIR ./
 
         echo "Pass 1 completed at $(date)" >> {log}
         """
@@ -399,7 +402,7 @@ rule sentdhiom_mapq0_bed:
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
-
+        mv $TMPDIR ./
         echo "MAPQ0 detection completed at $(date)" >> {log}
         """
 
@@ -612,6 +615,7 @@ rule sentdhiom_stage1:
             # Index the hap BAM produced by HybridStage1 - required by stage2
             samtools index {output.hap_bam} >> {log} 2>&1
         fi
+        mv $TMPDIR ./
 
         echo "Stage 1 completed at $(date)" >> {log}
         """
@@ -672,7 +676,7 @@ rule sentdhiom_stage2:
             --unmap_bam {output.unmap_bam} \
             --alt_bam {output.alt_bam} \
             --all_bed {output.bed} >> {log} 2>&1
-
+        mv $TMPDIR ./
         echo "Stage 2 completed at $(date)" >> {log}
         """
 
@@ -749,7 +753,7 @@ rule sentdhiom_stage3:
             -i - -t {params.use_threads} \
             --temp_dir $TMPDIR \
             -o {output.bam} >> {log} 2>&1
-
+        mv $TMPDIR ./
         echo "Stage 3 completed at $(date)" >> {log}
         """
 
@@ -817,7 +821,7 @@ rule sentdhiom_pass2:
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
-
+        mv $TMPDIR ./
         echo "Pass 2 completed at $(date)" >> {log}
         """
 
@@ -984,7 +988,12 @@ rule sentdhiom_transfer:
 
         echo "Starting annotation transfer at $(date)" >> {log}
 
-        TMPDIR=$(dirname {output.vcf})
+        #TMPDIR=$(dirname {output.vcf})
+
+        export TMPDIR="/dev/shm/sentdhiom_p2_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         # Reheader anno_vcf to use cluster_sample name (use old\tnew format)
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
@@ -1011,15 +1020,17 @@ rule sentdhiom_transfer:
             bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
 
             # Cleanup temp files
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/anno_rename.txt"
+            #rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
+            #      "$TMPDIR/anno_rename.txt"
+   
         else
             echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
             mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
             bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
+            #rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
         fi
 
+        mv $TMPDIR ./
         echo "Transfer completed at $(date)" >> {log}
         """
 
@@ -1075,6 +1086,7 @@ rule sentdhiom_model_apply:
             --vcf {input.vcf} \
             {output.vcf} >> {log} 2>&1
 
+        mv $TMPDIR ./
         echo "Model apply completed at $(date)" >> {log}
         """
 
@@ -1210,7 +1222,7 @@ rule sentdhiom_concat_index_chunks:
         bcftools reheader --threads {threads} -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
         bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
 
-        rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
+        ##rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
         """
 
 
@@ -1231,7 +1243,8 @@ rule clear_combined_sentdhiom_vcf:  # TARGET: clear combined sentdhiom vcf so ch
     priority: 42
     shell:
         """
-        rm {input}*  1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';
+        echo "skipping cleanup of {input}"
+        ## rm {input}*  1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';
         """
 
 

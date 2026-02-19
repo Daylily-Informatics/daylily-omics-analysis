@@ -66,12 +66,12 @@ command: `source bin/augment_setup_and_run_dayoa.bash slurm hg38_broad "produce_
 ## Ilmn+ONT cli and modular
 Hybrid CLI Ilmn+ONT
 copy  samples.tsv and units.tsv to config/
-dryrun command= ` source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_sentdhio_vcf produce_alignstats produce_snv_concordances" "-p -j 3 -k -T 1" "-n"` 
+dryrun command= ` source bin/augment_setup_and_run_dayoa.bash slurm hg38_broad "produce_sentdhio_vcf produce_alignstats produce_snv_concordances" "-p -j 3 -k -T 1" "-n"` 
 command= `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_sentdhio_vcf produce_alignstats produce_snv_concordances" "-p -j 3 -k -T 1" `
 
 Hybrid Mod Ilmn+ONT
 copy  samples.tsv and units.tsv to config/
-dryrun command= `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_sentdhiom_vcf produce_alignstats produce_snv_concordances" "-p -j 20 -k -T 1" "-n"` 
+dryrun command= `source bin/augment_setup_and_run_dayoa.bash slurm hg38_broad "produce_sentdhiom_vcf produce_alignstats produce_snv_concordances" "-p -j 20 -k -T 1" "-n"` 
 command= `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_sentdhiom_vcf produce_alignstats produce_snv_concordances" "-p -j 20 -k -T 1" ` 
 
 
