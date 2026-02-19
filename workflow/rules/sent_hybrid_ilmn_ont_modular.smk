@@ -291,7 +291,7 @@ rule sentdhiom_sr_markdup:
             "cram_opts",
             " --cram_write_options version=3.0,compressor=rans ",
         ),
-        tmp_base=DOPPEL_SENT_CFG.get("tmp_base", "/dev/shm"),
+        tmp_base="/dev/shm",
     threads: config['sentdhio']['threads']
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.sr_markdup.bench.tsv"
