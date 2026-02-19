@@ -1,4 +1,4 @@
-headnode=ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@44.231.76.175
+headnode=ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@34.209.187.6
 create and attach to a tmux session that is named <analysis_description>-datetimewseconds , which will stay open after the job is done or fails
 run `bash` `source ~/.bashrc`
 
@@ -31,6 +31,16 @@ ILMN ONLY
 copy  samples.tsv and units.tsv to config/
 dryrun command: `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf dedup_doppelmark produce_alignstats" "-p -j 20 -k -T 1" "-n"` 
 command: `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf dedup_doppelmark produce_alignstats" "-p -j 20 -k -T 1"` 
+
+
+ILMN ALL
+
+
+
+dryrun command: `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf produce_bwa_mem2_sort_bam produce_deep19_vcf produce_clair3_vcf produce_oct_vcf dedup_doppelmark produce_alignstats" "-p -j 20 -k -T 1" "-n"`
+ 
+command: `source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf produce_bwa_mem2_sort_bam produce_deep19_vcf produce_clair3_vcf produce_oct_vcf dedup_doppelmark produce_alignstats" "-p -j 20 -k -T 1"` 
+
 
 PB only
 copy  samples.tsv and units.tsv to config/
