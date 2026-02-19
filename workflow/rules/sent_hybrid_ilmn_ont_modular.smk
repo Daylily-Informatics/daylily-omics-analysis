@@ -611,11 +611,6 @@ rule sentdhiom_stage1:
         # This matches the pattern used in sentieon_bwa_sort and other alignment rules
         epocsec=$(date +%s)
 
-        LR_RG_ARGS=""
-        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
-        done
-
 
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
@@ -626,6 +621,7 @@ rule sentdhiom_stage1:
             # Create proper empty BAM with clean header: @HD, @SQ, and @RG lines only (no @PG)
             # Include @RG because sentieon driver requires it
             # Exclude @PG to avoid PP chain references to non-existent programs
+
             samtools view -H {input.lr_cram} \
             | grep -E '^@(HD|SQ|RG)' \
             | sed 's/\\tSM:[^\\t]*/\\tSM:{params.cluster_sample}/g' \
@@ -636,7 +632,7 @@ rule sentdhiom_stage1:
             # Only run insertion detection (no interval restriction)
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                $LR_RG_ARGS  -i {input.lr_cram} \
+                -i {input.lr_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -659,7 +655,7 @@ rule sentdhiom_stage1:
             # Haplotype assembly driver command
             HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                $LR_RG_ARGS -i {input.lr_cram} --interval {input.diff_bed} \
+                -i {input.lr_cram} --interval {input.diff_bed} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1.model \
                 --hap_bam {output.hap_bam} \
@@ -670,7 +666,7 @@ rule sentdhiom_stage1:
             # Insertion detection driver command
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                $LR_RG_ARGS -i {input.lr_cram} \
+                -i {input.lr_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -715,7 +711,6 @@ rule sentdhiom_stage1:
 
         echo "Stage 1 completed at $(date)" >> {log}
         """
-
 
 
 # ---------------------------------------------------------------------------
