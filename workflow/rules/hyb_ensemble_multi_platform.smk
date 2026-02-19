@@ -119,12 +119,12 @@ rule hyb_norm_vcfs:
         # Normalize short-read VCF
         bcftools norm -f {params.huref} -m -any {input.sr_vcf} \
           -Oz -o {output.sr_norm} >> {log} 2>&1
-        bcftools index -f {output.sr_norm} >> {log} 2>&1
+        bcftools index -f -t {output.sr_norm} >> {log} 2>&1
 
         # Normalize long-read VCF
         bcftools norm -f {params.huref} -m -any {input.lr_vcf} \
           -Oz -o {output.lr_norm} >> {log} 2>&1
-        bcftools index -f {output.lr_norm} >> {log} 2>&1
+        bcftools index -f -t {output.lr_norm} >> {log} 2>&1
         """
 
 
@@ -230,7 +230,7 @@ rule hyb_ensemble_merge:
         # Concatenate shared + rescued variants
         bcftools concat -a -D $tmpdir/shared.vcf.gz $tmpdir/lr_rescue.vcf.gz \
           -Oz -o {output.vcf} >> {log} 2>&1
-        bcftools index -f {output.vcf} >> {log} 2>&1
+        bcftools index -f -t {output.vcf} >> {log} 2>&1
 
         rm -rf $tmpdir
         """
