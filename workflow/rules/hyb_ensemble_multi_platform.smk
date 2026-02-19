@@ -45,8 +45,6 @@ ALIGNERS_ENSEMBLE = ["ont", "pb"]
 
 # Get config or use defaults
 cfg = config.get("hyb_ensemble", {})
-_ref_fa_override = cfg.get("ref_fa")
-ref = _ref_fa_override if _ref_fa_override else config["supporting_files"]["files"]["huref"]["fasta"]["name"]
 mode = cfg.get("mode", "A")
 pad_bp = cfg.get("pad_bp", 50)
 thresholds = cfg.get("thresholds", {
@@ -110,7 +108,7 @@ rule hyb_norm_vcfs:
         threads=2,
         partition="i192,i192mem"
     params:
-        huref=ref,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample
     conda:
         "../envs/bcftools_v0.1.yaml"
@@ -152,7 +150,7 @@ rule hyb_rescue_regions:
         threads=2,
         partition="i192,i192mem"
     params:
-        huref=ref,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         pad_bp=pad_bp,
         cluster_sample=ret_sample
     conda:
@@ -197,7 +195,7 @@ rule hyb_ensemble_merge:
         threads=4,
         partition="i192,i192mem"
     params:
-        huref=ref,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         mode=mode,
         ont_qual_min_snv=thresholds["ont_qual_min_snv"],
         ont_qual_min_indel=thresholds["ont_qual_min_indel"],
@@ -260,7 +258,7 @@ rule hyb_ensemble_sort:
         threads=4,
         partition="i192,i192mem"
     params:
-        huref=ref,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample
     conda:
         "../envs/bcftools_v0.1.yaml"
