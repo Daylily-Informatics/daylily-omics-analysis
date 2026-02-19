@@ -1263,6 +1263,97 @@ rule produce_sentdhiom_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
         """
 
 
+# ===========================================================================
+# SV CALLING: LongReadSV structural variant calling (whole-genome, not chunked)
+# ===========================================================================
+
+rule sentdhiom_call_svs:
+    """Call structural variants using LongReadSV on ONT long reads"""
+    input:
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+    output:
+        sv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.sv.vcf.gz",
+        sv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.sv.vcf.gz.tbi",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOM)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/log/{sample}.{alnr}.{ddup}.sentdhiom.sv.log",
+    threads: config['sentdhio']['threads']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.sv.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhio']['threads'],
+        vcpu=config['sentdhio']['threads'],
+        mem_mb=config['sentdhio']['mem_mb'],
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        model=config["sentdhio"]["dna_scope_snv_model"],
+        diploid_bed=get_diploid_bed_interval_arg,
+        use_threads=config["sentdhio"]["use_threads"],
+        cluster_sample=ret_sample,
+    shell:
+        """
+        set -euo pipefail
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhiom_sv_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+
+        mkdir -p $(dirname {log})
+        echo "Starting LongReadSV at $(date)" >> {log}
+
+        # Build LR readgroup replacement args: LR reads get LR:1 tag
+        LR_RG_ARGS=""
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\t]*\).*/\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+
+        sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            $LR_RG_ARGS -i {input.lr_cram} \
+            {params.diploid_bed} \
+            --algo LongReadSV \
+            --model {params.model}/longreadsv.model \
+            {output.sv_vcf} >> {log} 2>&1
+
+        bcftools index -t -f {output.sv_vcf} >> {log} 2>&1
+
+        echo "LongReadSV completed at $(date)" >> {log}
+        """
+
+
+localrules:
+    produce_sentdhiom_sv,
+
+
+rule produce_sentdhiom_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modular sv vcf
+    input:
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.sv.vcf.gz.tbi",
+            sample=SSAMPS,
+            alnr=ALIGNERS_DHIOM,
+            ddup=DDUP,
+        ),
+    output:
+        "gatheredall.sentdhiom.sv",
+    priority: 48
+    threads: 1
+    log:
+        "gatheredall.sentdhiom.sv.log",
+    shell:
+        """( touch {output} ;
+        ls {output} ) >> {log} 2>&1;
+        """
+
+
 localrules:
     prep_sentdhiom_chunkdirs,
 
