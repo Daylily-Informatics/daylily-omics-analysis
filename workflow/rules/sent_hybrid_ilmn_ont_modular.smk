@@ -1001,7 +1001,7 @@ rule sentdhiom_transfer:
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
-    threads: config['sentdhio']['threads_light']
+    threads: 24
     resources:
         partition="i192mem,i192bigmem,i192",
         threads=config['sentdhio']['threads_medium'],
