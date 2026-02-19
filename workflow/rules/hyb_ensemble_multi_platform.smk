@@ -167,7 +167,7 @@ rule hyb_rescue_regions:
         # Convert to BED with padding
         bcftools query -f '%CHROM\t%POS0\t%END\n' {output.bed}.tmp.vcf.gz \
           | bedtools slop -b {params.pad_bp} \
-            -g <(samtools faidx {params.huref} | cut -f1,2) \
+            -g <(cut -f1,2 {params.huref}.fai) \
           > {output.bed} 2>> {log}
 
         rm -f {output.bed}.tmp.vcf.gz
