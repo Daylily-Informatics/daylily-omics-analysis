@@ -45,7 +45,8 @@ ALIGNERS_ENSEMBLE = ["ont", "pb"]
 
 # Get config or use defaults
 cfg = config.get("hyb_ensemble", {})
-ref = cfg.get("ref_fa", config["supporting_files"]["files"]["huref"]["fasta"]["name"])
+_ref_fa_override = cfg.get("ref_fa")
+ref = _ref_fa_override if _ref_fa_override else config["supporting_files"]["files"]["huref"]["fasta"]["name"]
 mode = cfg.get("mode", "A")
 pad_bp = cfg.get("pad_bp", 50)
 thresholds = cfg.get("thresholds", {

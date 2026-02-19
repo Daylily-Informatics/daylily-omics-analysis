@@ -6,7 +6,7 @@ snv_callers_somatic:
   - "senttn"
 
 hyb_ensemble:
-  ref_fa: /path/to/hg38.fa
+  # ref_fa: /absolute/path/to/ref.fa  # Optional: override hg38 ref. Default: auto-resolved from supporting_files config.
 
   platforms:
     ILMN:
