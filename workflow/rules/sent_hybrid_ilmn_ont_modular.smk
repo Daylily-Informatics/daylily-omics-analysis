@@ -175,8 +175,8 @@ rule sentdhiom_sr_align:
 rule sentdhiom_pass1:
     """First-pass combined variant calling (DNAscope) on LR+SR"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam",
-        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam.bai",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam.bai",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
@@ -278,6 +278,27 @@ rule sentdhiom_pass1:
         echo "Pass 1 completed at $(date)" >> {log}
         """
 
+rule sentdhiom_sr_markdup:
+    input:
+        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam"
+    output:
+        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        bai = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam.bai"
+    params:
+        huref = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        use_threads = config["sentdhio"]["use_threads"]
+    threads: config['sentdhio']['threads']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    shell:
+        """
+        sentieon driver -r {params.huref} -t {params.use_threads} \
+            -i {input.bam} \
+            --algo MarkDuplicates \
+            {output.bam}
+
+        samtools index -@ {threads} {output.bam}
+        """
 
 # ---------------------------------------------------------------------------
 # Rule 3: Hybrid Select - Region selection from pass-1 VCF
@@ -345,7 +366,7 @@ rule sentdhiom_hybrid_select:
 rule sentdhiom_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
@@ -528,6 +549,12 @@ rule sentdhiom_stage1:
         # This matches the pattern used in sentieon_bwa_sort and other alignment rules
         epocsec=$(date +%s)
 
+        LR_RG_ARGS=""
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{params.cluster_sample}\tLR:1"
+        done
+
+
         # Check if merged_diff.bed is empty - if so, skip HAP_CMD and create empty outputs
         if [ ! -s {input.diff_bed} ]; then
             echo "WARNING: merged_diff.bed is empty - no haplotype regions to process" >> {log}
@@ -537,13 +564,17 @@ rule sentdhiom_stage1:
             # Create proper empty BAM with clean header: @HD, @SQ, and @RG lines only (no @PG)
             # Include @RG because sentieon driver requires it
             # Exclude @PG to avoid PP chain references to non-existent programs
-            samtools view -H {input.lr_cram} | grep -E '^@(HD|SQ|RG)' | samtools view -bo {output.hap_bam} -
+            samtools view -H {input.lr_cram} \
+            | grep -E '^@(HD|SQ|RG)' \
+            | sed 's/\tSM:[^\t]*/\tSM:{params.cluster_sample}/g' \
+            | samtools view -bo {output.hap_bam} -
+            
             samtools index {output.hap_bam}
 
             # Only run insertion detection (no interval restriction)
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                -i {input.lr_cram} \
+                $LR_RG_ARGS  -i {input.lr_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -566,7 +597,7 @@ rule sentdhiom_stage1:
             # Haplotype assembly driver command
             HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                -i {input.lr_cram} --interval {input.diff_bed} \
+                $LR_RG_ARGS -i {input.lr_cram} --interval {input.diff_bed} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1.model \
                 --hap_bam {output.hap_bam} \
@@ -577,7 +608,7 @@ rule sentdhiom_stage1:
             # Insertion detection driver command
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                -i {input.lr_cram} \
+                $LR_RG_ARGS -i {input.lr_cram} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -607,6 +638,17 @@ rule sentdhiom_stage1:
             # Index the hap BAM produced by HybridStage1 - required by stage2
             samtools index {output.hap_bam} >> {log} 2>&1
         fi
+
+        SM_VALUE=$(samtools view -H {output.hap_bam} \
+            | awk -F'\t' '/^@RG/{
+                for(i=1;i<=NF;i++) if($i ~ /^SM:/) print substr($i,4)
+            }' | sort -u)
+
+        if [ "$SM_VALUE" != "{params.cluster_sample}" ]; then
+            echo "ERROR: SM mismatch in stage1_hap.bam: $SM_VALUE" >> {log}
+            exit 1
+        fi
+
         mv $TMPDIR ./
 
         echo "Stage 1 completed at $(date)" >> {log}
@@ -671,7 +713,7 @@ rule sentdhiom_stage2:
         mv $TMPDIR ./
         echo "Stage 2 completed at $(date)" >> {log}
         """
-
+ 
 
 # ---------------------------------------------------------------------------
 # Rule 9: Stage 3 - Re-alignment with stage2 outputs
@@ -679,7 +721,7 @@ rule sentdhiom_stage2:
 rule sentdhiom_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam",
+        sr_bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
@@ -741,10 +783,11 @@ rule sentdhiom_stage3:
             -i - -t {params.use_threads} \
             --temp_dir $TMPDIR \
             -o {output.bam} >> {log} 2>&1
+
+
         mv $TMPDIR ./
         echo "Stage 3 completed at $(date)" >> {log}
         """
-
 
 # ---------------------------------------------------------------------------
 # Rule 10: Pass 2 - Second-pass variant calling on refined regions
