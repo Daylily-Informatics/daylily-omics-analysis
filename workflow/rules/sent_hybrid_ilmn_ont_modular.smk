@@ -551,7 +551,7 @@ rule sentdhiom_stage1:
 
         LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{params.cluster_sample}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{params.cluster_sample}\tLR:1"
         done
 
 
@@ -640,9 +640,9 @@ rule sentdhiom_stage1:
         fi
 
         SM_VALUE=$(samtools view -H {output.hap_bam} \
-            | awk -F'\t' '/^@RG/{
+            | awk -F'\t' '/^@RG/{{
                 for(i=1;i<=NF;i++) if($i ~ /^SM:/) print substr($i,4)
-            }' | sort -u)
+            }}' | sort -u)
 
         if [ "$SM_VALUE" != "{params.cluster_sample}" ]; then
             echo "ERROR: SM mismatch in stage1_hap.bam: $SM_VALUE" >> {log}
