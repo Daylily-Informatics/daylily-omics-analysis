@@ -230,6 +230,13 @@ rule hyb_ensemble_merge:
         fi
         bcftools index -f $tmpdir/lr_rescue.vcf.gz >> {log} 2>&1
 
+        # Rename LR rescue sample to match SR sample name (required for bcftools concat)
+        bcftools query -l $tmpdir/shared.vcf.gz > $tmpdir/sample_names.txt
+        bcftools reheader -s $tmpdir/sample_names.txt $tmpdir/lr_rescue.vcf.gz \
+          -o $tmpdir/lr_rescue.reheadered.vcf.gz >> {log} 2>&1
+        mv $tmpdir/lr_rescue.reheadered.vcf.gz $tmpdir/lr_rescue.vcf.gz
+        bcftools index -f $tmpdir/lr_rescue.vcf.gz >> {log} 2>&1
+
         # Concatenate shared + rescued variants
         bcftools concat -a -D $tmpdir/shared.vcf.gz $tmpdir/lr_rescue.vcf.gz \
           -Oz -o {output.vcf} >> {log} 2>&1
