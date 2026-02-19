@@ -356,20 +356,20 @@ rule sentdhrom_stage1:
         alnr="|".join(ALIGNERS_DHROM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhrom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
-    threads: config['sentdhrom']['threads_medium']
+    threads: config['sentdhrom']['threads']  # Full node: stage1 runs 4 concurrent processes (HAP+INS+bwa+sort)
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhrom.{dchrm}.stage1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhrom']['threads_medium'],
-        vcpu=config['sentdhrom']['threads_medium'],
-        mem_mb=config['sentdhrom']['mem_mb_medium'],
+        threads=config['sentdhrom']['threads'],
+        vcpu=config['sentdhrom']['threads'],
+        mem_mb=config['sentdhrom']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhrom"]["dna_scope_snv_model"],
-        use_threads=config["sentdhrom"]["use_threads_medium"],
+        use_threads=config["sentdhrom"]["use_threads"],
         cluster_sample=ret_sample,
         alt_samp_name=get_alt_sample_name,
     shell:
@@ -556,20 +556,20 @@ rule sentdhrom_stage3:
         alnr="|".join(ALIGNERS_DHROM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhrom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
-    threads: config['sentdhrom']['threads_medium']
+    threads: config['sentdhrom']['threads']  # Full node: stage3 pipes driver → util sort (2 concurrent processes)
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhrom.{dchrm}.stage3.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhrom']['threads_medium'],
-        vcpu=config['sentdhrom']['threads_medium'],
-        mem_mb=config['sentdhrom']['mem_mb_medium'],
+        threads=config['sentdhrom']['threads'],
+        vcpu=config['sentdhrom']['threads'],
+        mem_mb=config['sentdhrom']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhrom"]["dna_scope_snv_model"],
-        use_threads=config["sentdhrom"]["use_threads_medium"],
+        use_threads=config["sentdhrom"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
         """

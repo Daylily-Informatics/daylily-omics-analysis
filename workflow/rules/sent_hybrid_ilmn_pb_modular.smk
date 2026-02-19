@@ -416,20 +416,20 @@ rule sentdhipm_stage1:
         alnr="|".join(ALIGNERS_DHIPM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
-    threads: config['sentdhipm']['threads_medium']
+    threads: config['sentdhipm']['threads']  # Full node: stage1 runs 4 concurrent processes (HAP+INS+bwa+sort)
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.stage1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhipm']['threads_medium'],
-        vcpu=config['sentdhipm']['threads_medium'],
-        mem_mb=config['sentdhipm']['mem_mb_medium'],
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
+        mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
-        use_threads=config["sentdhio"]["use_threads_medium"],
+        use_threads=config["sentdhipm"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
         r"""
@@ -617,20 +617,20 @@ rule sentdhipm_stage3:
         alnr="|".join(ALIGNERS_DHIPM)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipm/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
-    threads: config['sentdhipm']['threads_medium']
+    threads: config['sentdhipm']['threads']  # Full node: stage3 pipes driver → util sort (2 concurrent processes)
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipm.{dchrm}.stage3.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhipm']['threads_medium'],
-        vcpu=config['sentdhipm']['threads_medium'],
-        mem_mb=config['sentdhipm']['mem_mb_medium'],
+        threads=config['sentdhipm']['threads'],
+        vcpu=config['sentdhipm']['threads'],
+        mem_mb=config['sentdhipm']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhio"]["dna_scope_snv_model"],
-        use_threads=config["sentdhio"]["use_threads_medium"],
+        use_threads=config["sentdhipm"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
         """
