@@ -592,7 +592,7 @@ rule sentdhiom_stage1:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR="/dev/shm/sentdhiom_s1_${timestamp}_$$"
+        export TMPDIR="/dev/shm/sentdhiom_s1_${{timestamp}}_$$"
         export SENTIEON_TMPDIR="$TMPDIR"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
