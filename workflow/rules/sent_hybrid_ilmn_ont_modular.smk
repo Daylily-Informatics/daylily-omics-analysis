@@ -978,7 +978,8 @@ rule sentdhiom_transfer:
 
         #TMPDIR=$(dirname {output.vcf})
 
-        export TMPDIR="/dev/shm/sentdhiom_p2_${{timestamp}}_$$";
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhiom_tr_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
