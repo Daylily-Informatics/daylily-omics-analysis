@@ -286,18 +286,89 @@ rule sentdhiom_sr_markdup:
         bai = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam.bai"
     params:
         huref = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        use_threads = config["sentdhio"]["use_threads"]
+        use_threads = config["sentdhio"]["use_threads"],
+        cram_opts=DOPPEL_SENT_CFG.get(
+            "cram_opts",
+            " --cram_write_options version=3.0,compressor=rans ",
+        ),
+        tmp_base=DOPPEL_SENT_CFG.get("tmp_base", "/dev/shm"),
     threads: config['sentdhio']['threads']
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.sr_markdup.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhio']['threads'],
+        vcpu=config['sentdhio']['threads'],
+        mem_mb=config['sentdhio']['mem_mb'],
     conda:
         "../envs/sentieon_v0.3.yaml"
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_markdup.log"
     shell:
         """
-        sentieon driver -r {params.huref} -t {params.use_threads} \
-            -i {input.bam} \
-            --algo MarkDuplicates \
-            {output.bam}
+        set -euo pipefail;
+        touch {log};
 
-        samtools index -@ {threads} {output.bam}
+        if [ -z "${{SENTIEON_LICENSE:-}}" ]; then
+            echo "SENTIEON_LICENSE not set. Please export the license path or server." >> {log} 2>&1;
+            exit 3;
+        fi;
+        if [[ ! "$SENTIEON_LICENSE" =~ : ]] && [ ! -f "$SENTIEON_LICENSE" ]; then
+            echo "The file referenced by SENTIEON_LICENSE ('$SENTIEON_LICENSE') does not exist." >> {log} 2>&1;
+            exit 4;
+        fi;
+
+        TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
+        itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type || echo "unknown");
+        echo "INSTANCE TYPE: $itype" > {log};
+        echo "INSTANCE TYPE: $itype";
+        start_time=$(date +%s);
+
+        ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
+
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
+        export TMPDIR={params.tmp_base}/smd_sentieon_$timestamp;
+        mkdir -p "$TMPDIR";
+        export SENTIEON_TMPDIR=$TMPDIR;
+        export APPTAINER_HOME=$TMPDIR;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+
+        score_file=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.score.txt;
+        metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.metrics.txt;
+
+        read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
+
+        jemalloc_path=$(find "$CONDA_PREFIX" \( -name "libjemalloc*.so*" -o -name "libjemalloc*.dylib" \) | head -n 1 || true);
+        if [[ -n "$jemalloc_path" ]]; then
+            export LD_PRELOAD="$jemalloc_path";
+            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+        else
+            echo "libjemalloc not found in the active conda environment $CONDA_PREFIX." >> {log};
+            exit 5;
+        fi;
+        
+        LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
+            --input {input.bam} \
+            --reference {params.huref} \
+            --thread_count {threads} \
+            --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
+
+        LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
+            --input {input.bam} \
+            --reference {params.huref} \
+            --thread_count {threads} \
+            --algo Dedup \
+            --score_info "$score_file" \
+            --metrics "$metrics_tmp" \
+            {params.cram_opts} \
+            {output.bam} >> {log} 2>&1;
+
+        #sentieon driver -r {params.huref} -t {params.use_threads} \
+        #    -i {input.bam} \
+        #    --algo MarkDuplicates \
+        #    {output.bam}
+
+        samtools index -@ {threads} {output.bam} {output.bai} >> {log} 2>&1;
         """
 
 # ---------------------------------------------------------------------------
