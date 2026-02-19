@@ -1028,9 +1028,9 @@ rule sentdhiom_transfer:
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
         echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
 
-        echo -e "${anno_old_sample}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
+        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
 
-        if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
+        if [ -n "{{params.pop_vcf}}" ] && [ -f "{params.pop_vcf}" ]; then
 
             TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
