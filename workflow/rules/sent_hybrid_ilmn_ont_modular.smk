@@ -287,10 +287,7 @@ rule sentdhiom_sr_markdup:
     params:
         huref = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         use_threads = config["sentdhio"]["use_threads"],
-        cram_opts=DOPPEL_SENT_CFG.get(
-            "cram_opts",
-            " --cram_write_options version=3.0,compressor=rans ",
-        ),
+        cram_opts=" --cram_write_options version=3.0,compressor=rans ",
         tmp_base="/dev/shm",
     threads: config['sentdhio']['threads']
     benchmark:
