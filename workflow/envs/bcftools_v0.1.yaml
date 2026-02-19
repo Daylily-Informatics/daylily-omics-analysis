@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - r
+  - defaults
+dependencies:
+  - bcftools=1.21
+  - samtools=1.21
+  - htslib=1.21
+  - tabix
+
