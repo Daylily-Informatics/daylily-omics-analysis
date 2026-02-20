@@ -81,9 +81,6 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       vep_cache:
         class: file_only
         name: /fsx/data/tool_specific_resources/vep
-    popvcf:
-        class: file_only
-	name: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
     gatk:
       onekg_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_phase1.snps.high_confidence.hg38.vcf.gz
       mills_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
@@ -212,4 +209,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       filter_model_indel: /resources/model-germline-sbxd-multisample-indel.txt.gz
       pangenome_gbz: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz
       giab_truth_base: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1
+    popvcf:
+        class: file_only
+        name: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
 
