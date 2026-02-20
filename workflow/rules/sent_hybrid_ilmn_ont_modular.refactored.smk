@@ -30,15 +30,6 @@ import sys
 # Aligner constraint: ONT for long reads
 ALIGNERS_DHIOM = ["ont"]
 
-# ---------------------------------------------------------------------------
-# Global defaults for hybrid read filters and sample SM tag.
-# Override via --config sentdhio_sample_sm=... sentdhio_lr_read_filter=... etc.
-# These will move to the config YAML once the config schema is finalized.
-# ---------------------------------------------------------------------------
-SENTDHIOM_SAMPLE_SM = config.get("sentdhio", {}).get("sample_sm", "hybrid_sample")
-SENTDHIOM_LR_READ_FILTER = config.get("sentdhio", {}).get("lr_read_filter", "")
-SENTDHIOM_SR_READ_FILTER = config.get("sentdhio", {}).get("sr_read_filter", "")
-
 # Base temp directory prefix for intermediate files
 def _dhiom_tmp(wildcards):
     return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiom/vcfs/{wildcards.dchrm}/tmp"
@@ -623,17 +614,14 @@ rule sentdhiom_stage1:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR="/dev/shm/sentdhiom_s1_${{timestamp}}_$$"
+        export TMPDIR="/dev/shm/sentdhiom_s1_${timestamp}_$$"
         export SENTIEON_TMPDIR="$TMPDIR"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
         echo "Starting Stage1 at $(date)" >> {log}
 
-        epocsec=$(date +%s)
-
-
-        # Build LR replace args
+        # Build LR replace args (matches sentieon-cli RgInfo for LR inputs)
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
             $1=="@RG"{
                 for(i=1;i<=NF;i++){
@@ -649,35 +637,54 @@ rule sentdhiom_stage1:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
-        HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
-            --interval {input.diff_bed} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1.model \
-            --hap_bam {output.hap_bam} \
-            --hap_bed {output.hap_bed} \
-            --hap_vcf {output.hap_vcf} \
-            -"
+        # Match sentieon-cli: remove bwt_max_mem from bwa env (noop if unset)
+        unset bwt_max_mem || true
 
-        INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1_ins.model \
-            --fa_file {output.ins_fa} \
-            --bed_file {output.ins_bed} \
-            -"
-       
+        # Match sentieon-cli hybrid_stage1():
+        #   cat( HybridStage1.stdout , HybridStage1_ins.stdout )
+        #   | bwa mem -x HybridStage1_bwa.model -R "@RG\tID:hybrid-18893\tSM:<SM>"
+        #   | util sort --sam2bam
+        cat \
+            <(sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --interval {input.diff_bed} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1.model \
+                --hap_bam {output.hap_bam} \
+                --hap_bed {output.hap_bed} \
+                --hap_vcf {output.hap_vcf} \
+                - 2>> {log}) \
+            <(sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1_ins.model \
+                --fa_file {output.ins_fa} \
+                --bed_file {output.ins_bed} \
+                - 2>> {log}) \
+        | sentieon bwa mem \
+            -R "@RG\tID:hybrid-18893\tSM:{config[sentdhio][sample_sm]}" \
+            -t {params.use_threads} \
+            -x {params.model}/HybridStage1_bwa.model \
+            {params.huref} \
+            - 2>> {log} \
+        | sentieon util sort \
+            -i - \
+            -t {params.use_threads} \
+            -o {output.bam} \
+            --sam2bam >> {log} 2>&1
+
+        # Index hap BAM for downstream rules
         samtools index {output.hap_bam} >> {log} 2>&1
 
+        mv $TMPDIR ./
         echo "Stage1 completed at $(date)" >> {log}
         """
 
 
-# ---------------------------------------------------------------------------
-# Rule 8: Stage 2 - Generate unmap/alt BAMs and refined BED
-# ---------------------------------------------------------------------------
 rule sentdhiom_stage2:
     """Stage2: generate unmap BAM, alt BAM, and refined BED"""
     input:
@@ -882,12 +889,12 @@ rule sentdhiom_pass2:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
-            --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
-            -i {input.stage3_bam} \
+        sentieon driver \
+            $LR_RG_ARGS --input {input.lr_cram} \
+            --input {input.stage3_bam} \
+            --reference {params.huref} \
+            --thread_count {params.use_threads} \
             --interval {input.bed} \
-            {params.diploid_bed} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \

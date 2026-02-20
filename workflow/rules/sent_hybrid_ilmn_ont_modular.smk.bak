@@ -30,15 +30,6 @@ import sys
 # Aligner constraint: ONT for long reads
 ALIGNERS_DHIOM = ["ont"]
 
-# ---------------------------------------------------------------------------
-# Global defaults for hybrid read filters and sample SM tag.
-# Override via --config sentdhio_sample_sm=... sentdhio_lr_read_filter=... etc.
-# These will move to the config YAML once the config schema is finalized.
-# ---------------------------------------------------------------------------
-SENTDHIOM_SAMPLE_SM = config.get("sentdhio", {}).get("sample_sm", "hybrid_sample")
-SENTDHIOM_LR_READ_FILTER = config.get("sentdhio", {}).get("lr_read_filter", "")
-SENTDHIOM_SR_READ_FILTER = config.get("sentdhio", {}).get("sr_read_filter", "")
-
 # Base temp directory prefix for intermediate files
 def _dhiom_tmp(wildcards):
     return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiom/vcfs/{wildcards.dchrm}/tmp"
@@ -85,7 +76,6 @@ rule sentdhiom_sr_align:
         sort_threads=config['sentieon']['sort_threads'],
         cluster_sample=ret_sample,
         trim_head=get_ilmn_trim_head,
-        sample_sm="hg003",
     shell:
         """
         set -euo pipefail
@@ -152,7 +142,7 @@ rule sentdhiom_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA"
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -264,21 +254,10 @@ rule sentdhiom_pass1:
         # Build --replace_rg args: LR reads get LR:1 tag (critical for hybrid.model
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }
-                }
-            }')
-
         LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
-
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
@@ -486,19 +465,9 @@ rule sentdhiom_mapq0_bed:
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }
-                }
-            }')
-
         LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
@@ -632,43 +601,55 @@ rule sentdhiom_stage1:
 
         epocsec=$(date +%s)
 
+        # Haplotype assembly only if diff_bed not empty
+        if [ -s {input.diff_bed} ]; then
+            HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
+                --temp_dir $TMPDIR \
+                -i {input.lr_cram} --interval {input.diff_bed} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1.model \
+                --hap_bam {output.hap_bam} \
+                --hap_bed {output.hap_bed} \
+                --hap_vcf {output.hap_vcf} \
+                -"
+        else
+            echo "merged_diff.bed empty — skipping hap assembly" >> {log}
+            HAP_CMD="true"
+        fi
 
-        # Build LR replace args
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }
-                }
-            }')
-
-        LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
-        done
-
-        HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
-            --interval {input.diff_bed} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1.model \
-            --hap_bam {output.hap_bam} \
-            --hap_bed {output.hap_bed} \
-            --hap_vcf {output.hap_vcf} \
-            -"
-
+        # Insertion detection always runs
         INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            -i {input.lr_cram} \
             --algo HybridStage1 \
             --model {params.model}/HybridStage1_ins.model \
             --fa_file {output.ins_fa} \
             --bed_file {output.ins_bed} \
             -"
-       
+
+        # Combine HAP + INS → bwa → sort
+        cat <($HAP_CMD 2>> {log}) <($INS_CMD 2>> {log}) | \
+        sentieon bwa mem \
+            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.cluster_sample}\tLB:{params.cluster_sample}-LB-1\tPL:HYBRID" \
+            -t {params.use_threads} \
+            -x {params.model}/HybridStage1_bwa.model \
+            {params.huref} - 2>> {log} | \
+        sentieon util sort \
+            -i - -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            -o {output.bam} --sam2bam >> {log} 2>&1
+
+        wait
+        sync
+
+        # If hap_bam not created, create valid empty BAM
+        if [ ! -s {output.hap_bam} ]; then
+            echo "No haplotypes produced — creating empty hap_bam" >> {log}
+            samtools view -H {input.lr_cram} \
+            | grep -E '^@(HD|SQ|RG)' \
+            | samtools view -bo {output.hap_bam} -
+        fi
+
         samtools index {output.hap_bam} >> {log} 2>&1
 
         echo "Stage1 completed at $(date)" >> {log}
@@ -783,22 +764,11 @@ rule sentdhiom_stage3:
         # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }
-                }
-            }')
-
         LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
- 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
@@ -867,19 +837,9 @@ rule sentdhiom_pass2:
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model.
         # This also unifies SM tags across lr_cram and stage3_bam so sentieon
         # driver sees a single sample (stage3_bam inherits LR RGs from ONT input).
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }
-                }
-            }')
-
         LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
@@ -1360,19 +1320,9 @@ rule sentdhiom_call_svs:
         echo "Starting LongReadSV at $(date)" >> {log}
 
         # Build LR readgroup replacement args: LR reads get LR:1 tag
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }
-                }
-            }')
-
         LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+        for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\t]*\).*/\1/'); do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
