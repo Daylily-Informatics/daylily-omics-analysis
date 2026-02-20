@@ -174,7 +174,6 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             export TMPDIR="/fsx/scratch/"
             outdir="$(dirname {output.summary})"
             rm -rf "$outdir"
-            mkdir -p "$outdir"
 
             rtg vcfeval \
               --decompose \
