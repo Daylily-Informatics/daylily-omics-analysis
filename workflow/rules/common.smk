@@ -265,6 +265,7 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_sentdhio_vcf": "sentdhio",
     "produce_sentdhuo_vcf": "sentdhuo",
     "produce_sentpg_vcf": "sentpg",
+    "produce_sentieon_gatk_vcf": "gatk",
     "produce_deep19_vcf": "deep19",
     "produce_deep15_vcf": "deep15",
     "produce_oct_vcf": "oct",

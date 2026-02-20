@@ -1,171 +1,313 @@
 import os
 import sys
+import glob
+
+
+# -----------------------------------------------------------------------------
+# Helpers (kept compatible with the existing pipeline context)
+# -----------------------------------------------------------------------------
 
 def get_samp_concordance_truth_dir(wildcards):
-    cntrl_dir = samples[samples['sample'] == wildcards.sample]["CONCORDANCE_CONTROL_PATH"][0]
+    """Return the per-sample truthset directory (may be empty/NA)."""
+    # Original code used [0] indexing; iloc is safer if the DF index is not 0..N.
+    cntrl_dir = samples[samples["sample"] == wildcards.sample]["CONCORDANCE_CONTROL_PATH"].iloc[0]
     return cntrl_dir
 
+
 def get_alt_sample_name(wildcards):
-    return samples[samples['sample'] == wildcards.sample]['EXTERNAL_SAMPLE_ID'][0]
+    """Truthset filenames are keyed on EXTERNAL_SAMPLE_ID."""
+    return samples[samples["sample"] == wildcards.sample]["EXTERNAL_SAMPLE_ID"].iloc[0]
+
 
 def get_snv_caller(wildcards):
     return wildcards.snv
 
-def get_cdir(wildcards):
-    ret_d =  MDIR+f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/concordance/"
 
-    if ret_d.startswith('/marigo'):
-        ret_d = f"results"+ret_d
+def get_cdir(wildcards):
+    """Directory where concordance outputs land for this sample+condition."""
+    ret_d = MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/concordance/"
+    # Preserve original Marigo-path hack.
+    if ret_d.startswith("/marigo"):
+        ret_d = "results" + ret_d
     return ret_d
 
-if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
-    print("/home/ubuntu/dragen_data/HG001/HG001.hard-filtered.vcf.gz")
+
+def _norm_path(p):
+    """Normalize potentially-missing sample-sheet values (None/NaN/'na'/etc)."""
+    if p is None:
+        return ""
+    s = str(p).strip()
+    if s == "":
+        return ""
+    if s.lower() in {"none", "nan", "na", "null"}:
+        return ""
+    return s
 
 
+def get_concordance_footprints(wildcards):
+    """
+    Truthset directory can have 0..many ROI subdirectories.
+    Each ROI directory name becomes cmpFootprint.
+    """
+    tdir = _norm_path(get_samp_concordance_truth_dir(wildcards))
+    if not tdir:
+        return []
+    if not os.path.isdir(tdir):
+        return []
+    fps = []
+    for name in sorted(os.listdir(tdir)):
+        p = os.path.join(tdir, name)
+        if os.path.isdir(p):
+            fps.append(name)
+    return fps
+
+
+def get_truth_vcf(wildcards):
+    tdir = _norm_path(get_samp_concordance_truth_dir(wildcards))
+    alt = get_alt_sample_name(wildcards)
+    return f"{tdir}/{wildcards.cmpfootprint}/{alt}.vcf.gz"
+
+
+def get_truth_tbi(wildcards):
+    return get_truth_vcf(wildcards) + ".tbi"
+
+
+def get_truth_bed(wildcards):
+    tdir = _norm_path(get_samp_concordance_truth_dir(wildcards))
+    alt = get_alt_sample_name(wildcards)
+    return f"{tdir}/{wildcards.cmpfootprint}/{alt}.bed"
+
+
+# -----------------------------------------------------------------------------
+# Input VCF (callset) compatibility layer
+# -----------------------------------------------------------------------------
+# NOTE: This preserves the existing DAYLILY_DRAGEN symlink behavior, but makes it
+# safer under parallelism (ln -sf, no sleeps).
+# A later cleanup would turn this into a proper rule to avoid side effects in
+# input functions.
 
 def get_in_rtg_vcf(wildcards):
-    if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
+    if os.environ.get("DAYLILY_DRAGEN", "false") == "true":
         r1 = get_raw_R1s(wildcards)[0]
-        dvcfgz= f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
+        dvcfgz = (
+            f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
+            f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
+        )
         os.system(f"mkdir -p {os.path.dirname(dvcfgz)}")
-        os.system(f"ln -s {r1} {dvcfgz}")
-        os.system('sleep 2')
+        os.system(f"ln -sf {r1} {dvcfgz}")
         return dvcfgz
-    else:
-        vcf_path = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
-        # Use ancient() to skip upstream DAG checks if file exists
-        if os.environ.get('DAYLILY_CONCORDANCE_ONLY', 'false') == 'true':
-            return ancient(vcf_path)
-        return vcf_path
+    return (
+        f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
+        f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
+    )
 
 
 def get_in_rtg_tbi(wildcards):
-    if os.environ.get('DAYLILY_DRAGEN', 'false') == 'true':
+    if os.environ.get("DAYLILY_DRAGEN", "false") == "true":
         r2 = get_raw_R2s(wildcards)[0]
-        dvcfgztbi = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+        dvcfgztbi = (
+            f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
+            f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+        )
         os.system(f"mkdir -p {os.path.dirname(dvcfgztbi)}")
-        os.system(f"ln -s {r2} {dvcfgztbi}")
-        os.system('sleep 2')
+        os.system(f"ln -sf {r2} {dvcfgztbi}")
         return dvcfgztbi
-    else:
-        tbi_path = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
-        # Use ancient() to skip upstream DAG checks if file exists
-        if os.environ.get('DAYLILY_CONCORDANCE_ONLY', 'false') == 'true':
-            return ancient(tbi_path)
-        return tbi_path
+    return (
+        f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
+        f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+    )
 
+
+def concordance_mqc_outputs(wildcards):
+    """
+    Dynamic input function for the per-ROI MQC outputs.
+    This drives instantiation of per-ROI rules without the old fofn|bash mess.
+    """
+    fps = get_concordance_footprints(wildcards)
+    if not fps:
+        return []
+    return expand(
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/_{cmpfootprint}/snv_{sample}_{cmpfootprint}_concordance.mqc.tsv",
+        sample=wildcards.sample,
+        alnr=wildcards.alnr,
+        ddup=wildcards.ddup,
+        snv=wildcards.snv,
+        cmpfootprint=fps,
+    )
+
+
+# -----------------------------------------------------------------------------
+# Concordance rules
+# -----------------------------------------------------------------------------
 
 if len(CONCORDANCE_SAMPLES.keys()) > 0:
 
-    rule prep_for_concordance_check:
+    rule rtg_vcfeval_roi:
+        """
+        Run rtg vcfeval for a single (sample, condition, cmpFootprint).
+        """
         input:
             cvcf=get_in_rtg_vcf,
             ctbi=get_in_rtg_tbi,
+            truth_vcf=get_truth_vcf,
+            truth_tbi=get_truth_tbi,
+            bed=get_truth_bed,
+        output:
+            summary=MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/_{cmpfootprint}/summary.txt",
+        log:
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/logs/{sample}.{alnr}.{ddup}.{snv}.{cmpfootprint}.rtg_vcfeval.log",
+        benchmark:
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.{cmpfootprint}.rtg_vcfeval.bench.tsv",
+        threads:
+            int(config["rtg_vcfeval"].get("sub_threads", 7)),
+        resources:
+            vcpu=int(config["rtg_vcfeval"].get("sub_threads", 7)),
+            threads=int(config["rtg_vcfeval"].get("sub_threads", 7)),
+            partition=config["rtg_vcfeval"]["partition_other"],
+        conda:
+            config["rtg_vcfeval"]["env_yaml"]
+        params:
+            sdf=config["supporting_files"]["files"]["huref"]["rtg_tools_genome"]["name"],
+        shell:
+            r"""
+            set -euo pipefail
+            export TMPDIR="/fsx/scratch/"
+            outdir="$(dirname {output.summary})"
+            rm -rf "$outdir"
+            mkdir -p "$outdir"
+
+            rtg vcfeval \
+              --decompose \
+              --squash-ploidy \
+              --ref-overlap \
+              -e {input.bed} \
+              -b {input.truth_vcf} \
+              -c {input.cvcf} \
+              -o "$outdir" \
+              -t {params.sdf} \
+              --threads {threads} \
+              > {log} 2>&1
+            """
+
+
+    rule parse_vcfeval_summary_roi:
+        """
+        Parse rtg summary + classify TP/FP/FN into the existing per-class MQC TSV.
+        """
+        input:
+            summary=rules.rtg_vcfeval_roi.output.summary,
+            bed=get_truth_bed,
+        output:
+            mqc=MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/_{cmpfootprint}/snv_{sample}_{cmpfootprint}_concordance.mqc.tsv",
+        log:
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/logs/{sample}.{alnr}.{ddup}.{snv}.{cmpfootprint}.parse_vcfeval_summary.log",
+        benchmark:
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.{cmpfootprint}.parse_vcfeval_summary.bench.tsv",
+        # This step is mostly I/O + bcftools annotate + python classification.
+        # Keep it light to avoid oversubscription when many ROIs run in parallel.
+        threads: 1
+        resources:
+            vcpu=1,
+            threads=1,
+            partition=config["rtg_vcfeval"]["partition_other"],
+        conda:
+            config["rtg_vcfeval"]["env_yaml"]
+        params:
+            # Preserve existing metadata behavior
+            alt_name=get_alt_sample_name,
+        shell:
+            r"""
+            set -euo pipefail
+
+            outdir="$(dirname {input.summary})"
+            # This file is legacy/debug; parse-vcfeval-summary.py uses its dirname to place the MQC TSV.
+            legacy_parsed="$outdir/vcfeval_summary.parsed.tsv"
+
+            # Keep mean depth behavior identical to the current rule (effectively NA/-1).
+            allvar_mean_dp="na"
+
+            # Prevent parse script from over-threading bcftools when many ROIs run concurrently.
+            export DAYLILY_BCFTOOLS_THREADS="{threads}"
+
+            python workflow/scripts/parse-vcfeval-summary.py \
+              {input.summary} \
+              {wildcards.sample} \
+              {input.bed} \
+              {wildcards.cmpfootprint} \
+              {params.alt_name} \
+              "$legacy_parsed" \
+              "$allvar_mean_dp" \
+              {wildcards.alnr} \
+              {wildcards.snv} \
+              > {log} 2>&1
+
+            # Hard check: the legacy script should have written the MQC output where we declared it.
+            test -s {output.mqc}
+            """
+
+
+    rule prep_for_concordance_check:
+        """
+        Sample-level sentinel rule (drop-in replacement).
+        - Produces concordance.done (as before)
+        - Produces concordance.fofn + concordance.fin.cmds (kept for compatibility; now informational)
+        - Drives per-ROI parallelism via input expansion
+        """
+        input:
+            cvcf=get_in_rtg_vcf,
+            ctbi=get_in_rtg_tbi,
+            mqcs=concordance_mqc_outputs,
         priority: 48
         output:
             s=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done"),
             fofn=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fofn"),
-            fin_cmds=touch( MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fin.cmds"),
+            fin_cmds=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fin.cmds"),
         log:
             MDIR
             + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/logs/{sample}.{alnr}.{ddup}.{snv}.concordance.log",
-        benchmark:  MDIR+ "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.concordance.bench.tsv",
-        threads: config['rtg_vcfeval']['threads']
+        benchmark:
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.concordance.bench.tsv",
+        # Keep the rule-level threads/resources for backwards cluster configs that key off them.
+        threads: config["rtg_vcfeval"]["threads"]
         resources:
-            vcpu=config['rtg_vcfeval']['threads'],
-            threads=config['rtg_vcfeval']['threads'],
-            partition=config['rtg_vcfeval']['partition_other']
-        conda:
-            config["rtg_vcfeval"]["env_yaml"]
+            vcpu=config["rtg_vcfeval"]["threads"],
+            threads=config["rtg_vcfeval"]["threads"],
+            partition=config["rtg_vcfeval"]["partition_other"]
+        # Note: conda directive removed - not allowed with run: blocks
         params:
             tdir=get_samp_concordance_truth_dir,
-            alnr=get_alnr,
-            snv_caller=get_snv_caller,
-            conc_dir=get_cdir,
-            cluster_sample=get_samp_name,
-            ld_p=config['malloc_alt']['ld_preload'] if 'ld_preload' not in config['rtg_vcfeval'] else config['rtg_vcfeval']['ld_preload'],
-            l="{",
-            r="}",
-            sdf=config['supporting_files']['files']['huref']['rtg_tools_genome']['name'],
-            sub_threads="7" if 'sub_threads' not in config['rtg_vcfeval'] else config['rtg_vcfeval']['sub_threads'],
-            alt_name=get_alt_sample_name, 
-        shell:
-            """
-            # This is a *very* old shameful mess :-) I apologize in advance if you need to debug this before I've killed it off.
+            alt_name=get_alt_sample_name,
+        run:
+            import os
+            import datetime
 
-            export TMPDIR="/fsx/scratch/";
-            mkdir -p $HOME/.parallel;
-            parallel --record-env;
+            # Ensure output directory exists.
+            outdir = os.path.dirname(str(output.s))
+            os.makedirs(outdir, exist_ok=True)
 
-            # this needs to be disassembled and re-imagined.  Talk about rube goldbergian....
-            set +euo pipefail;
-            echo "" > {output.fofn};
-            echo "" > {output.fin_cmds};
-            ( 
-            #IFS=',' read -a vararray <<< $(env LD_PRELOAD=./resources/lib/libgsl.so.25  bcftools query -f "[%DP,]" {input.cvcf} );
-            var_sum_dp=na;  # $(IFS=+; echo "$((${params.l}vararray[*]{params.r}))");
-            allvar_mean_depth=na; # $(( var_sum_dp  / $(echo ${params.l}#vararray[@]{params.r} ) )) ;
-            export allvar_mean_dp=na  #$allvar_mean_depth;
-            if [[ "$allvar_mean_depth" == "" ]]; then
-                echo THEVARIANT_depth_CALCULATIONHASFAILED;
-                export allvar_mean_dp=-1;
-                echo sleeping~~~~~~~~~~~;
-            fi;
+            # Recreate the legacy "fofn" / "fin.cmds" as informational artifacts.
+            fps = get_concordance_footprints(wildcards)
 
-            export aligner={params.alnr};
-            export snv={params.snv_caller};
+            with open(str(output.fofn), "w") as fofn_fh:
+                fofn_fh.write("# Refactor: per-ROI jobs are scheduled by Snakemake; this file is informational.\n")
+                fofn_fh.write(f"# generated_at_utc={datetime.datetime.utcnow().isoformat()}Z\n")
+                fofn_fh.write(f"# truth_dir={_norm_path(params.tdir)}\n")
+                fofn_fh.write(f"# footprints={','.join(fps)}\n")
+                for mqc in input.mqcs:
+                    fofn_fh.write(str(mqc) + "\n")
 
-            if [[ "$aligner" == "" ]]; then
-                echo "ERROR::: ALIGNER NOT SET, setting to na";
-                export aligner="na";
-            fi;
+            with open(str(output.fin_cmds), "w") as fin_fh:
+                fin_fh.write("# Refactor: see Snakemake DAG for exact commands.\n")
+                fin_fh.write(f"# generated_at_utc={datetime.datetime.utcnow().isoformat()}Z\n")
 
-            if [[ "$snv" == "" ]]; then
-                echo "ERROR::: snv NOT SET, settign to na";
-                export snv="na";
-            fi;
+            # Emit a SKIPPED sentinel if there are no footprints / no mqcs.
+            if len(input.mqcs) == 0:
+                with open(str(output.s) + ".SKIPPED", "w") as sk:
+                    sk.write("No truthset ROI directories found; concordance skipped.\n")
 
-            rm -rf {output} || echo nothingToDel;
-            mkdir -p $( dirname {output.fofn} ) || echo MKDIRfailed ;
-            mkdir -p {params.conc_dir}/logs;
-            export alt_name={params.alt_name}  ### $(dirname {params.tdir}/{params.alt_name}/. | perl -pe 's/^.*\///g;' );
-
-
-            # Hack... if the sample entry does not have a concordance dir set, as approximated by the string length of the field being < 6, fake the output files and touch a sentinel noting they have been faked
-            aconcdir={params.conc_dir}
-            if (( ${params.l}#aconcdir{params.r} <= 6 )); then
-                echo 'WARNING: concordance is not being run for sample {params.cluster_sample}.' 2>&1;
-                touch {output} {output.s}.SKIPPED;
-                exit 0;
-            fi;
-
-            (ls -d {params.tdir}/* | parallel --halt never --env _ -k --jobs 1 'export vcf="{params.l}{params.r}/$alt_name.vcf.gz";
-            export bed="{params.l}{params.r}/$alt_name.bed";
-            echo "BEDBRDBED: _$bed _";
-            # Retrieve the second-to-last element (-2 in Bash)
-            export subd=$(basename $(dirname "$bed"));
-
-            echo "XXXXXXXX-----> _$subd _";
-            if [[ "$subd" == "" ]]; then
-                exit 33;
-            fi;
-
-            echo "BBBDFBDFBDFGDF"; #--use-all-records
-            rm -rf {params.conc_dir}/_$subd || sleep 1;  export cmd="`which rtg` vcfeval --decompose --squash-ploidy  --ref-overlap -e $bed -b $vcf -c {input.cvcf} -o {params.conc_dir}/_$subd -t {params.sdf} --threads {params.sub_threads}";
-            export  fin_cmd="env python workflow/scripts/parse-vcfeval-summary.py {params.conc_dir}/_$subd/summary.txt {params.cluster_sample} $bed $subd  $alt_name {params.conc_dir}_$subd/{params.alt_name}_$subdb_summary.txt $allvar_mean_dp $aligner $snv ";
-            ccmd="$cmd >> {params.conc_dir}_a.err 2>&1; $fin_cmd >> {params.conc_dir}_b.err 2>&1; ";
-            echo "$ccmd" >> {output.fofn} 2>&1; '
-            ) >> {log} 2>&1;
-            echo  AlomstDone;
-                 if [[ "$allvar_mean_dp" == "" || "$snv" == "" || "$aligner" == "" ]]; then
-                echo "WARNING:::: 1 or more of the depth/snv/aligner annotations is null! ... $allvar_mean_dp ... $snv .. $aligner ...\n\n";
-            fi;
-            ) >> {log} ;  # || echo commandFAILSrtgvcfeval >> {log} 2>&1;
-            cat {output.fofn} | env bash ;
-
-            touch {output};
-            ls {output};
-            """
+            # Touch the main sentinel log for compatibility.
+            with open(str(log[0]), "a") as lfh:
+                lfh.write(f"Concordance sentinel complete. footprints={len(fps)} mqcs={len(input.mqcs)}\n")
 
 
 else:
@@ -196,10 +338,10 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
     params:
         cluster_sample="aggregate",
         mdir=MDIR,
-        genome_build=config['genome_build'],
+        genome_build=config["genome_build"],
         pc=print_wildcards_etc,
     output:
-        touch(MDIR+"other_reports/giab_concordance_mqc.tsv")
+        touch(MDIR + "other_reports/giab_concordance_mqc.tsv")
     shell:
         """
         set +euo pipefail;
@@ -208,7 +350,7 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         (find results/day/{params.genome_build}/*/align/*/*/snv/*/concordance/ | grep  concordance.mqc  | head -n 1 | parallel 'head -n 1 {{}} > {output}';) || echo 'GetHeaderFAILS' 1>&2;
         (find {params.mdir}*/align/*/*/snv/*/concordance/ | grep  .mqc | parallel ' tail -n +2 {{}} >> {output}';) || echo "GETCONCORDANCECALLSfails"  1>&2;
 
-        (perl -pi -e 's/^(.+?)(\t)(.+?)(\t)(.+)$/$3\t$1\t$5/g;' {output} ) || echo "perl regsub failed"  1>&2;
-	    perl -pi -e 's/^([^\t]+?)-None\t([^\t]+)/$1-$2\t$2/g;' {output}  1>&2;
+        (perl -pi -e 's/^(.+?)(\\t)(.+?)(\\t)(.+)$/$3\\t$1\\t$5/g;' {output} ) || echo "perl regsub failed"  1>&2;
+        perl -pi -e 's/^([^\\t]+?)-None\\t([^\\t]+)/$1-$2\\t$2/g;' {output}  1>&2;
 
         """

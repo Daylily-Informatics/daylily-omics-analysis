@@ -6,17 +6,7 @@ import pandas as pd
 import re
 import math
 
-def _get_int_env(var_name, default):
-    try:
-        v = os.environ.get(var_name)
-        if v is None or str(v).strip() == "":
-            return int(default)
-        return int(float(str(v)))
-    except Exception:
-        return int(default)
-
-# bcftools/threading: keep legacy default (cpu_count//4) but allow overriding
-cpus_div4 = max(1, _get_int_env("DAYLILY_BCFTOOLS_THREADS", os.cpu_count() // 4))  # Integer division legacy default
+cpus_div4 = os.cpu_count() // 4  # Integer division
 
 summary_fh = open(sys.argv[1], "r")
 sample = sys.argv[2]  # Sample name
