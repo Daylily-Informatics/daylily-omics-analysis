@@ -256,6 +256,6 @@ rule produce_sentieon_gatk_vcf:  # TARGET: sentieon GATK HaplotypeCaller per-sam
     shell:
         """( touch {output} ;
 
-        {latency_wait}; ls {output} ) >> {log} 2>&1;
+     ls {output} ) >> {log} 2>&1;
         """
 
