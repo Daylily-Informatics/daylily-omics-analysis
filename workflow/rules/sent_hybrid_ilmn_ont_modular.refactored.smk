@@ -999,6 +999,7 @@ rule sentdhiomr_anno:
         hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.bed",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
@@ -1029,6 +1030,8 @@ rule sentdhiomr_anno:
             -b {input.hap_bed} \
             -t {params.use_threads} \
             {output.vcf} >> {log} 2>&1
+
+        tabix -p vcf {output.vcf} >> {log} 2>&1
 
         echo "Annotation completed at $(date)" >> {log}
         """
