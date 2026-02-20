@@ -1,151 +1,20 @@
-# Sentieon pangenome (graph) short-read processing
-# - Wraps: sentieon-cli pangenome
-# - Inputs: Illumina short-read FASTQ (paired-end or single-end)
-# - Outputs (by Sentieon-cli naming convention):
-#     {output.vcf}                       -> final SNV/indel VCF (model-applied)
-#     {output.aligned}                   -> pangenome-assisted, surjected + deduped CRAM aligned to GRCh38
-#     {output.ploidy_json}               -> sex/ploidy estimate JSON
-#     {output.svs_vcf}                   -> SV VCF produced by vg call (optional to consume downstream)
-#
-# Required config keys (mirrors your existing Sentieon rules style):
-#   config['supporting_files']['files']['huref']['fasta']['name']
-#   config['supporting_files']['files']['sentieon_env']['path']
-#   config['supporting_files']['files']['sentieon_env']['jemalloc_path']
-#   config['supporting_files']['files']['pangenome_gbz']['name']
-#   config['supporting_files']['files']['pangenome_hapl']['name']
-#   config['supporting_files']['files']['pangenome_xg']['name']
-#   config['supporting_files']['files']['pangenome_snarls']['name']
-#   config['supporting_files']['files']['pangenome_model_bundle']['name']
-#
-# Optional config keys:
-#   config['supporting_files']['files']['dbsnp']['name']         (if present, passed as --dbsnp)
-#   config['sentieon']['pangenome_threads']                      (else falls back to config['sentieon']['threads'])
-#   config['sentieon']['pangenome_kmer_memory_gb']               (default 30)
-#   config['sentieon']['pangenome_skip_cnv']                     (default True)
-#   config['sentieon']['pangenome_pcr_free']                     (default True)
-#
-# FASTQ discovery:
-#   This module tries, in order:
-#     1) global helper fns: getR1s(wildcards) and getR2s(wildcards)
-#     2) config-driven: config['samples'][sample]['r1'] and optional ['r2']
-#     3) units.tsv parsing if config contains a path under one of:
-#           config['units_tsv']
-#           config['tables']['units_tsv']
-#           config['tables']['units']
-#
-# If none are found, the rule errors with an actionable message.
-
 import os
-import csv
-from pathlib import Path
 
-MDIR = "{DIR}/tools/"
-
-# -------------------------
-# Helpers
-# -------------------------
-
-def _as_list(x):
-    if x is None:
-        return []
-    if isinstance(x, (list, tuple)):
-        return [str(i) for i in x if i not in (None, "")]
-    return [str(x)]
-
-_UNITS_ROWS = None
-_UNITS_PATH = None
-_UNITS_SAMPLE_CACHE = {}
-
-def _get_units_path():
-    # Try a few common config layouts.
-    candidates = []
-    if isinstance(config, dict):
-        if config.get("units_tsv"):
-            candidates.append(config["units_tsv"])
-        tables = config.get("tables", {}) if isinstance(config.get("tables", {}), dict) else {}
-        if tables.get("units_tsv"):
-            candidates.append(tables["units_tsv"])
-        if tables.get("units"):
-            candidates.append(tables["units"])
-    for p in candidates:
-        if p and Path(p).exists():
-            return str(p)
-    return None
-
-def _load_units_rows():
-    global _UNITS_ROWS, _UNITS_PATH
-    if _UNITS_ROWS is not None:
-        return _UNITS_ROWS
-    units_path = _get_units_path()
-    _UNITS_PATH = units_path
-    if not units_path:
-        _UNITS_ROWS = []
-        return _UNITS_ROWS
-    rows = []
-    with open(units_path, "r", newline="") as fh:
-        reader = csv.DictReader(fh, delimiter="\t")
-        for row in reader:
-            rows.append(row)
-    _UNITS_ROWS = rows
-    return _UNITS_ROWS
-
-def _units_rows_for_sample(sample):
-    # Cache per sample because Snakemake calls input functions repeatedly.
-    if sample in _UNITS_SAMPLE_CACHE:
-        return _UNITS_SAMPLE_CACHE[sample]
-    rows = _load_units_rows()
-    sample_rows = [r for r in rows if (r.get("SAMPLEID") == sample)]
-    _UNITS_SAMPLE_CACHE[sample] = sample_rows
-    return sample_rows
-
-def _fastqs_from_helpers_or_config_or_units(wildcards):
-    sample = wildcards.sample
-
-    # 1) Global helper functions (your workflow already uses these)
-    if "getR1s" in globals():
-        r1 = _as_list(globals()["getR1s"](wildcards))
-        r2 = _as_list(globals()["getR2s"](wildcards)) if "getR2s" in globals() else []
-        if not r1:
-            raise ValueError(f"getR1s({sample}) returned no FASTQs")
-        return (r1, r2, None)
-
-    # 2) config['samples'][sample] mapping
-    samples = config.get("samples", {}) if isinstance(config, dict) else {}
-    if isinstance(samples, dict) and sample in samples and isinstance(samples[sample], dict):
-        r1 = _as_list(samples[sample].get("r1") or samples[sample].get("R1"))
-        r2 = _as_list(samples[sample].get("r2") or samples[sample].get("R2"))
-        if not r1:
-            raise ValueError(f"config['samples'][{sample}]['r1'] is missing/empty")
-        return (r1, r2, None)
-
-    # 3) units.tsv
-    rows = _units_rows_for_sample(sample)
-    if rows:
-        r1 = []
-        r2 = []
-        lane_meta = []
-        for row in rows:
-            r1p = (row.get("ILMN_R1_PATH") or "").strip()
-            r2p = (row.get("ILMN_R2_PATH") or "").strip()
-            if not r1p:
-                continue
-            r1.append(r1p)
-            if r2p:
-                r2.append(r2p)
-            lane_meta.append(row)
-        if not r1:
-            raise ValueError(
-                f"units.tsv ({_UNITS_PATH}) has SAMPLEID={sample} rows but no ILMN_R1_PATH values"
-            )
-        return (r1, r2, lane_meta)
-
-    raise ValueError(
-        "Unable to resolve FASTQs for sample '{s}'. Provide either:\n"
-        "  - helper functions getR1s()/getR2s(), or\n"
-        "  - config['samples'][sample]['r1'] (+ optional ['r2']), or\n"
-        "  - a units.tsv path in config['units_tsv'] (or config['tables']['units_tsv'] / ['units'])\n"
-        "and ensure it contains ILMN_R1_PATH (+ optional ILMN_R2_PATH) for that SAMPLEID.".format(s=sample)
-    )
+####### Sentieon Pangenome (full) – short-read pipeline
+#
+# Uses sentieon-cli pangenome which performs:
+#   1. Pangenome graph alignment (GBZ + XG + snarls)
+#   2. Surjection + dedup onto linear GRCh38
+#   3. SNV/indel calling with model bundle
+#   4. SV calling via vg call
+#   5. Ploidy estimation
+#
+# Outputs per sample:
+#   {sample}.pangenome_sr.snv.vcf.gz               - SNV/indel VCF (model-applied)
+#   {sample}.pangenome_sr_pangenome-aligned.cram    - surjected + deduped CRAM
+#   {sample}.pangenome_sr_ploidy.json               - sex/ploidy estimate
+#   {sample}.pangenome_sr_svs.vcf.gz               - SV VCF from vg call
+#
 
 def pangenome_r1_fastqs(wildcards):
     r1, r2, _ = _fastqs_from_helpers_or_config_or_units(wildcards)

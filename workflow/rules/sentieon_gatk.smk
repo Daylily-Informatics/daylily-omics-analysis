@@ -2,11 +2,10 @@ import os
 
 ####### Sentieon
 #
-# Our current prod aligner
 #
 
 
-rule sentieon_gatk_bsqr:  #TARGET: sent bwa sort
+rule sentieon_gatk_bsqr_og:  #TARGET: sent bwa sort
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
@@ -148,13 +147,13 @@ rule sentieon_gatk_bsqr:  #TARGET: sent bwa sort
 
 localrules: produce_sentieon_gatk_bsqr,
 
-rule produce_sentieon_gatk_bsqr:  # TARGET: produce_sentieon_bwa_sort_bam
+rule produce_sentieon_gatk_bsqr_og:  # TARGET: produce_sentieon_bwa_sort_bam
      input:
          expand(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram", sample=SAMPS, alnr=ALIGNERS, ddup=DDUP)
 
 
 
-rule sentieon_gatk_snv:  #TARGET: sent bwa sort
+rule sentieon_gatk_snv_og:  #TARGET: sent bwa sort
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram",
         cram_crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram.crai",
