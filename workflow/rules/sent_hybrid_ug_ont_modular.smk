@@ -80,7 +80,7 @@ rule sentdhuom_pass1:
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
         alt_samp_name=get_alt_sample_name,
-        pop_vcf=config["supporting_files"]["popvcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -652,7 +652,7 @@ rule sentdhuom_pass2:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
-        pop_vcf=config["sentdhuo"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -840,7 +840,7 @@ rule sentdhuom_transfer:
         vcpu=config['sentdhuo']['threads_light'],
         mem_mb=config['sentdhuo']['mem_mb_light'],
     params:
-        pop_vcf=config["sentdhuo"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         use_threads=config["sentdhuo"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:

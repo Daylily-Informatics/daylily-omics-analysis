@@ -220,7 +220,7 @@ rule sentdhiom_pass1:
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
         sr_read_filter=SENTDHIOM_SR_READ_FILTER,
-        pop_vcf=config["supporting_files"]["popvcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -962,7 +962,7 @@ rule sentdhiom_pass2:
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -1175,7 +1175,7 @@ rule sentdhiom_transfer:
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         huref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
         cluster_sample=ret_sample,
     shell:
