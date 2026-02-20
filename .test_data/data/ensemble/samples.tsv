@@ -1,0 +1,3 @@
+SAMPLE	EXTERNAL_SAMPLE_ID	SAMPLE_TYPE	IS_POSITIVE_CONTROL	IS_NEGATIVE_CONTROL	CONCORDANCE_CONTROL_PATH	BIOLOGICAL_SEX	IDDNA_UID
+HG003	HG003	posControl	true	false	/fsx/data/genomic_data/organism_references/H_sapiens/giab/truth_sets/hg38/HG003_GRCh38_1_22_v4.2.1_benchmark	male	na
+

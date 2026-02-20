@@ -28,16 +28,16 @@ import os
 import sys
 
 # Aligner constraint: ONT for long reads
-ALIGNERS_DHIOM = ["ont"]
+ALIGNERS_DHIOMR = ["ont"]
 
 # Base temp directory prefix for intermediate files
-def _dhiom_tmp(wildcards):
-    return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiom/vcfs/{wildcards.dchrm}/tmp"
+def _dhiomr_tmp(wildcards):
+    return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiomr/vcfs/{wildcards.dchrm}/tmp"
 
 # ---------------------------------------------------------------------------
 # Rule 1: SR Alignment - Align Illumina FASTQs with sentieon bwa mem
 # ---------------------------------------------------------------------------
-rule sentdhiom_sr_align:
+rule sentdhiomr_sr_align:
     """Align Illumina short-read FASTQs with sentieon bwa mem | util sort"""
     input:
         r1=getR1s,
@@ -46,17 +46,17 @@ rule sentdhiom_sr_align:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
     output:
-        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam",
-        bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam.bai",
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_aligned.bam",
+        bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_aligned.bam.bai",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_align.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_align.log",
     threads: config['sentdhio']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.sr_align.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.sr_align.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -83,7 +83,7 @@ rule sentdhiom_sr_align:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_sr_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_sr_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR" $(dirname {output.bam});
         if [ ! -d "$TMPDIR" ]; then
@@ -173,25 +173,25 @@ rule sentdhiom_sr_align:
 # ---------------------------------------------------------------------------
 # Rule 2: Pass 1 - Combined LR+SR variant calling (DNAscope)
 # ---------------------------------------------------------------------------
-rule sentdhiom_pass1:
+rule sentdhiomr_pass1:
     """First-pass combined variant calling (DNAscope) on LR+SR"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
-        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam.bai",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam.bai",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz",
-        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.pass1.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.pass1.log",
     threads: config['sentdhio']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.pass1.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.pass1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -209,7 +209,7 @@ rule sentdhiom_pass1:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_p1_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_p1_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
@@ -290,12 +290,12 @@ rule sentdhiom_pass1:
         echo "Pass 1 completed at $(date)" >> {log}
         """
 
-rule sentdhiom_sr_markdup:
+rule sentdhiomr_sr_markdup:
     input:
-        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_aligned.bam"
+        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_aligned.bam"
     output:
-        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
-        bai = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam.bai"
+        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        bai = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam.bai"
     params:
         huref = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         use_threads = config["sentdhio"]["use_threads"],
@@ -303,7 +303,7 @@ rule sentdhiom_sr_markdup:
         cluster_sample=ret_sample,
     threads: config['sentdhio']['threads']
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.sr_markdup.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.sr_markdup.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -312,7 +312,7 @@ rule sentdhiom_sr_markdup:
     conda:
         "../envs/sentieon_v0.3.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_markdup.log"
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_markdup.log"
     shell:
         """
         set -euo pipefail;
@@ -377,7 +377,7 @@ rule sentdhiom_sr_markdup:
 # ---------------------------------------------------------------------------
 # Rule 3: Hybrid Select - Region selection from pass-1 VCF
 # ---------------------------------------------------------------------------
-rule sentdhiom_hybrid_select:
+rule sentdhiomr_hybrid_select:
     """Select regions for hybrid re-analysis based on pass-1 variants.
 
     This replicates the sentieon-cli hybrid_select pipeline:
@@ -387,19 +387,19 @@ rule sentdhiom_hybrid_select:
     4. bedtools slop adds 1000bp padding
     """
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/selected.bed",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/selected.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.hybrid_select.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.hybrid_select.log",
     threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.hybrid_select.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.hybrid_select.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads_light'],
@@ -437,22 +437,22 @@ rule sentdhiom_hybrid_select:
 # ---------------------------------------------------------------------------
 # Rule 4: MAPQ0 Detection - Find low-quality mapping regions
 # ---------------------------------------------------------------------------
-rule sentdhiom_mapq0_bed:
+rule sentdhiomr_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
     output:
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_bed.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_bed.log",
     threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.mapq0_bed.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.mapq0_bed.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads_medium'],
@@ -469,7 +469,7 @@ rule sentdhiom_mapq0_bed:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_mq_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_mq_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -507,17 +507,17 @@ rule sentdhiom_mapq0_bed:
 # ---------------------------------------------------------------------------
 # Rule 5: MAPQ0 Slop - Extend MAPQ0 regions by 1000bp
 # ---------------------------------------------------------------------------
-rule sentdhiom_mapq0_slop:
+rule sentdhiomr_mapq0_slop:
     """Extend MAPQ0 regions by 1000 bp using bedtools slop"""
     input:
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_slop.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_slop.log",
     threads: 2
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -541,18 +541,18 @@ rule sentdhiom_mapq0_slop:
 # ---------------------------------------------------------------------------
 # Rule 6: Merge BEDs - Combine selected + MAPQ0 regions
 # ---------------------------------------------------------------------------
-rule sentdhiom_merge_beds:
+rule sentdhiomr_merge_beds:
     """Cat, sort, merge selected.bed + mapq0.ex1000.bed → merged_diff.bed"""
     input:
-        selected=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/selected.bed",
-        mapq0=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
+        selected=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/selected.bed",
+        mapq0=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
         ref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
     output:
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/merged_diff.bed",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/merged_diff.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.merge_beds.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.merge_beds.log",
     threads: 2
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -577,27 +577,27 @@ rule sentdhiom_merge_beds:
 # ---------------------------------------------------------------------------
 # Rule 7: Stage 1 - Insertion detection + haplotype assembly → bwa realign
 # ---------------------------------------------------------------------------
-rule sentdhiom_stage1:
+rule sentdhiomr_stage1:
     """Stage1: insertion detection + haplotype assembly piped through bwa"""
     input:
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        diff_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/merged_diff.bed",
+        diff_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/merged_diff.bed",
     output:
-        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
-        hap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_hap.bam",
-        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_hap.bed",
-        hap_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_hap.vcf",
-        ins_fa=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_ins.fa",
-        ins_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_ins.bed",
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
+        hap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.bam",
+        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.bed",
+        hap_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.vcf",
+        ins_fa=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_ins.fa",
+        ins_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_ins.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
     threads: config['sentdhio']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage1.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.stage1.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -614,7 +614,7 @@ rule sentdhiom_stage1:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR="/dev/shm/sentdhiom_s1_${timestamp}_$$"
+        export TMPDIR="/dev/shm/sentdhiomr_s1_${timestamp}_$$"
         export SENTIEON_TMPDIR="$TMPDIR"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
@@ -685,25 +685,25 @@ rule sentdhiom_stage1:
         """
 
 
-rule sentdhiom_stage2:
+rule sentdhiomr_stage2:
     """Stage2: generate unmap BAM, alt BAM, and refined BED"""
     input:
-        stage1_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
-        hap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_hap.bam",
-        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_hap.bed",
+        stage1_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
+        hap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.bam",
+        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.bed",
     output:
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
-        unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
-        alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
+        unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
+        alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage2.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage2.log",
     threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage2.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.stage2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads_medium'],
@@ -720,7 +720,7 @@ rule sentdhiom_stage2:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_s2_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_s2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -744,25 +744,25 @@ rule sentdhiom_stage2:
 # ---------------------------------------------------------------------------
 # Rule 9: Stage 3 - Re-alignment with stage2 outputs
 # ---------------------------------------------------------------------------
-rule sentdhiom_stage3:
+rule sentdhiomr_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
-        sr_bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        sr_bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
-        alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
+        unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
+        alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
-        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
     threads: config['sentdhio']['threads']  # Full node: stage3 pipes driver → util sort (2 concurrent processes)
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.stage3.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.stage3.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -779,7 +779,7 @@ rule sentdhiom_stage3:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_s3_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_s3_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -829,24 +829,24 @@ rule sentdhiom_stage3:
 # ---------------------------------------------------------------------------
 # Rule 10: Pass 2 - Second-pass variant calling on refined regions
 # ---------------------------------------------------------------------------
-rule sentdhiom_pass2:
+rule sentdhiomr_pass2:
     """Second-pass variant calling on stage3 BAM + LR reads"""
     input:
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
+        stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
-        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.pass2.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.pass2.log",
     threads: config['sentdhio']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.pass2.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.pass2.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -864,7 +864,7 @@ rule sentdhiom_pass2:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_p2_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_p2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -908,18 +908,18 @@ rule sentdhiom_pass2:
 # ---------------------------------------------------------------------------
 # Rule 11: Subset - Subset pass-1 VCF to complement of stage2 regions
 # ---------------------------------------------------------------------------
-rule sentdhiom_subset:
+rule sentdhiomr_subset:
     """Subset pass-1 VCF to complement of stage2 regions"""
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/initial.vcf.gz",
-        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
+        bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
-        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
     threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -957,19 +957,19 @@ rule sentdhiom_subset:
 # ---------------------------------------------------------------------------
 # Rule 12: Concat Pass - Concatenate subset + pass2 VCFs
 # ---------------------------------------------------------------------------
-rule sentdhiom_concat_pass:
+rule sentdhiomr_concat_pass:
     """Concatenate subset + pass2 VCFs"""
     input:
-        subset=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
-        subset_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
-        pass2=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
-        pass2_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
+        subset=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
+        subset_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
+        pass2=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
+        pass2_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
     threads: config['sentdhio']['threads_light']
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -992,17 +992,17 @@ rule sentdhiom_concat_pass:
 # ---------------------------------------------------------------------------
 # Rule 13: Annotation - Hybrid-specific annotations
 # ---------------------------------------------------------------------------
-rule sentdhiom_anno:
+rule sentdhiomr_anno:
     """Annotate VCF with hybrid-specific annotations"""
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
-        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/stage1_hap.bed",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
+        hap_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_hap.bed",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
     threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -1040,14 +1040,14 @@ rule sentdhiom_anno:
 # ---------------------------------------------------------------------------
 # Rule 14: Transfer - Annotation transfer from population VCF (if pop_vcf set)
 # ---------------------------------------------------------------------------
-rule sentdhiom_transfer:
+rule sentdhiomr_transfer:
     """Fast INFO transfer using bcftools annotate instead of merge"""
     input:
-        anno_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
-        anno_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
+        anno_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
+        anno_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
-        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
     threads: 24
     resources:
         partition="i192mem,i192bigmem,i192",
@@ -1085,21 +1085,21 @@ rule sentdhiom_transfer:
 # ---------------------------------------------------------------------------
 # Rule 15: Model Apply - DNAModelApply ML filtering
 # ---------------------------------------------------------------------------
-rule sentdhiom_model_apply:
+rule sentdhiomr_model_apply:
     """Apply ML model to called variants"""
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.model_apply.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.model_apply.log",
     threads: config['sentdhio']['threads_medium']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.model_apply.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.model_apply.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads_medium'],
@@ -1117,7 +1117,7 @@ rule sentdhiom_model_apply:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_ma_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_ma_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1140,22 +1140,22 @@ rule sentdhiom_model_apply:
 # ---------------------------------------------------------------------------
 # Rule 16: Final Norm - bcftools normalization → output VCF
 # ---------------------------------------------------------------------------
-rule sentdhiom_final_norm:
+rule sentdhiomr_final_norm:
     """Trim, normalize, and produce final output VCF"""
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.snv.sort.vcf.gz",
-        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.snv.sort.vcf.gz.tbi",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.snv.sort.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.snv.sort.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.{dchrm}.final_norm.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.final_norm.log",
     threads: config['sentdhio']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.{dchrm}.final_norm.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.final_norm.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads_light'],
@@ -1184,16 +1184,16 @@ rule sentdhiom_final_norm:
 # ===========================================================================
 
 localrules:
-    sentdhiom_concat_fofn,
+    sentdhiomr_concat_fofn,
 
 
-rule sentdhiom_concat_fofn:
+rule sentdhiomr_concat_fofn:
     """Build file-of-filenames for chromosome chunks"""
     input:
         chunk_tbi=sorted(
             expand(
                 MDIR
-                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhiom/vcfs/{ochm}/{{sample}}.{{alnr}}.{{ddup}}.sentdhiom.{ochm}.snv.sort.vcf.gz.tbi",
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhiomr/vcfs/{ochm}/{{sample}}.{{alnr}}.{{ddup}}.sentdhiomr.{ochm}.snv.sort.vcf.gz.tbi",
                 ochm=SENTDHIO_CHRMS,
             ),
             key=lambda x: float(
@@ -1204,42 +1204,42 @@ rule sentdhiom_concat_fofn:
             ),
         ),
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     priority: 44
     output:
-        fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.concat.vcf.gz.fofn.tmp",
+        fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn.tmp",
     threads: 1
     resources:
         threads=1
     params:
-        fn_stub="{sample}.{alnr}.{ddup}.sentdhiom."
+        fn_stub="{sample}.{alnr}.{ddup}.sentdhiomr."
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.concat.fofn.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.sentdhiom.concat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.concat.fofn.log",
     shell:
         """
         for i in {input.chunk_tbi}; do
             ii=$(echo $i | perl -pe 's/\\.tbi$//g'; );
             echo $ii >> {output.tmp_fofn};
         done;
-        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdhiom. {output.fin_fofn}) >> {log} 2>&1;
+        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdhiomr. {output.fin_fofn}) >> {log} 2>&1;
         """
 
 
-rule sentdhiom_concat_index_chunks:
+rule sentdhiomr_concat_index_chunks:
     """Concatenate chromosome chunks and index final VCF"""
     input:
-        fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.concat.vcf.gz.fofn",
+        fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz",
-        vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.temp.vcf.gz",
-        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz.tbi",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
+        vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.temp.vcf.gz",
+        vcfgztbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz.tbi",
     threads: config['sentdhio']['threads_light']
     resources:
         vcpu=config['sentdhio']['threads_light'],
@@ -1251,11 +1251,11 @@ rule sentdhiom_concat_index_chunks:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.merge.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.merge.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/log/{sample}.{alnr}.{ddup}.sentdhiom.snv.merge.sort.gathered.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.snv.merge.sort.gathered.log",
     shell:
         """
         touch {log};
@@ -1274,15 +1274,15 @@ rule sentdhiom_concat_index_chunks:
 
 
 localrules:
-    clear_combined_sentdhiom_vcf,
+    clear_combined_sentdhiomr_vcf,
 
 
-rule clear_combined_sentdhiom_vcf:  # TARGET: clear combined sentdhiom vcf so chunks can be re-evaluated if needed.
+rule clear_combined_sentdhiomr_vcf:  # TARGET: clear combined sentdhiomr vcf so chunks can be re-evaluated if needed.
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
             sample=SSAMPS,
-            alnr=ALIGNERS_DHIOM,
+            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     threads: 2
@@ -1295,24 +1295,24 @@ rule clear_combined_sentdhiom_vcf:  # TARGET: clear combined sentdhiom vcf so ch
 
 
 localrules:
-    produce_sentdhiom_vcf,
+    produce_sentdhiomr_vcf,
 
 
-rule produce_sentdhiom_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
+rule produce_sentdhiomr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.snv.sort.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
-            alnr=ALIGNERS_DHIOM,
+            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
-        "gatheredall.sentdhiom",
+        "gatheredall.sentdhiomr",
     priority: 48
     threads: 1
     log:
-        "gatheredall.sentdhiom.log",
+        "gatheredall.sentdhiomr.log",
     shell:
         """( touch {output} ;
 
@@ -1324,23 +1324,23 @@ rule produce_sentdhiom_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
 # SV CALLING: LongReadSV structural variant calling (whole-genome, not chunked)
 # ===========================================================================
 
-rule sentdhiom_call_svs:
+rule sentdhiomr_call_svs:
     """Call structural variants using LongReadSV on ONT long reads"""
     input:
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
-        sv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.sv.vcf.gz",
-        sv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.sv.vcf.gz.tbi",
+        sv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz",
+        sv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/log/{sample}.{alnr}.{ddup}.sentdhiom.sv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.sv.log",
     threads: config['sentdhio']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiom.sv.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.sv.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhio']['threads'],
@@ -1358,7 +1358,7 @@ rule sentdhiom_call_svs:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhiom_sv_${{timestamp}}_$$";
+        export TMPDIR="/dev/shm/sentdhiomr_sv_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1397,24 +1397,24 @@ rule sentdhiom_call_svs:
 
 
 localrules:
-    produce_sentdhiom_sv,
+    produce_sentdhiomr_sv,
 
 
-rule produce_sentdhiom_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modular sv vcf
+rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modular sv vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/sv/sentdhiom/{sample}.{alnr}.{ddup}.sentdhiom.sv.vcf.gz.tbi",
+            + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz.tbi",
             sample=SSAMPS,
-            alnr=ALIGNERS_DHIOM,
+            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
-        "gatheredall.sentdhiom.sv",
+        "gatheredall.sentdhiomr.sv",
     priority: 48
     threads: 1
     log:
-        "gatheredall.sentdhiom.sv.log",
+        "gatheredall.sentdhiomr.sv.log",
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -1422,10 +1422,10 @@ rule produce_sentdhiom_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modula
 
 
 localrules:
-    prep_sentdhiom_chunkdirs,
+    prep_sentdhiomr_chunkdirs,
 
 
-rule prep_sentdhiom_chunkdirs:
+rule prep_sentdhiomr_chunkdirs:
     """Prepare chunk directories for modular hybrid workflow"""
     input:
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
@@ -1435,14 +1435,14 @@ rule prep_sentdhiom_chunkdirs:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
         expand(
-            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhiom/vcfs/{dchrm}/{{sample}}.ready",
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhiomr/vcfs/{dchrm}/{{sample}}.ready",
             dchrm=SENTDHIO_CHRMS
         ),
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOM)
+        alnr="|".join(ALIGNERS_DHIOMR)
     threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiom/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
     shell:
         """
         ( echo {output}  ;
