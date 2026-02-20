@@ -212,6 +212,8 @@ rule sentdhiom_pass1:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
+        lr_read_filter=SENTDHIOM_LR_READ_FILTER,
+        sr_read_filter=SENTDHIOM_SR_READ_FILTER,
     shell:
         """
         set -euo pipefail
@@ -279,10 +281,35 @@ rule sentdhiom_pass1:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
+        # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
+        LR_FILTER_ARGS=""
+        if [ -n "{params.lr_read_filter}" ]; then
+            for rgid in $RGIDS; do
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+            done
+        fi
+
+        # Build --read_filter args for SR reads
+        SR_FILTER_ARGS=""
+        if [ -n "{params.sr_read_filter}" ]; then
+            SR_RGIDS=$(samtools view -H {input.sr_bam} | awk '
+                $1=="@RG"{{
+                    for(i=1;i<=NF;i++){{
+                        if($i~/^ID:/){{
+                            sub(/^ID:/,"",$i);
+                            print $i
+                        }}
+                    }}
+                }}')
+            for rgid in $SR_RGIDS; do
+                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${rgid}"
+            done
+        fi
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $LR_FILTER_ARGS $SR_FILTER_ARGS \
+            -i {input.lr_cram} \
             -i {input.sr_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
@@ -472,6 +499,8 @@ rule sentdhiom_mapq0_bed:
         model=config["sentdhio"]["dna_scope_snv_model"],
         use_threads=config["sentdhio"]["use_threads_medium"],
         cluster_sample=ret_sample,
+        lr_read_filter=SENTDHIOM_LR_READ_FILTER,
+        sr_read_filter=SENTDHIOM_SR_READ_FILTER,
     shell:
         """
         set -euo pipefail
@@ -501,9 +530,35 @@ rule sentdhiom_mapq0_bed:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
+        # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
+        LR_FILTER_ARGS=""
+        if [ -n "{params.lr_read_filter}" ]; then
+            for rgid in $RGIDS; do
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+            done
+        fi
+
+        # Build --read_filter args for SR reads
+        SR_FILTER_ARGS=""
+        if [ -n "{params.sr_read_filter}" ]; then
+            SR_RGIDS=$(samtools view -H {input.sr_bam} | awk '
+                $1=="@RG"{{
+                    for(i=1;i<=NF;i++){{
+                        if($i~/^ID:/){{
+                            sub(/^ID:/,"",$i);
+                            print $i
+                        }}
+                    }}
+                }}')
+            for rgid in $SR_RGIDS; do
+                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${rgid}"
+            done
+        fi
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $LR_FILTER_ARGS $SR_FILTER_ARGS \
+            -i {input.lr_cram} \
             -i {input.sr_bam} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
@@ -617,6 +672,7 @@ rule sentdhiom_stage1:
         model=config["sentdhio"]["dna_scope_snv_model"],
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
+        lr_read_filter=SENTDHIOM_LR_READ_FILTER,
     shell:
         r"""
         set -euo pipefail
@@ -649,9 +705,17 @@ rule sentdhiom_stage1:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
+        # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
+        LR_FILTER_ARGS=""
+        if [ -n "{params.lr_read_filter}" ]; then
+            for rgid in $RGIDS; do
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+            done
+        fi
+
         HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $LR_FILTER_ARGS -i {input.lr_cram} \
             --interval {input.diff_bed} \
             --algo HybridStage1 \
             --model {params.model}/HybridStage1.model \
@@ -662,14 +726,30 @@ rule sentdhiom_stage1:
 
         INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $LR_FILTER_ARGS -i {input.lr_cram} \
             --algo HybridStage1 \
             --model {params.model}/HybridStage1_ins.model \
             --fa_file {output.ins_fa} \
             --bed_file {output.ins_bed} \
             -"
-       
-        samtools index {output.hap_bam} >> {log} 2>&1
+
+        # Match sentieon-cli hybrid stage1:
+        #   cat <(stage1_driver) <(ins_driver) | sentieon bwa mem | sentieon util sort --sam2bam
+        # (sentieon_cli/command_strings.py: hybrid_stage1)
+        unset bwt_max_mem
+
+        cat <( eval "$HAP_CMD" ) <( eval "$INS_CMD" ) \
+          | sentieon bwa mem \
+              -R "@RG\tID:hybrid-18893\tSM:{config[sentdhio][sample_sm]}" \
+              -t {params.use_threads} \
+              -x {params.model}/HybridStage1_bwa.model \
+              {params.huref} \
+              - 2>> {log} \
+          | sentieon util sort \
+              -i - \
+              -t {params.use_threads} \
+              -o {output.bam} \
+              --sam2bam >> {log} 2>&1
 
         echo "Stage1 completed at $(date)" >> {log}
         """
@@ -766,6 +846,8 @@ rule sentdhiom_stage3:
         model=config["sentdhio"]["dna_scope_snv_model"],
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
+        lr_read_filter=SENTDHIOM_LR_READ_FILTER,
+        sr_read_filter=SENTDHIOM_SR_READ_FILTER,
     shell:
         """
         set -euo pipefail
@@ -798,10 +880,35 @@ rule sentdhiom_stage3:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
- 
+        # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
+        LR_FILTER_ARGS=""
+        if [ -n "{params.lr_read_filter}" ]; then
+            for rgid in $RGIDS; do
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+            done
+        fi
+
+        # Build --read_filter args for SR reads
+        SR_FILTER_ARGS=""
+        if [ -n "{params.sr_read_filter}" ]; then
+            SR_RGIDS=$(samtools view -H {input.sr_bam} | awk '
+                $1=="@RG"{{
+                    for(i=1;i<=NF;i++){{
+                        if($i~/^ID:/){{
+                            sub(/^ID:/,"",$i);
+                            print $i
+                        }}
+                    }}
+                }}')
+            for rgid in $SR_RGIDS; do
+                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${rgid}"
+            done
+        fi
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $LR_FILTER_ARGS $SR_FILTER_ARGS \
+            -i {input.lr_cram} \
             -i {input.sr_bam} \
             -i {input.unmap_bam} \
             -i {input.alt_bam} \
@@ -851,6 +958,7 @@ rule sentdhiom_pass2:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
+        lr_read_filter=SENTDHIOM_LR_READ_FILTER,
     shell:
         """
         set -euo pipefail
@@ -882,9 +990,18 @@ rule sentdhiom_pass2:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
         done
 
+        # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
+        LR_FILTER_ARGS=""
+        if [ -n "{params.lr_read_filter}" ]; then
+            for rgid in $RGIDS; do
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+            done
+        fi
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $LR_FILTER_ARGS \
+            -i {input.lr_cram} \
             -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
@@ -1051,21 +1168,122 @@ rule sentdhiom_transfer:
         "../envs/vanilla_v0.1.yaml"
     params:
         pop_vcf=config["sentdhio"]["pop_vcf"],
+        huref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
         cluster_sample=ret_sample,
     shell:
         r"""
         set -euo pipefail
+        export REF_FAI="{params.huref_fai}"
 
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
+            # Match sentieon-cli transfer behavior (sentieon_cli/transfer.py: build_transfer_jobs)
+            # - Compute merge_rules from pop_vcf header INFO fields with Number=A
+            # - Shard reference fai into 10Mb chunks
+            # - For contigs not in pop_vcf, subset raw_vcf by contig
+            # - Else: bcftools merge ... | python3 trimalt.py | bcftools view -W=tbi -o shard.vcf.gz
+            # - bcftools concat -W=tbi --output out --no-version --threads {threads} shard_vcfs...
 
-            # Transfer all INFO fields from pop_vcf
-            bcftools annotate \
-                --threads {threads} \
-                -a "{params.pop_vcf}" \
-                -c INFO \
-                -Oz \
-                -o {output.vcf} \
-                {input.anno_vcf}
+            python3 - << 'PY'
+import os, re, subprocess, tempfile, pathlib, sys
+
+raw_vcf = pathlib.Path("{input.anno_vcf}")
+pop_vcf = pathlib.Path("{params.pop_vcf}")
+out_vcf = pathlib.Path("{output.vcf}")
+threads = int("{threads}")
+
+# Locate trimalt.py exactly as CLI does
+from importlib_resources import files
+trim_script = pathlib.Path(str(files("sentieon_cli.scripts").joinpath("trimalt.py"))).resolve()
+
+# Temp directory like build_transfer_jobs(base_tmp_dir=self.tmp_dir)
+tmp_dir = pathlib.Path(tempfile.mkdtemp(prefix="sentdhiom_transfer_", dir=os.getcwd()))
+
+# Parse pop VCF header to get contigs and merge_rules (Number=A => sum)
+kvpat = re.compile(r'(.*?)=(".*?"|.*?)(?:,|$)')
+hdr = subprocess.run(["bcftools","view","-h",str(pop_vcf)], capture_output=True, text=True, check=True).stdout.splitlines()
+
+pop_contigs = set()
+id_fields = []
+for line in hdr:
+    if line.startswith("##contig="):
+        s = line.index("<"); e = line.index(">")
+        d = dict(kvpat.findall(line[s+1:e]))
+        if "ID" in d: pop_contigs.add(d["ID"])
+    if line.startswith("##INFO") and ",Number=A" in line:
+        s = line.index("<"); e = line.index(">")
+        d = dict(kvpat.findall(line[s+1:e]))
+        if "ID" in d: id_fields.append(d["ID"])
+merge_rules = ",".join([f"{{x}}:sum" for x in id_fields]) if id_fields else "AC_v20:sum,AF_v20:sum,AC_genomes:sum,AF_genomes:sum"
+
+# Read reference fai
+ref_fai = os.environ.get("REF_FAI")
+if not ref_fai:
+    sys.stderr.write("ERROR: REF_FAI env var not set; cannot shard like sentieon-cli determine_shards_from_fai\n")
+    sys.exit(2)
+
+# Parse fai: contig length
+fai = {{}}
+with open(ref_fai, "r") as fh:
+    for line in fh:
+        fields = line.rstrip("\n").split("\t")
+        fai[fields[0]] = int(fields[1])
+
+MAX_SHARD = 10_000_000  # determine_shards_from_fai(..., 10*1000*1000)
+
+sharded_vcfs = []
+seen_missing = set()
+
+for ctg, ctg_len in fai.items():
+    if ctg not in pop_contigs:
+        if ctg in seen_missing:
+            continue
+        seen_missing.add(ctg)
+        bed = tmp_dir / f"subset_{{ctg}}.bed"
+        bed.write_text(f"{{ctg}}\t0\t{{ctg_len}}\n")
+        out = tmp_dir / f"subset_{{ctg}}.vcf.gz"
+        subprocess.run(
+            ["bcftools","view","--no-version","-W=tbi","-O","z","-o",str(out),"--regions-file",str(bed),str(raw_vcf)],
+            check=True
+        )
+        sharded_vcfs.append(out)
+        continue
+
+    start = 0
+    shard_i = 0
+    while start < ctg_len:
+        stop = min(ctg_len, start + MAX_SHARD)
+        bed = tmp_dir / f"shard_{{ctg}}_{{shard_i}}.bed"
+        bed.write_text(f"{{ctg}}\t{{start}}\t{{stop}}\n")
+        out = tmp_dir / f"shard_{{ctg}}_{{shard_i}}.vcf.gz"
+
+        # bcftools merge -> trimalt.py -> bcftools view, matching cmd_bcftools_merge_trim
+        merge_cmd = [
+            "bcftools","merge",
+            "--regions-file",str(bed),
+            "--no-version","--regions-overlap","pos","-m","all",
+            "-i", merge_rules,
+            str(raw_vcf), str(pop_vcf),
+        ]
+        view_cmd = ["bcftools","view","--no-version","-W=tbi","-o",str(out)]
+
+        p1 = subprocess.Popen(merge_cmd, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(["python3", str(trim_script)], stdin=p1.stdout, stdout=subprocess.PIPE)
+        p3 = subprocess.run(view_cmd, stdin=p2.stdout, check=True)
+        if p1.wait() != 0:
+            sys.exit(p1.returncode)
+        if p2.wait() != 0:
+            sys.exit(p2.returncode)
+
+        sharded_vcfs.append(out)
+        shard_i += 1
+        start = stop
+
+# Final concat: bcftools concat -W=tbi --output out --no-version --threads <cores> shards...
+subprocess.run(
+    ["bcftools","concat","-W=tbi","--output",str(out_vcf),"--no-version","--threads",str(threads), *map(str, sharded_vcfs)],
+    check=True
+)
+PY
 
         else
             cp {input.anno_vcf} {output.vcf}
