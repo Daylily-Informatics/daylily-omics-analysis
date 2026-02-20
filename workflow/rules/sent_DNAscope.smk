@@ -39,7 +39,7 @@ rule sent_DNAscope:
         schrm_mod=get_dchrm_day,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentD"]["dna_scope_snv_model"],
-        pop_vcf=config["supporting_files"]["popvcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         max_mem="100G"
     shell:
