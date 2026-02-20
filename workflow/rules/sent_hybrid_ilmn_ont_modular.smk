@@ -152,7 +152,7 @@ rule sentdhiom_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA"
+            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
