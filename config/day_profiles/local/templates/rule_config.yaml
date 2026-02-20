@@ -954,9 +954,9 @@ sentieon_gatk:
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""
     pop_vcf: ""
-    hg38_sentieon_gatk_chrms: "1-24"
-    hg38_broad_sentieon_gatk_chrms: "1-24"
-    b37_sentieon_gatk_chrms: "1-24"
+    hg38_sentieon_gatk_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    hg38_broad_sentieon_gatk_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
+    b37_sentieon_gatk_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"
     partition_other: "i8"
 
 sentieon_markdups:
