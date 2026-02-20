@@ -152,7 +152,7 @@ rule sentdhiom_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA" \
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.sample_sm}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -742,7 +742,7 @@ rule sentdhiom_stage1:
 
         cat <( eval "$HAP_CMD" ) <( eval "$INS_CMD" ) \
           | sentieon bwa mem \
-              -R "@RG\tID:hybrid-18893\tSM:{config[sentdhio][sample_sm]}" \
+              -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
               -t {params.use_threads} \
               -x {params.model}/HybridStage1_bwa.model \
               {params.huref} \
