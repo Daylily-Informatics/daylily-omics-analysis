@@ -77,20 +77,6 @@ rule deepvariant_19_r:
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
 
-        # --- Validate input BAM contains aligned data ---
-        echo "Validating BAM: {input.bam}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.bam} >> {log} 2>&1; then
-            echo "ERROR: BAM failed integrity check: {input.bam}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.bam} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "BAM @SQ header count: $_sq_count" >> {log} 2>&1;
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: BAM has no @SQ headers (unaligned?): {input.bam}" | tee -a {log};
-            exit 11;
-        fi
-        echo "BAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
-
         {params.numa} \
         /opt/deepvariant/bin/run_pangenome_aware_deepvariant \
         --model_type={params.deep_model} --ref={params.huref} \

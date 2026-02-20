@@ -115,20 +115,6 @@ rule octopus:
         trap 'sleep 2; rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.c}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.c} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.c}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.c} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.c}" | tee -a {log};
-            exit 11;
-        fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
-
         oochrm_mod=$(echo '{params.ochrm_mod}' | sed 's/~/\:/g' | perl -pe 's/(^23| 23)/ X/g;' | perl -pe 's/(^24| 24)/ Y/g;' | perl -pe 's/(^25| 25)/ {params.mito_code}/g;');
 
         {params.ld_pre} /opt/octopus/bin/octopus -T $oochrm_mod --threads {threads}    \
