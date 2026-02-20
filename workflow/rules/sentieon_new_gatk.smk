@@ -124,35 +124,82 @@ rule sentieon_gatk_bsqr:
         """
 
 
-rule sentieon_gatk_snv:
-    """Per-sample Sentieon GATK HaplotypeCaller → sorted VCF."""
+##### Per-chromosome scatter-gather pattern for HaplotypeCaller
+#
+# 1. prep_gatk_chunkdirs — create per-chrm output directories
+# 2. sentieon_gatk_snv — run HaplotypeCaller on each chrm chunk
+# 3. gatk_sort_index_chunk_vcf — sort/bgzip/tabix each chunk
+# 4. gatk_concat_fofn — build ordered file-of-filenames
+# 5. gatk_concat_index_chunks — bcftools concat into final VCF
+#
+
+
+localrules:
+    prep_gatk_chunkdirs,
+
+
+rule prep_gatk_chunkdirs:
+    """Create per-chromosome output directories for GATK HaplotypeCaller scatter."""
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram",
-        cram_crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram.crai",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram.crai",
     output:
-        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.sort.vcf.gz",
-        vcfgz_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.sort.vcf.gz.tbi",
-        vcfsort=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.sort.vcf"),
-        vcftmp=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.vcf.gz"),
+        expand(
+            MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/gatk/vcfs/{gatkchrm}/{{sample}}.ready",
+            gatkchrm=GATK_CHRMS,
+        ),
+    threads: 1
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.{ddup}.gatk.snv.sort.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
+    shell:
+        """
+        ( echo {output};
+        mkdir -p $(dirname {output});
+        touch {output};
+        ls {output}; ) > {log} 2>&1;
+        """
+
+
+rule sentieon_gatk_snv:
+    """Per-chromosome Sentieon GATK HaplotypeCaller."""
+    input:
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.bsqr.recal.cram.crai",
+        d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.ready",
+    output:
+        vcf=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.vcf"),
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/log/vcfs/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.log",
     threads: config["sentieon_gatk"]["threads"]
     benchmark:
-        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.snv.bench.tsv", 0)
-    priority: 5
+        repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.bench.tsv", 0)
+    priority: 45
     resources:
         partition=config['sentieon_gatk']['partition'],
         vcpu=config['sentieon_gatk']['threads'],
         threads=config['sentieon_gatk']['threads'],
         mem_mb=config['sentieon_gatk']['mem_mb'],
         constraint=config['sentieon_gatk']['constraint'],
+        attempt_n=lambda wildcards, attempt: attempt + 0,
     params:
+        schrm_mod=get_gatkchrm,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
+        max_mem="100G",
     conda:
         config['sentieon_gatk']["env_yaml"]
     shell:
         """
+        export bwt_max_mem={params.max_mem};
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
+        export TMPDIR=/dev/shm/gatk_snv_tmp_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR;
+        mkdir -p $TMPDIR;
+        export APPTAINER_HOME=$TMPDIR;
+
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+        ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
+
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set." >> {log} 2>&1;
             exit 3;
@@ -162,19 +209,11 @@ rule sentieon_gatk_snv:
             exit 4;
         fi
 
-        TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
-        itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
+        TOKEN=$(curl -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
+        itype=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
         echo "INSTANCE TYPE: $itype" > {log};
+        echo "INSTANCE TYPE: $itype";
         start_time=$(date +%s);
-
-        ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
-
-        timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR=/dev/shm/sentieon_gatk_snv_tmp_$timestamp;
-        export SENTIEON_TMPDIR=$TMPDIR;
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         # --- Validate input CRAM ---
         echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
@@ -190,47 +229,137 @@ rule sentieon_gatk_snv:
         fi
         echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
-        # --- Find jemalloc ---
-        jemalloc_path="";
-        for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
-            if [[ -d "$_dir" ]]; then
-                for _ext in so dylib; do
-                    _candidate=$(find "$_dir" -maxdepth 1 -name "libjemalloc*.$_ext*" 2>/dev/null | head -n 1);
-                    if [[ -n "$_candidate" && -r "$_candidate" ]]; then
-                        jemalloc_path="$_candidate";
-                        break 2;
-                    fi
-                done
-            fi
-        done
-        if [[ -n "$jemalloc_path" ]]; then
-            export LD_PRELOAD="$jemalloc_path";
-            export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
-            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
-        else
-            echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
-            exit 3;
-        fi
-
-        # --- HaplotypeCaller (per-sample, confident mode) ---
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
-            -t {threads} \
-            -r {params.huref} \
-            -i {input.cram} \
+        # --- HaplotypeCaller (per-chrm, confident mode) ---
+        /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
+            --thread_count {threads} \
+            --interval {params.schrm_mod} \
+            --reference {params.huref} \
+            --input {input.cram} \
             --algo Haplotyper \
             --emit_mode confident \
-            {output.vcftmp} >> {log} 2>&1;
-
-        # --- Sort and compress ---
-        bcftools sort -O v -o {output.vcfsort} {output.vcftmp} >> {log} 2>&1;
-        bgzip {output.vcfsort} >> {log} 2>&1;
-        tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
+            {output.vcf} >> {log} 2>&1;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
-        echo "Elapsed-Time-min: $itype $elapsed_time" >> {log} 2>&1;
+        echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
 
-        touch {output};
+        touch {output.vcf};
+        """
+
+
+rule gatk_sort_index_chunk_vcf:
+    """Sort and index per-chromosome GATK VCF chunk."""
+    input:
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.vcf",
+    output:
+        vcfsort=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.sort.vcf"),
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.sort.vcf.gz"),
+        vcftbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.sort.vcf.gz.tbi"),
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/log/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.sort.vcf.gz.log",
+    priority: 46
+    threads: 1
+    resources:
+        vcpu=1,
+        threads=1,
+        partition=config['sentieon_gatk'].get('partition_other', config['sentieon_gatk']['partition']),
+    params:
+        cluster_sample=ret_sample,
+    conda:
+        "../envs/vanilla_v0.1.yaml"
+    shell:
+        """
+        bedtools sort -header -i {input.vcf} > {output.vcfsort} 2>> {log};
+
+        bgzip {output.vcfsort} >> {log} 2>&1;
+        touch {output.vcfsort};
+
+        tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
+        """
+
+
+localrules:
+    gatk_concat_fofn,
+
+
+rule gatk_concat_fofn:
+    """Build ordered file-of-filenames from sorted per-chromosome VCF chunks."""
+    input:
+        chunk_tbi=sorted(
+            expand(
+                MDIR
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/gatk/vcfs/{gatkchrm}/{{sample}}.{{alnr}}.{{ddup}}.gatk.{gatkchrm}.snv.sort.vcf.gz.tbi",
+                gatkchrm=GATK_CHRMS,
+            ),
+            key=lambda x: float(
+                str(x.replace("~", ".").replace(":", "."))
+                .split("vcfs/")[1]
+                .split("/")[0]
+                .split("-")[0]
+            ),
+        ),
+    priority: 44
+    output:
+        fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.concat.vcf.gz.fofn.tmp",
+    threads: 1
+    resources:
+        threads=1,
+    params:
+        fn_stub="{sample}.{alnr}.{ddup}.gatk.",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.concat.fofn.bench.tsv"
+    conda:
+        "../envs/vanilla_v0.1.yaml"
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/log/{sample}.{alnr}.{ddup}.gatk.concat.fofn.log",
+    shell:
+        """
+        for i in {input.chunk_tbi}; do
+            ii=$(echo $i | perl -pe 's/\\.tbi$//g';);
+            echo $ii >> {output.tmp_fofn};
+        done;
+        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.gatk. {output.fin_fofn}) >> {log} 2>&1;
+        """
+
+
+rule gatk_concat_index_chunks:
+    """Concatenate per-chromosome GATK VCFs into final sorted VCF."""
+    input:
+        fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.concat.vcf.gz.fofn",
+    output:
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.sort.vcf.gz"),
+        vcfgztemp=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.sort.temp.vcf.gz"),
+        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/{sample}.{alnr}.{ddup}.gatk.snv.sort.vcf.gz.tbi"),
+    threads: 4
+    resources:
+        vcpu=4,
+        threads=4,
+        partition=config['sentieon_gatk'].get('partition_other', config['sentieon_gatk']['partition']),
+        attempt_n=lambda wildcards, attempt: attempt + 0,
+    priority: 47
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        cluster_sample=ret_sample,
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.merge.bench.tsv"
+    conda:
+        "../envs/vanilla_v0.1.yaml"
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/log/{sample}.{alnr}.{ddup}.gatk.snv.merge.sort.gathered.log",
+    shell:
+        """
+        touch {log};
+        mkdir -p $(dirname {log});
+
+        bcftools concat -a -d all --threads {threads} -f {input.fofn} -O z -o {output.vcfgztemp} >> {log} 2>&1;
+
+        export oldname=$(bcftools query -l {output.vcfgztemp} | head -n1) >> {log} 2>&1;
+        echo -e "${{oldname}}\t{params.cluster_sample}" > {output.vcfgz}.rename.txt
+        bcftools reheader -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
+        bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
+
+        rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
         """
 
 
@@ -258,4 +387,3 @@ rule produce_sentieon_gatk_vcf:  # TARGET: sentieon GATK HaplotypeCaller per-sam
 
         ls {output} ) >> {log} 2>&1;
         """
-

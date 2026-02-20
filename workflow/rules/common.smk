@@ -126,6 +126,9 @@ SENTDHUPM_CHRMS = SENTDHUP_CHRMS  # Modular Ultima+PacBio hybrid
 SENTDHROM_CHRMS = config["sentdhrom"][f"{config['genome_build']}_sentdhrom_chrms"].split(",")  # Modular Roche+ONT hybrid
 SENTDHRPM_CHRMS = config["sentdhrpm"][f"{config['genome_build']}_sentdhrpm_chrms"].split(",")  # Modular Roche+PacBio hybrid
 
+# Sentieon GATK HaplotypeCaller
+GATK_CHRMS = config["sentieon_gatk"][f"{config['genome_build']}_sentieon_gatk_chrms"].split(",")
+
 # ##### Setting the allowed aligners to run and to which deduper to use.
 # presently, 1+ aligners may run, but all must use the same deduper
 
@@ -1364,6 +1367,37 @@ def get_dchrm_day(wildcards):
     else:
         raise Exception(
             "sentD chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y, 25=MT"
+        )
+
+    return ret_str
+
+
+def get_gatkchrm(wildcards):
+    """Map gatkchrm wildcard to proper chromosome names for Sentieon GATK HaplotypeCaller."""
+    pchr = GENOME_CHR_PREFIX
+    mito_code = "MT" if "b37" == config['genome_build'] else "M"
+
+    chrm_map = {'23': 'X', '24': 'Y', '25': mito_code}
+
+    def _chrm_name(n):
+        s = str(n)
+        return pchr + chrm_map.get(s, s)
+
+    raw = wildcards.gatkchrm.replace('chr', '')
+    sl = raw.split("-")
+    sl2 = raw.split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.gatkchrm
+    elif len(sl) == 1:
+        ret_str = _chrm_name(sl[0])
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        ret_str = ','.join(_chrm_name(i) for i in range(start, end + 1))
+    else:
+        raise Exception(
+            "gatk chunks can only be one contiguous range per chunk : ie: 1-4 with 23=X, 24=Y, 25=MT"
         )
 
     return ret_str

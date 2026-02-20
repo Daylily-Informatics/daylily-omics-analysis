@@ -923,6 +923,10 @@ sentieon_gatk:
     mbuffer: " | mbuffer -m 1G -q -s 128k "
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""
+    hg38_sentieon_gatk_chrms: "1-24"
+    hg38_broad_sentieon_gatk_chrms: "1-24"
+    b37_sentieon_gatk_chrms: "1-24"
+    partition_other: "i192,i192mem"
 
 sentieon_markdups:
     threads: 192
