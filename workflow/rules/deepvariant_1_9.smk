@@ -233,6 +233,8 @@ rule deep19_concat_index_chunks:
 
         """
 
+localrules:
+	clear_combined_deep19_vcf,
 
 rule clear_combined_deep19_vcf:  # TARGET:  clear combined deep vcf so the chunks can be re-evaluated if needed.
     input:
@@ -290,7 +292,9 @@ rule produce_deep19_vcf:  # TARGET: deep variant vcf
     log:
         "gatheredall.deep19.log",
     conda:
-        config['deepvariant']['deep19_conda'] 
+        config['deepvariant']['deep19_conda']
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         # Convert VCF to BCF and index it

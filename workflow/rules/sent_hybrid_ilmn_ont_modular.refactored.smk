@@ -27,6 +27,13 @@ Uses model bundle: HybridIlluminaONT2.0.bundle
 import os
 import sys
 
+# Ensure config keys exist for shell-block {config[sentdhio][...]} access
+if "sentdhio" not in config:
+    config["sentdhio"] = {}
+config["sentdhio"].setdefault("sample_sm", "hybrid_sample")
+config["sentdhio"].setdefault("lr_read_filter", "")
+config["sentdhio"].setdefault("sr_read_filter", "")
+
 # Aligner constraint: ONT for long reads
 ALIGNERS_DHIOMR = ["ont"]
 
@@ -143,7 +150,7 @@ rule sentdhiomr_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA"
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.sample_sm}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -256,18 +263,18 @@ rule sentdhiomr_pass1:
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
 
@@ -478,18 +485,18 @@ rule sentdhiomr_mapq0_bed:
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
@@ -614,7 +621,7 @@ rule sentdhiomr_stage1:
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR="/dev/shm/sentdhiomr_s1_${timestamp}_$$"
+        export TMPDIR="/dev/shm/sentdhiomr_s1_${{timestamp}}_$$"
         export SENTIEON_TMPDIR="$TMPDIR"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
@@ -623,18 +630,18 @@ rule sentdhiomr_stage1:
 
         # Build LR replace args (matches sentieon-cli RgInfo for LR inputs)
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Match sentieon-cli: remove bwt_max_mem from bwa env (noop if unset)
@@ -666,7 +673,7 @@ rule sentdhiomr_stage1:
                 --bed_file {output.ins_bed} \
                 - 2>> {log}) \
         | sentieon bwa mem \
-            -R "@RG\tID:hybrid-18893\tSM:{config[sentdhio][sample_sm]}" \
+            -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
             -t {params.use_threads} \
             -x {params.model}/HybridStage1_bwa.model \
             {params.huref} \
@@ -791,18 +798,18 @@ rule sentdhiomr_stage3:
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
  
@@ -875,18 +882,18 @@ rule sentdhiomr_pass2:
         # This also unifies SM tags across lr_cram and stage3_bam so sentieon
         # driver sees a single sample (stage3_bam inherits LR RGs from ONT input).
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver \
@@ -1371,18 +1378,18 @@ rule sentdhiomr_call_svs:
 
         # Build LR readgroup replacement args: LR reads get LR:1 tag
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \

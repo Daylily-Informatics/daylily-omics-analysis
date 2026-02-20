@@ -35,9 +35,15 @@ ALIGNERS_DHIOM = ["ont"]
 # Override via --config sentdhio_sample_sm=... sentdhio_lr_read_filter=... etc.
 # These will move to the config YAML once the config schema is finalized.
 # ---------------------------------------------------------------------------
-SENTDHIOM_SAMPLE_SM = config.get("sentdhio", {}).get("sample_sm", "hybrid_sample")
-SENTDHIOM_LR_READ_FILTER = config.get("sentdhio", {}).get("lr_read_filter", "")
-SENTDHIOM_SR_READ_FILTER = config.get("sentdhio", {}).get("sr_read_filter", "")
+# Ensure config keys exist for shell-block {config[sentdhio][...]} access
+if "sentdhio" not in config:
+    config["sentdhio"] = {}
+config["sentdhio"].setdefault("sample_sm", "hybrid_sample")
+config["sentdhio"].setdefault("lr_read_filter", "")
+config["sentdhio"].setdefault("sr_read_filter", "")
+SENTDHIOM_SAMPLE_SM = config["sentdhio"]["sample_sm"]
+SENTDHIOM_LR_READ_FILTER = config["sentdhio"]["lr_read_filter"]
+SENTDHIOM_SR_READ_FILTER = config["sentdhio"]["sr_read_filter"]
 
 # Base temp directory prefix for intermediate files
 def _dhiom_tmp(wildcards):
@@ -152,7 +158,7 @@ rule sentdhiom_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA"
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.sample_sm}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -214,6 +220,7 @@ rule sentdhiom_pass1:
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
         sr_read_filter=SENTDHIOM_SR_READ_FILTER,
+        pop_vcf=config["sentdhio"]["pop_vcf"],
     shell:
         """
         set -euo pipefail
@@ -267,25 +274,25 @@ rule sentdhiom_pass1:
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
         LR_FILTER_ARGS=""
         if [ -n "{params.lr_read_filter}" ]; then
             for rgid in $RGIDS; do
-                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -302,7 +309,7 @@ rule sentdhiom_pass1:
                     }}
                 }}')
             for rgid in $SR_RGIDS; do
-                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${rgid}"
+                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -313,6 +320,7 @@ rule sentdhiom_pass1:
             -i {input.sr_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
@@ -516,25 +524,25 @@ rule sentdhiom_mapq0_bed:
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
         LR_FILTER_ARGS=""
         if [ -n "{params.lr_read_filter}" ]; then
             for rgid in $RGIDS; do
-                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -551,7 +559,7 @@ rule sentdhiom_mapq0_bed:
                     }}
                 }}')
             for rgid in $SR_RGIDS; do
-                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${rgid}"
+                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -691,25 +699,25 @@ rule sentdhiom_stage1:
 
         # Build LR replace args
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
         LR_FILTER_ARGS=""
         if [ -n "{params.lr_read_filter}" ]; then
             for rgid in $RGIDS; do
-                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -740,7 +748,7 @@ rule sentdhiom_stage1:
 
         cat <( eval "$HAP_CMD" ) <( eval "$INS_CMD" ) \
           | sentieon bwa mem \
-              -R "@RG\tID:hybrid-18893\tSM:{config[sentdhio][sample_sm]}" \
+              -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
               -t {params.use_threads} \
               -x {params.model}/HybridStage1_bwa.model \
               {params.huref} \
@@ -866,25 +874,25 @@ rule sentdhiom_stage3:
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
         LR_FILTER_ARGS=""
         if [ -n "{params.lr_read_filter}" ]; then
             for rgid in $RGIDS; do
-                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -901,7 +909,7 @@ rule sentdhiom_stage3:
                     }}
                 }}')
             for rgid in $SR_RGIDS; do
-                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${rgid}"
+                SR_FILTER_ARGS="$SR_FILTER_ARGS --read_filter {params.sr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -959,6 +967,7 @@ rule sentdhiom_pass2:
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
+        pop_vcf=config["sentdhio"]["pop_vcf"],
     shell:
         """
         set -euo pipefail
@@ -976,25 +985,25 @@ rule sentdhiom_pass2:
         # This also unifies SM tags across lr_cram and stage3_bam so sentieon
         # driver sees a single sample (stage3_bam inherits LR RGs from ONT input).
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
         LR_FILTER_ARGS=""
         if [ -n "{params.lr_read_filter}" ]; then
             for rgid in $RGIDS; do
-                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${rgid}"
+                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${{rgid}}"
             done
         fi
 
@@ -1006,6 +1015,7 @@ rule sentdhiom_pass2:
             --interval {input.bed} \
             {params.diploid_bed} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
@@ -1582,18 +1592,18 @@ rule sentdhiom_call_svs:
 
         # Build LR readgroup replacement args: LR reads get LR:1 tag
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{
-                for(i=1;i<=NF;i++){
-                    if($i~/^ID:/){
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
                         sub(/^ID:/,"",$i);
                         print $i
-                    }
-                }
-            }')
+                    }}
+                }}
+            }}')
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${rgid}=ID:${rgid}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \

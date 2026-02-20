@@ -34,6 +34,9 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       mills_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
       dbsnp_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz
       af_sites: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/af-only-gnomad.hg38.vcf.gz
+      hapmap_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/hapmap_3.3.hg38.vcf.gz
+      omni_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_omni2.5.hg38.vcf.gz
+      known_indels_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.known_indels.vcf.gz
     snpeff:
       ref_build_code: GRCh38.99
     ucsc:

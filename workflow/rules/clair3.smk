@@ -342,6 +342,8 @@ rule produce_clair3_vcf:  # TARGET: clair3 vcf
         "gatheredall.clair3.log",
     conda:
         "../envs/vanilla_v0.1.yaml"
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         # Convert VCF to BCF and index it

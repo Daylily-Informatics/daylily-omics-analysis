@@ -303,6 +303,8 @@ rule produce_deep19_r_vcf:  # TARGET: DeepVariant 1.9 Roche VCF
         "gatheredall.deep19r.log",
     conda:
         config['deepvariant_1_9_roche']['conda']
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         # Convert VCF to BCF and index it
