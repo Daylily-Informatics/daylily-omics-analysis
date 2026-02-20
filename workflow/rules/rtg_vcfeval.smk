@@ -32,7 +32,11 @@ def get_in_rtg_vcf(wildcards):
         os.system('sleep 2')
         return dvcfgz
     else:
-        return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
+        vcf_path = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
+        # Use ancient() to skip upstream DAG checks if file exists
+        if os.environ.get('DAYLILY_CONCORDANCE_ONLY', 'false') == 'true':
+            return ancient(vcf_path)
+        return vcf_path
 
 
 def get_in_rtg_tbi(wildcards):
@@ -44,7 +48,11 @@ def get_in_rtg_tbi(wildcards):
         os.system('sleep 2')
         return dvcfgztbi
     else:
-        return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+        tbi_path = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
+        # Use ancient() to skip upstream DAG checks if file exists
+        if os.environ.get('DAYLILY_CONCORDANCE_ONLY', 'false') == 'true':
+            return ancient(tbi_path)
+        return tbi_path
 
 
 if len(CONCORDANCE_SAMPLES.keys()) > 0:
