@@ -6,3 +6,5 @@ On1	HG003	15x	6	D0	PF	ONT	PROMETHION											posControl	19	ONT_R104				/fsx/da
 On1	HG003	20x	7	D0	PF	ONT	PROMETHION											posControl	19	ONT_R104				/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_20x.cleaned.cram	ont	sentdont							
 On1b	HG003	15xact	6	D0	PF	ONT	PROMETHION											posControl	19	ONT_R104				/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_15xactual.cleaned.cram	ont	sentdont							
 On1b	HG003	20x	7	D0	PF	ONT	PROMETHION											posControl	19	ONT_R104				/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_20x.cleaned.cram	ont	sentdont							
+On1c	HG003	30x	7	D0	PF	ONT	PROMETHION											posControl	19	ONT_R104				/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_30x_merged.cleaned.cram	ont	sentdont							
+On1c	HG003	40x	7	D0	PF	ONT	PROMETHION											posControl	19	ONT_R104				/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_40x_merged.cleaned.cram	ont	sentdont							
