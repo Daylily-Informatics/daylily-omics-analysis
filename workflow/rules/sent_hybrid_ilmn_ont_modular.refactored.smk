@@ -172,7 +172,6 @@ rule sentdhiomr_sr_align:
         # Index the BAM
         samtools index -@ {threads} {output.bam} >> {log} 2>&1
 
-        mv $TMPDIR ./
         echo "SR alignment completed at $(date)" >> {log}
         """
 
@@ -292,7 +291,6 @@ rule sentdhiomr_pass1:
         echo "Creating VCF index with tabix" >> {log}
         tabix -f -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
 
-        mv $TMPDIR ./
 
         echo "Pass 1 completed at $(date)" >> {log}
         """
@@ -506,7 +504,7 @@ rule sentdhiomr_mapq0_bed:
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
-        mv $TMPDIR ./
+
         echo "MAPQ0 detection completed at $(date)" >> {log}
         """
 
@@ -687,7 +685,6 @@ rule sentdhiomr_stage1:
         # Index hap BAM for downstream rules
         samtools index {output.hap_bam} >> {log} 2>&1
 
-        mv $TMPDIR ./
         echo "Stage1 completed at $(date)" >> {log}
         """
 
@@ -743,7 +740,7 @@ rule sentdhiomr_stage2:
             --unmap_bam {output.unmap_bam} \
             --alt_bam {output.alt_bam} \
             --all_bed {output.bed} >> {log} 2>&1
-        mv $TMPDIR ./
+
         echo "Stage 2 completed at $(date)" >> {log}
         """
  
@@ -828,8 +825,6 @@ rule sentdhiomr_stage3:
             --temp_dir $TMPDIR \
             -o {output.bam} >> {log} 2>&1
 
-
-        mv $TMPDIR ./
         echo "Stage 3 completed at $(date)" >> {log}
         """
 
@@ -897,6 +892,7 @@ rule sentdhiomr_pass2:
         done
 
         sentieon driver \
+            --temp_dir $TMPDIR \
             $LR_RG_ARGS --input {input.lr_cram} \
             --input {input.stage3_bam} \
             --reference {params.huref} \
@@ -906,7 +902,7 @@ rule sentdhiomr_pass2:
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
-        mv $TMPDIR ./
+
         echo "Pass 2 completed at $(date)" >> {log}
         """
 
@@ -1147,7 +1143,6 @@ rule sentdhiomr_model_apply:
             --vcf "$SINGLE_SAMPLE_VCF" \
             {output.vcf} >> {log} 2>&1
 
-        mv $TMPDIR ./
         echo "Model apply completed at $(date)" >> {log}
         """
 
