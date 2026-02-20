@@ -285,7 +285,7 @@ rule sentdhiom_pass1:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
@@ -319,8 +319,8 @@ rule sentdhiom_pass1:
             -i {input.lr_cram} \
             -i {input.sr_bam} \
             {params.diploid_bed} \
-            -d {params.pop_vcf} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
@@ -535,7 +535,7 @@ rule sentdhiom_mapq0_bed:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
@@ -710,7 +710,7 @@ rule sentdhiom_stage1:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
@@ -885,7 +885,7 @@ rule sentdhiom_stage3:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
@@ -996,7 +996,7 @@ rule sentdhiom_pass2:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
@@ -1014,8 +1014,8 @@ rule sentdhiom_pass2:
             -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
-            -d {params.pop_vcf} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
@@ -1603,7 +1603,7 @@ rule sentdhiom_call_svs:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \

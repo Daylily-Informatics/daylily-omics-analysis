@@ -274,7 +274,7 @@ rule sentdhiomr_pass1:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
 
@@ -496,7 +496,7 @@ rule sentdhiomr_mapq0_bed:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
@@ -641,7 +641,7 @@ rule sentdhiomr_stage1:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         # Match sentieon-cli: remove bwt_max_mem from bwa env (noop if unset)
@@ -809,7 +809,7 @@ rule sentdhiomr_stage3:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
  
@@ -893,7 +893,7 @@ rule sentdhiomr_pass2:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver \
@@ -1389,7 +1389,7 @@ rule sentdhiomr_call_svs:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\tSM:{config[sentdhio][sample_sm]}\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
