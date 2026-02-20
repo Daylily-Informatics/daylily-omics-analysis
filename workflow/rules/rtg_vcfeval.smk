@@ -273,8 +273,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             vcpu=config["rtg_vcfeval"]["threads"],
             threads=config["rtg_vcfeval"]["threads"],
             partition=config["rtg_vcfeval"]["partition_other"]
-        conda:
-            config["rtg_vcfeval"]["env_yaml"]
+        # Note: conda directive removed - not allowed with run: blocks
         params:
             tdir=get_samp_concordance_truth_dir,
             alt_name=get_alt_sample_name,
