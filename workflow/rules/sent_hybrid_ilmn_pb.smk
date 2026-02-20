@@ -52,7 +52,7 @@ rule sentdhip_snv:
         use_threads=config["sentdhip"]["use_threads"],
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhip"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdhip"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         diploid_bed=get_diploid_bed_arg,
     shell:

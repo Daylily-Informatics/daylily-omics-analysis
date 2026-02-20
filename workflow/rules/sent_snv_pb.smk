@@ -48,7 +48,7 @@ rule sent_snv_pacbio:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdpb"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdpb"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,

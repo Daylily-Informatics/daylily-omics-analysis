@@ -73,7 +73,7 @@ rule sent_snv_ont:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdont"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdont"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,

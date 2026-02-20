@@ -202,7 +202,7 @@ rule sentdhipm_pass1:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -748,7 +748,7 @@ rule sentdhipm_pass2:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -938,7 +938,7 @@ rule sentdhipm_transfer:
         vcpu=config['sentdhipm']['threads_light'],
         mem_mb=config['sentdhipm']['mem_mb_light'],
     params:
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         use_threads=config["sentdhio"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:
