@@ -80,7 +80,7 @@ rule sentdhuom_pass1:
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
         alt_samp_name=get_alt_sample_name,
-        pop_vcf=config["sentdhuo"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["popvcf"],
     shell:
         """
         set -euo pipefail

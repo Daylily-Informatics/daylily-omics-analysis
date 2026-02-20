@@ -220,7 +220,7 @@ rule sentdhiom_pass1:
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
         sr_read_filter=SENTDHIOM_SR_READ_FILTER,
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["popvcf"],
     shell:
         """
         set -euo pipefail
