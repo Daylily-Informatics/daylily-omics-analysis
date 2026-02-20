@@ -10,6 +10,8 @@ DYMEMBERS
 day_pipe_stats.json
 results/
 
+_analysis*/*
+
 etc/about_me.yaml
 pblogs
 
