@@ -921,6 +921,23 @@ sent_aln_sort_snv:
     dbsnp: "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
     pcr_free: "true"
 
+sentieon_pangenome_sr:
+    threads: 7
+    env_yaml: "../envs/sentieon_v0.1.yaml"
+    mem_mb: 50000
+    partition: "i8"
+    constraint: ""
+    bench_repeat: 0
+    gbz: "/fsx/scratch/pangenome/hprc-v2.0-mc-grch38.gbz"
+    hapl: "/fsx/scratch/pangenome/hprc-v2.0-mc-grch38.hapl"
+    xg: "/fsx/scratch/pangenome/hprc-v2.0-mc-grch38.xg"
+    snarls: "/fsx/scratch/pangenome/hprc-v2.0-mc-grch38.snarls"
+    model_bundle: "/fsx/scratch/pangenome/dnaseq_pangenome3.0.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    canonical_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38/hg38_canonical.bed"
+    dbsnp: "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
+    pcr_free: "true"
+
 sentieon_gatk:
     threads: 7
     bwa_threads: 7

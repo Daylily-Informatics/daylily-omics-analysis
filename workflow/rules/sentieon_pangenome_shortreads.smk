@@ -16,152 +16,210 @@ import os
 #   {sample}.pangenome_sr_svs.vcf.gz               - SV VCF from vg call
 #
 
-def pangenome_r1_fastqs(wildcards):
-    r1, r2, _ = _fastqs_from_helpers_or_config_or_units(wildcards)
-    return r1
-
-def pangenome_r2_fastqs(wildcards):
-    r1, r2, _ = _fastqs_from_helpers_or_config_or_units(wildcards)
-    return r2
-
-def pangenome_readgroups(wildcards):
-    """
-    Build one readgroup per R1 fastq, as required by sentieon-cli pangenome:
-      len(r1_fastq) must equal len(readgroups).
-    """
-    sample = wildcards.sample
-    r1, r2, lane_meta = _fastqs_from_helpers_or_config_or_units(wildcards)
-
-    rgs = []
-    if lane_meta:
-        # Use RUNID/LANEID/BARCODEID if present in units.tsv to make stable RG IDs
-        for i, row in enumerate(lane_meta):
-            runid = (row.get("RUNID") or "").strip()
-            laneid = (row.get("LANEID") or "").strip()
-            barcode = (row.get("BARCODEID") or "").strip()
-            rgid_parts = [p for p in [sample, runid, laneid, barcode] if p]
-            rgid = ".".join(rgid_parts) if rgid_parts else f"{sample}.{i+1}"
-            lb = (row.get("LIBPREP") or sample).strip() or sample
-            # PL is the sequencing platform family; for Illumina data, use ILLUMINA
-            rgs.append(f"@RG\\tID:{rgid}\\tSM:{sample}\\tLB:{lb}\\tPL:ILLUMINA")
-    else:
-        for i in range(len(r1)):
-            rgid = f"{sample}.{i+1}"
-            rgs.append(f"@RG\\tID:{rgid}\\tSM:{sample}\\tLB:{sample}\\tPL:ILLUMINA")
-
-    if len(rgs) != len(r1):
-        raise ValueError(
-            f"Internal error: generated {len(rgs)} readgroups for {len(r1)} R1 FASTQs (sample={sample})"
-        )
-    return rgs
-
-def _cfg(path, default=None):
-    cur = config
-    for k in path:
-        if not isinstance(cur, dict) or k not in cur:
-            return default
-        cur = cur[k]
-    return cur
-
-# -------------------------
-# Rules
-# -------------------------
-
-localrules: sentieon_pangenome_shortreads
-
-rule sentieon_pangenome_shortreads:
+rule sentieon_pangenome_sr:
+    """Sentieon pangenome (full): graph-align + surject + dedup + SNV/SV call (Illumina PE FASTQ)."""
     input:
-        r1=pangenome_r1_fastqs,
-        r2=pangenome_r2_fastqs,
+        DR=MDIR + "{sample}/{sample}.dirsetup.ready",
+        f1=getR1s,
+        f2=getR2s,
     output:
-        vcf=MDIR + "align/pangenome/{sample}.vcf.gz",
-        aligned=MDIR + "align/pangenome/{sample}_pangenome-aligned.cram",
-        ploidy_json=MDIR + "align/pangenome/{sample}_ploidy.json",
-        svs_vcf=MDIR + "align/pangenome/{sample}_svs.vcf.gz",
+        vcfgz=MDIR
+        + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz",
+        vcfgztbi=MDIR
+        + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz.tbi",
     log:
-        MDIR + "align/pangenome/{sample}.pangenome.log",
-    threads:
-        config.get("sentieon", {}).get("pangenome_threads", config.get("sentieon", {}).get("threads", 16))
+        MDIR
+        + "{sample}/align/pangenome/log/{sample}.pangenome_sr.log",
+    threads: config["sentieon_pangenome_sr"]["threads"]
+    conda:
+        config["sentieon_pangenome_sr"]["env_yaml"]
+    priority: 5
+    benchmark:
+        repeat(
+            MDIR + "{sample}/benchmarks/{sample}.pangenome_sr.bench.tsv",
+            0
+            if "bench_repeat" not in config["sentieon_pangenome_sr"]
+            else config["sentieon_pangenome_sr"]["bench_repeat"],
+        )
+    resources:
+        attempt_n=lambda wildcards, attempt: (attempt + 0),
+        partition=config["sentieon_pangenome_sr"]["partition"],
+        threads=config["sentieon_pangenome_sr"]["threads"],
+        vcpu=config["sentieon_pangenome_sr"]["threads"],
+        mem_mb=config["sentieon_pangenome_sr"]["mem_mb"],
+        constraint=config["sentieon_pangenome_sr"]["constraint"],
     params:
-        ref=_cfg(["supporting_files","files","huref","fasta","name"]),
-        sentieon_env=_cfg(["supporting_files","files","sentieon_env","path"]),
-        jemalloc=_cfg(["supporting_files","files","sentieon_env","jemalloc_path"]),
-        gbz=_cfg(["supporting_files","files","pangenome_gbz","name"]),
-        hapl=_cfg(["supporting_files","files","pangenome_hapl","name"]),
-        xg=_cfg(["supporting_files","files","pangenome_xg","name"]),
-        snarls=_cfg(["supporting_files","files","pangenome_snarls","name"]),
-        model_bundle=_cfg(["supporting_files","files","pangenome_model_bundle","name"]),
-        dbsnp=_cfg(["supporting_files","files","dbsnp","name"], default=""),
-        kmer_memory_gb=config.get("sentieon", {}).get("pangenome_kmer_memory_gb", 30),
-        skip_cnv=config.get("sentieon", {}).get("pangenome_skip_cnv", True),
-        pcr_free=config.get("sentieon", {}).get("pangenome_pcr_free", True),
-        readgroups=pangenome_readgroups,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        gbz=config["sentieon_pangenome_sr"]["gbz"],
+        hapl=config["sentieon_pangenome_sr"]["hapl"],
+        xg=config["sentieon_pangenome_sr"]["xg"],
+        snarls=config["sentieon_pangenome_sr"]["snarls"],
+        model_bundle=config["sentieon_pangenome_sr"]["model_bundle"],
+        pop_vcf=config["sentieon_pangenome_sr"]["pop_vcf"],
+        canonical_bed=config["sentieon_pangenome_sr"]["canonical_bed"],
+        dbsnp=config["sentieon_pangenome_sr"]["dbsnp"],
+        pcr_free=config["sentieon_pangenome_sr"]["pcr_free"],
+        cluster_sample=ret_sample,
+        rgpl="ILLUMINA",
+        rgpu="presumedCombinedLanes",
+        rgsm=ret_sample,
+        rgid=ret_sample,
+        rglb="_presumedNoAmpWGS",
+        rgcn="CenterName",
+        rgpg="sentieonPangenomeFull",
     shell:
         """
-        set -euo pipefail
 
-        # Activate env (mirrors your existing Sentieon rules style)
-        source /fsx/data/cached_envs/miniconda3/bin/activate {MDIR}{params.sentieon_env}/bin
-
-        if [ -z "${{SENTIEON_LICENSE:-}}" ]; then
-            echo "SENTIEON_LICENSE is not set." >&2
-            exit 1
+        if [ -z "$SENTIEON_LICENSE" ]; then
+            echo "SENTIEON_LICENSE not set." >> {log} 2>&1;
+            exit 3;
         fi
 
-        # jemalloc: keep consistent with your Sentieon rules
-        export LD_PRELOAD={params.jemalloc}
-        export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000
-
-        # Per-sample tmpdir for sentieon-cli (uses SENTIEON_TMPDIR)
-        ts="$(date +%s)"
-        TMPROOT="/dev/shm"
-        TMPDIR="${{TMPROOT}}/sentieon_pangenome_{wildcards.sample}_${{ts}}"
-        mkdir -p "${{TMPDIR}}"
-        export SENTIEON_TMPDIR="${{TMPDIR}}"
-
-        mkdir -p "$(dirname {output.vcf})"
-
-        # Optional args
-        R2_ARGS=""
-        if [ -n "{input.r2}" ]; then
-            R2_ARGS="--r2_fastq {input.r2}"
+        if [ ! -f "$SENTIEON_LICENSE" ]; then
+            echo "SENTIEON_LICENSE file does not exist: '$SENTIEON_LICENSE'" >> {log} 2>&1;
+            exit 4;
         fi
 
-        DBSNP_ARGS=""
-        if [ -n "{params.dbsnp}" ]; then
-            DBSNP_ARGS="--dbsnp {params.dbsnp}"
+        TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
+        itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
+        echo "INSTANCE TYPE: $itype" > {log};
+        start_time=$(date +%s);
+        epocsec=$(date +'%s');
+
+        ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
+
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/pangenome_sr_tmp_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        if [ ! -d "$TMPDIR" ]; then
+            echo "ERROR: Failed to create TMPDIR: $TMPDIR" >> {log} 2>&1;
+            exit 5;
+        fi
+        echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" >> {log} 2>&1;
+        df -h /dev/shm >> {log} 2>&1;
+        export APPTAINER_HOME="$TMPDIR";
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+
+        # Find jemalloc in active conda env
+        jemalloc_path="";
+        for _dir in "$CONDA_PREFIX/lib" "$CONDA_PREFIX/lib64" "$CONDA_PREFIX/lib/x86_64-linux-gnu"; do
+            if [[ -d "$_dir" ]]; then
+                for _ext in so dylib; do
+                    _candidate=$(find "$_dir" -maxdepth 1 -name "libjemalloc*.$_ext*" 2>/dev/null | head -n 1);
+                    if [[ -n "$_candidate" && -r "$_candidate" ]]; then
+                        jemalloc_path="$_candidate";
+                        break 2;
+                    fi
+                done
+            fi
+        done
+
+        if [[ -n "$jemalloc_path" ]]; then
+            export LD_PRELOAD="$jemalloc_path";
+            export MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:5000,muzzy_decay_ms:5000;
+            echo "LD_PRELOAD set to: $LD_PRELOAD" >> {log};
+            echo "MALLOC_CONF set to: $MALLOC_CONF" >> {log};
+        else
+            echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
 
-        PCRFREE_ARGS=""
-        if [ "{params.pcr_free}" = "True" ]; then
-            PCRFREE_ARGS="--pcr_free"
+        # --- Build optional flags ---
+        pcr_flag="";
+        if [[ "{params.pcr_free}" == "true" ]]; then
+            pcr_flag="--pcr_free";
         fi
 
-        SKIP_CNV_ARGS=""
-        if [ "{params.skip_cnv}" = "True" ]; then
-            SKIP_CNV_ARGS="--skip_cnv"
-        fi
+        # --- sentieon-cli pangenome (full pipeline) ---
+        cli_out="$TMPDIR/{wildcards.sample}.pangenome_sr";
 
-        # Run Sentieon CLI pangenome pipeline
-        # Output naming is driven by the positional output_vcf path
+        echo "sentieon-cli pangenome starting" >> {log} 2>&1;
+        echo "  model_bundle={params.model_bundle}" >> {log} 2>&1;
+        echo "  hapl={params.hapl}" >> {log} 2>&1;
+        echo "  gbz={params.gbz}" >> {log} 2>&1;
+        echo "  xg={params.xg}" >> {log} 2>&1;
+        echo "  snarls={params.snarls}" >> {log} 2>&1;
+        set +e;
         sentieon-cli pangenome \
-            --reference {params.ref} \
-            --cores {threads} \
-            --gbz {params.gbz} \
-            --hapl {params.hapl} \
-            --xg {params.xg} \
-            --snarls {params.snarls} \
-            -m {params.model_bundle} \
-            --kmer_memory {params.kmer_memory_gb} \
-            --r1_fastq {input.r1} \
-            $R2_ARGS \
-            --readgroups {params.readgroups} \
-            $DBSNP_ARGS \
-            $PCRFREE_ARGS \
-            $SKIP_CNV_ARGS \
-            {output.vcf} \
-            > {log} 2>&1
+            -r {params.huref} \
+            --hapl "{params.hapl}" \
+            --gbz "{params.gbz}" \
+            --xg "{params.xg}" \
+            --snarls "{params.snarls}" \
+            -m "{params.model_bundle}" \
+            --pop_vcf "{params.pop_vcf}" \
+            --r1_fastq {input.f1} \
+            --r2_fastq {input.f2} \
+            --readgroup "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}" \
+            -b "{params.canonical_bed}" \
+            --dbsnp "{params.dbsnp}" \
+            $pcr_flag \
+            -t {threads} \
+            "${{cli_out}}.vcf.gz" >> {log} 2>&1;
+        cli_rc=$?;
+        set -e;
+        echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
+        if [ $cli_rc -ne 0 ]; then
+            echo "ERROR: sentieon-cli pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            exit $cli_rc;
+        fi
 
-        # Cleanup
-        rm -rf "${{TMPDIR}}"
+        # --- Reheader VCF: rename sample to cluster_sample ---
+        if [ -f "${{cli_out}}.vcf.gz" ]; then
+            oldname=$(bcftools query -l "${{cli_out}}.vcf.gz" | head -n1);
+            echo -e "${{oldname}}\\t{params.cluster_sample}" > "$TMPDIR/rename.txt";
+            bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
+            bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
+        else
+            echo "ERROR: VCF not produced by sentieon-cli pangenome" >> {log} 2>&1;
+            exit 20;
+        fi
+
+        end_time=$(date +%s);
+        elapsed_time=$((($end_time - $start_time) / 60));
+        echo "Elapsed-Time-min:\\t$itype\\t$elapsed_time" >> {log} 2>&1;
+
+        """
+
+
+localrules:
+    clear_combined_pangenome_sr_vcf,
+
+
+rule clear_combined_pangenome_sr_vcf:  # TARGET: clear combined pangenome sr vcf
+    input:
+        expand(
+            MDIR + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz",
+            sample=SAMPS,
+        ),
+    threads: 2
+    priority: 42
+    shell:
+        """
+        rm {input}*  1> /dev/null  2> /dev/null || echo 'file not found for deletion: {input}';
+        """
+
+
+localrules:
+    produce_pangenome_sr_vcf,
+
+
+rule produce_pangenome_sr_vcf:  # TARGET: sentieon pangenome full vcf
+    input:
+        expand(
+            MDIR
+            + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz.tbi",
+            sample=SAMPS,
+        ),
+    output:
+        "gatheredall.pangenome_sr",
+    priority: 48
+    threads: 1
+    log:
+        "gatheredall.pangenome_sr.log",
+    shell:
+        """( touch {output} ;
+
+        ls {output} ) >> {log} 2>&1;
         """
