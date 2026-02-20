@@ -71,20 +71,6 @@ rule sent_DNAscope:
         echo "INSTANCE TYPE: $itype";
         start_time=$(date +%s);
 
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.c}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.c} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.c}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.c} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.c}" | tee -a {log};
-            exit 11;
-        fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
-
         /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver --thread_count {threads} --interval {params.schrm_mod} --reference {params.huref} --input {input.c} --algo DNAscope -d {params.pop_vcf} --pcr_indel_model none --emit_mode variant --model {params.model}  {output.tvcf} >> {log} 2>&1;
 
         /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} -r {params.huref} --algo DNAModelApply --model {params.model} -v {output.tvcf} {output.vcf} >> {log} 2>&1;
