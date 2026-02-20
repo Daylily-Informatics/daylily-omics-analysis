@@ -694,10 +694,7 @@ rule sentdhiom_stage1:
 
         echo "Starting Stage1 at $(date)" >> {log}
 
-        epocsec=$(date +%s)
-
-
-        # Build LR replace args
+        # Build LR replace args (matches sentieon-cli RgInfo for LR inputs)
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
             $1=="@RG"{{
                 for(i=1;i<=NF;i++){{
@@ -713,52 +710,50 @@ rule sentdhiom_stage1:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
         done
 
-        # Build --read_filter args for LR reads (CLI: RgInfo.__init__, BaseDriver.build_cmd)
-        LR_FILTER_ARGS=""
-        if [ -n "{params.lr_read_filter}" ]; then
-            for rgid in $RGIDS; do
-                LR_FILTER_ARGS="$LR_FILTER_ARGS --read_filter {params.lr_read_filter},rgid=${{rgid}}"
-            done
-        fi
+        # Match sentieon-cli: remove bwt_max_mem from bwa env (noop if unset)
+        unset bwt_max_mem || true
 
-        HAP_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            --temp_dir $TMPDIR \
-            $LR_RG_ARGS $LR_FILTER_ARGS -i {input.lr_cram} \
-            --interval {input.diff_bed} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1.model \
-            --hap_bam {output.hap_bam} \
-            --hap_bed {output.hap_bed} \
-            --hap_vcf {output.hap_vcf} \
-            -"
+        # Match sentieon-cli hybrid_stage1():
+        #   cat( HybridStage1.stdout , HybridStage1_ins.stdout )
+        #   | bwa mem -x HybridStage1_bwa.model -R "@RG\tID:hybrid-18893\tSM:<SM>"
+        #   | util sort --sam2bam
+        cat \
+            <(sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --interval {input.diff_bed} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1.model \
+                --hap_bam {output.hap_bam} \
+                --hap_bed {output.hap_bed} \
+                --hap_vcf {output.hap_vcf} \
+                - 2>> {log}) \
+            <(sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1_ins.model \
+                --fa_file {output.ins_fa} \
+                --bed_file {output.ins_bed} \
+                - 2>> {log}) \
+        | sentieon bwa mem \
+            -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
+            -t {params.use_threads} \
+            -x {params.model}/HybridStage1_bwa.model \
+            {params.huref} \
+            - 2>> {log} \
+        | sentieon util sort \
+            -i - \
+            -t {params.use_threads} \
+            -o {output.bam} \
+            --sam2bam >> {log} 2>&1
 
-        INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
-            --temp_dir $TMPDIR \
-            $LR_RG_ARGS $LR_FILTER_ARGS -i {input.lr_cram} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1_ins.model \
-            --fa_file {output.ins_fa} \
-            --bed_file {output.ins_bed} \
-            -"
+        # Index hap BAM for downstream rules
+        samtools index {output.hap_bam} >> {log} 2>&1
 
-        # Match sentieon-cli hybrid stage1:
-        #   cat <(stage1_driver) <(ins_driver) | sentieon bwa mem | sentieon util sort --sam2bam
-        # (sentieon_cli/command_strings.py: hybrid_stage1)
-        unset bwt_max_mem
-
-        cat <( eval "$HAP_CMD" ) <( eval "$INS_CMD" ) \
-          | sentieon bwa mem \
-              -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
-              -t {params.use_threads} \
-              -x {params.model}/HybridStage1_bwa.model \
-              {params.huref} \
-              - 2>> {log} \
-          | sentieon util sort \
-              -i - \
-              -t {params.use_threads} \
-              -o {output.bam} \
-              --sam2bam >> {log} 2>&1
-
+        mv $TMPDIR ./
         echo "Stage1 completed at $(date)" >> {log}
         """
 
