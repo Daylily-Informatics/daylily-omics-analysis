@@ -113,6 +113,9 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       ref_vcf:
         class: file_only
         name: /fsx/data/tool_specific_resources/H_sapiens/b37/supersonic_modules/RE2666_intersect_1000g_phase1_release_v3.20101123.vcf
+    popvcf:
+        class: file_only
+        name: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
     iddnas:
       human_iddnas:
         class: file_only
