@@ -304,8 +304,6 @@ rule produce_oct_vcf:  # TARGET: octopus vcf
     output:
         "gatheredall.oct",
     priority: 48
-    params:
-	cluster_sample=ret_sample,
     threads: 2
     log:
         "gatheredall.oct.log",

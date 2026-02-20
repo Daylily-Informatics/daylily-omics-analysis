@@ -286,12 +286,12 @@ rule produce_deep15_vcf:  # TARGET: deep variant vcf
         "gatheredall.deep",
     threads: 4
     priority: 48
-    params:
-	cluster_sample=ret_sample,
     log:
         "gatheredall.deep15.log",
     conda:
         config['deepvariant']['deep15_conda']
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         # Convert VCF to BCF and index it
