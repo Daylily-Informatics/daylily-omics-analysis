@@ -820,7 +820,7 @@ rule sentdhrpm_transfer:
         vcpu=config['sentdhrpm']['threads_light'],
         mem_mb=config['sentdhrpm']['mem_mb_light'],
     params:
-        pop_vcf=config["sentdhrpm"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         use_threads=config["sentdhrpm"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:

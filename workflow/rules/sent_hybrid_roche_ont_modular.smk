@@ -831,7 +831,7 @@ rule sentdhrom_transfer:
         vcpu=config['sentdhrom']['threads_light'],
         mem_mb=config['sentdhrom']['mem_mb_light'],
     params:
-        pop_vcf=config["sentdhrom"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         use_threads=config["sentdhrom"]["use_threads_light"],
         cluster_sample=ret_sample,
     shell:

@@ -55,7 +55,7 @@ rule sentieon_pangenome_sr:
         xg=config["sentieon_pangenome_sr"]["xg"],
         snarls=config["sentieon_pangenome_sr"]["snarls"],
         model_bundle=config["sentieon_pangenome_sr"]["model_bundle"],
-        pop_vcf=config["sentieon_pangenome_sr"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         canonical_bed=config["sentieon_pangenome_sr"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_sr"]["dbsnp"],
         pcr_free=config["sentieon_pangenome_sr"]["pcr_free"],

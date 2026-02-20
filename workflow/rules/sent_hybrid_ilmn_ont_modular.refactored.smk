@@ -1063,7 +1063,7 @@ rule sentdhiomr_transfer:
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
-        pop_vcf=config["sentdhio"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
     shell:
         r"""

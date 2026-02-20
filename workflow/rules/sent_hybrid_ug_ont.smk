@@ -42,7 +42,7 @@ rule sentdhuo_snv:
         schrm_mod=get_dchrm_day,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
-        pop_vcf=config["supporting_files"]["popvcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         haploid_bed="",  # dnascope-hybrid does not support --haploid_bed
         diploid_bed=get_diploid_bed_arg,

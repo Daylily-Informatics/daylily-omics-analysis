@@ -40,7 +40,7 @@ rule sent_snv_ug:
         schrm_mod=get_dchrm_day,
         huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdug"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdug"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         use_threads=config["sentdug"]["use_threads"],
     shell:

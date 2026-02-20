@@ -45,7 +45,7 @@ rule sent_aln_sort_snv:
         hapl=config["sent_aln_sort_snv"]["hapl"],
         gbz=config["sent_aln_sort_snv"]["gbz"],
         model=config["sent_aln_sort_snv"]["model"],
-        pop_vcf=config["sent_aln_sort_snv"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         canonical_bed=config["sent_aln_sort_snv"]["canonical_bed"],
         dbsnp=config["sent_aln_sort_snv"]["dbsnp"],
         pcr_free=config["sent_aln_sort_snv"]["pcr_free"],
