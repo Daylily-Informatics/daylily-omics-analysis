@@ -80,6 +80,7 @@ rule sentdhuom_pass1:
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
         alt_samp_name=get_alt_sample_name,
+        pop_vcf=config["sentdhuo"]["pop_vcf"],
     shell:
         """
         set -euo pipefail
@@ -130,6 +131,7 @@ rule sentdhuom_pass1:
             $LR_RG_ARGS -i {input.ont_cram} \
             $SR_RG_ARGS -i {input.ug_cram} \
             {params.diploid_bed} \
+            -d {params.pop_vcf} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
@@ -650,6 +652,7 @@ rule sentdhuom_pass2:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhuo"]["use_threads"],
         cluster_sample=ret_sample,
+        pop_vcf=config["sentdhuo"]["pop_vcf"],
     shell:
         """
         set -euo pipefail
@@ -677,6 +680,7 @@ rule sentdhuom_pass2:
             -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
+            -d {params.pop_vcf} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \

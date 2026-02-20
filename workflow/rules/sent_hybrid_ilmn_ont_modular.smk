@@ -214,6 +214,7 @@ rule sentdhiom_pass1:
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
         sr_read_filter=SENTDHIOM_SR_READ_FILTER,
+        pop_vcf=config["sentdhio"]["pop_vcf"],
     shell:
         """
         set -euo pipefail
@@ -312,6 +313,7 @@ rule sentdhiom_pass1:
             -i {input.lr_cram} \
             -i {input.sr_bam} \
             {params.diploid_bed} \
+            -d {params.pop_vcf} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
@@ -959,6 +961,7 @@ rule sentdhiom_pass2:
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
         lr_read_filter=SENTDHIOM_LR_READ_FILTER,
+        pop_vcf=config["sentdhio"]["pop_vcf"],
     shell:
         """
         set -euo pipefail
@@ -1005,6 +1008,7 @@ rule sentdhiom_pass2:
             -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
+            -d {params.pop_vcf} \
             --algo DNAscope \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
