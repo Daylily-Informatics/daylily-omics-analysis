@@ -9,7 +9,7 @@ set -euo pipefail
 BAM1="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
 BAM2="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87794.calls.sorted.bam"
 REFERENCE="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
-OUTPUT_DIR="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont"
+OUTPUT_DIR="/fsx/scratch/downsamples/ont_merged_hg38_broad/HG003"
 SCRATCH_DIR="/fsx/scratch/downsamples/ont_merged_hg38_broad/HG003"
 SEED=33
 COMBINED_COVERAGE=56.9  # ~26x + ~31x
@@ -38,7 +38,7 @@ for COV in "${COVERAGES[@]}"; do
 #!/bin/bash
 #SBATCH --job-name=ont_merge_ds_${COV}x
 #SBATCH --partition=i192mem,i192bigmem
-#SBATCH --comment=RnD
+#SBATCH --comment=da-us-west-2d-agbt-heavy
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=96
 #SBATCH --mem=100G
@@ -49,7 +49,7 @@ for COV in "${COVERAGES[@]}"; do
 set -euo pipefail
 
 source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
-conda activate AUGMENT
+conda activate SAM
 
 echo "=== Starting ${COV}x merge+downsample at \$(date) ==="
 echo "samtools version: \$(samtools --version | head -1)"
