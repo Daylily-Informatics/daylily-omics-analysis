@@ -72,7 +72,7 @@ def ilmn_ont_units_row(sr_cov: int, ont_cov: int, lane_id: int) -> list:
         ILMN_R2.format(cov=sr_cov),  # ILMN_R2_PATH
         "", "", "", "", "", "",  # PACBIO/ONT/UG paths (empty)
         "posControl",  # SUBSAMPLE_PCT
-        19,  # ILMN_TRIM_READ_LENGTH
+        "na",  # ILMN_TRIM_READ_LENGTH
         "WGS",  # SAMPLEUSE
         "", "",  # BWA_KMER, DEEP_MODEL
         "", "", "",  # ULTIMA_CRAM fields (empty for ILMN)
@@ -105,7 +105,7 @@ def ug_ont_units_row(sr_cov: int, ont_cov: int, lane_id: int) -> list:
         "", "",  # ILMN paths (empty)
         "", "", "", "", "", "",  # PACBIO/ONT/UG raw paths (empty)
         "posControl",  # SUBSAMPLE_PCT
-        19,  # ILMN_TRIM_READ_LENGTH
+        "na",  # ILMN_TRIM_READ_LENGTH
         "WGS",  # SAMPLEUSE
         "", "",  # BWA_KMER, DEEP_MODEL
         UG_CRAM_HG38_BROAD.format(cov=sr_cov),  # ULTIMA_CRAM
