@@ -233,6 +233,8 @@ rule deep19_concat_index_chunks:
 
         """
 
+localrules:
+	clear_combined_deep19_vcf,
 
 rule clear_combined_deep19_vcf:  # TARGET:  clear combined deep vcf so the chunks can be re-evaluated if needed.
     input:
@@ -287,6 +289,8 @@ rule produce_deep19_vcf:  # TARGET: deep variant vcf
         "gatheredall.deep",
     threads: 4
     priority: 48
+    params:
+	cluster_sample=ret_sample,
     log:
         "gatheredall.deep19.log",
     conda:

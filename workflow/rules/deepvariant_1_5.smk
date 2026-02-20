@@ -286,6 +286,8 @@ rule produce_deep15_vcf:  # TARGET: deep variant vcf
         "gatheredall.deep",
     threads: 4
     priority: 48
+    params:
+	cluster_sample=ret_sample,
     log:
         "gatheredall.deep15.log",
     conda:

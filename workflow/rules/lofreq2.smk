@@ -303,6 +303,8 @@ rule produce_lofreq2_vcf:  # TARGET: lofreq2 vcfs
         "gatheredall.lfq2",
     threads: 4
     priority: 48
+    params:
+	cluster_sample=ret_sample,
     log:
         "gatheredall.lfq2.log",
     conda:

@@ -298,6 +298,8 @@ rule produce_deep19_r_vcf:  # TARGET: DeepVariant 1.9 Roche VCF
     output:
         "gatheredall.deep19r",
     threads: 4
+    params:
+	cluster_sample=ret_sample,
     priority: 48
     log:
         "gatheredall.deep19r.log",
