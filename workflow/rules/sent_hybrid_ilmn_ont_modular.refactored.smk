@@ -143,7 +143,7 @@ rule sentdhiomr_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\tID:{params.cluster_sample}-$epocsec\tSM:{params.sample_sm}\tLB:{params.cluster_sample}-LB-1\tPL:ILLUMINA" \
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.sample_sm}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -666,7 +666,7 @@ rule sentdhiomr_stage1:
                 --bed_file {output.ins_bed} \
                 - 2>> {log}) \
         | sentieon bwa mem \
-            -R "@RG\tID:hybrid-18893\tSM:{config[sentdhio][sample_sm]}" \
+            -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
             -t {params.use_threads} \
             -x {params.model}/HybridStage1_bwa.model \
             {params.huref} \
