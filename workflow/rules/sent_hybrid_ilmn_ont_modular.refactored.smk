@@ -1038,7 +1038,7 @@ rule sentdhiomr_anno:
             -t {params.use_threads} \
             {output.vcf} >> {log} 2>&1
 
-        tabix -p vcf {output.vcf} >> {log} 2>&1
+        tabix -f -p vcf {output.vcf} >> {log} 2>&1
 
         echo "Annotation completed at $(date)" >> {log}
         """
