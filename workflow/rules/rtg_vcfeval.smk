@@ -168,6 +168,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             config["rtg_vcfeval"]["env_yaml"]
         params:
             sdf=config["supporting_files"]["files"]["huref"]["rtg_tools_genome"]["name"],
+	    cluster_sample=ret_sample,
         shell:
             r"""
             set -euo pipefail
@@ -214,6 +215,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         params:
             # Preserve existing metadata behavior
             alt_name=get_alt_sample_name,
+	    cluster_sample=ret_sample,
         shell:
             r"""
             set -euo pipefail
@@ -276,6 +278,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         params:
             tdir=get_samp_concordance_truth_dir,
             alt_name=get_alt_sample_name,
+	    cluster_sample=ret_sample,
         run:
             import os
             import datetime
@@ -318,6 +321,7 @@ else:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz.tbi",
         output:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
+	threads: 1
         shell:
             "touch {output};"
 
@@ -341,6 +345,7 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         pc=print_wildcards_etc,
     output:
         touch(MDIR + "other_reports/giab_concordance_mqc.tsv")
+    threads: 1
     shell:
         """
         set +euo pipefail;
