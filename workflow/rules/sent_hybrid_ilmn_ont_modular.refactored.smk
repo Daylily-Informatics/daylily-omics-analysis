@@ -209,6 +209,7 @@ rule sentdhiomr_pass1:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -283,6 +284,7 @@ rule sentdhiomr_pass1:
             -i {input.sr_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
@@ -860,6 +862,7 @@ rule sentdhiomr_pass2:
         diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
         use_threads=config["sentdhio"]["use_threads"],
         cluster_sample=ret_sample,
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
     shell:
         """
         set -euo pipefail
@@ -899,6 +902,7 @@ rule sentdhiomr_pass2:
             --thread_count {params.use_threads} \
             --interval {input.bed} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
