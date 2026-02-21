@@ -1,23 +1,17 @@
 import os
 
-####### Sentieon Pangenome (full) – short-read pipeline
+####### Sentieon Pangenome (accelerated) – short-read pipeline
 #
-# Uses sentieon-cli pangenome which performs:
-#   1. Pangenome graph alignment (GBZ + XG + snarls)
-#   2. Surjection + dedup onto linear GRCh38
-#   3. SNV/indel calling with model bundle
-#   4. SV calling via vg call
-#   5. Ploidy estimation
+# Uses sentieon-cli sentieon-pangenome which performs pangenome-aware
+# alignment (via GBZ graph reference) and variant calling for Illumina
+# paired-end WGS data.  No vg/XG/snarls dependencies required.
 #
 # Outputs per sample:
-#   {sample}.pangenome_sr.snv.vcf.gz               - SNV/indel VCF (model-applied)
-#   {sample}.pangenome_sr_pangenome-aligned.cram    - surjected + deduped CRAM
-#   {sample}.pangenome_sr_ploidy.json               - sex/ploidy estimate
-#   {sample}.pangenome_sr_svs.vcf.gz               - SV VCF from vg call
+#   {sample}.pangenome_sr.snv.vcf.gz     - SNV/indel VCF (model-applied)
 #
 
 rule sentieon_pangenome_sr:
-    """Sentieon pangenome (full): graph-align + surject + dedup + SNV/SV call (Illumina PE FASTQ)."""
+    """Sentieon pangenome (accelerated): graph-align + variant call (Illumina PE FASTQ → VCF)."""
     input:
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
         f1=getR1s,
@@ -52,9 +46,7 @@ rule sentieon_pangenome_sr:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         gbz=config["sentieon_pangenome_sr"]["gbz"],
         hapl=config["sentieon_pangenome_sr"]["hapl"],
-        xg=config["sentieon_pangenome_sr"]["xg"],
-        snarls=config["sentieon_pangenome_sr"]["snarls"],
-        model_bundle=config["sentieon_pangenome_sr"]["model_bundle"],
+        model=config["sentieon_pangenome_sr"]["model"],
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         canonical_bed=config["sentieon_pangenome_sr"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_sr"]["dbsnp"],
@@ -66,7 +58,7 @@ rule sentieon_pangenome_sr:
         rgid=ret_sample,
         rglb="_presumedNoAmpWGS",
         rgcn="CenterName",
-        rgpg="sentieonPangenomeFull",
+        rgpg="sentieonPangenome",
     shell:
         """
 
@@ -131,23 +123,19 @@ rule sentieon_pangenome_sr:
             pcr_flag="--pcr_free";
         fi
 
-        # --- sentieon-cli pangenome (full pipeline) ---
+        # --- sentieon-cli sentieon-pangenome (accelerated pipeline) ---
         cli_out="$TMPDIR/{wildcards.sample}.pangenome_sr";
 
-        echo "sentieon-cli pangenome starting" >> {log} 2>&1;
-        echo "  model_bundle={params.model_bundle}" >> {log} 2>&1;
+        echo "sentieon-cli sentieon-pangenome starting" >> {log} 2>&1;
+        echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
-        echo "  xg={params.xg}" >> {log} 2>&1;
-        echo "  snarls={params.snarls}" >> {log} 2>&1;
         set +e;
-        sentieon-cli pangenome \
+        sentieon-cli sentieon-pangenome \
             -r {params.huref} \
             --hapl "{params.hapl}" \
             --gbz "{params.gbz}" \
-            --xg "{params.xg}" \
-            --snarls "{params.snarls}" \
-            -m "{params.model_bundle}" \
+            -m "{params.model}" \
             --pop_vcf "{params.pop_vcf}" \
             --r1_fastq {input.f1} \
             --r2_fastq {input.f2} \
@@ -161,7 +149,7 @@ rule sentieon_pangenome_sr:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: sentieon-cli pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: sentieon-cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 
@@ -172,7 +160,7 @@ rule sentieon_pangenome_sr:
             bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
             bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
         else
-            echo "ERROR: VCF not produced by sentieon-cli pangenome" >> {log} 2>&1;
+            echo "ERROR: VCF not produced by sentieon-cli sentieon-pangenome" >> {log} 2>&1;
             exit 20;
         fi
 
@@ -205,7 +193,7 @@ localrules:
     produce_pangenome_sr_vcf,
 
 
-rule produce_pangenome_sr_vcf:  # TARGET: sentieon pangenome full vcf
+rule produce_pangenome_sr_vcf:  # TARGET: sentieon pangenome vcf
     input:
         expand(
             MDIR
