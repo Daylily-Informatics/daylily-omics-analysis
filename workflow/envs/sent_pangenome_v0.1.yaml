@@ -20,6 +20,7 @@ dependencies:
   - seqkit
   - seqfu
   - sambamba
+  - kmc
   - jemalloc
   - isa-l=2.31.0
   - pip:
