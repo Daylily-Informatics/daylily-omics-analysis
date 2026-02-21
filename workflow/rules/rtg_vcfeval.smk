@@ -269,7 +269,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         benchmark:
             MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.concordance.bench.tsv",
         # Keep the rule-level threads/resources for backwards cluster configs that key off them.
-        threads: config["rtg_vcfeval"]["threads"]
+        threads: 1 #config["rtg_vcfeval"]["threads"]
         resources:
             vcpu=config["rtg_vcfeval"]["threads"],
             threads=config["rtg_vcfeval"]["threads"],
