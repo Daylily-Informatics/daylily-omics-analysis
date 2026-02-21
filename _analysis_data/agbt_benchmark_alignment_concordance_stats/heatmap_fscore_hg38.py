@@ -286,7 +286,7 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
         return c
 
     xlabels = [_reformat_xlabel(c) for c in columns]
-    ax.set_xticklabels(xlabels, rotation=55, ha="right", fontsize=10.8)
+    ax.set_xticklabels(xlabels, rotation=55, ha="right", fontsize=11.9, fontweight="bold")
 
     # Subtle background shading on x-axis labels grouped by platform (50% alpha)
     _PLATFORM_COLORS = {
@@ -357,10 +357,9 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
                 rgba = cmap(norm(val))
                 perceived_lum = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
                 color = "black" if perceived_lum > 0.5 else "white"
-                depth_str = f"{d:.1f}x" if not np.isnan(d) else "?"
-                ax.text(j, i, f"{val:.3f}\nn={n} d={depth_str}",
+                ax.text(j, i, f"{val:.3f}",
                         ha="center", va="center",
-                        fontsize=5, fontweight="bold", color=color, linespacing=1.2)
+                        fontsize=11, fontweight="bold", color=color)
 
     # Make spacer columns rgb(10,30,40) with white coverage labels
     bin_display = {25: 20, 35: 30, 45: 40}
@@ -402,7 +401,8 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
                  fontsize=13, fontweight="bold", pad=30)
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
-    cbar.set_label("Fscore", fontsize=10)
+    cbar.ax.tick_params(labelsize=13.5)
+    cbar.set_label("Fscore", fontsize=15)
 
     plt.tight_layout()
     fig.savefig(out_path, format="svg", bbox_inches="tight")
