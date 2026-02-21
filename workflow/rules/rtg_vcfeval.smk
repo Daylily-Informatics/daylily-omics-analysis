@@ -321,6 +321,8 @@ else:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz.tbi",
         output:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
+        benchmark:
+            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.noconcordance.bench.tsv",
         threads: 1
         shell:
             "touch {output};"
@@ -345,6 +347,8 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         pc=print_wildcards_etc,
     output:
         touch(MDIR + "other_reports/giab_concordance_mqc.tsv")
+    benchmark:
+        MDIR + "/benchmarks/produce_snv_concordances.tsv"
     threads: 1
     shell:
         """
