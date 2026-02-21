@@ -16,7 +16,7 @@ with open(f"{BASE}/alignstats_combo_mqc.tsv") as f:
 fscores = {}
 with open(f"{BASE}/giab_concordance_mqc.tsv") as f:
     for r in csv.DictReader(f, delimiter="\t"):
-        if r["CmpFootprint"] == "giabHC" and r["SNPClass"] == "All":
+        if r["ROI"] == "giabHC" and r["VariantClass"] == "All":
             fscores[r["Sample"]] = float(r["Fscore"]) if r["Fscore"] else None
 
 # Combine and sort by measured median, then mean

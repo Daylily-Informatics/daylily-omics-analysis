@@ -73,7 +73,7 @@ tgt_region_size = float(os.popen(cmd).readline())
 
 
 new_summary_out_fh.write(
-    "Sample\tCmpFootprint\tTN\tTP\tFP\tFN\tPrecision\tSensitivity-Recall\tSpecificity\tFDR\tFscore\tTgtRegionSize\tSubset\tAltID\tAllVarMeanDP\n"
+    "Sample\tROI\tTN\tTP\tFP\tFN\tPrecision\tSensitivity-Recall\tSpecificity\tFDR\tFscore\tTgtRegionSize\tSubset\tAltID\tAllVarMeanDP\n"
 )
 ctr = 0
 for i in summary_fh:
@@ -269,7 +269,7 @@ for i in df.iterrows():
 df["mqc_id"] = f"{sample}-{alnr}-{snv_caller}-{subset}"
 df["Sample"] = sample
 df["AltId"] = alt_id
-df["CmpFootprint"] = cmp_footprint
+df["ROI"] = cmp_footprint
 df["Subset"] = subset
 df["AllVarMeanDP"] = allvar_mean_dp
 df['CovBin'] = cov_bin
@@ -305,7 +305,7 @@ df['Youdens_J_Index'] = [row['Sensitivity-Recall'] + row['Specificity'] - 1 if (
 df['MCC'] = [calc_mcc(row['TP'], row['TN'], row['FP'], row['FN']) for idx, row in df.iterrows()]
 
 
-print_cols = ['mqc_id','Sample','TgtRegionSize','TN','FN','TP','FP','Fscore','Sensitivity-Recall','Specificity', 'FDR', 'PPV', 'Precision','AltId', 'CmpFootprint', 'AllVarMeanDP', 'CovBin', 'Aligner','SNVCaller']
+print_cols = ['mqc_id','Sample','TgtRegionSize','TN','FN','TP','FP','Fscore','Sensitivity-Recall','Specificity', 'FDR', 'PPV', 'Precision','AltId', 'ROI', 'AllVarMeanDP', 'CovBin', 'Aligner','SNVCaller']
 
 # Update columns to include new calculations
 print_cols.extend(['Fbeta_1',
@@ -316,4 +316,4 @@ print_cols.extend(['Fbeta_1',
 
 df.to_csv(even_newer_summary, sep="\t", columns=print_cols)
 
-os.system(f"perl -pi -e 's/^\t/SNPClass\t/g;' {even_newer_summary}")
+os.system(f"perl -pi -e 's/^\t/VariantClass\t/g;' {even_newer_summary}")

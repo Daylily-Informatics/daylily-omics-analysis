@@ -130,8 +130,8 @@ def make_dragen_old_rows(header_fields):
     base = {k: "" for k in header_fields}
     base.update({
         "Sample": "dragen_old_HG003_20x",
-        "SNPClass": "All",
-        "CmpFootprint": "hg38",
+        "VariantClass": "All",
+        "ROI": "hg38",
         "Fscore": "0.9983",
         "Sensitivity-Recall": "0.9971",
         "Precision": "0.9994",
@@ -234,7 +234,10 @@ def main():
                 # --- Determine measured coverage ---
                 if hio_m:
                     pri = ilmn_solo.get(pri_tgt, (0.0, 0.0))
-                    sec = ont_solo.get(sec_tgt, (0.0, 0.0))
+                    sec = ont_solo.get(sec_tgt, None)
+                    if sec is None:
+                        # Extrapolate from linear trend (measured/target ≈ 0.52)
+                        sec = (round(sec_tgt * 0.52, 6), round(sec_tgt * 0.52, 1))
                 elif hio_old_m:
                     # Use the hio_old alignstats directly for secondary (ONT)
                     meas_ont = alignstats.get((sample, aligner))

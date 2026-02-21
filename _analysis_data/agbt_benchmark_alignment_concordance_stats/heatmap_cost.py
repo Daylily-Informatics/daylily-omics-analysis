@@ -150,12 +150,12 @@ def load_cell_mapping():
 
     Returns dict: (test_group, sample, raw_aligner, raw_caller) ->
         (column_label, pri_cov_bin, section)
-    Only uses SNPClass=All, CmpFootprint=hg38 to get one row per sample.
+    Only uses VariantClass=All, ROI=hg38 to get one row per sample.
     """
     mapping = {}
     with open(INPUT_TSV, "r") as f:
         for row in csv.DictReader(f, delimiter="\t"):
-            if row["SNPClass"] != "All" or row["CmpFootprint"] != "hg38":
+            if row["VariantClass"] != "All" or row["ROI"] != "hg38":
                 continue
             if row.get("TestGroup", "") in SKIP_TEST_GROUPS:
                 continue

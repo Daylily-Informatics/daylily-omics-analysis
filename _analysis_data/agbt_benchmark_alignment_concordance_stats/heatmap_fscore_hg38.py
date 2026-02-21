@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate per-SNPClass Fscore heatmaps for a given CmpFootprint.
+"""Generate per-VariantClass Fscore heatmaps for a given ROI.
 
 Usage: python heatmap_fscore_hg38.py [FOOTPRINT]
-  Default FOOTPRINT is 'hg38'. Pass any valid CmpFootprint value.
+  Default FOOTPRINT is 'hg38'. Pass any valid ROI value.
 
 X-axis: Platform+Aligner+Caller (single-platform) then gap then HIO columns.
 Y-axis: PrimaryCoverageBin ascending (0x bottom, 50x top).
@@ -53,10 +53,10 @@ def _display_name(raw, mapping):
 
 
 def load_data(footprint):
-    """Load consolidated TSV, filter to given CmpFootprint.
+    """Load consolidated TSV, filter to given ROI.
 
     Returns:
-        data, counts, depths: per-SNPClass dicts keyed by (pri_cov, col_label)
+        data, counts, depths: per-VariantClass dicts keyed by (pri_cov, col_label)
         pangenome_labels: pangenome column labels (dragen, roche)
         hg38_labels: hg38 single-platform column labels
         paired_labels: ILMN read-length column labels (50/100/150bp)
@@ -71,7 +71,7 @@ def load_data(footprint):
 
     with open(INPUT_TSV, "r") as f:
         for row in csv.DictReader(f, delimiter="\t"):
-            if row["CmpFootprint"] != footprint:
+            if row["ROI"] != footprint:
                 continue
 
             # Deduplicate: skip test groups superseded by others
@@ -79,7 +79,7 @@ def load_data(footprint):
             if test_group in SKIP_TEST_GROUPS:
                 continue
 
-            snp_class = row["SNPClass"]
+            snp_class = row["VariantClass"]
             pri_bin_raw = row["PrimaryCoverageBin"]
             if not pri_bin_raw or not pri_bin_raw.strip():
                 continue
@@ -399,7 +399,7 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
 
     ax.set_xlabel("(Sequencing Platforms) Analysis Pipeline Code", fontsize=16.5)
     ax.set_ylabel("Primary Measured Coverage (Binned)", fontsize=16.5)
-    ax.set_title(f"Fscore — CmpFootprint={footprint} — SNPClass={snp_class}",
+    ax.set_title(f"Fscore — ROI={footprint} — VariantClass={snp_class}",
                  fontsize=16.25, fontweight="bold", pad=30)
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
@@ -426,19 +426,19 @@ def main():
 
     data, counts, depths, pg_labels, hg38_labels, paired_labels, hio_labels = load_data(footprint)
     if not data:
-        print(f"No data found for CmpFootprint={footprint}", file=sys.stderr)
+        print(f"No data found for ROI={footprint}", file=sys.stderr)
         sys.exit(1)
 
     columns, spacer_indices = build_column_order(pg_labels, hg38_labels, paired_labels, hio_labels)
     all_covs = sorted({k[0] for d in data.values() for k in d if k[0] <= 45})
 
-    print(f"CmpFootprint: {footprint}")
+    print(f"ROI: {footprint}")
     print(f"Coverage levels: {all_covs}")
     print(f"Pangenome columns ({len(pg_labels)}): {pg_labels}")
     print(f"hg38 columns ({len(hg38_labels)}): {hg38_labels}")
     print(f"Paired columns ({len(paired_labels)}): {paired_labels}")
     print(f"HIO columns ({len(hio_labels)}): {sorted(hio_labels, key=hio_sort_key)}")
-    print(f"SNPClasses: {sorted(data.keys())}")
+    print(f"VariantClasses: {sorted(data.keys())}")
     print()
 
     for snp_class in sorted(data.keys()):
