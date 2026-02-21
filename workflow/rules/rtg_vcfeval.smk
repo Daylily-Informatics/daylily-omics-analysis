@@ -41,7 +41,7 @@ def _norm_path(p):
         return ""
     if s.lower() in {"none", "nan", "na", "null"}:
         return ""
-    return s
+    return s.rstrip("/")
 
 
 def get_concordance_footprints(wildcards):
