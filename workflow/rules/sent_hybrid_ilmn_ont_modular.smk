@@ -1269,20 +1269,14 @@ rule sentdhiom_model_apply:
 
         echo "Starting DNAModelApply at $(date)" >> {log}
 
-        # DNAModelApply requires single-sample VCF; strip any extra samples from annotation/transfer
-        SINGLE_SAMPLE_VCF="$TMPDIR/single_sample.vcf.gz"
-        bcftools view -s hybrid_sample -Oz -o "$SINGLE_SAMPLE_VCF" {input.vcf} 2>> {log}
-        bcftools index -t "$SINGLE_SAMPLE_VCF" 2>> {log}
-
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             {params.diploid_bed} \
             --algo DNAModelApply \
             --model {params.model}/hybrid.model \
-            --vcf "$SINGLE_SAMPLE_VCF" \
+            --vcf {input.vcf} \
             {output.vcf} >> {log} 2>&1
 
-        mv $TMPDIR ./
         echo "Model apply completed at $(date)" >> {log}
         """
 
