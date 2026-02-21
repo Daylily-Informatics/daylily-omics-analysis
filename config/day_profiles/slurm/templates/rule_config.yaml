@@ -892,10 +892,10 @@ sent_aln_sort_snv:
     pcr_free: "true"
 
 sentieon_pangenome_sr:
-    threads: 192
+    threads: 128
     env_yaml: "../envs/sent_pangenome_v0.1.yaml"
     mem_mb: 200000
-    partition: "i192mem"
+    partition: "i128mem,i192mem,i192bigmem"
     constraint: ""
     bench_repeat: 0
     gbz: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
