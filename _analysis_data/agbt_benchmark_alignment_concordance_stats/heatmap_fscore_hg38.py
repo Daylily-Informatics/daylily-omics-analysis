@@ -44,6 +44,8 @@ CALLER_DISPLAY = {
     "sentdpb": "dnascope-pb",
     "sentdug": "dnascope-ug",
     "sentdhio": "dnascope-hio",
+    "sentdhuo": "dnascope-huo",
+    "deep19r": "dv-roche",
 }
 
 

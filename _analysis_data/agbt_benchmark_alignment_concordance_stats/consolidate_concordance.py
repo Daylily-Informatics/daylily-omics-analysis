@@ -17,11 +17,13 @@ TEST_GROUPS = [
     ("ilmn_read_trim", "ilmn_read_trim/giab_concordance_mqc.tsv", "ilmn_read_trim/alignstats_combo_mqc.tsv"),
     ("ont_ds", "ont_ds/ont_patch/giab_concordance_mqc.tsv", "ont_ds/ont_patch/alignstats_combo_mqc.tsv"),
     ("pacbio_ds", "pacbio_ds/giab_concordance_mqc.tsv", "pacbio_ds/alignstats_combo_mqc.tsv"),
-    ("roche_ds", "roche_ds/giab_concordance_mqc.tsv", "roche_ds/alignstats_combo_mqc.tsv"),
-    ("roche_ds_fillinone", "roche_ds_fillinone/giab_concordance_mqc.tsv", "roche_ds_fillinone/alignstats_combo_mqc.tsv"),
+    ("roche_ds_a", "roche_ds_a/giab_concordance_mqc.tsv", "roche_ds_a/alignstats_combo_mqc.tsv"),
+    ("roche_ds_c", "roche_ds_c/giab_concordance_mqc.tsv", "roche_ds_c/alignstats_combo_mqc.tsv"),
     ("ultima_ds", "ultima_ds/giab_concordance_mqc.tsv", "ultima_ds/alignstats_combo_mqc.tsv"),
     ("ont_dv19", "ont_dv19/giab_concordance_mqc.tsv", "ont_dv19/alignstats_combo_mqc.tsv"),
     ("ilmn_gatk_b", "ilmn_gatk_b/giab_concordance_mqc.tsv", "ilmn_gatk_b/alignstats_combo_mqc.tsv"),
+    ("dark_horses2", "dark_horses2/giab_concordance_mqc.tsv", "dark_horses2/alignstats_combo_mqc.tsv"),
+    ("huo_old", "huo_old/giab_concordance_mqc.tsv", "huo_old/alignstats_combo_mqc.tsv"),
     ("dragen_fullold", "dragen_fullold/giab_concordance_mqc.tsv", None),
 ]
 
@@ -30,8 +32,16 @@ ONT_SOLO_ALIGNSTATS = os.path.join(BASE_DIR, "ont_ds/ont_patch/alignstats_combo_
 
 HIO_PATTERN = re.compile(r"^HIO[ab]-.*-SR(\d+)x-ONT(\d+)x-")
 HIO_OLD_PATTERN = re.compile(r"^HIOv1_HG003_")
+HUO_PATTERN = re.compile(r"^HUOv1_")
 COV_PATTERN = re.compile(r"HG003-(\d+)x")
+COV_FRACTIONAL_PATTERN = re.compile(r"HG003-(\d+)p(\d+)xa?-")  # e.g. 2p5xa → 2.5
 READLEN_PATTERN = re.compile(r"HG003-\d+x-(\d+)bp-")
+
+# Column name mapping: files with SNPClass/CmpFootprint → VariantClass/ROI
+COLUMN_REMAP = {
+    "SNPClass": "VariantClass",
+    "CmpFootprint": "ROI",
+}
 
 PRIMARY_SEQ_PLATFORM = {
     "hio_cli": "ILMN",
@@ -43,10 +53,12 @@ PRIMARY_SEQ_PLATFORM = {
     "ont_ds": "ONT",
     "ont_dv19": "ONT",
     "pacbio_ds": "PacBio",
-    "roche_ds": "Roche",
-    "roche_ds_fillinone": "Roche",
+    "roche_ds_a": "Roche",
+    "roche_ds_c": "Roche",
     "ultima_ds": "Ultima",
     "ilmn_gatk_b": "ILMN",
+    "dark_horses2": "ILMN",
+    "huo_old": "Ultima",
     "dragen_fullold": "ILMN",
     "dragen_old": "ILMN",
 }
@@ -60,13 +72,18 @@ SECONDARY_SEQ_PLATFORM = {
 # Test groups where only HG003 samples should be kept
 HG003_ONLY_GROUPS = {"hio_old", "dragen_fullold"}
 
+# Callers to exclude from specific test groups (replaced by dark_horses2)
+EXCLUDE_CALLER_FROM_GROUP = {
+    "ilmn_all_downsamples_a": {"clair3"},
+}
+
 # Genome build per test group (default: hg38)
 # dragen uses ILMN proprietary pangenome; roche uses public pangenome
 GENOME_BUILD = {
     "dragen_old": "pangenome-ilmn",
     "dragen_fullold": "pangenome-ilmn",
-    "roche_ds": "pangenome-pub",
-    "roche_ds_fillinone": "pangenome-pub",
+    "roche_ds_a": "pangenome-pub",
+    "roche_ds_c": "pangenome-pub",
 }
 
 
@@ -199,18 +216,32 @@ def main():
             reader = csv.DictReader(f, delimiter="\t")
             if header is None:
                 header = list(reader.fieldnames) + new_cols
-            n, miss, skip = 0, 0, 0
+            n, miss, skip, excl = 0, 0, 0, 0
             for row in reader:
+                # --- Remap column names if needed (SNPClass→VariantClass, etc.) ---
+                for old_key, new_key in COLUMN_REMAP.items():
+                    if old_key in row and new_key not in row:
+                        row[new_key] = row.pop(old_key)
+
                 sample, aligner = row["Sample"], row["Aligner"]
+                caller = row["SNVCaller"]
 
                 # HG003-only filter for selected groups
                 if tg_name in HG003_ONLY_GROUPS and "HG003" not in sample:
                     skip += 1
                     continue
 
+                # Exclude specific callers from specific groups
+                excluded_callers = EXCLUDE_CALLER_FROM_GROUP.get(tg_name)
+                if excluded_callers and caller in excluded_callers:
+                    excl += 1
+                    continue
+
                 hio_m = HIO_PATTERN.match(sample)
                 hio_old_m = HIO_OLD_PATTERN.match(sample)
+                huo_m = HUO_PATTERN.match(sample)
                 cov_m = COV_PATTERN.search(sample)
+                cov_frac_m = COV_FRACTIONAL_PATTERN.search(sample)
 
                 # --- Determine target coverages ---
                 if hio_m:
@@ -220,6 +251,14 @@ def main():
                     # hio_old: force SR40x / ONT40x
                     pri_tgt = 40
                     sec_tgt = 40
+                elif huo_m:
+                    # huo_old: full-depth, no coverage in name; use alignstats
+                    pri_tgt = 0
+                    sec_tgt = 0
+                elif cov_frac_m:
+                    # Fractional coverage: e.g. 2p5xa → 2.5
+                    pri_tgt = float(f"{cov_frac_m.group(1)}.{cov_frac_m.group(2)}")
+                    sec_tgt = 0
                 elif cov_m:
                     pri_tgt = int(cov_m.group(1))
                     sec_tgt = 0
@@ -243,6 +282,13 @@ def main():
                     meas_ont = alignstats.get((sample, aligner))
                     pri = ilmn_solo.get(40, (0.0, 0.0))
                     sec = meas_ont if meas_ont else (0.0, 0.0)
+                elif huo_m:
+                    # huo_old: use alignstats directly for primary (ONT-aligned)
+                    meas = alignstats.get((sample, aligner))
+                    pri = meas if meas else (0.0, 0.0)
+                    sec = (0.0, 0.0)
+                    if not meas:
+                        miss += 1
                 else:
                     meas = alignstats.get((sample, aligner))
                     if meas:
@@ -281,6 +327,8 @@ def main():
         suffix = f" ({miss} alignstats misses)" if miss else ""
         if skip:
             suffix += f" ({skip} non-HG003 skipped)"
+        if excl:
+            suffix += f" ({excl} caller-excluded)"
         print(f"  {tg_name}: {n} rows{suffix}")
 
     # --- dragen_old: manual row construction ---
