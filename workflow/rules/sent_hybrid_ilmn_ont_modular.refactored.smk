@@ -83,7 +83,6 @@ rule sentdhiomr_sr_align:
         sort_threads=config['sentieon']['sort_threads'],
         cluster_sample=ret_sample,
         trim_head=get_ilmn_trim_head,
-        sample_sm="hg003",
     shell:
         """
         set -euo pipefail
@@ -150,7 +149,7 @@ rule sentdhiomr_sr_align:
 
         # Align with bwa mem → util sort
         LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
-            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.sample_sm}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
+            -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
             -K 100000000 \
@@ -274,13 +273,28 @@ rule sentdhiomr_pass1:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
+        # Build --replace_rg args for SR reads: cluster_sample SM (no LR:1 tag)
+        SR_RGIDS=$(samtools view -H {input.sr_bam} | awk '
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
+                        sub(/^ID:/,"",$i);
+                        print $i
+                    }}
+                }}
+            }}')
+
+        SR_RG_ARGS=""
+        for rgid in $SR_RGIDS; do
+            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+        done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $SR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
             {params.diploid_bed} \
             --algo DNAscope \
@@ -496,12 +510,28 @@ rule sentdhiomr_mapq0_bed:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+
+        # Build --replace_rg args for SR reads: cluster_sample SM (no LR:1 tag)
+        SR_RGIDS=$(samtools view -H {input.sr_bam} | awk '
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
+                        sub(/^ID:/,"",$i);
+                        print $i
+                    }}
+                }}
+            }}')
+
+        SR_RG_ARGS=""
+        for rgid in $SR_RGIDS; do
+            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $SR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
@@ -641,7 +671,7 @@ rule sentdhiomr_stage1:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         # Match sentieon-cli: remove bwt_max_mem from bwa env (noop if unset)
@@ -673,7 +703,7 @@ rule sentdhiomr_stage1:
                 --bed_file {output.ins_bed} \
                 - 2>> {log}) \
         | sentieon bwa mem \
-            -R "@RG\\tID:hybrid-18893\\tSM:{config[sentdhio][sample_sm]}" \
+            -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
             -t {params.use_threads} \
             -x {params.model}/HybridStage1_bwa.model \
             {params.huref} \
@@ -808,13 +838,28 @@ rule sentdhiomr_stage3:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
- 
+        # Build --replace_rg args for SR reads: cluster_sample SM (no LR:1 tag)
+        SR_RGIDS=$(samtools view -H {input.sr_bam} | awk '
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
+                        sub(/^ID:/,"",$i);
+                        print $i
+                    }}
+                }}
+            }}')
+
+        SR_RG_ARGS=""
+        for rgid in $SR_RGIDS; do
+            SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
+        done
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
+            $LR_RG_ARGS $SR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
             -i {input.unmap_bam} \
             -i {input.alt_bam} \
@@ -891,7 +936,7 @@ rule sentdhiomr_pass2:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         sentieon driver \
@@ -1415,7 +1460,7 @@ rule sentdhiomr_call_svs:
 
         LR_RG_ARGS=""
         for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{config[sentdhio][sample_sm]}\\tLR:1"
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
         sentieon driver -r {params.huref} -t {params.use_threads} \
