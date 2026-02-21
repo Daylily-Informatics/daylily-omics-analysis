@@ -20,6 +20,7 @@ dependencies:
   - seqkit
   - seqfu
   - sambamba
+  - vg
   - kmc
   - jemalloc
   - isa-l=2.31.0
