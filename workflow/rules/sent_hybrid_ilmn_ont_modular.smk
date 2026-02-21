@@ -1173,7 +1173,7 @@ rule sentdhiom_transfer:
         vcpu=config['sentdhio']['threads_medium'],
         mem_mb=config['sentdhio']['mem_mb_medium'],
     conda:
-        "../envs/vanilla_v0.1.yaml"
+        "../envs/sentieon_v0.3.yaml"
     params:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         huref_fai=config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
