@@ -1199,31 +1199,29 @@ rule sentdhiom_transfer:
         bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
         bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
 
-        # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
-        if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
-            TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
-
-            echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
-
-            # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
-            # Then trimalt processes the merged output (CLI-equivalent single-pipe pattern)
-            bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
-                "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
-            sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
-            bgzip -c -@ {threads} > {output.vcf} 2>> {log}
-
-            # Create tabix index
-            bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
-
-            # Cleanup temp files
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/anno_rename.txt"
-        else
-            echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
-            mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
-            bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
+        # pop_vcf is required for transfer
+        if [ -z "{params.pop_vcf}" ] || [ ! -f "{params.pop_vcf}" ]; then
+            echo "ERROR: pop_vcf is not set or file not found: '{params.pop_vcf}'" >> {log}
+            exit 1
         fi
+
+        TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
+
+        echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
+
+        # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
+        # Then trimalt processes the merged output (CLI-equivalent single-pipe pattern)
+        bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
+            "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
+        sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
+        bgzip -c -@ {threads} > {output.vcf} 2>> {log}
+
+        # Create tabix index
+        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
+
+        # Cleanup temp files
+        rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
+              "$TMPDIR/anno_rename.txt"
 
         echo "Transfer completed at $(date)" >> {log}
         """
