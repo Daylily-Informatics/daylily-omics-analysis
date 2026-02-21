@@ -237,6 +237,8 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
     fig_w = max(14, n_cols * 0.95)
     fig_h = max(6, n_rows * 0.55 + 2.5)
     fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    fig.patch.set_facecolor((230/255, 230/255, 240/255))
+    ax.set_facecolor((230/255, 230/255, 240/255))
 
     cmap = plt.cm.RdYlGn.copy()
     cmap.set_bad(color=(40/255, 30/255, 10/255))
@@ -286,16 +288,16 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
         return c
 
     xlabels = [_reformat_xlabel(c) for c in columns]
-    ax.set_xticklabels(xlabels, rotation=55, ha="right", fontsize=11.9, fontweight="bold")
+    ax.set_xticklabels(xlabels, rotation=55, ha="right", fontsize=10.1, fontweight="bold")
 
     # Subtle background shading on x-axis labels grouped by platform (50% alpha)
     _PLATFORM_COLORS = {
-        "ILMN":     "#3b82f680",   # blue 50%
-        "ILMN+ONT": "#14b8a680",   # teal 50%
-        "ONT":      "#22c55e80",   # green 50%
-        "PacBio":   "#f59e0b80",   # amber 50%
-        "Ultima":   "#a855f780",   # purple 50%
-        "Roche":    "#ef444480",   # red 50%
+        "ILMN":     "#3b82f626",   # blue 15%
+        "ILMN+ONT": "#14b8a626",   # teal 15%
+        "ONT":      "#22c55e26",   # green 15%
+        "PacBio":   "#f59e0b26",   # amber 15%
+        "Ultima":   "#a855f726",   # purple 15%
+        "Roche":    "#ef444426",   # red 15%
     }
     for tick_label in ax.get_xticklabels():
         txt = tick_label.get_text()
@@ -395,14 +397,21 @@ def plot_heatmap(mat, cnt, dep, cov_levels, columns, spacer_indices,
                         zorder=6)
                     break
 
-    ax.set_xlabel("Platform + Aligner + Caller", fontsize=16.5)
+    ax.set_xlabel("(Sequencing Platforms) Analysis Pipeline Code", fontsize=16.5)
     ax.set_ylabel("Primary Measured Coverage (Binned)", fontsize=16.5)
     ax.set_title(f"Fscore — CmpFootprint={footprint} — SNPClass={snp_class}",
-                 fontsize=13, fontweight="bold", pad=30)
+                 fontsize=16.25, fontweight="bold", pad=30)
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
     cbar.ax.tick_params(labelsize=13.5)
     cbar.set_label("Fscore", fontsize=15)
+    # Ensure 0 and 1 appear on the colorbar scale
+    existing_ticks = list(cbar.get_ticks())
+    if 0.0 not in existing_ticks:
+        existing_ticks.insert(0, 0.0)
+    if 1.0 not in existing_ticks:
+        existing_ticks.append(1.0)
+    cbar.set_ticks(existing_ticks)
 
     plt.tight_layout()
     fig.savefig(out_path, format="svg", bbox_inches="tight")
