@@ -274,42 +274,48 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             vcpu=config["rtg_vcfeval"]["threads"],
             threads=config["rtg_vcfeval"]["threads"],
             partition=config["rtg_vcfeval"]["partition_other"]
-        # Note: conda directive removed - not allowed with run: blocks
+        conda:
+            config["rtg_vcfeval"]["env_yaml"]
         params:
             tdir=get_samp_concordance_truth_dir,
             alt_name=get_alt_sample_name,
             cluster_sample=ret_sample,
-        run:
-            import os
-            import datetime
+            footprints=lambda wc: ",".join(get_concordance_footprints(wc)),
+            nmqcs=lambda wc, input: len(input.mqcs),
+        shell:
+            """
+            set +euo pipefail;
 
-            # Ensure output directory exists.
-            outdir = os.path.dirname(str(output.s))
-            os.makedirs(outdir, exist_ok=True)
+            mkdir -p $(dirname {output.s});
+            mkdir -p $(dirname {log});
 
-            # Recreate the legacy "fofn" / "fin.cmds" as informational artifacts.
-            fps = get_concordance_footprints(wildcards)
+            utc_ts=$(date -u +%Y-%m-%dT%H:%M:%SZ);
 
-            with open(str(output.fofn), "w") as fofn_fh:
-                fofn_fh.write("# Refactor: per-ROI jobs are scheduled by Snakemake; this file is informational.\n")
-                fofn_fh.write(f"# generated_at_utc={datetime.datetime.utcnow().isoformat()}Z\n")
-                fofn_fh.write(f"# truth_dir={_norm_path(params.tdir)}\n")
-                fofn_fh.write(f"# footprints={','.join(fps)}\n")
-                for mqc in input.mqcs:
-                    fofn_fh.write(str(mqc) + "\n")
+            # Write informational fofn
+            {{
+                echo "# Refactor: per-ROI jobs are scheduled by Snakemake; this file is informational.";
+                echo "# generated_at_utc=$utc_ts";
+                echo "# truth_dir={params.tdir}";
+                echo "# footprints={params.footprints}";
+                for mqc in {input.mqcs}; do
+                    echo "$mqc";
+                done;
+            }} > {output.fofn};
 
-            with open(str(output.fin_cmds), "w") as fin_fh:
-                fin_fh.write("# Refactor: see Snakemake DAG for exact commands.\n")
-                fin_fh.write(f"# generated_at_utc={datetime.datetime.utcnow().isoformat()}Z\n")
+            # Write informational fin.cmds
+            {{
+                echo "# Refactor: see Snakemake DAG for exact commands.";
+                echo "# generated_at_utc=$utc_ts";
+            }} > {output.fin_cmds};
 
-            # Emit a SKIPPED sentinel if there are no footprints / no mqcs.
-            if len(input.mqcs) == 0:
-                with open(str(output.s) + ".SKIPPED", "w") as sk:
-                    sk.write("No truthset ROI directories found; concordance skipped.\n")
+            # SKIPPED sentinel if no mqcs
+            if [ "{params.nmqcs}" -eq 0 ]; then
+                echo "No truthset ROI directories found; concordance skipped." > {output.s}.SKIPPED;
+            fi;
 
-            # Touch the main sentinel log for compatibility.
-            with open(str(log[0]), "a") as lfh:
-                lfh.write(f"Concordance sentinel complete. footprints={len(fps)} mqcs={len(input.mqcs)}\n")
+            # Log
+            echo "Concordance sentinel complete. footprints={params.footprints} mqcs={params.nmqcs}" >> {log};
+            """
 
 
 else:
@@ -321,8 +327,6 @@ else:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz.tbi",
         output:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
-        benchmark:
-            MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.noconcordance.bench.tsv",
         threads: 1
         shell:
             "touch {output};"
@@ -347,8 +351,6 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         pc=print_wildcards_etc,
     output:
         touch(MDIR + "other_reports/giab_concordance_mqc.tsv")
-    benchmark:
-        MDIR + "/benchmarks/produce_snv_concordances.tsv"
     threads: 1
     shell:
         """
