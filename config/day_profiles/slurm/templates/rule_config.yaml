@@ -893,7 +893,7 @@ sent_aln_sort_snv:
 
 sentieon_pangenome_sr:
     threads: 192
-    env_yaml: "../envs/sentieon_v0.1.yaml"
+    env_yaml: "../envs/sent_pangenome_v0.1.yaml"
     mem_mb: 200000
     partition: "i192mem"
     constraint: ""
