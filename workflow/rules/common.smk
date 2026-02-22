@@ -177,6 +177,7 @@ _ALIGNER_TARGET_MAP = {
     "produce_strobe_align_sort_bam": "strobe",
     "produce_sentmm2_align_sort": "sentmm2",
     "produce_sentmm2ont_align_sort": "sentmm2ont",
+    "produce_pangenome_sr_vcf": "pangenome_sr",
 }
 if not ALIGNERS:
     _auto_aligners_env = os.environ.get('_DY_AUTO_ALIGNERS', '')
@@ -205,7 +206,7 @@ os.system(
 # Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
 # If no dedupers specified, defaults to ['na'] (no dedup).
 DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
-DDUP_VALID_CODES = {"dmd", "smd", "na"}
+DDUP_VALID_CODES = {"dmd", "smd", "spmd", "na"}
 
 DDUP = []
 if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
@@ -283,6 +284,7 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_sentdhio_vcf": "sentdhio",
     "produce_sentdhuo_vcf": "sentdhuo",
     "produce_sentpg_vcf": "sentpg",
+    "produce_pangenome_sr_vcf": "sentpg",
     "produce_sentieon_gatk_vcf": "gatk",
     "produce_deep19_vcf": "deep19",
     "produce_deep15_vcf": "deep15",
@@ -1589,6 +1591,8 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdhrpm": ["roche"],               # Modular Hybrid Roche+PB  → emits alnr=roche
     # Ensemble callers
     "ensemble":  ["ont", "pb", "sentmm2"],  # Multi-platform ensemble → emits alnr=ont, pb, or sentmm2
+    # Pangenome callers
+    "sentpg":    ["pangenome_sr"],           # Sentieon pangenome SR → emits alnr=pangenome_sr
 }
 
 
