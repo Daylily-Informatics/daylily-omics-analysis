@@ -188,6 +188,7 @@ _ALIGNER_TARGET_MAP = {
     "produce_sentmm2_align_sort": "sentmm2",
     "produce_sentmm2ont_align_sort": "sentmm2ont",
     "produce_pangenome_sr_vcf": "pangenome_sr",
+    "produce_pangenome_ug_vcf": "pangenome_ug",
 }
 if not ALIGNERS:
     _auto_aligners_env = os.environ.get('_DY_AUTO_ALIGNERS', '')
@@ -295,6 +296,7 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_sentdhuo_vcf": "sentdhuo",
     "produce_sentpg_vcf": "sentpg",
     "produce_pangenome_sr_vcf": "sentpg",
+    "produce_pangenome_ug_vcf": "sentpg",
     "produce_sentieon_gatk_vcf": "gatk",
     "produce_deep19_vcf": "deep19",
     "produce_deep15_vcf": "deep15",
@@ -1556,7 +1558,7 @@ def instrument(wildcards):
 # (e.g. via auto-detection) but are missing from CRAM_ALIGNERS (which is
 # populated from samples.tsv), reconcile here so they are never routed
 # through the BAM-based no_dedup / markdup rules.
-_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb", "pangenome_sr"}
+_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb", "pangenome_sr", "pangenome_ug"}
 for _a in ALIGNERS:
     if _a in _KNOWN_CRAM_ALIGNERS and _a not in CRAM_ALIGNERS:
         CRAM_ALIGNERS.append(_a)
@@ -1602,7 +1604,7 @@ _SNV_CALLER_VALID_ALIGNERS = {
     # Ensemble callers
     "ensemble":  ["ont", "pb", "sentmm2"],  # Multi-platform ensemble → emits alnr=ont, pb, or sentmm2
     # Pangenome callers
-    "sentpg":    ["pangenome_sr"],           # Sentieon pangenome SR → emits alnr=pangenome_sr
+    "sentpg":    ["pangenome_sr", "pangenome_ug"],  # Sentieon pangenome → emits alnr=pangenome_sr or pangenome_ug
 }
 
 
