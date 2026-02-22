@@ -6,8 +6,8 @@ import os
 # alignment (via GBZ graph reference) and variant calling for Illumina
 # paired-end WGS data.  No vg/XG/snarls dependencies required.
 #
-# Outputs per sample:
-#   {sample}.pangenome_sr.snv.vcf.gz     - SNV/indel VCF (model-applied)
+# Outputs per sample (at standard concordance-compatible path):
+#   {sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz
 #
 
 rule sentieon_pangenome_sr:
@@ -18,19 +18,19 @@ rule sentieon_pangenome_sr:
         f2=getR2s,
     output:
         vcfgz=MDIR
-        + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz",
+        + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz",
         vcfgztbi=MDIR
-        + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz.tbi",
+        + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz.tbi",
     log:
         MDIR
-        + "{sample}/align/pangenome/log/{sample}.pangenome_sr.log",
+        + "{sample}/align/pangenome_sr/spmd/snv/sentpg/log/{sample}.pangenome_sr.spmd.sentpg.log",
     threads: config["sentieon_pangenome_sr"]["threads"]
     conda:
         config["sentieon_pangenome_sr"]["env_yaml"]
     priority: 5
     benchmark:
         repeat(
-            MDIR + "{sample}/benchmarks/{sample}.pangenome_sr.bench.tsv",
+            MDIR + "{sample}/benchmarks/{sample}.pangenome_sr.spmd.sentpg.bench.tsv",
             0
             if "bench_repeat" not in config["sentieon_pangenome_sr"]
             else config["sentieon_pangenome_sr"]["bench_repeat"],
@@ -178,7 +178,7 @@ localrules:
 rule clear_combined_pangenome_sr_vcf:  # TARGET: clear combined pangenome sr vcf
     input:
         expand(
-            MDIR + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz",
+            MDIR + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz",
             sample=SAMPS,
         ),
     threads: 2
@@ -197,7 +197,7 @@ rule produce_pangenome_sr_vcf:  # TARGET: sentieon pangenome vcf
     input:
         expand(
             MDIR
-            + "{sample}/align/pangenome/{sample}.pangenome_sr.snv.vcf.gz.tbi",
+            + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz.tbi",
             sample=SAMPS,
         ),
     output:
