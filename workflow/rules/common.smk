@@ -312,6 +312,11 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_sent_TNscope_vcf": "senttn",
     "produce_rochehc_vcf": "rochehc",
     "produce_deep19_r_vcf": "deep19r",
+    # Modular refactored hybrid targets (r-suffix)
+    "produce_sentdhiomr_vcf": "sentdhiomr",
+    "produce_sentdhipmr_vcf": "sentdhipmr",
+    "produce_sentdhuomr_vcf": "sentdhuomr",
+    "produce_sentdhupmr_vcf": "sentdhupmr",
 }
 if not snv_CALLERS:
     _auto_snv_env = os.environ.get('_DY_AUTO_SNV_CALLERS', '')
@@ -1601,6 +1606,11 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdhupm": ["sentmm2"],             # Modular Hybrid Ultima+PB → emits alnr=sentmm2
     "sentdhrom": ["roche"],               # Modular Hybrid Roche+ONT → emits alnr=roche
     "sentdhrpm": ["roche"],               # Modular Hybrid Roche+PB  → emits alnr=roche
+    # Hybrid modular refactored callers (r-suffix)
+    "sentdhiomr": ["ont"],                 # Modular Refactored Hybrid Ilmn+ONT  → emits alnr=ont
+    "sentdhipmr": ["sentmm2"],            # Modular Refactored Hybrid Ilmn+PB   → emits alnr=sentmm2
+    "sentdhuomr": ["ug"],                  # Modular Refactored Hybrid Ultima+ONT → emits alnr=ug
+    "sentdhupmr": ["ug"],                  # Modular Refactored Hybrid Ultima+PB  → emits alnr=ug
     # Ensemble callers
     "ensemble":  ["ont", "pb", "sentmm2"],  # Multi-platform ensemble → emits alnr=ont, pb, or sentmm2
     # Pangenome callers
