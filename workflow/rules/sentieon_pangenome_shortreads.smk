@@ -6,10 +6,8 @@ import os
 # alignment (via GBZ graph reference) and variant calling for Illumina
 # paired-end WGS data.  No vg/XG/snarls dependencies required.
 #
-# Outputs per sample:
+# Outputs per sample (at standard concordance-compatible path):
 #   {sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz
-#   {sample}/align/pangenome_sr/spmd/{sample}.pangenome_sr.spmd.cram        (surjected + deduped)
-#   {sample}/align/pangenome_sr/spmd/{sample}.pangenome_sr.spmd.cram.crai
 #
 
 rule sentieon_pangenome_sr:
@@ -23,10 +21,6 @@ rule sentieon_pangenome_sr:
         + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz",
         vcfgztbi=MDIR
         + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz.tbi",
-        cram=MDIR
-        + "{sample}/align/pangenome_sr/spmd/{sample}.pangenome_sr.spmd.cram",
-        crai=MDIR
-        + "{sample}/align/pangenome_sr/spmd/{sample}.pangenome_sr.spmd.cram.crai",
     log:
         MDIR
         + "{sample}/align/pangenome_sr/spmd/snv/sentpg/log/{sample}.pangenome_sr.spmd.sentpg.log",
@@ -169,19 +163,6 @@ rule sentieon_pangenome_sr:
         else
             echo "ERROR: VCF not produced by sentieon-cli sentieon-pangenome" >> {log} 2>&1;
             exit 20;
-        fi
-
-        # --- Preserve CRAM produced by sentieon-cli ---
-        cram_src="${{cli_out}}_pangenome-aligned.cram";
-        if [ -f "$cram_src" ]; then
-            mkdir -p "$(dirname {output.cram})";
-            cp "$cram_src" {output.cram} >> {log} 2>&1;
-            samtools index -@ {threads} {output.cram} >> {log} 2>&1;
-            echo "CRAM preserved: {output.cram} ($(du -h {output.cram} | cut -f1))" >> {log} 2>&1;
-        else
-            echo "WARNING: CRAM not found at $cram_src — listing TMPDIR:" >> {log} 2>&1;
-            ls -la "$TMPDIR"/ >> {log} 2>&1;
-            exit 21;
         fi
 
         end_time=$(date +%s);
