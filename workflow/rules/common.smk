@@ -1556,7 +1556,7 @@ def instrument(wildcards):
 # (e.g. via auto-detection) but are missing from CRAM_ALIGNERS (which is
 # populated from samples.tsv), reconcile here so they are never routed
 # through the BAM-based no_dedup / markdup rules.
-_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb"}
+_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb", "pangenome_sr"}
 for _a in ALIGNERS:
     if _a in _KNOWN_CRAM_ALIGNERS and _a not in CRAM_ALIGNERS:
         CRAM_ALIGNERS.append(_a)
