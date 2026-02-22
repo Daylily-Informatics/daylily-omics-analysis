@@ -144,6 +144,16 @@ SENTDHUPM_CHRMS = SENTDHUP_CHRMS  # Modular Ultima+PacBio hybrid
 SENTDHROM_CHRMS = config["sentdhrom"][f"{config['genome_build']}_sentdhrom_chrms"].split(",")  # Modular Roche+ONT hybrid
 SENTDHRPM_CHRMS = config["sentdhrpm"][f"{config['genome_build']}_sentdhrpm_chrms"].split(",")  # Modular Roche+PacBio hybrid
 
+# Modular refactored hybrid workflows - each uses its own config section (r-suffix)
+SENTDHIOMR_CHRMS = config["sentdhiomr"][f"{config['genome_build']}_sentdhiomr_chrms"].split(",")
+SENTDHIOMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIOMR_CHRMS)
+SENTDHIPMR_CHRMS = config["sentdhipmr"][f"{config['genome_build']}_sentdhipmr_chrms"].split(",")
+SENTDHIPMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIPMR_CHRMS)
+SENTDHUPMR_CHRMS = config["sentdhupmr"][f"{config['genome_build']}_sentdhupmr_chrms"].split(",")
+SENTDHUPMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHUPMR_CHRMS)
+SENTDHUOMR_CHRMS = config["sentdhuomr"][f"{config['genome_build']}_sentdhuomr_chrms"].split(",")
+SENTDHUOMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHUOMR_CHRMS)
+
 # Sentieon GATK HaplotypeCaller
 GATK_CHRMS = config["sentieon_gatk"][f"{config['genome_build']}_sentieon_gatk_chrms"].split(",")
 
