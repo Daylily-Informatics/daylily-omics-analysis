@@ -702,6 +702,106 @@ sentdhrpm:
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
 
+
+# Hybrid Modular Refactored Illumina+ONT
+sentdhiomr:
+    threads: 192
+    use_threads: 188
+    hg38_sentdhiomr_chrms: "1-24"
+    hg38_broad_sentdhiomr_chrms: "1-24"
+    b37_sentdhiomr_chrms: "1-24"
+    ld_preload: " "
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192mem,i192bigmem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
+    max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
+
+# Hybrid Modular Refactored Illumina+PacBio
+sentdhipmr:
+    threads: 192
+    use_threads: 190
+    hg38_sentdhipmr_chrms: "1-24"
+    hg38_broad_sentdhipmr_chrms: "1-24"
+    b37_sentdhipmr_chrms: "1-24"
+    ld_preload: " "
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192mem,i192bigmem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
+    max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
+
+# Hybrid Modular Refactored Ultima+PacBio
+sentdhupmr:
+    threads: 192
+    use_threads: 190
+    hg38_sentdhupmr_chrms: "1-24"
+    hg38_broad_sentdhupmr_chrms: "1-24"
+    b37_sentdhupmr_chrms: "1-24"
+    ld_preload: " "
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192mem,i192bigmem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
+    max_mem: "140G"
+    igz: "  igzip -cd -T 32 "
+
+# Hybrid Modular Refactored Ultima+ONT
+sentdhuomr:
+    threads: 192
+    use_threads: 188
+    hg38_sentdhuomr_chrms: "1-24"
+    hg38_broad_sentdhuomr_chrms: "1-24"
+    b37_sentdhuomr_chrms: "1-24"
+    ld_preload: " "
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192mem,i192bigmem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    mem_mb: 300000
+    mem_mb_medium: 75000
+    mem_mb_light: 16000
+    threads_medium: 48
+    threads_light: 8
+    use_threads_medium: 46
+    use_threads_light: 6
+    max_mem: "140G"
+
 sentdug:
     threads: 192
     use_threads: 190
@@ -809,6 +909,7 @@ qualimap:
 
 rtg_vcfeval:
     threads: 16
+    sub_threads: 16
     env_yaml: "../envs/rtgtools_v0.1.yaml"
     ld_preload: " "
     partition: "i192,i192mem,i128"
