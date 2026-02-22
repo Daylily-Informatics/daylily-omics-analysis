@@ -678,30 +678,40 @@ rule sentdhiomr_stage1:
         unset bwt_max_mem || true
 
         # Match sentieon-cli hybrid_stage1():
-        #   cat( HybridStage1.stdout , HybridStage1_ins.stdout )
-        #   | bwa mem -x HybridStage1_bwa.model -R "@RG\tID:hybrid-18893\tSM:<SM>"
-        #   | util sort --sam2bam
-        cat \
-            <(sentieon driver \
-                $LR_RG_ARGS --input {input.lr_cram} \
-                --reference {params.huref} \
-                --thread_count {params.use_threads} \
-                --interval {input.diff_bed} \
-                --algo HybridStage1 \
-                --model {params.model}/HybridStage1.model \
-                --hap_bam {output.hap_bam} \
-                --hap_bed {output.hap_bed} \
-                --hap_vcf {output.hap_vcf} \
-                - 2>> {log}) \
-            <(sentieon driver \
-                $LR_RG_ARGS --input {input.lr_cram} \
-                --reference {params.huref} \
-                --thread_count {params.use_threads} \
-                --algo HybridStage1 \
-                --model {params.model}/HybridStage1_ins.model \
-                --fa_file {output.ins_fa} \
-                --bed_file {output.ins_bed} \
-                - 2>> {log}) \
+        #   Run HAP + INS drivers sequentially to temp files, then cat | bwa mem | util sort
+        #   (sequential execution ensures set -euo pipefail catches driver failures;
+        #    process substitution <(...) silently swallows failures)
+
+        # 1. Haplotype assembly driver → stdout to temp file, side-outputs written directly
+        echo "Starting HAP driver at $(date)" >> {log}
+        sentieon driver \
+            $LR_RG_ARGS --input {input.lr_cram} \
+            --reference {params.huref} \
+            --thread_count {params.use_threads} \
+            --interval {input.diff_bed} \
+            --algo HybridStage1 \
+            --model {params.model}/HybridStage1.model \
+            --hap_bam {output.hap_bam} \
+            --hap_bed {output.hap_bed} \
+            --hap_vcf {output.hap_vcf} \
+            - 2>> {log} > "$TMPDIR/hap_stdout.sam"
+        echo "HAP driver finished at $(date)" >> {log}
+
+        # 2. Insertion detection driver → stdout to temp file, side-outputs written directly
+        echo "Starting INS driver at $(date)" >> {log}
+        sentieon driver \
+            $LR_RG_ARGS --input {input.lr_cram} \
+            --reference {params.huref} \
+            --thread_count {params.use_threads} \
+            --algo HybridStage1 \
+            --model {params.model}/HybridStage1_ins.model \
+            --fa_file {output.ins_fa} \
+            --bed_file {output.ins_bed} \
+            - 2>> {log} > "$TMPDIR/ins_stdout.sam"
+        echo "INS driver finished at $(date)" >> {log}
+
+        # 3. Cat both driver outputs → bwa mem → util sort
+        cat "$TMPDIR/hap_stdout.sam" "$TMPDIR/ins_stdout.sam" \
         | sentieon bwa mem \
             -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
             -t {params.use_threads} \
@@ -714,7 +724,16 @@ rule sentdhiomr_stage1:
             -o {output.bam} \
             --sam2bam >> {log} 2>&1
 
-        # Index hap BAM for downstream rules
+        # 4. Validate all expected outputs exist and are non-empty
+        sync
+        for f in {output.hap_bam} {output.hap_bed} {output.hap_vcf} {output.ins_fa} {output.ins_bed} {output.bam}; do
+            if [[ ! -s "$f" ]]; then
+                echo "ERROR: Missing or empty output: $f" >> {log}
+                exit 1
+            fi
+        done
+
+        # 5. Index hap BAM for downstream rules
         samtools index {output.hap_bam} >> {log} 2>&1
 
         echo "Stage1 completed at $(date)" >> {log}
