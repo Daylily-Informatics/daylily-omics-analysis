@@ -131,8 +131,8 @@ rule sentdhupmr_pass1:
             $LR_RG_ARGS -i {input.pb_cram} \
             $SR_RG_ARGS -i {input.ug_cram} \
             {params.diploid_bed} \
-            -d {params.pop_vcf} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
@@ -668,8 +668,8 @@ rule sentdhupmr_pass2:
             -i {input.stage3_bam} \
             --interval {input.bed} \
             {params.diploid_bed} \
-            -d {params.pop_vcf} \
             --algo DNAscope \
+            -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
             --pcr_indel_model none \
             {output.vcf} >> {log} 2>&1
