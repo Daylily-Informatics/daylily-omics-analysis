@@ -78,6 +78,14 @@ rule sentieon_pangenome_ug:
         echo "INSTANCE TYPE: $itype" > {log};
         start_time=$(date +%s);
 
+        # Prepend patched KMC (Sentieon fork with stdin support) to PATH
+        export PATH="$DAY_ROOT/resources/kmc/bin:$PATH";
+        if ! command -v kmc &>/dev/null; then
+            echo "ERROR: patched kmc not found at $DAY_ROOT/resources/kmc/bin/kmc" >> {log} 2>&1;
+            exit 6;
+        fi
+        echo "Using patched KMC: $(which kmc)" >> {log} 2>&1;
+
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S);

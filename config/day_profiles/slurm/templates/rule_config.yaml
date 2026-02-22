@@ -1009,7 +1009,7 @@ sentieon_pangenome_sr:
 
 sentieon_pangenome_ug:
     threads: 128
-    env_yaml: "../envs/sent_pangenome_v0.1.yaml"
+    env_yaml: "../envs/pangenome_ultima_v0.1.yaml"
     mem_mb: 200000
     partition: "i128,i192mem,i192bigmem"
     constraint: ""
