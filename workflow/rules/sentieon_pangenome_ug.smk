@@ -6,7 +6,7 @@ import os
 # alignment (via GBZ graph reference) and variant calling for Ultima
 # Genomics single-end WGS data.
 #
-# Input:  Staged Ultima CRAM  →  FASTQ extraction  →  pangenome pipeline
+# Input:  Staged Ultima CRAM  →  pangenome pipeline (direct CRAM input via -i)
 #
 # Outputs per sample:
 #   {sample}/align/pangenome_ug/spmd/snv/sentpg/{sample}.pangenome_ug.spmd.sentpg.snv.sort.vcf.gz
@@ -60,13 +60,6 @@ rule sentieon_pangenome_ug:
         dbsnp=config["sentieon_pangenome_ug"]["dbsnp"],
         pcr_free=config["sentieon_pangenome_ug"]["pcr_free"],
         cluster_sample=ret_sample,
-        rgpl="ULTIMA",
-        rgpu="presumedCombinedLanes",
-        rgsm=ret_sample,
-        rgid=ret_sample,
-        rglb="_presumedNoAmpWGS",
-        rgcn="CenterName",
-        rgpg="sentieonPangenome",
     shell:
         """
 
@@ -84,7 +77,6 @@ rule sentieon_pangenome_ug:
         itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type);
         echo "INSTANCE TYPE: $itype" > {log};
         start_time=$(date +%s);
-        epocsec=$(date +'%s');
 
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
@@ -125,12 +117,6 @@ rule sentieon_pangenome_ug:
             echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
 
-        # --- Extract single-end FASTQ from Ultima CRAM ---
-        ug_fq="$TMPDIR/{wildcards.sample}.ug_reads.fastq";
-        echo "Extracting FASTQ from Ultima CRAM: {input.cram}" >> {log} 2>&1;
-        samtools fastq -@ {threads} --reference {params.huref} -0 "$ug_fq" {input.cram} >> {log} 2>&1;
-        echo "FASTQ extracted: $(wc -l < "$ug_fq") lines" >> {log} 2>&1;
-
         # --- Build optional flags ---
         pcr_flag="";
         if [[ "{params.pcr_free}" == "true" ]]; then
@@ -140,7 +126,8 @@ rule sentieon_pangenome_ug:
         # --- sentieon-cli sentieon-pangenome (accelerated pipeline) ---
         cli_out="$TMPDIR/{wildcards.sample}.pangenome_ug";
 
-        echo "sentieon-cli sentieon-pangenome starting (Ultima)" >> {log} 2>&1;
+        echo "sentieon-cli sentieon-pangenome starting (Ultima, CRAM input mode)" >> {log} 2>&1;
+        echo "  input_cram={input.cram}" >> {log} 2>&1;
         echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
@@ -151,8 +138,7 @@ rule sentieon_pangenome_ug:
             --gbz "{params.gbz}" \
             -m "{params.model}" \
             --pop_vcf "{params.pop_vcf}" \
-            --r1_fastq "$ug_fq" \
-            --readgroup "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}" \
+            -i {input.cram} \
             -b "{params.canonical_bed}" \
             --dbsnp "{params.dbsnp}" \
             $pcr_flag \
