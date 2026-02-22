@@ -81,7 +81,8 @@ rule sentieon_pangenome_sr:
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/pangenome_sr_tmp_${{timestamp}}_$$";
+        # Use /fsx/scratch for TMPDIR — /dev/shm is too small for 30x+ WGS
+        export TMPDIR="/fsx/scratch/pangenome_sr_tmp_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
@@ -90,7 +91,7 @@ rule sentieon_pangenome_sr:
         fi
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /dev/shm >> {log} 2>&1;
+        df -h /fsx/scratch >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
