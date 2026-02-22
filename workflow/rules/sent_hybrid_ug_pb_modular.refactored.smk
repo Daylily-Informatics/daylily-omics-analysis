@@ -810,74 +810,129 @@ rule sentdhupmr_anno:
 
 
 # ---------------------------------------------------------------------------
-# Rule 13: Transfer - Annotation transfer from population VCF (if pop_vcf set)
+# Rule 13: Transfer - Annotation transfer from population VCF (per-chromosome sharded)
+# ---------------------------------------------------------------------------
+# The transfer step is sharded per-chromosome for parallel execution.
+# Input comes from the whole-genome anno VCF (dchrm="1-24"), and each shard
+# processes a single chromosome using bcftools merge --regions.
+# A gather rule (sentdhupmr_transfer_merge) concatenates shards before model_apply.
 # ---------------------------------------------------------------------------
 rule sentdhupmr_transfer:
-    """Transfer annotations from population VCF using bcftools merge"""
+    """Transfer annotations from population VCF using bcftools merge + trimalt pipe (per-chromosome shard)"""
     input:
         anno_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
+        anno_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/transfer_shards/transfer.{tchrm}.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/transfer_shards/transfer.{tchrm}.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHUPMR)
+        alnr="|".join(ALIGNERS_DHUPMR),
+        tchrm="|".join(SENTDHUPMR_CHRMS_TRANSFER),
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer.{tchrm}.log",
     threads: config['sentdhupmr']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhupmr.{dchrm}.transfer.{tchrm}.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192mem,i192bigmem,i192",
         threads=config['sentdhupmr']['threads_light'],
         vcpu=config['sentdhupmr']['threads_light'],
         mem_mb=config['sentdhupmr']['mem_mb_light'],
     params:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
-        use_threads=config["sentdhupmr"]["use_threads_light"],
         cluster_sample=ret_sample,
+        regions=lambda wildcards: get_dchrm_day(type('obj', (object,), {'dchrm': wildcards.tchrm})()),
     shell:
         """
         set -euo pipefail
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        echo "Starting annotation transfer at $(date)" >> {log}
+        echo "Starting annotation transfer shard {wildcards.tchrm} (regions: {params.regions}) at $(date)" >> {log}
 
         TMPDIR=$(dirname {output.vcf})
+        mkdir -p "$TMPDIR"
 
         # Reheader anno_vcf to use cluster_sample name (use old\tnew format)
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
         echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
-        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.txt"
-        bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.txt" -o "$TMPDIR/anno_reheadered.vcf.gz" {input.anno_vcf} >> {log} 2>&1
-        bcftools index -t --threads {threads} "$TMPDIR/anno_reheadered.vcf.gz" >> {log} 2>&1
+        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.{wildcards.tchrm}.txt"
+        bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.{wildcards.tchrm}.txt" -o "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {input.anno_vcf} >> {log} 2>&1
+        bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" >> {log} 2>&1
 
-        # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
-        # Note: pop_vcf is a sites-only VCF (no samples) - don't try to reheader it
-        if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
-            TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
-
-            echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
-
-            # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
-            # Then trimalt processes the merged output
-            bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
-                "$TMPDIR/anno_reheadered.vcf.gz" {params.pop_vcf} 2>> {log} | \
-            sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
-            bgzip -c -@ {threads} > {output.vcf} 2>> {log}
-
-            # Create tabix index
-            bcftools index -t --threads {threads} {output.vcf} >> {log} 2>&1
-
-            # Cleanup temp files
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz" "$TMPDIR/anno_reheadered.vcf.gz.tbi" \
-                  "$TMPDIR/anno_rename.txt"
-        else
-            echo "No pop_vcf configured, using reheadered anno VCF directly" >> {log}
-            mv "$TMPDIR/anno_reheadered.vcf.gz" {output.vcf}
-            bcftools index -t --threads {threads} {output.vcf} >> {log} 2>&1
-            rm -f "$TMPDIR/anno_reheadered.vcf.gz.tbi" "$TMPDIR/anno_rename.txt"
+        # pop_vcf is required for transfer
+        if [ -z "{params.pop_vcf}" ] || [ ! -f "{params.pop_vcf}" ]; then
+            echo "ERROR: pop_vcf is not set or file not found: '{params.pop_vcf}'" >> {log}
+            exit 1
         fi
 
-        echo "Transfer completed at $(date)" >> {log}
+        TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
+
+        echo "Transferring annotations from pop_vcf: {params.pop_vcf} for regions: {params.regions}" >> {log}
+
+        bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
+            --regions {params.regions} \
+            "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {params.pop_vcf} 2>> {log} | \
+        sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
+        bgzip -c -@ {threads} > {output.vcf} 2>> {log}
+
+        # Create tabix index
+        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
+
+        # Cleanup temp files
+        rm -f "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" \
+              "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz.tbi" \
+              "$TMPDIR/anno_rename.{wildcards.tchrm}.txt"
+
+        echo "Transfer shard {wildcards.tchrm} completed at $(date)" >> {log}
+        """
+
+
+# ---------------------------------------------------------------------------
+# Rule 13b: Transfer Merge - Gather per-chromosome transfer shards
+# ---------------------------------------------------------------------------
+rule sentdhupmr_transfer_merge:
+    """Concatenate per-chromosome transfer shards into single VCF for model_apply"""
+    input:
+        shards=sorted(
+            expand(
+                MDIR
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhupmr/vcfs/{{dchrm}}/tmp/transfer_shards/transfer.{tchrm}.vcf.gz",
+                tchrm=SENTDHUPMR_CHRMS_TRANSFER,
+            ),
+            key=lambda x: int(x.rsplit("transfer.", 1)[1].split(".vcf.gz")[0])
+            if x.rsplit("transfer.", 1)[1].split(".vcf.gz")[0].isdigit()
+            else 99,
+        ),
+    output:
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHUPMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhupmr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer_merge.log",
+    threads: config['sentdhupmr']['threads_light']
+    conda:
+        "../envs/vanilla_v0.1.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhupmr.{dchrm}.transfer_merge.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem,i192",
+        threads=config['sentdhupmr']['threads_light'],
+        vcpu=config['sentdhupmr']['threads_light'],
+        mem_mb=config['sentdhupmr']['mem_mb_light'],
+    params:
+        cluster_sample=ret_sample,
+    shell:
+        """
+        set -euo pipefail
+        echo "Merging transfer shards at $(date)" >> {log}
+
+        bcftools concat --threads {threads} -a -d all -O z -o {output.vcf} {input.shards} >> {log} 2>&1
+        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
+
+        echo "Transfer merge completed at $(date)" >> {log}
         """
 
 
@@ -1113,6 +1168,107 @@ rule produce_sentdhupmr_vcf:  # TARGET: sentieon dnascope hybrid ultima+ont modu
     shell:
         """( touch {output} ;
 
+        ls {output} ) >> {log} 2>&1;
+        """
+
+
+# ===========================================================================
+# SV CALLING: LongReadSV structural variant calling (whole-genome, not chunked)
+# ===========================================================================
+
+rule sentdhupmr_call_svs:
+    """Call structural variants using LongReadSV on PacBio long reads"""
+    input:
+        lr_cram=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
+        lr_crai=MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram.crai",
+    output:
+        sv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhupmr/{sample}.{alnr}.{ddup}.sentdhupmr.sv.vcf.gz",
+        sv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhupmr/{sample}.{alnr}.{ddup}.sentdhupmr.sv.vcf.gz.tbi",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHUPMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhupmr/log/{sample}.{alnr}.{ddup}.sentdhupmr.sv.log",
+    threads: config['sentdhupmr']['threads']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhupmr.sv.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhupmr']['threads'],
+        vcpu=config['sentdhupmr']['threads'],
+        mem_mb=config['sentdhupmr']['mem_mb'],
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        model=config["sentdhupmr"]["dna_scope_snv_model"],
+        diploid_bed=get_diploid_bed_interval_arg,
+        use_threads=config["sentdhupmr"]["use_threads"],
+        cluster_sample=ret_sample,
+    shell:
+        """
+        set -euo pipefail
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhupmr_sv_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+
+        mkdir -p $(dirname {log})
+        echo "Starting LongReadSV at $(date)" >> {log}
+
+        # Build LR readgroup replacement args: LR reads get LR:1 tag
+        RGIDS=$(samtools view -H {input.lr_cram} | awk '
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
+                        sub(/^ID:/,"",$i);
+                        print $i
+                    }}
+                }}
+            }}')
+
+        LR_RG_ARGS=""
+        for rgid in $RGIDS; do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+
+        sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            $LR_RG_ARGS -i {input.lr_cram} \
+            {params.diploid_bed} \
+            --algo LongReadSV \
+            --model {params.model}/longreadsv.model \
+            {output.sv_vcf} >> {log} 2>&1
+
+        bcftools index -t -f {output.sv_vcf} >> {log} 2>&1
+
+        echo "LongReadSV completed at $(date)" >> {log}
+        """
+
+
+localrules:
+    produce_sentdhupmr_sv,
+
+
+rule produce_sentdhupmr_sv:  # TARGET: sentieon longreadsv hybrid ultima+pb modular sv vcf
+    input:
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/sv/sentdhupmr/{sample}.{alnr}.{ddup}.sentdhupmr.sv.vcf.gz.tbi",
+            sample=SSAMPS,
+            alnr=ALIGNERS_DHUPMR,
+            ddup=DDUP,
+        ),
+    output:
+        "gatheredall.sentdhupmr.sv",
+    priority: 48
+    threads: 1
+    log:
+        "gatheredall.sentdhupmr.sv.log",
+    shell:
+        """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
         """
 
