@@ -53,7 +53,7 @@ CALLER_DISPLAY = {
 
 # Hybrid callers to compress into a single column per ONT bin.
 # When multiple callers exist at the same ONT bin, keep the max Fscore.
-HYBRID_CALLERS = {"sentdhio", "sentdhiom", "sentdhiomr"}
+HYBRID_CALLERS = {"sentdhiomr"}
 
 # Map measured ONT secondary coverage → display ONT bin
 ONT_BIN_MAP = {
