@@ -18,6 +18,9 @@ TEST_GROUPS = [
     ("hio_fillin", "hio_fillin/giab_concordance_mqc.tsv", "hio_fillin/alignstats_combo_mqc.tsv"),
     ("hio_old", "hio_old/giab_concordance_mqc.tsv", "hio_old/alignstats_combo_mqc.tsv"),
     ("hiom_jem", "hiom_jem/giab_concordance_mqc.tsv", "hiom_jem/alignstats_combo_mqc.tsv"),
+    ("hiomr_midd", "hiomr_midd/giab_concordance_mqc.tsv", "hiomr_midd/alignstats_combo_mqc.tsv"),
+    ("hiomr_one", "hiomr_one/giab_concordance_mqc.tsv", None),
+    ("hiomr_two", "hiomr_two/giab_concordance_mqc.tsv", "hiomr_two/alignstats_combo_mqc.tsv"),
     ("huo_old", "huo_old/giab_concordance_mqc.tsv", "huo_old/alignstats_combo_mqc.tsv"),
     ("ilmn_all_downsamples_a", "ilmn_all_downsamples_a/giab_concordance_mqc.tsv", "ilmn_all_downsamples_a/alignstats_combo_mqc.tsv"),
     ("ilmn_gatk_b", "ilmn_gatk_b/giab_concordance_mqc.tsv", "ilmn_gatk_b/alignstats_combo_mqc.tsv"),
@@ -27,6 +30,7 @@ TEST_GROUPS = [
     ("ont_ds", "ont_ds/ont_patch/giab_concordance_mqc.tsv", "ont_ds/ont_patch/alignstats_combo_mqc.tsv"),
     ("ont_dv19", "ont_dv19/giab_concordance_mqc.tsv", "ont_dv19/alignstats_combo_mqc.tsv"),
     ("pacbio_ds", "pacbio_ds/giab_concordance_mqc.tsv", "pacbio_ds/alignstats_combo_mqc.tsv"),
+    ("pan_ilmn_x", "pan_ilmn_x/giab_concordance_mqc.tsv", None),
     ("pangenome_3_and_30x", "pangenome_3_and_30x/giab_concordance_mqc.tsv", None),
     ("pb_hg003_prod", "pb_hg003_prod/giab_concordance_mqc.tsv", "pb_hg003_prod/alignstats_combo_mqc.tsv"),
     ("roche_ds_a", "roche_ds_a/giab_concordance_mqc.tsv", "roche_ds_a/alignstats_combo_mqc.tsv"),
@@ -35,12 +39,17 @@ TEST_GROUPS = [
     ("roche_hg003_coverage_series", "roche_hg003_coverage_series/giab_concordance_mqc.tsv", "roche_hg003_coverage_series/alignstats_combo_mqc.tsv"),
     ("sentdhiomr", "sentdhiomr_results/other_reports/giab_concordance_mqc.tsv", "sentdhiomr_results/other_reports/alignstats_combo_mqc.tsv"),
     ("ultima_ds", "ultima_ds/giab_concordance_mqc.tsv", "ultima_ds/alignstats_combo_mqc.tsv"),
+    ("ilmn_fin_pan", "ilmn_fin_pan/giab_concordance_mqc.tsv", None),
+    ("ont_two", "ont_two/giab_concordance_mqc.tsv", None),
+    ("RLEN", "RLEN/giab_concordance_mqc.tsv", "RLEN/alignstats_combo_mqc.tsv"),
+    ("read_len", "read_len/giab_concordance_mqc.tsv", None),
+    ("ug_pan", "ug_pan/giab_concordance_mqc.tsv", None),
 ]
 
 ILMN_SOLO_ALIGNSTATS = os.path.join(SRC_DATA_DIR, "ilmn_hg003_ilmn_sentonly/alignstats_combo_mqc.tsv")
 ONT_SOLO_ALIGNSTATS = os.path.join(SRC_DATA_DIR, "ont_ds/ont_patch/alignstats_combo_mqc.tsv")
 
-HIO_PATTERN = re.compile(r"^HIO[ab]-.*-SR(\d+)x-ONT(\d+)x-")
+HIO_PATTERN = re.compile(r"^HIO[ab]-.*-SR(\d+)x-ONT(\d+)b?x-")
 HIO_OLD_PATTERN = re.compile(r"^HIOv1_HG003_")
 HUO_PATTERN = re.compile(r"^HUOv1_")
 COV_PATTERN = re.compile(r"HG003-(\d+)x")
@@ -63,6 +72,9 @@ PRIMARY_SEQ_PLATFORM = {
     "hio_fillin": "ILMN",
     "hio_old": "ILMN",
     "hiom_jem": "ILMN",
+    "hiomr_midd": "ILMN",
+    "hiomr_one": "ILMN",
+    "hiomr_two": "ILMN",
     "huo_old": "Ultima",
     "ilmn_all_downsamples_a": "ILMN",
     "ilmn_gatk_b": "ILMN",
@@ -72,6 +84,7 @@ PRIMARY_SEQ_PLATFORM = {
     "ont_ds": "ONT",
     "ont_dv19": "ONT",
     "pacbio_ds": "PacBio",
+    "pan_ilmn_x": "ILMN",
     "pangenome_3_and_30x": "ILMN",
     "pb_hg003_prod": "PacBio",
     "roche_ds_a": "Roche",
@@ -80,6 +93,11 @@ PRIMARY_SEQ_PLATFORM = {
     "roche_hg003_coverage_series": "Roche",
     "sentdhiomr": "ILMN",
     "ultima_ds": "Ultima",
+    "ilmn_fin_pan": "ILMN",
+    "ont_two": "ONT",
+    "RLEN": "ILMN",
+    "read_len": "ONT",
+    "ug_pan": "Ultima",
 }
 
 SECONDARY_SEQ_PLATFORM = {
@@ -87,6 +105,9 @@ SECONDARY_SEQ_PLATFORM = {
     "hio_fillin": "ONT",
     "hio_old": "ONT",
     "hiom_jem": "ONT",
+    "hiomr_midd": "ONT",
+    "hiomr_one": "ONT",
+    "hiomr_two": "ONT",
     "huo_old": "ONT",
     "sentdhiomr": "ONT",
 }
@@ -98,7 +119,10 @@ GENOME_BUILD = {
     "roche_ds_b": "pangenome-pub",
     "roche_ds_c": "pangenome-pub",
     "roche_hg003_coverage_series": "pangenome-pub",
+    "pan_ilmn_x": "pangenome-hprc",
     "pangenome_3_and_30x": "pangenome-hprc",
+    "ilmn_fin_pan": "pangenome-hprc",
+    "ug_pan": "pangenome-ug",
 }
 
 
@@ -154,6 +178,23 @@ def build_solo_lookup(filepath, prefix, aligner_filter):
     return result
 
 
+def sample_mean_coverage(alignstats, sample):
+    """Return mean (mean_cov, median_cov) across all aligners for a given sample.
+
+    Falls back to (0.0, 0.0) when no entries match.
+    """
+    means, medians = [], []
+    for (s, _aligner), (mc, mdc) in alignstats.items():
+        if s == sample and mc > 0:
+            means.append(mc)
+            medians.append(mdc)
+    if not means:
+        return None
+    avg_mean = round(sum(means) / len(means), 6)
+    avg_median = round(sum(medians) / len(medians), 6)
+    return (avg_mean, avg_median)
+
+
 
 def main():
     output_path = os.path.join(BASE_DIR, "consolidated_concordance.tsv")
@@ -194,6 +235,10 @@ def main():
                 for old_key, new_key in COLUMN_REMAP.items():
                     if old_key in row and new_key not in row:
                         row[new_key] = row.pop(old_key)
+
+                # Skip callers that produce empty/invalid concordance data
+                if row.get("SNVCaller", "") in ("oct",):
+                    continue
 
                 sample, aligner = row["Sample"], row["Aligner"]
 
@@ -246,22 +291,41 @@ def main():
                 elif huo_m:
                     # huo_old: use alignstats directly for primary (ONT-aligned)
                     meas = alignstats.get((sample, aligner))
+                    if not meas:
+                        meas = sample_mean_coverage(alignstats, sample)
                     pri = meas if meas else (0.0, 0.0)
                     sec = (0.0, 0.0)
                     if not meas:
                         miss += 1
-                else:
+                elif pangenome_m:
+                    # Pangenome samples: use target coverage from sample name
+                    # (e.g. R10x → 10) as the measured coverage proxy.
                     meas = alignstats.get((sample, aligner))
+                    if not meas:
+                        meas = sample_mean_coverage(alignstats, sample)
                     if meas:
                         pri = meas
                     else:
-                        pri = (0.0, 0.0)
+                        pri = (float(pri_tgt), float(pri_tgt))
+                    sec = (0.0, 0.0)
+                else:
+                    meas = alignstats.get((sample, aligner))
+                    if not meas:
+                        meas = sample_mean_coverage(alignstats, sample)
+                    if meas:
+                        pri = meas
+                    else:
+                        # Last resort: use target coverage if available
+                        if pri_tgt > 0:
+                            pri = (float(pri_tgt), float(pri_tgt))
+                        else:
+                            pri = (0.0, 0.0)
                         miss += 1
                     sec = (0.0, 0.0)
 
                 # --- Read length for ilmn_read_trim ---
                 readlen = ""
-                if tg_name == "ilmn_read_trim":
+                if tg_name in ("ilmn_read_trim", "RLEN"):
                     rl_m = READLEN_PATTERN.search(sample)
                     if rl_m:
                         readlen = rl_m.group(1)

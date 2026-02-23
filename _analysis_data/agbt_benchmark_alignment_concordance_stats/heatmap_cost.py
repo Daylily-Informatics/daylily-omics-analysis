@@ -159,7 +159,7 @@ def load_cell_mapping():
                 continue
             if row.get("TestGroup", "") in SKIP_TEST_GROUPS:
                 continue
-            if row["SNVCaller"] == "clair3":
+            if row["SNVCaller"] in ("clair3", "oct"):
                 continue
 
             tg = row["TestGroup"]
