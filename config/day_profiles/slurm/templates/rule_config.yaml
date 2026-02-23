@@ -912,8 +912,8 @@ rtg_vcfeval:
     sub_threads: 16
     env_yaml: "../envs/rtgtools_v0.1.yaml"
     ld_preload: " "
-    partition: "i192,i192mem,i128"
-    partition_other: "i192,i192mem,i128"
+    partition: "i192mem,i192bigmem"
+    partition_other: "i192mem,i192bigmem"
     rtg_region: " "
 
 run_concordance:
