@@ -1,0 +1,64 @@
+Unit	SR_Cov	ONT_Cov	Status	Failure_Reason	WgsCoverageMean	WgsCoverageMedian	SNPts_Fscore	SNPts_Precision	SNPts_Recall	SNPts_FN	SNPts_FP	SNPtv_Fscore	SNPtv_Precision	SNPtv_Recall	SNPtv_FN	SNPtv_FP	DEL_50_Fscore	DEL_50_Precision	DEL_50_Recall	DEL_50_FN	DEL_50_FP	INS_50_Fscore	INS_50_Precision	INS_50_Recall	INS_50_FN	INS_50_FP	Indel_50_Fscore	Indel_50_Precision	Indel_50_Recall	Indel_50_FN	Indel_50_FP	Total_Wall_Min	Total_Cost_USD	Alignment_Cost	VariantCalling_Cost	Concordance_Cost	Alignstats_Cost	Alignment_Wall_Min	VariantCalling_Wall_Min	Concordance_Wall_Min	Alignstats_Wall_Min
+SR1x-ONT1x	1	1	Complete		0.52	0	0.179902	0.136888	0.262333	50151	112454	0.139141	0.094924	0.260480	25986	87272	0.208350	0.148029	0.351644	18471	57658	0.203846	0.147917	0.327786	18945	53216	0.130507	0.182123	0.101688	6228	3166	181.5	7.8649		7.8624		0.0025	0.0	181.1		0.3
+SR1x-ONT3x	1	3	Failed/Pending	sentdhio_snv failed (no diagnostic output)	1.56	1																										0.6	0.0042				0.0042	0.0			0.6
+SR1x-ONT7x	1	7	Failed/Pending	sentdhio_snv failed (no diagnostic output)	3.64	3																										1.0	0.0073				0.0073	0.0			1.0
+SR1x-ONT10x	1	10	Failed/Pending	sentdhio_snv failed (no diagnostic output)	5.20	5																										1.3	0.0110				0.0110	0.0			1.3
+SR1x-ONT15x	1	15	Failed/Pending	sentdhio_snv failed (no diagnostic output)	7.80	8																										1.9	0.0156				0.0156	0.0			1.9
+SR1x-ONT20x	1	20	Failed/Pending	sentdhio_snv failed (no diagnostic output)	10.35	10																										2.4	0.0199				0.0199	0.0			2.4
+SR1x-ONT30x	1	30	Failed/Pending	sentdhio_snv failed (no diagnostic output)	15.64	16																										2.8	0.0229				0.0229	0.0			2.8
+SR3x-ONT1x	3	1	Complete		0.52	0	0.260686	0.167545	0.587016	28061	198175	0.203926	0.123303	0.589149	14434	147165	0.246476	0.151530	0.660053	9938	108045	0.244703	0.151511	0.635729	10440	102035	0.279673	0.187608	0.549168	2682	14147	204.8	8.6386		8.6358		0.0028	0.0	204.4		0.3
+SR3x-ONT3x	3	3	In Progress		1.56	1																										0.6	0.0048				0.0048	0.0			0.6
+SR3x-ONT7x	3	7	Failed/Pending	sentdhio_snv failed (no diagnostic output)	3.64	3																										1.0	0.0073				0.0073	0.0			1.0
+SR3x-ONT10x	3	10	Failed/Pending	sentdhio_snv failed (no diagnostic output)	5.20	5																										1.4	0.0112				0.0112	0.0			1.4
+SR3x-ONT15x	3	15	Failed/Pending	sentdhio_snv failed (no diagnostic output)	7.80	8																										1.9	0.0154				0.0154	0.0			1.9
+SR3x-ONT20x	3	20	Failed/Pending	sentdhio_snv failed (no diagnostic output)	10.35	10																										2.4	0.0198				0.0198	0.0			2.4
+SR3x-ONT30x	3	30	Failed/Pending	sentdhio_snv failed (no diagnostic output)	15.64	16																										2.5	0.0203				0.0203	0.0			2.5
+SR5x-ONT1x	5	1	In Progress		0.52	0																										98.3	4.8029		4.8002		0.0027	0.0	98.0		0.3
+SR5x-ONT3x	5	3	In Progress		1.56	1																										0.6	0.0047				0.0047	0.0			0.6
+SR5x-ONT7x	5	7	Failed/Pending	sentdhio_snv failed (no diagnostic output)	3.64	3																										1.0	0.0083				0.0083	0.0			1.0
+SR5x-ONT10x	5	10	Failed/Pending	sentdhio_snv failed (no diagnostic output)	5.20	5																										1.4	0.0112				0.0112	0.0			1.4
+SR5x-ONT15x	5	15	Failed/Pending	sentdhio_snv failed (no diagnostic output)	7.80	8																										1.9	0.0155				0.0155	0.0			1.9
+SR5x-ONT20x	5	20	Failed/Pending	sentdhio_snv failed (no diagnostic output)	10.35	10																										2.4	0.0173				0.0173	0.0			2.4
+SR5x-ONT30x	5	30	Failed/Pending	sentdhio_snv failed (no diagnostic output)	15.64	16																										2.5	0.0205				0.0205	0.0			2.5
+SR7x-ONT1x	7	1	In Progress		0.52	0																										142.6	6.9794		6.9766		0.0027	0.0	142.2		0.3
+SR7x-ONT3x	7	3	In Progress		1.56	1																										0.6	0.0046				0.0046	0.0			0.6
+SR7x-ONT7x	7	7	Failed/Pending	sentdhio_snv failed (no diagnostic output)	3.64	3																										1.0	0.0083				0.0083	0.0			1.0
+SR7x-ONT10x	7	10	In Progress		5.20	5																										1.3	0.0109				0.0109	0.0			1.3
+SR7x-ONT15x	7	15	Failed/Pending	sentdhio_snv failed (no diagnostic output)	7.80	8																										1.9	0.0155				0.0155	0.0			1.9
+SR7x-ONT20x	7	20	Failed/Pending	sentdhio_snv failed (no diagnostic output)	10.35	10																										2.4	0.0198				0.0198	0.0			2.4
+SR7x-ONT30x	7	30	Failed/Pending	sentdhio_snv failed (no diagnostic output)	15.64	16																										2.5	0.0207				0.0207	0.0			2.5
+SR10x-ONT1x	10	1	Failed/Pending	sentdhio_snv failed (no diagnostic output)	0.52	0																										0.3	0.0024				0.0024	0.0			0.3
+SR10x-ONT3x	10	3	Failed/Pending	sentdhio_snv failed (no diagnostic output)	1.56	1																										0.6	0.0045				0.0045	0.0			0.6
+SR10x-ONT7x	10	7	Failed/Pending	sentdhio_snv failed (no diagnostic output)	3.64	3																										1.0	0.0085				0.0085	0.0			1.0
+SR10x-ONT10x	10	10	In Progress		5.20	5																										1.4	0.0097				0.0097	0.0			1.4
+SR10x-ONT15x	10	15	Failed/Pending	Spot reclamation	7.80	8																										1.9	0.0156				0.0156	0.0			1.9
+SR10x-ONT20x	10	20	Failed/Pending	Spot reclamation	10.35	10																										2.4	0.0198				0.0198	0.0			2.4
+SR10x-ONT30x	10	30	Failed/Pending	Spot reclamation	15.64	16																										2.5	0.0204				0.0204	0.0			2.5
+SR15x-ONT1x	15	1	Complete		0.52	0	0.307775	0.185231	0.909445	6134	270976	0.233116	0.133761	0.906305	3277	205277	0.241472	0.138648	0.934535	1798	159456	0.241239	0.138773	0.922067	2126	156106	0.321857	0.193621	0.953087	430	36383	206.1	8.4013		8.3986		0.0027	0.0	205.8		0.3
+SR15x-ONT3x	15	3	In Progress		1.56	1																										258.9	12.6843		12.6796		0.0047	0.0	258.4		0.6
+SR15x-ONT7x	15	7	In Progress		3.64	3																										320.1	15.6649		15.6565		0.0083	0.0	319.1		1.0
+SR15x-ONT10x	15	10	Failed/Pending	Spot reclamation	5.20	5																										1.4	0.0112				0.0112	0.0			1.4
+SR15x-ONT15x	15	15	Failed/Pending	sentdhio_snv failed (no diagnostic output)	7.80	8																										1.9	0.0156				0.0156	0.0			1.9
+SR15x-ONT20x	15	20	Failed/Pending	sentdhio_snv failed (no diagnostic output)	10.35	10																										2.4	0.0198				0.0198	0.0			2.4
+SR15x-ONT30x	15	30	Failed/Pending	TMPDIR race condition	15.64	16																										2.5	0.0208				0.0208	0.0			2.5
+SR20x-ONT1x	20	1	Complete		0.52	0	0.312629	0.188378	0.918377	5528	267979	0.234522	0.134512	0.914336	2995	205685	0.240040	0.137484	0.944850	1503	161545	0.239911	0.137663	0.932556	1833	158764	0.319083	0.191291	0.961237	366	38370	185.6	7.3772		7.3746		0.0027	0.0	185.2		0.3
+SR20x-ONT3x	20	3	Complete		1.56	1	0.299176	0.178374	0.926945	4947	289127	0.219976	0.124847	0.924124	2653	226501	0.238300	0.136284	0.947737	1425	163771	0.238220	0.136444	0.937557	1698	161358	0.318976	0.191179	0.962138	357	38381	304.5	13.2088		13.2041		0.0047	0.0	303.9		0.6
+SR20x-ONT7x	20	7	Complete		3.64	3	0.285905	0.168641	0.938477	4166	313277	0.205725	0.115564	0.935885	2241	250352	0.236162	0.134801	0.952014	1308	166556	0.236002	0.134874	0.943242	1544	164585	0.318688	0.190979	0.961958	359	38456	308.5	13.3233		13.3149		0.0084	0.0	307.5		1.0
+SR20x-ONT10x	20	10	Complete		5.20	5	0.280477	0.164788	0.941368	3970	323061	0.199931	0.111890	0.938020	2166	260195	0.235236	0.134150	0.954440	1242	167936	0.234898	0.134127	0.944522	1509	165851	0.318712	0.190980	0.962370	355	38460	366.9	16.1799		16.1686		0.0113	0.0	365.5		1.4
+SR20x-ONT15x	20	15	Failed/Pending	Spot reclamation	7.80	8																										1.9	0.0154				0.0154	0.0			1.9
+SR20x-ONT20x	20	20	Failed/Pending	Spot reclamation	10.35	10																										2.4	0.0196				0.0196	0.0			2.4
+SR20x-ONT30x	20	30	Failed/Pending	Spot reclamation	15.64	16																										2.5	0.0203				0.0203	0.0			2.5
+SR30x-ONT1x	30	1	Complete		0.52	0	0.320152	0.193683	0.922542	5246	260113	0.237401	0.136271	0.920620	2774	203917	0.238736	0.136532	0.949537	1368	162794	0.239067	0.136941	0.940357	1615	160479	0.312772	0.186593	0.966039	328	40672	757.6	35.4593		35.4566		0.0028	0.0	757.3		0.3
+SR30x-ONT3x	30	3	Complete		1.56	1	0.307012	0.183833	0.930498	4706	279720	0.223784	0.127231	0.928091	2513	222488	0.237452	0.135620	0.953082	1272	164686	0.237800	0.136018	0.944770	1497	162661	0.312948	0.186691	0.966743	321	40650	725.1	33.8251		33.8209		0.0041	0.0	724.6		0.6
+SR30x-ONT7x	30	7	Complete		3.64	3	0.292956	0.173539	0.939329	4108	302892	0.209501	0.117938	0.936811	2208	244827	0.235368	0.134196	0.956469	1180	167276	0.235471	0.134408	0.949159	1378	165677	0.312758	0.186570	0.966349	325	40691	335.0	14.6470		14.6396		0.0073	0.0	334.0		1.0
+SR30x-ONT10x	30	10	In Progress		5.20	5																										320.9	15.6969		15.6859		0.0110	0.0	319.6		1.3
+SR30x-ONT15x	30	15	Failed/Pending	Spot reclamation	7.80	8																										1.9	0.0156				0.0156	0.0			1.9
+SR30x-ONT20x	30	20	Failed/Pending	Spot reclamation	10.35	10																										2.4	0.0198				0.0198	0.0			2.4
+SR30x-ONT30x	30	30	Failed/Pending	Spot reclamation	15.64	16																										2.5	0.0180				0.0180	0.0			2.5
+SR40x-ONT1x	40	1	Failed/Pending	Spot reclamation	0.52	0																										0.3	0.0027				0.0027	0.0			0.3
+SR40x-ONT3x	40	3	Complete		1.56	1	0.312378	0.187708	0.930155	4730	272588	0.226248	0.128853	0.926745	2561	219043	0.237836	0.135856	0.953804	1251	164291	0.237703	0.135928	0.946046	1460	162735	0.309197	0.183958	0.968647	304	41663	356.0	15.7326		15.7279		0.0047	0.0	355.4		0.6
+SR40x-ONT7x	40	7	In Progress		3.64	3																										320.3	15.6780		15.6697		0.0083	0.0	319.3		1.0
+SR40x-ONT10x	40	10	In Progress		5.20	5																										1.4	0.0112				0.0112	0.0			1.4
+SR40x-ONT15x	40	15	Complete		7.80	8	0.285363	0.168036	0.945621	3682	317010	0.200080	0.111905	0.943473	1975	261606	0.233586	0.132974	0.959776	1090	169579	0.233439	0.133016	0.952687	1281	168122	0.308775	0.183606	0.970142	289	41752	781.6	36.4949		36.4794		0.0155	0.0	779.7		1.9
+SR40x-ONT20x	40	20	Failed/Pending	sentdhio_snv failed (no diagnostic output)	10.35	10																										2.4	0.0198				0.0198	0.0			2.4
+SR40x-ONT30x	40	30	Failed/Pending	Spot reclamation	15.64	16																										2.5	0.0204				0.0204	0.0			2.5

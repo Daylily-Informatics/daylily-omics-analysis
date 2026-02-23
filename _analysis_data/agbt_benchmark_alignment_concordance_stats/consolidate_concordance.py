@@ -240,11 +240,6 @@ def main():
                 if row.get("SNVCaller", "") in ("oct",):
                     continue
 
-                # Skip non-hiomr hybrid data: hio_*/hiom_* test groups
-                # only keep rows where SNVCaller == "sentdhiomr"
-                if tg_name in ("hio_cli", "hio_fillin", "hio_old", "hiom_jem") \
-                        and row.get("SNVCaller", "") != "sentdhiomr":
-                    continue
 
                 sample, aligner = row["Sample"], row["Aligner"]
 
