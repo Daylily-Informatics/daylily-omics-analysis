@@ -168,7 +168,7 @@ rule deep19_r_concat_fofn:
     resources:
         vcpu=32,
         threads=32,
-        partition="i192,i192mem,i128",
+        partition="i192mem,i192bigmem",
     params:
         fn_stub="{sample}.{alnr}.{ddup}.deep19r.",
         cluster_sample=ret_sample,
