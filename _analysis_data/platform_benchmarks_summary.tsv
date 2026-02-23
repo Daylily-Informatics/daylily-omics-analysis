@@ -1,0 +1,5 @@
+platform	n_units	total_cost_usd	cost_per_unit_usd	total_wall_hours	total_vcpu_hours	avg_cpu_efficiency	top_rule_1	top_rule_1_cost	top_rule_2	top_rule_2_cost	top_rule_3	top_rule_3_cost
+ONT	10	11.7293	1.1729	9.14	1754.9	0.7828	ont.na.sentdont	7.2091	ont.na.sentdont.concordance	4.3495	ont.na.alignstats	0.1706
+ILMN	9	15.8785	1.7643	10.49	2014.2	21.0303	sent.alNsort	5.5151	sent.dmd.sentd.concordance	4.3135	sent.dmd.sentd.1-24	2.8835
+PacBio	8	18.2035	2.2754	10.44	2005.1	0.4834	sentmm2.na.sentdpb	11.2346	sentmm2.alNsort	3.5195	sentmm2.na.sentdpb.concordance	3.2948
+Ultima	10	10.2588	1.0259	9.53	1829.1	6.2296	ug.na.sentdug.1-24	5.0668	ug.na.sentdug.concordance	4.6098	ug.na.alignstats	0.5263

@@ -1,0 +1,334 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+0 [ shape=none, margin=0, label=<<table border="2" color="#D97D57" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">produce_alignstats</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_bsummary.tsv</font></td>
+</tr>
+<hr/>
+<tr><td align="right">  </td> </tr>
+</table>>]
+1 [ shape=none, margin=0, label=<<table border="2" color="#77D957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">alignstats_compile</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_summary_gather.done</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_bsummary.tsv</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_combo_mqc.tsv</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_csummary.tsv</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_gs_mqc.tsv</font></td></tr>
+</table>>]
+2 [ shape=none, margin=0, label=<<table border="2" color="#90D957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">alignstats_gather</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ/align/ont/na/alignqc/alignstats/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ.ont.na.alignstats.tsv</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/benchmarks/all.alignstats_summary.bench.tsv</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/alignstats_summary_gather.done</font></td></tr>
+</table>>]
+3 [ shape=none, margin=0, label=<<table border="2" color="#D98657" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">finish_align_stats</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv</font></td></tr>
+</table>>]
+4 [ shape=none, margin=0, label=<<table border="2" color="#57D98F" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">alignstats</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json</font></td></tr>
+</table>>]
+5 [ shape=none, margin=0, label=<<table border="2" color="#57D9BE" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">no_dedup_cram</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr,ont}/na/{sample}.{alnr}.na.cram</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr,ont}/na/{sample}.{alnr}.na.cram.crai</font></td></tr>
+</table>>]
+6 [ shape=none, margin=0, label=<<table border="2" color="#D98C57" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">pre_prep_ont_cram</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/ont/{sample_lane}.cram</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/ont/{sample_lane}.cram.crai</font></td></tr>
+</table>>]
+7 [ shape=none, margin=0, label=<<table border="2" color="#57B3D9" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">produce_sentdhio_vcf</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ/align/ont/na/snv/sentdhio/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ.ont.na.sentdhio.snv.sort.vcf.gz.tbi</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">gatheredall.sentdhio</font></td></tr>
+</table>>]
+8 [ shape=none, margin=0, label=<<table border="2" color="#D99957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">sentdhio_concat_index_chunks</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/{sample}.{alnr}.{ddup}.sentdhio.snv.concat.vcf.gz.fofn</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/{sample}.{alnr}.{ddup}.sentdhio.snv.sort.temp.vcf.gz</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/{sample}.{alnr}.{ddup}.sentdhio.snv.sort.vcf.gz</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/{sample}.{alnr}.{ddup}.sentdhio.snv.sort.vcf.gz.tbi</font></td></tr>
+</table>>]
+9 [ shape=none, margin=0, label=<<table border="2" color="#67D957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">sentdhio_concat_fofn</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/vcfs/19-20/{sample}.{alnr}.{ddup}.sentdhio.19-20.snv.sort.vcf.gz.tbi</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/{sample}.{alnr}.{ddup}.sentdhio.snv.concat.vcf.gz.fofn</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/{sample}.{alnr}.{ddup}.sentdhio.snv.concat.vcf.gz.fofn.tmp</font></td></tr>
+</table>>]
+10 [ shape=none, margin=0, label=<<table border="2" color="#5766D9" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">sentdhio_snv</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/sentdhio/vcfs/{dchrm}/{sample}.ready</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{sample}.cram</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{sample}.cram.crai</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/{sample}.dirsetup.ready</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr,ont}/{ddup}/snv/sentdhio/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhio.{dchrm}.snv.sort.vcf.gz</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr,ont}/{ddup}/snv/sentdhio/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhio.{dchrm}.snv.sort.vcf.gz.tbi</font></td></tr>
+</table>>]
+11 [ shape=none, margin=0, label=<<table border="2" color="#57D9A0" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">prep_results_dirs</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">logs/workflow_staging.done</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ.dirsetup.ready</font></td></tr>
+</table>>]
+12 [ shape=none, margin=0, label=<<table border="2" color="#57D9D7" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">workflow_staging</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">logs/supporting_data_staging.done</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">logs/workflow_staging.done</font></td></tr>
+</table>>]
+13 [ shape=none, margin=0, label=<<table border="2" color="#CDD957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">stage_supporting_data</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left">  </td></tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">logs/supporting_data_staging.done</font></td></tr>
+</table>>]
+14 [ shape=none, margin=0, label=<<table border="2" color="#64D957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">pre_prep_raw_fq</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/{sample_lane}.R1.fastq.gz</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/{sample_lane}.R2.fastq.gz</font></td></tr>
+</table>>]
+15 [ shape=none, margin=0, label=<<table border="2" color="#BFD957" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">prep_sentdhio_chunkdirs</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{sample}.cram</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{sample}.cram.crai</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/{sample}.dirsetup.ready</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr,ont}/{ddup}/snv/sentdhio/vcfs/19-20/{sample}.ready</font></td></tr>
+</table>>]
+16 [ shape=none, margin=0, label=<<table border="2" color="#57D9AF" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">produce_snv_concordances</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/HIOa-HG003-SR40x-ONT15x-60-D0-PF-ILMN-NOVASEQ/align/ont/na/snv/sentdhio/concordance/concordance.done</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/other_reports/giab_concordance_mqc.tsv</font></td></tr>
+</table>>]
+17 [ shape=none, margin=0, label=<<table border="2" color="#D98E57" cellspacing="3" cellborder="0">
+<tr><td>
+<b><font point-size="18">prep_for_concordance_check</font></b>
+</td></tr>
+<hr/>
+<tr><td align="left"> <b><font point-size="14">&#8618; input</font></b> </td></tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<tr>
+<td align="left"><font face="monospace">&lt;input function&gt;</font></td>
+</tr>
+<hr/>
+<tr><td align="right"> <b><font point-size="14">output &rarr;</font></b> </td> </tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fin.cmds</font></td></tr>
+<tr>
+<td align="left"><font face="monospace">results/day/hg38_broad/{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.fofn</font></td></tr>
+</table>>]
+	1 -> 0
+	2 -> 1
+	3 -> 2
+	4 -> 3
+	5 -> 4
+	6 -> 5
+	8 -> 7
+	9 -> 8
+	10 -> 9
+	11 -> 10
+	15 -> 10
+	14 -> 10
+	6 -> 10
+	12 -> 11
+	13 -> 12
+	11 -> 15
+	14 -> 15
+	6 -> 15
+	17 -> 16
+	8 -> 17
+}            

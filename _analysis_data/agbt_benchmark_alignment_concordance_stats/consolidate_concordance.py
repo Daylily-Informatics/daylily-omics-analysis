@@ -240,6 +240,7 @@ def main():
                 if row.get("SNVCaller", "") in ("oct",):
                     continue
 
+
                 sample, aligner = row["Sample"], row["Aligner"]
 
                 hio_m = HIO_PATTERN.match(sample)
