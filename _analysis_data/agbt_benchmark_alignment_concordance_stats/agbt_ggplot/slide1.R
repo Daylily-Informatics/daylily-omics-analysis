@@ -2,6 +2,8 @@ library(dplyr)
 library(ggplot2)
 library(grid)
 
+d<-read.csv('consolidated_concordance.tsv',header=TRUE, sep='\t')
+
 exclude_classes <- c("All","INS_gt50","DEL_gt50","Indel_gt50","Indel_50")
 
 df_slice <- d %>%

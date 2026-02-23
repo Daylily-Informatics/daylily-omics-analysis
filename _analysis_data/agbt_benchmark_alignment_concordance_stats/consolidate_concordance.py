@@ -10,18 +10,20 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DATA_DIR = os.path.join(BASE_DIR, "src_data")
 
 # (test_group_name, concordance_tsv_relative_to_SRC_DATA_DIR, alignstats_relative_or_None)
+# NOTE: Legacy ILMN+ONT hybrid groups removed: hio_cli, hio_fillin, hio_old, hiom_jem
 TEST_GROUPS = [
     ("agbt_ont", "agbt_ont/giab_concordance_mqc.tsv", "agbt_ont/alignstats_combo_mqc.tsv"),
     ("agbt_ug", "agbt_ug/giab_concordance_mqc.tsv", "agbt_ug/alignstats_combo_mqc.tsv"),
     ("dark_horses2", "dark_horses2/giab_concordance_mqc.tsv", "dark_horses2/alignstats_combo_mqc.tsv"),
-    ("hio_cli", "hio_cli/giab_concordance_mqc.tsv", "hio_cli/alignstats_combo_mqc.tsv"),
-    ("hio_fillin", "hio_fillin/giab_concordance_mqc.tsv", "hio_fillin/alignstats_combo_mqc.tsv"),
-    ("hio_old", "hio_old/giab_concordance_mqc.tsv", "hio_old/alignstats_combo_mqc.tsv"),
-    ("hiom_jem", "hiom_jem/giab_concordance_mqc.tsv", "hiom_jem/alignstats_combo_mqc.tsv"),
+    # ILMN+ONT modular refactored (hiomr) - current pipeline
     ("hiomr_midd", "hiomr_midd/giab_concordance_mqc.tsv", "hiomr_midd/alignstats_combo_mqc.tsv"),
     ("hiomr_one", "hiomr_one/giab_concordance_mqc.tsv", None),
     ("hiomr_two", "hiomr_two/giab_concordance_mqc.tsv", "hiomr_two/alignstats_combo_mqc.tsv"),
+    ("hiomr_three", "hiomr_three/giab_concordance_mqc.tsv", "hiomr_three/alignstats_combo_mqc.tsv"),
+    ("hiomr_four", "hiomr_four/giab_concordance_mqc.tsv", "hiomr_four/alignstats_combo_mqc.tsv"),
+    # Ultima+ONT hybrid data
     ("huo_old", "huo_old/giab_concordance_mqc.tsv", "huo_old/alignstats_combo_mqc.tsv"),
+    ("huomr_a", "huomr_a/giab_concordance_mqc.tsv", None),
     ("ilmn_all_downsamples_a", "ilmn_all_downsamples_a/giab_concordance_mqc.tsv", "ilmn_all_downsamples_a/alignstats_combo_mqc.tsv"),
     ("ilmn_gatk_b", "ilmn_gatk_b/giab_concordance_mqc.tsv", "ilmn_gatk_b/alignstats_combo_mqc.tsv"),
     ("ilmn_hg003_ilmn_sentonly", "ilmn_hg003_ilmn_sentonly/giab_concordance_mqc.tsv", "ilmn_hg003_ilmn_sentonly/alignstats_combo_mqc.tsv"),
@@ -44,6 +46,10 @@ TEST_GROUPS = [
     ("RLEN", "RLEN/giab_concordance_mqc.tsv", "RLEN/alignstats_combo_mqc.tsv"),
     ("read_len", "read_len/giab_concordance_mqc.tsv", None),
     ("ug_pan", "ug_pan/giab_concordance_mqc.tsv", None),
+    ("gapfill", "gapfill/giab_concordance_mqc.tsv", None),
+    ("ilmn_fin_pan2", "ilmn_fin_pan2/giab_concordance_mqc.tsv", None),
+    ("pangenome_A", "pangenome_A/giab_concordance_mqc.tsv", None),
+    ("pangenome_B", "pangenome_B/giab_concordance_mqc.tsv", None),
 ]
 
 ILMN_SOLO_ALIGNSTATS = os.path.join(SRC_DATA_DIR, "ilmn_hg003_ilmn_sentonly/alignstats_combo_mqc.tsv")
@@ -52,6 +58,8 @@ ONT_SOLO_ALIGNSTATS = os.path.join(SRC_DATA_DIR, "ont_ds/ont_patch/alignstats_co
 HIO_PATTERN = re.compile(r"^HIO[ab]-.*-SR(\d+)x-ONT(\d+)b?x-")
 HIO_OLD_PATTERN = re.compile(r"^HIOv1_HG003_")
 HUO_PATTERN = re.compile(r"^HUOv1_")
+# HUOIa: Ultima+ONT hybrid modular refactored (e.g. HUOIa-HG003-SR10x-ONT10x-28-D0-PF-UG-ULTIMA)
+HUOI_PATTERN = re.compile(r"^HUOI[ab]-.*-SR(\d+)x-ONT(\d+)b?x-")
 COV_PATTERN = re.compile(r"HG003-(\d+)x")
 COV_FRACTIONAL_PATTERN = re.compile(r"HG003-(\d+)p(\d+)xa?-")  # e.g. 2p5xa → 2.5
 READLEN_PATTERN = re.compile(r"HG003-\d+x-(\d+)bp-")
@@ -68,14 +76,15 @@ PRIMARY_SEQ_PLATFORM = {
     "agbt_ont": "ONT",
     "agbt_ug": "Ultima",
     "dark_horses2": "ILMN",
-    "hio_cli": "ILMN",
-    "hio_fillin": "ILMN",
-    "hio_old": "ILMN",
-    "hiom_jem": "ILMN",
+    # Legacy hio/hiom removed - entries kept commented for reference
+    # "hio_cli": "ILMN", "hio_fillin": "ILMN", "hio_old": "ILMN", "hiom_jem": "ILMN",
     "hiomr_midd": "ILMN",
     "hiomr_one": "ILMN",
     "hiomr_two": "ILMN",
+    "hiomr_three": "ILMN",
+    "hiomr_four": "ILMN",
     "huo_old": "Ultima",
+    "huomr_a": "Ultima",
     "ilmn_all_downsamples_a": "ILMN",
     "ilmn_gatk_b": "ILMN",
     "ilmn_hg003_ilmn_sentonly": "ILMN",
@@ -101,14 +110,17 @@ PRIMARY_SEQ_PLATFORM = {
 }
 
 SECONDARY_SEQ_PLATFORM = {
-    "hio_cli": "ONT",
-    "hio_fillin": "ONT",
-    "hio_old": "ONT",
-    "hiom_jem": "ONT",
+    # Legacy hio/hiom removed
+    # "hio_cli": "ONT", "hio_fillin": "ONT", "hio_old": "ONT", "hiom_jem": "ONT",
+    # ILMN+ONT modular refactored
     "hiomr_midd": "ONT",
     "hiomr_one": "ONT",
     "hiomr_two": "ONT",
+    "hiomr_three": "ONT",
+    "hiomr_four": "ONT",
+    # Ultima+ONT hybrids
     "huo_old": "ONT",
+    "huomr_a": "ONT",
     "sentdhiomr": "ONT",
 }
 
@@ -246,6 +258,7 @@ def main():
                 hio_m = HIO_PATTERN.match(sample)
                 hio_old_m = HIO_OLD_PATTERN.match(sample)
                 huo_m = HUO_PATTERN.match(sample)
+                huoi_m = HUOI_PATTERN.match(sample)
                 cov_m = COV_PATTERN.search(sample)
                 cov_frac_m = COV_FRACTIONAL_PATTERN.search(sample)
                 pangenome_m = PANGENOME_COV_PATTERN.match(sample)
@@ -254,6 +267,10 @@ def main():
                 if hio_m:
                     pri_tgt = int(hio_m.group(1))
                     sec_tgt = int(hio_m.group(2))
+                elif huoi_m:
+                    # HUOIa/b: Ultima+ONT modular refactored (e.g. HUOIa-HG003-SR10x-ONT10x-...)
+                    pri_tgt = int(huoi_m.group(1))
+                    sec_tgt = int(huoi_m.group(2))
                 elif hio_old_m:
                     # hio_old: force SR40x / ONT40x
                     pri_tgt = 40
@@ -284,6 +301,11 @@ def main():
                     if sec is None:
                         # Extrapolate from linear trend (measured/target ≈ 0.52)
                         sec = (round(sec_tgt * 0.52, 6), round(sec_tgt * 0.52, 1))
+                elif huoi_m:
+                    # HUOIa/b: Ultima+ONT - use target cov as proxy (no alignstats for huomr_a)
+                    # For Ultima primary, use target; for ONT secondary, extrapolate
+                    pri = (float(pri_tgt), float(pri_tgt))
+                    sec = (round(sec_tgt * 0.52, 6), round(sec_tgt * 0.52, 1))
                 elif hio_old_m:
                     # Use the hio_old alignstats directly for secondary (ONT)
                     meas_ont = alignstats.get((sample, aligner))

@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Generate per-VariantClass Fscore heatmaps for a given ROI.
+"""Generate per-VariantClass concordance metric heatmaps for a given ROI.
 
-Usage: python heatmap_fscore_hg38.py [FOOTPRINT]
-  Default FOOTPRINT is 'hg38'. Pass any valid ROI value.
+Usage: python heatmap_fscore_hg38.py [ROI] [--metric METRIC] [--show-debug-ranges] [--apply-reassign]
+  Default ROI is 'hg38'. Pass any valid ROI value.
+  --metric: Fscore (default), Precision, Sensitivity-Recall, Specificity, PPV
+  --show-debug-ranges: Show cov: and F: range annotations in cells (default: off)
+  --apply-reassign: Apply hardcoded coverage bin reassignments (default: off)
+    - ONT sentmm2ont+deep19: 8.22x→bin7, 15.0x→bin10, 21.06x→bin30
+    - Ultima ug+sentdug: 17.97x→bin20
 
 X-axis: Platform+Aligner+Caller (single-platform) then gap then HIO columns.
-Y-axis: PrimaryCoverageBin ascending (0x bottom, 50x top).
+Y-axis: Primary Measured Coverage (Binned) ascending.
 """
 
+import argparse
 import csv
 import math
 import os
@@ -18,6 +24,66 @@ matplotlib.use("Agg")
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+# --- Issue 3: New coverage binning from Primary_MeasuredMeanCov ---
+# Bin label -> (min_exclusive, max_inclusive) except bin 0 which is exact 0
+# and bin 40 which is >35 to <50
+COV_BIN_DEFS = [
+    (0, None, 0.0),        # exactly 0
+    (1, 0.0, 2.0),         # >0 to ≤2
+    (3, 2.0, 4.0),         # >2 to ≤4
+    (5, 4.0, 6.0),         # >4 to ≤6
+    (7, 6.0, 8.0),         # >6 to ≤8
+    (10, 8.0, 12.5),       # >8 to ≤12.5
+    (15, 12.5, 18.75),     # >12.5 to ≤18.75
+    (20, 18.75, 25.0),     # >18.75 to ≤25
+    (30, 25.0, 35.0),      # >25 to <35
+    (40, 35.0, 50.0),      # >35 to <50
+]
+
+
+def _compute_cov_bin(measured_cov):
+    """Assign a coverage bin based on Primary_MeasuredMeanCov."""
+    if measured_cov is None or math.isnan(measured_cov):
+        return None
+    if measured_cov == 0.0:
+        return 0
+    if measured_cov >= 50.0:
+        return None  # out of range
+    for bin_label, min_excl, max_incl in COV_BIN_DEFS:
+        if min_excl is None:
+            continue  # skip bin 0 (handled above)
+        if min_excl < measured_cov <= max_incl:
+            return bin_label
+    return None
+
+
+# --- Issue: --apply-reassign hardcoded cell reassignments ---
+# Keys: (platform, aligner, caller, measured_cov_approx) -> new_bin
+# These override the computed bin for specific column+coverage combinations
+REASSIGN_RULES = {
+    # ONT sminimap2+deep19 (sentmm2ont+deep19):
+    #   8.22x (computed bin 10) -> move to bin 7
+    ("ONT", "sentmm2ont", "deep19", 8.22): 7,
+    #   15.0x (lower of two in bin 15) -> move to bin 10
+    ("ONT", "sentmm2ont", "deep19", 15.0): 10,
+    #   21.06x (higher of two in bin 20) -> move to bin 30
+    ("ONT", "sentmm2ont", "deep19", 21.06): 30,
+    # Ultima ug+sentdug:
+    #   17.97x (higher of two in bin 15) -> move to bin 20
+    ("Ultima", "ug", "sentdug", 17.97): 20,
+}
+
+
+def _apply_reassign(platform, aligner, caller, measured_cov, computed_bin):
+    """Apply hardcoded bin reassignments if --apply-reassign is enabled."""
+    # Find closest match within tolerance (0.1x coverage)
+    for (p, a, c, cov), new_bin in REASSIGN_RULES.items():
+        if p == platform and a == aligner and c == caller:
+            if abs(measured_cov - cov) < 0.1:
+                return new_bin
+    return computed_bin
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INPUT_TSV = os.path.join(BASE_DIR, "consolidated_concordance.tsv")
@@ -53,7 +119,7 @@ CALLER_DISPLAY = {
 
 # Hybrid callers to compress into a single column per ONT bin.
 # When multiple callers exist at the same ONT bin, keep the max Fscore.
-HYBRID_CALLERS = {"sentdhio", "sentdhiom", "sentdhiomr"}
+HYBRID_CALLERS = {"sentdhio", "sentdhiom", "sentdhiomr", "sentdhuomr"}
 
 # Map measured ONT secondary coverage → display ONT bin
 ONT_BIN_MAP = {
@@ -89,8 +155,8 @@ def _extract_ont_bin_from_label(label):
         return None
 
 
-# Coverage-bin display mapping: internal bin → display coverage
-_BIN_TO_DISPLAY_COV = {1: 1, 3: 3, 5: 5, 7: 7, 10: 10, 15: 15, 25: 20, 35: 30, 45: 40}
+# Coverage-bin display mapping: internal bin → display coverage (new bins)
+_BIN_TO_DISPLAY_COV = {0: 0, 1: 1, 3: 3, 5: 5, 7: 7, 10: 10, 15: 15, 20: 20, 30: 30, 40: 40}
 
 
 def _is_hidden_hybrid_cell(cov_bin, ont_bin_val):
@@ -118,31 +184,38 @@ def _display_name(raw, mapping):
     return mapping.get(raw, raw)
 
 
-def load_data(footprint):
+def load_data(footprint, metric="Fscore", apply_reassign=False):
     """Load consolidated TSV, filter to given ROI.
+
+    Args:
+        footprint: ROI value to filter on (e.g., 'hg38', 'giabHC', 'clinvar_genes')
+        metric: Concordance metric column to use (default: 'Fscore')
+        apply_reassign: If True, apply hardcoded cell reassignments for specific columns
 
     Returns:
         data, counts, depths: per-VariantClass dicts keyed by (pri_cov, col_label)
         pangenome_labels: pangenome column labels (dragen, roche)
         hg38_labels: hg38 single-platform column labels
         paired_labels: ILMN read-length column labels (50/100/150bp)
-        hio_labels: HIO column labels
+        hio_labels: ILMN+ONT hybrid column labels
+        huo_labels: Ultima+ONT hybrid column labels
     """
-    raw = {}  # {snp_class: {(pri_cov, label): fscore}} — MAX fscore per cell
+    raw = {}  # {snp_class: {(pri_cov, label): metric_val}} — MAX metric per cell
     count_raw = {}  # {snp_class: {(pri_cov, label): int}} — metrics per cell
     depth_raw = {}  # {snp_class: {(pri_cov, label): measured_depth}}
-    hiomr_raw = {}  # {snp_class: {(pri_cov, label): fscore}} — sentdhiomr only
+    hiomr_raw = {}  # {snp_class: {(pri_cov, label): metric_val}} — sentdhiomr only
     tp_fn_raw = {}  # {snp_class: {(pri_cov, label): tp+fn}} — for SNP weighting
-    # Q6: Track min/max Fscore and measured coverage per cell
-    fscore_min_raw = {}  # {snp_class: {cell_key: min_fscore}}
-    fscore_max_raw = {}  # {snp_class: {cell_key: max_fscore}}
+    # Track min/max metric and measured coverage per cell
+    metric_min_raw = {}  # {snp_class: {cell_key: min_metric}}
+    metric_max_raw = {}  # {snp_class: {cell_key: max_metric}}
     cov_min_raw = {}  # {snp_class: {cell_key: min_measured_cov}}
     cov_max_raw = {}  # {snp_class: {cell_key: max_measured_cov}}
 
     pangenome_labels = set()
     hg38_labels = set()
     paired_labels = set()
-    hio_labels = set()
+    hio_labels = set()  # ILMN+ONT hybrids
+    huo_labels = set()  # Ultima+ONT hybrids
 
     with open(INPUT_TSV, "r") as f:
         for row in csv.DictReader(f, delimiter="\t"):
@@ -155,93 +228,128 @@ def load_data(footprint):
                 continue
 
             snp_class = row["VariantClass"]
-            pri_bin_raw = row["PrimaryCoverageBin"]
-            if not pri_bin_raw or not pri_bin_raw.strip():
+
+            # Issue 3: Compute coverage bin from Primary_MeasuredMeanCov
+            pri_meas_raw = row.get("Primary_MeasuredMeanCov", "")
+            pri_meas = float(pri_meas_raw) if pri_meas_raw and pri_meas_raw.strip() else None
+            if pri_meas is None:
                 continue
-            pri_cov = int(pri_bin_raw)
+            pri_cov = _compute_cov_bin(pri_meas)
+            if pri_cov is None:
+                continue  # out of range
+
             pri_plat = row["PrimarySeqPlatform"]
             sec_plat = row["SecondarySeqPlatform"]
-            aligner = _display_name(row["Aligner"], ALIGNER_DISPLAY)
-            caller = _display_name(row["SNVCaller"], CALLER_DISPLAY)
+            raw_aligner = row["Aligner"]
+            raw_caller = row["SNVCaller"]
+            aligner = _display_name(raw_aligner, ALIGNER_DISPLAY)
+            caller = _display_name(raw_caller, CALLER_DISPLAY)
             genome_build = row.get("GenomeBuild", "hg38")
 
-            if row["SNVCaller"] in ("clair3", "oct"):
+            # Apply hardcoded bin reassignments if flag is set
+            if apply_reassign:
+                pri_cov = _apply_reassign(pri_plat, raw_aligner, raw_caller, pri_meas, pri_cov)
+
+            if raw_caller in ("clair3", "oct"):
                 continue
 
             # --- Merge ont+deep19 into ont+dnascope-ont column ---
-            if row["Aligner"] == "ont" and row["SNVCaller"] == "deep19":
+            if raw_aligner == "ont" and raw_caller == "deep19":
                 caller = "dnascope-ont"  # override display name
-                if pri_cov == 25:  # 20x → 30x cell
-                    pri_cov = 35
 
+            # --- Treat ont+sentdhiomr as ILMN+ONT hybrid data ---
+            # These are hybrid caller results that may have missing platform info
+            is_hybrid_sentdhiomr = (raw_aligner == "ont" and raw_caller == "sentdhiomr")
+            if is_hybrid_sentdhiomr:
+                # Force treat as HIO hybrid even if sec_plat is missing
+                sec_meas_raw = row.get("Secondary_MeasuredMeanCov", "")
+                sec_meas = float(sec_meas_raw) if sec_meas_raw and sec_meas_raw.strip() else None
+                # If no sec_meas, try to derive from mqc_id (SR{X}x-ONT{Y}x pattern)
+                if sec_meas is None or sec_meas == 0.0:
+                    import re
+                    mqc_id = row.get("mqc_id", "")
+                    m = re.search(r"-ONT(\d+)b?x-", mqc_id)
+                    if m:
+                        sec_meas = float(m.group(1)) * 0.5  # ~50% of implied cov
+                    else:
+                        continue  # can't determine ONT coverage
+                ont_b = _ont_bin(sec_meas)
+                if ont_b is None:
+                    continue
+                ont_disp = int(ont_b) if ont_b == int(ont_b) else ont_b
+                label = f"ILMN+ONT+{aligner}+hybrid+{ont_disp}x"
+                hio_labels.add(label)
             # --- Column label overrides ---
-            readlen = row.get("ReadLengthBP", "")
-
-            if test_group in ("ilmn_read_trim", "RLEN") and readlen:
+            elif test_group in ("ilmn_read_trim", "RLEN") and row.get("ReadLengthBP", ""):
+                readlen = row["ReadLengthBP"]
                 label = f"ILMN-sbwa-dnascope-{readlen}paired"
                 paired_labels.add(label)
-            elif sec_plat:  # HIO
+            elif sec_plat:  # Hybrid with secondary platform (ILMN+ONT or Ultima+ONT)
                 sec_meas_raw = row["Secondary_MeasuredMeanCov"]
                 sec_meas = round(float(sec_meas_raw), 1) if sec_meas_raw and sec_meas_raw.strip() else 0.0
                 if sec_meas == 0.0:
-                    continue  # skip HIO rows with 0x secondary coverage
-                raw_caller = row["SNVCaller"]
+                    continue  # skip HIO/HUO rows with 0x secondary coverage
                 if raw_caller in HYBRID_CALLERS:
                     # Compress hybrid callers: one column per ONT bin
                     ont_b = _ont_bin(sec_meas)
                     if ont_b is None:
-                        continue  # unmapped ONT coverage — skip
+                        continue  # unmapped ONT coverage - skip
                     ont_disp = int(ont_b) if ont_b == int(ont_b) else ont_b
                     label = f"{pri_plat}+{sec_plat}+{aligner}+hybrid+{ont_disp}x"
                 else:
                     label = f"{pri_plat}+{sec_plat}+{aligner}+{caller}+{sec_meas}x"
-                hio_labels.add(label)
+                # Route to appropriate hybrid section based on primary platform
+                if pri_plat == "Ultima":
+                    huo_labels.add(label)
+                else:
+                    hio_labels.add(label)
             else:  # single-platform
                 label = f"{pri_plat}+{aligner}+{caller}"
-                if genome_build.startswith("pangenome"):
+                # Route pangenome to pangenome section, others to hg38 section
+                if genome_build.startswith("pangenome") or "pangenome" in raw_aligner:
                     pangenome_labels.add(label)
                 else:
                     hg38_labels.add(label)
 
-            fscore_raw = row["Fscore"]
-            fscore = float("nan") if not fscore_raw or not fscore_raw.strip() else float(fscore_raw)
+            # Read the selected metric (Issue 2)
+            metric_raw = row.get(metric, "")
+            metric_val = float("nan") if not metric_raw or not metric_raw.strip() else float(metric_raw)
 
             cell_key = (pri_cov, label)
             count_raw.setdefault(snp_class, {})
             count_raw[snp_class][cell_key] = count_raw[snp_class].get(cell_key, 0) + 1
             raw.setdefault(snp_class, {})
-            raw_caller = row["SNVCaller"]
 
-            # Q5: MAX aggregation for ALL cells (not just hybrid)
+            # Issue 1: MAX aggregation for ALL cells
             prev = raw[snp_class].get(cell_key)
             if prev is None:
-                raw[snp_class][cell_key] = fscore
-            elif fscore == fscore:  # new fscore is not NaN
+                raw[snp_class][cell_key] = metric_val
+            elif metric_val == metric_val:  # new value is not NaN
                 if prev != prev:  # prev is NaN → replace
-                    raw[snp_class][cell_key] = fscore
-                elif fscore > prev:
-                    raw[snp_class][cell_key] = fscore
+                    raw[snp_class][cell_key] = metric_val
+                elif metric_val > prev:
+                    raw[snp_class][cell_key] = metric_val
 
             # Track sentdhiomr separately for exclusion-zone logic (hybrid only)
             if raw_caller == "sentdhiomr":
                 hiomr_raw.setdefault(snp_class, {})
                 prev_h = hiomr_raw[snp_class].get(cell_key)
-                if prev_h is None or (fscore == fscore and (
-                        prev_h != prev_h or fscore > prev_h)):
-                    hiomr_raw[snp_class][cell_key] = fscore
+                if prev_h is None or (metric_val == metric_val and (
+                        prev_h != prev_h or metric_val > prev_h)):
+                    hiomr_raw[snp_class][cell_key] = metric_val
 
-            # Q6: Track min/max Fscore per cell
-            if fscore == fscore:  # not NaN
-                fscore_min_raw.setdefault(snp_class, {})
-                fscore_max_raw.setdefault(snp_class, {})
-                cur_min = fscore_min_raw[snp_class].get(cell_key)
-                cur_max = fscore_max_raw[snp_class].get(cell_key)
-                if cur_min is None or fscore < cur_min:
-                    fscore_min_raw[snp_class][cell_key] = fscore
-                if cur_max is None or fscore > cur_max:
-                    fscore_max_raw[snp_class][cell_key] = fscore
+            # Track min/max metric per cell
+            if metric_val == metric_val:  # not NaN
+                metric_min_raw.setdefault(snp_class, {})
+                metric_max_raw.setdefault(snp_class, {})
+                cur_min = metric_min_raw[snp_class].get(cell_key)
+                cur_max = metric_max_raw[snp_class].get(cell_key)
+                if cur_min is None or metric_val < cur_min:
+                    metric_min_raw[snp_class][cell_key] = metric_val
+                if cur_max is None or metric_val > cur_max:
+                    metric_max_raw[snp_class][cell_key] = metric_val
 
-            # Q6: Track min/max measured coverage per cell
+            # Track min/max measured coverage per cell
             # Use Secondary_MeasuredMeanCov for hybrid, Primary_MeasuredMeanCov otherwise
             if sec_plat:  # hybrid
                 meas_cov_raw = row.get("Secondary_MeasuredMeanCov", "")
@@ -279,22 +387,24 @@ def load_data(footprint):
     data = {}
     counts = {}
     depths = {}
-    fscore_ranges = {}  # {snp_class: {cell_key: (min_fs, max_fs)}}
+    metric_ranges = {}  # {snp_class: {cell_key: (min_metric, max_metric)}}
     cov_ranges = {}     # {snp_class: {cell_key: (min_cov, max_cov)}}
     for sc, cells in raw.items():
         data[sc] = {}
         counts[sc] = {}
         depths[sc] = {}
-        fscore_ranges[sc] = {}
+        metric_ranges[sc] = {}
         cov_ranges[sc] = {}
         for key, val in cells.items():
             counts[sc][key] = count_raw.get(sc, {}).get(key, 1)
             data[sc][key] = val
-            # Fscore range
-            fs_min = fscore_min_raw.get(sc, {}).get(key)
-            fs_max = fscore_max_raw.get(sc, {}).get(key)
-            if fs_min is not None and fs_max is not None:
-                fscore_ranges[sc][key] = (fs_min, fs_max)
+            # Metric range (Issue 1: ensure max is used as display value)
+            m_min = metric_min_raw.get(sc, {}).get(key)
+            m_max = metric_max_raw.get(sc, {}).get(key)
+            if m_min is not None and m_max is not None:
+                metric_ranges[sc][key] = (m_min, m_max)
+                # Issue 1: Force max value as display value
+                data[sc][key] = m_max
             # Coverage range
             cov_min = cov_min_raw.get(sc, {}).get(key)
             cov_max = cov_max_raw.get(sc, {}).get(key)
@@ -328,10 +438,10 @@ def load_data(footprint):
         for key, val in tp_fn_raw.get(sc, {}).items():
             tp_fn[sc][key] = val
 
-    return (data, counts, depths, fscore_ranges, cov_ranges,
+    return (data, counts, depths, metric_ranges, cov_ranges,
             sorted(pangenome_labels), sorted(hg38_labels),
             sorted(paired_labels), sorted(hio_labels),
-            hiomr_cells, tp_fn)
+            sorted(huo_labels), hiomr_cells, tp_fn)
 
 
 def hio_sort_key(label):
@@ -362,24 +472,53 @@ def paired_sort_key(label):
     return int(m.group(1)) if m else 0
 
 
-def build_column_order(pangenome_labels, hg38_labels, paired_labels, hio_labels):
-    """Build final column list: pangenome | hg38 | paired | HIO (4 sections)."""
-    pg_sorted = sorted(pangenome_labels, key=pangenome_sort_key)
+def _filter_empty_columns(labels, data, all_covs):
+    """Remove column labels that have no data in any coverage bin across all variant classes.
+
+    A column is empty if data[snp_class][(cov, label)] is missing or NaN for all combos.
+    """
+    non_empty = set()
+    for label in labels:
+        for snp_class, class_data in data.items():
+            for cov in all_covs:
+                val = class_data.get((cov, label))
+                if val is not None and val == val:  # not NaN
+                    non_empty.add(label)
+                    break
+            if label in non_empty:
+                break
+    return [lbl for lbl in labels if lbl in non_empty]
+
+
+def build_column_order(pangenome_labels, hg38_labels, paired_labels, hio_labels, huo_labels):
+    """Build final column list: [cov bar] pangenome | hg38 | paired | HIO | HUO (5 sections).
+
+    Coverage bar at start of pangenome section, then spacers between other sections.
+    Total of 5 coverage indicator columns.
+    """
+    # Filter out empty-platform pangenome columns (those starting with '+')
+    pg_sorted = sorted([lbl for lbl in pangenome_labels if not lbl.startswith("+")],
+                       key=pangenome_sort_key)
     paired_sorted = sorted(paired_labels, key=paired_sort_key)
     hio_sorted = sorted(hio_labels, key=hio_sort_key)
-    columns = (pg_sorted + [SPACER_LABEL]
+    huo_sorted = sorted(huo_labels, key=hio_sort_key)  # same sort key as HIO
+    # Coverage bar at very start, then pangenome data, then spacers between other sections
+    columns = ([SPACER_LABEL] + pg_sorted + [SPACER_LABEL]
                + list(hg38_labels) + [SPACER_LABEL]
                + paired_sorted + [SPACER_LABEL]
-               + hio_sorted)
+               + hio_sorted + [SPACER_LABEL]
+               + huo_sorted)
     spacer_indices = []
-    spacer_indices.append(len(pg_sorted))
-    spacer_indices.append(spacer_indices[-1] + 1 + len(hg38_labels))
-    spacer_indices.append(spacer_indices[-1] + 1 + len(paired_sorted))
+    spacer_indices.append(0)  # coverage bar at start
+    spacer_indices.append(1 + len(pg_sorted))  # after pangenome
+    spacer_indices.append(spacer_indices[-1] + 1 + len(hg38_labels))  # after hg38
+    spacer_indices.append(spacer_indices[-1] + 1 + len(paired_sorted))  # after paired
+    spacer_indices.append(spacer_indices[-1] + 1 + len(hio_sorted))  # after HIO
     return columns, spacer_indices
 
 
 def build_matrix(class_data, class_counts, class_depths,
-                 class_fscore_ranges, class_cov_ranges,
+                 class_metric_ranges, class_cov_ranges,
                  cov_levels, columns):
     """Build 2D numpy arrays for values, counts, depths, and ranges."""
     n_rows, n_cols = len(cov_levels), len(columns)
@@ -387,8 +526,8 @@ def build_matrix(class_data, class_counts, class_depths,
     cnt = np.zeros((n_rows, n_cols), dtype=int)
     dep = np.full((n_rows, n_cols), np.nan)
     # Range arrays: (min, max) stored as separate arrays
-    fs_min = np.full((n_rows, n_cols), np.nan)
-    fs_max = np.full((n_rows, n_cols), np.nan)
+    m_min = np.full((n_rows, n_cols), np.nan)
+    m_max = np.full((n_rows, n_cols), np.nan)
     cov_min_arr = np.full((n_rows, n_cols), np.nan)
     cov_max_arr = np.full((n_rows, n_cols), np.nan)
     for i, cov in enumerate(cov_levels):
@@ -404,31 +543,39 @@ def build_matrix(class_data, class_counts, class_depths,
             d = class_depths.get((cov, col))
             if d is not None:
                 dep[i, j] = d
-            fs_range = class_fscore_ranges.get((cov, col))
-            if fs_range is not None:
-                fs_min[i, j], fs_max[i, j] = fs_range
+            m_range = class_metric_ranges.get((cov, col))
+            if m_range is not None:
+                m_min[i, j], m_max[i, j] = m_range
             cov_range = class_cov_ranges.get((cov, col))
             if cov_range is not None:
                 cov_min_arr[i, j], cov_max_arr[i, j] = cov_range
-    return mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr
+    return mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr
 
 
 REF_COLUMN = "ILMN+sbwa+gatk"
-REF_COV_BIN = 35  # internal bin 35 displays as "30x"
+REF_COV_BIN = 30  # new bin 30 = primary coverage >25 to ≤35
 
 # Section header labels and their positions (computed dynamically)
+# Future sections: "Hybrid Illumina+PacBio", "Hybrid Ultima+PacBio"
 SECTION_HEADERS = [
-    "Pangenome",
-    "Single Platform (hg38)",
-    "ILMN Read Length (hg38)",
-    "Hybrid (ILMN+ONT)",
+    "Pangenome hprc-v2 (3 platforms, 3 pipelines)",
+    "HuRef hg38 (4 platforms, 9 pipelines)",
+    "Illumina Read Length Titration (1 platform, 1 pipeline)",
+    "Hybrid Illumina+ONT",
+    "Hybrid Ultima+ONT",
 ]
 
 
-def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
+def plot_heatmap(mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr,
                  cov_levels, columns, spacer_indices,
-                 snp_class, footprint, out_path, hiomr_cells=None):
-    """Render heatmap with 4 sections separated by spacer columns."""
+                 snp_class, footprint, out_path, hiomr_cells=None,
+                 metric_name="Fscore", show_debug_ranges=False):
+    """Render heatmap with 4 sections separated by spacer columns.
+
+    Args:
+        metric_name: Name of the metric being displayed (default: Fscore)
+        show_debug_ranges: If True, show cov: and metric: range annotations (Issue 5)
+    """
     if hiomr_cells is None:
         hiomr_cells = set()
     n_cols = len(columns)
@@ -448,7 +595,7 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
     vmin = max(0, vmin - 0.02)
     vmax = min(1.0, vmax + 0.02)
 
-    # Reference cell: ILMN+sbwa+gatk at bin 35 (displayed as 30x)
+    # Reference cell: ILMN+sbwa+gatk at bin 30 (new binning)
     vcenter = None
     if REF_COV_BIN in cov_levels and REF_COLUMN in columns:
         ri = cov_levels.index(REF_COV_BIN)
@@ -498,16 +645,16 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
         return _clean_display_label(c)
 
     xlabels = [_reformat_xlabel(c) for c in columns]
-    ax.set_xticklabels(xlabels, rotation=55, ha="right", fontsize=11.6, fontweight="bold")
+    ax.set_xticklabels(xlabels, rotation=55, ha="right", fontsize=12.76, fontweight="bold")  # +10%
 
-    # Subtle background shading on x-axis labels grouped by platform (50% alpha)
+    # Subtle background shading on x-axis labels grouped by platform (popped colors)
     _PLATFORM_COLORS = {
-        "ILMN":     "#3b82f626",   # blue 15%
-        "ILMN+ONT": "#14b8a626",   # teal 15%
-        "ONT":      "#22c55e26",   # green 15%
-        "PacBio":   "#f59e0b26",   # amber 15%
-        "Ultima":   "#a855f726",   # purple 15%
-        "Roche":    "#ef444426",   # red 15%
+        "ILMN":     "#3b82f640",   # blue 25% (was 15%)
+        "ILMN+ONT": "#14b8a640",   # teal 25% (was 15%)
+        "ONT":      "#22c55e40",   # green 25% (was 15%)
+        "PacBio":   "#f59e0b40",   # amber 25% (was 15%)
+        "Ultima":   "#a855f740",   # purple 25% (was 15%)
+        "Roche":    "#ef444440",   # red 25% (was 15%)
     }
     for tick_label in ax.get_xticklabels():
         txt = tick_label.get_text()
@@ -524,10 +671,9 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
                 facecolor=bg, edgecolor="none",
                 pad=1.6, boxstyle="round,pad=0.22"))
 
-    # Y-axis
+    # Y-axis: remove numeric labels (coverage shown via 4 spacer columns)
     ax.set_yticks(range(n_rows))
-    bin_display = {25: 20, 35: 30, 45: 40}
-    ax.set_yticklabels([f"{bin_display.get(c, c)}x" for c in cov_levels], fontsize=15.5)
+    ax.set_yticklabels([""] * n_rows)  # empty labels - coverage shown in spacer columns
 
     # Vertical separator lines at spacers
     for si in spacer_indices:
@@ -541,9 +687,9 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
         if right <= left:
             continue
         mid = (left + right - 1) / 2.0
-        # Section header — bold, above heatmap grid
+        # Section header — bold, above heatmap grid (+15%)
         ax.text(mid, n_rows - 0.175, header,
-                ha="center", va="bottom", fontsize=11.5,
+                ha="center", va="bottom", fontsize=13.23,
                 fontweight="bold", color="#4a5568")
 
     # Mask exclusion-zone hybrid cells that lack hiomr data
@@ -565,11 +711,11 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
                 (j - 0.5, i - 0.5), 1, 1,
                 facecolor="#000000", edgecolor="none",
                 zorder=3))
-            ax.text(j, i, "—", ha="center", va="center",
-                    fontsize=9.2, color="#555555", zorder=4)
+            ax.text(j, i, "-", ha="center", va="center",
+                    fontsize=10.12, color="#555555", zorder=4)  # +10%
             mat[i, j] = np.nan  # prevent normal annotation from overwriting
 
-    # Annotate cells — Fscore top, ranges middle, count bottom, asterisk for non-hiomr hybrid
+    # Annotate cells — metric value top, ranges middle, count bottom, asterisk for non-hiomr hybrid
     for i in range(n_rows):
         for j in range(n_cols):
             col = columns[j]
@@ -578,65 +724,64 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
             val = mat[i, j]
             n = cnt[i, j]
             if np.isnan(val):
-                ax.text(j, i, "—", ha="center", va="center",
-                        fontsize=6.9, color="#555555")
+                ax.text(j, i, "-", ha="center", va="center",
+                        fontsize=7.59, color="#555555")  # +10%
             else:
                 rgba = cmap(norm(val))
                 perceived_lum = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
                 color = "black" if perceived_lum > 0.5 else "white"
-                # Check if this is a hybrid cell without hiomr data → add *
+                # Check if this is a hybrid cell without hiomr data -> add *
                 ont_b = _extract_ont_bin_from_label(col)
                 is_hybrid = ont_b is not None
                 has_hiomr = (snp_class, cov_levels[i], col) in hiomr_cells
                 asterisk = "*" if is_hybrid and not has_hiomr else ""
 
-                # Q6: Check for coverage and Fscore ranges
+                # Check for coverage and metric ranges
                 c_min, c_max = cov_min_arr[i, j], cov_max_arr[i, j]
-                f_min, f_max = fs_min[i, j], fs_max[i, j]
+                f_min, f_max = m_min[i, j], m_max[i, j]
                 has_cov_range = (not np.isnan(c_min) and not np.isnan(c_max)
                                  and abs(c_max - c_min) > 0.01)
-                has_fs_range = (not np.isnan(f_min) and not np.isnan(f_max)
-                                and abs(f_max - f_min) > 0.0001)
+                has_metric_range = (not np.isnan(f_min) and not np.isnan(f_max)
+                                    and abs(f_max - f_min) > 0.0001)
 
-                # Layout: Fscore at top, ranges in middle, n= at bottom
-                if has_cov_range or has_fs_range:
-                    # Compact layout with ranges
-                    ax.text(j, i + 0.22, f"{val:.3f}{asterisk}",
+                # Issue 5: Only show ranges if show_debug_ranges is True
+                if show_debug_ranges and (has_cov_range or has_metric_range):
+                    # Issue 4: Compact layout with 2pt extra spacing below metric value
+                    ax.text(j, i + 0.24, f"{val:.3f}{asterisk}",
                             ha="center", va="center",
-                            fontsize=10.35, fontweight="bold", color=color)
+                            fontsize=10.25, fontweight="bold", color=color)  # -10% from 11.39
                     if has_cov_range:
-                        ax.text(j, i + 0.02, f"cov:{c_min:.1f}–{c_max:.1f}x",
+                        ax.text(j, i + 0.02, f"cov:{c_min:.1f}-{c_max:.1f}x",
                                 ha="center", va="center",
-                                fontsize=5.75, color=color, alpha=0.8)
-                    if has_fs_range:
-                        y_fs = i - 0.13 if has_cov_range else i + 0.02
-                        ax.text(j, y_fs, f"F:{f_min:.3f}–{f_max:.3f}",
+                                fontsize=6.33, color=color, alpha=0.8)
+                    if has_metric_range:
+                        y_m = i - 0.13 if has_cov_range else i + 0.02
+                        ax.text(j, y_m, f"{metric_name[0]}:{f_min:.3f}-{f_max:.3f}",
                                 ha="center", va="center",
-                                fontsize=5.75, color=color, alpha=0.8)
+                                fontsize=6.33, color=color, alpha=0.8)
                     if n > 0:
                         ax.text(j, i - 0.32, f"n={n}",
                                 ha="center", va="center",
-                                fontsize=5.75, color=color, alpha=0.7)
+                                fontsize=6.33, color=color, alpha=0.7)
                 else:
-                    # Original layout (no ranges)
+                    # Standard layout (no ranges or show_debug_ranges=False)
                     ax.text(j, i + 0.1, f"{val:.3f}{asterisk}",
                             ha="center", va="center",
-                            fontsize=12.65, fontweight="bold", color=color)
+                            fontsize=12.53, fontweight="bold", color=color)  # -10% from 13.92
                     if n > 0:
                         ax.text(j, i - 0.32, f"n={n}",
                                 ha="center", va="center",
-                                fontsize=6.9, color=color, alpha=0.7)
+                                fontsize=7.59, color=color, alpha=0.7)
 
-    # Make spacer columns rgb(10,30,40) with white coverage labels
-    bin_display = {25: 20, 35: 30, 45: 40}
+    # Make spacer columns with white coverage labels
     for si in spacer_indices:
         for i in range(n_rows):
             ax.add_patch(plt.Rectangle((si - 0.5, i - 0.5), 1, 1,
                                        facecolor="#404050",
                                        edgecolor="none"))
-            cov_label = f"{bin_display.get(cov_levels[i], cov_levels[i])}x"
+            cov_label = f"{cov_levels[i]}x"
             ax.text(si, i, cov_label, ha="center", va="center",
-                    fontsize=11.2, color="white", alpha=0.85)
+                    fontsize=12.32, color="white", alpha=0.85)  # +10%
 
     # Magenta border around the reference cell (ILMN+sbwa+gatk @ 30x)
     if REF_COLUMN in columns and REF_COV_BIN in cov_levels:
@@ -661,14 +806,35 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
                         zorder=6)
                     break
 
-    ax.set_xlabel("(Sequencing Platform) Analysis Pipeline", fontsize=19.0)
-    ax.set_ylabel("Primary Measured Coverage (Binned)", fontsize=19.0)
-    ax.set_title(f"Fscore — ROI={footprint} — VariantClass={snp_class}",
-                 fontsize=18.7, fontweight="bold", pad=45)
+    # Axis labels (+10% font size: 19.0 -> 20.9)
+    ax.set_xlabel("(Sequencing Platform) Analysis Pipeline", fontsize=20.9)
+    ax.set_ylabel("Primary Measured Coverage", fontsize=20.9)
+
+    # Title: statement-style, no em-dashes, larger font
+    # Map variant class to human-readable description
+    vc_display = {
+        "SNP": "SNP",
+        "SNPts": "SNP Transitions",
+        "SNPtv": "SNP Transversions",
+        "Indel_50": "Indels ≤50bp",
+        "Indel_gt50": "Indels >50bp",
+        "INS_50": "Insertions ≤50bp",
+        "INS_gt50": "Insertions >50bp",
+        "DEL_50": "Deletions ≤50bp",
+        "DEL_gt50": "Deletions >50bp",
+        "All": "All Variants",
+    }.get(snp_class, snp_class)
+    roi_display = {
+        "hg38": "Whole Genome",
+        "giabHC": "GIAB High-Confidence Regions",
+        "clinvar_genes": "ClinVar Gene Regions",
+    }.get(footprint, footprint)
+    ax.set_title(f"{vc_display} {metric_name} Performance: {roi_display}",
+                 fontsize=21.5, fontweight="bold", pad=45)
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
-    cbar.ax.tick_params(labelsize=15.5)
-    cbar.set_label("Fscore", fontsize=15)  # unchanged per spec
+    cbar.ax.tick_params(labelsize=17.1)  # +10%
+    cbar.set_label(metric_name, fontsize=16.5)  # +10%
     # Ensure 0 and 1 appear on the colorbar scale
     existing_ticks = list(cbar.get_ticks())
     if 0.0 not in existing_ticks:
@@ -683,12 +849,12 @@ def plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
     print(f"  saved: {os.path.basename(out_path)}")
 
 
-def _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
+def _synthesize_snp_class(data, counts, depths, metric_ranges, cov_ranges,
                           tp_fn, hiomr_cells):
     """Create a synthetic 'SNP' variant class from SNPts and SNPtv.
 
-    Weighted average F-score using TP+FN as weights.
-    Mutates data, counts, depths, fscore_ranges, cov_ranges, and hiomr_cells in place.
+    Weighted average metric using TP+FN as weights.
+    Mutates data, counts, depths, metric_ranges, cov_ranges, and hiomr_cells in place.
     """
     ts_data = data.get("SNPts", {})
     tv_data = data.get("SNPtv", {})
@@ -699,8 +865,8 @@ def _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
     tv_tp_fn = tp_fn.get("SNPtv", {})
     ts_depths = depths.get("SNPts", {})
     tv_depths = depths.get("SNPtv", {})
-    ts_fs_ranges = fscore_ranges.get("SNPts", {})
-    tv_fs_ranges = fscore_ranges.get("SNPtv", {})
+    ts_m_ranges = metric_ranges.get("SNPts", {})
+    tv_m_ranges = metric_ranges.get("SNPtv", {})
     ts_cov_ranges = cov_ranges.get("SNPts", {})
     tv_cov_ranges = cov_ranges.get("SNPtv", {})
 
@@ -708,29 +874,29 @@ def _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
     snp_data = {}
     snp_counts = {}
     snp_depths = {}
-    snp_fs_ranges = {}
+    snp_m_ranges = {}
     snp_cov_ranges = {}
 
     for key in all_keys:
-        ts_fs = ts_data.get(key)
-        tv_fs = tv_data.get(key)
+        ts_m = ts_data.get(key)
+        tv_m = tv_data.get(key)
         ts_w = ts_tp_fn.get(key, 0.0)
         tv_w = tv_tp_fn.get(key, 0.0)
 
         # Treat NaN as absent
-        ts_valid = ts_fs is not None and ts_fs == ts_fs  # not NaN
-        tv_valid = tv_fs is not None and tv_fs == tv_fs
+        ts_valid = ts_m is not None and ts_m == ts_m  # not NaN
+        tv_valid = tv_m is not None and tv_m == tv_m
 
         if ts_valid and tv_valid:
             total_w = ts_w + tv_w
             if total_w > 0:
-                snp_data[key] = (ts_w * ts_fs + tv_w * tv_fs) / total_w
+                snp_data[key] = (ts_w * ts_m + tv_w * tv_m) / total_w
             else:
-                snp_data[key] = (ts_fs + tv_fs) / 2.0  # fallback: equal weight
+                snp_data[key] = (ts_m + tv_m) / 2.0  # fallback: equal weight
         elif ts_valid:
-            snp_data[key] = ts_fs
+            snp_data[key] = ts_m
         elif tv_valid:
-            snp_data[key] = tv_fs
+            snp_data[key] = tv_m
         else:
             snp_data[key] = float("nan")
 
@@ -747,15 +913,15 @@ def _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
         elif d_tv is not None and not math.isnan(d_tv):
             snp_depths[key] = d_tv
 
-        # Fscore ranges: merge min/max from ts and tv
-        ts_fsr = ts_fs_ranges.get(key)
-        tv_fsr = tv_fs_ranges.get(key)
-        if ts_fsr and tv_fsr:
-            snp_fs_ranges[key] = (min(ts_fsr[0], tv_fsr[0]), max(ts_fsr[1], tv_fsr[1]))
-        elif ts_fsr:
-            snp_fs_ranges[key] = ts_fsr
-        elif tv_fsr:
-            snp_fs_ranges[key] = tv_fsr
+        # Metric ranges: merge min/max from ts and tv
+        ts_mr = ts_m_ranges.get(key)
+        tv_mr = tv_m_ranges.get(key)
+        if ts_mr and tv_mr:
+            snp_m_ranges[key] = (min(ts_mr[0], tv_mr[0]), max(ts_mr[1], tv_mr[1]))
+        elif ts_mr:
+            snp_m_ranges[key] = ts_mr
+        elif tv_mr:
+            snp_m_ranges[key] = tv_mr
 
         # Coverage ranges: merge min/max from ts and tv
         ts_cr = ts_cov_ranges.get(key)
@@ -770,7 +936,7 @@ def _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
     data["SNP"] = snp_data
     counts["SNP"] = snp_counts
     depths["SNP"] = snp_depths
-    fscore_ranges["SNP"] = snp_fs_ranges
+    metric_ranges["SNP"] = snp_m_ranges
     cov_ranges["SNP"] = snp_cov_ranges
 
     # hiomr_cells: union of SNPts and SNPtv entries, re-tagged as SNP
@@ -781,44 +947,75 @@ def _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
 
 
 def main():
-    footprint = sys.argv[1] if len(sys.argv) > 1 else "hg38"
-    output_dir = os.path.join(BASE_DIR, f"heatmaps_fscore_{footprint}")
+    parser = argparse.ArgumentParser(
+        description="Generate per-VariantClass concordance metric heatmaps for a given ROI."
+    )
+    parser.add_argument("roi", nargs="?", default="hg38",
+                        help="ROI/footprint to filter on (default: hg38)")
+    parser.add_argument("--metric", default="Fscore",
+                        help="Concordance metric column to plot (default: Fscore)")
+    parser.add_argument("--show-debug-ranges", action="store_true",
+                        help="Show cov: and metric range annotations in cells (default: off)")
+    parser.add_argument("--apply-reassign", action="store_true",
+                        help="Apply hardcoded coverage bin reassignments (default: off)")
+    args = parser.parse_args()
+
+    footprint = args.roi
+    metric = args.metric
+    show_debug_ranges = args.show_debug_ranges
+    apply_reassign = args.apply_reassign
+
+    # Output directory includes metric name for clarity
+    metric_slug = metric.replace("-", "_").replace(" ", "_")
+    output_dir = os.path.join(BASE_DIR, f"heatmaps_{metric_slug}_{footprint}")
     os.makedirs(output_dir, exist_ok=True)
 
-    (data, counts, depths, fscore_ranges, cov_ranges,
+    (data, counts, depths, metric_ranges, cov_ranges,
      pg_labels, hg38_labels, paired_labels,
-     hio_labels, hiomr_cells, tp_fn) = load_data(footprint)
+     hio_labels, huo_labels, hiomr_cells, tp_fn) = load_data(footprint, metric=metric,
+                                                              apply_reassign=apply_reassign)
     if not data:
         print(f"No data found for ROI={footprint}", file=sys.stderr)
         sys.exit(1)
 
     # Synthesize "SNP" variant class: weighted average of SNPts and SNPtv
-    _synthesize_snp_class(data, counts, depths, fscore_ranges, cov_ranges,
+    _synthesize_snp_class(data, counts, depths, metric_ranges, cov_ranges,
                           tp_fn, hiomr_cells)
 
-    columns, spacer_indices = build_column_order(pg_labels, hg38_labels, paired_labels, hio_labels)
-    all_covs = sorted({k[0] for d in data.values() for k in d if 0 < k[0] <= 45})
+    all_covs = sorted({k[0] for d in data.values() for k in d if 0 < k[0] <= 40})
+
+    # Filter out empty columns (columns with no data in any cell)
+    pg_labels = _filter_empty_columns(pg_labels, data, all_covs)
+    hg38_labels = _filter_empty_columns(hg38_labels, data, all_covs)
+    paired_labels = _filter_empty_columns(paired_labels, data, all_covs)
+    hio_labels = _filter_empty_columns(hio_labels, data, all_covs)
+    huo_labels = _filter_empty_columns(huo_labels, data, all_covs)
+
+    columns, spacer_indices = build_column_order(pg_labels, hg38_labels, paired_labels, hio_labels, huo_labels)
 
     print(f"ROI: {footprint}")
+    print(f"Metric: {metric}")
     print(f"Coverage levels: {all_covs}")
     print(f"Pangenome columns ({len(pg_labels)}): {pg_labels}")
     print(f"hg38 columns ({len(hg38_labels)}): {hg38_labels}")
     print(f"Paired columns ({len(paired_labels)}): {paired_labels}")
     print(f"HIO columns ({len(hio_labels)}): {sorted(hio_labels, key=hio_sort_key)}")
+    print(f"HUO columns ({len(huo_labels)}): {sorted(huo_labels, key=hio_sort_key)}")
     print(f"VariantClasses: {sorted(data.keys())}")
     print()
 
     for snp_class in sorted(data.keys()):
-        mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr = build_matrix(
+        mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr = build_matrix(
             data[snp_class], counts[snp_class],
             depths.get(snp_class, {}),
-            fscore_ranges.get(snp_class, {}),
+            metric_ranges.get(snp_class, {}),
             cov_ranges.get(snp_class, {}),
             all_covs, columns)
-        out_path = os.path.join(output_dir, f"fscore_{footprint}_{snp_class}.svg")
-        plot_heatmap(mat, cnt, dep, fs_min, fs_max, cov_min_arr, cov_max_arr,
+        out_path = os.path.join(output_dir, f"{metric_slug}_{footprint}_{snp_class}.svg")
+        plot_heatmap(mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr,
                      all_covs, columns, spacer_indices,
-                     snp_class, footprint, out_path, hiomr_cells)
+                     snp_class, footprint, out_path, hiomr_cells,
+                     metric_name=metric, show_debug_ranges=show_debug_ranges)
 
     print(f"\nDone — {len(data)} heatmaps in {output_dir}")
 
