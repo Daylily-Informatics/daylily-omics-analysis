@@ -122,12 +122,12 @@ rule deep19_r_sort_index_chunk_vcf:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/vcfs/{dvchrm}/log/{sample}.{alnr}.{ddup}.deep19r.{dvchrm}.snv.sort.vcf.gz.log",
     resources:
-        vcpu=4,
-        threads=4,
+        vcpu=24,
+        threads=24,
         partition=config['deepvariant_1_9_roche']['partition_other'],
     params:
         cluster_sample=ret_sample,
-    threads: 4
+    threads: 24
     shell:
         """
         bedtools sort -header -i {input.vcf} > {output.vcfsort} 2>> {log};
@@ -164,11 +164,11 @@ rule deep19_r_concat_fofn:
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/{sample}.{alnr}.{ddup}.deep19r.snv.concat.vcf.gz.fofn",
         tmp_fofn=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep19r/{sample}.{alnr}.{ddup}.deep19r.snv.concat.vcf.gz.fofn.tmp",
-    threads: 2
+    threads: 32
     resources:
-        vcpu=2,
-        threads=2,
-        partition="i192,i192mem",
+        vcpu=32,
+        threads=32,
+        partition="i192,i192mem,i128",
     params:
         fn_stub="{sample}.{alnr}.{ddup}.deep19r.",
         cluster_sample=ret_sample,
@@ -210,10 +210,10 @@ rule deep19_r_concat_index_chunks:
     wildcard_constraints:
         alnr="roche",
         ddup="na",
-    threads: 4
+    threads: 32
     resources:
-        vcpu=4,
-        threads=4,
+        vcpu=32,
+        threads=32,
         partition=config['deepvariant_1_9_roche']['partition_other'],
     priority: 47
     params:
@@ -258,9 +258,9 @@ rule clear_combined_deep19_r_vcf:  # TARGET: clear combined deep19r vcf so chunk
     conda:
         config['deepvariant_1_9_roche']['conda']
     resources:
-        vcpu=2,
-        threads=2,
-        partition="i192,i192mem",
+        vcpu=32,
+        threads=32,
+        partition="i192,i192mem,i128",
     shell:
         "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 
@@ -283,7 +283,7 @@ rule produce_deep19_r_vcf:  # TARGET: DeepVariant 1.9 Roche VCF
         ),
     output:
         "gatheredall.deep19r",
-    threads: 4
+    threads: 32
     priority: 48
     log:
         "gatheredall.deep19r.log",

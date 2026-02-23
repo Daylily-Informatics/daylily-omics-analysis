@@ -205,7 +205,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.{cmpfootprint}.parse_vcfeval_summary.bench.tsv",
         # This step is mostly I/O + bcftools annotate + python classification.
         # Keep it light to avoid oversubscription when many ROIs run in parallel.
-        threads: 1
+        threads: 8
         resources:
             vcpu=1,
             threads=1,
@@ -269,7 +269,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         benchmark:
             MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.concordance.bench.tsv",
         # Keep the rule-level threads/resources for backwards cluster configs that key off them.
-        threads: 1 #config["rtg_vcfeval"]["threads"]
+        threads: 8 #config["rtg_vcfeval"]["threads"]
         resources:
             vcpu=config["rtg_vcfeval"]["threads"],
             threads=config["rtg_vcfeval"]["threads"],
