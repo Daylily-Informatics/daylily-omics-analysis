@@ -680,10 +680,16 @@ def plot_heatmap(mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr,
         ax.axvline(x=si, color="#6366f1", linewidth=1.5, linestyle=":", alpha=0.55)
 
     # Horizontal section annotations just above the top of the heatmap grid
-    boundaries = [-1] + list(spacer_indices) + [n_cols]
+    # Each section's data columns run from spacer[i]+1 to spacer[i+1]-1
+    # (spacer columns themselves are coverage indicators, not data)
     for sec_i, header in enumerate(SECTION_HEADERS):
-        left = boundaries[sec_i] + 1
-        right = boundaries[sec_i + 1]
+        if sec_i >= len(spacer_indices):
+            break
+        left = spacer_indices[sec_i] + 1  # first data column after spacer
+        if sec_i + 1 < len(spacer_indices):
+            right = spacer_indices[sec_i + 1]  # up to (not including) next spacer
+        else:
+            right = n_cols  # last section goes to end
         if right <= left:
             continue
         mid = (left + right - 1) / 2.0

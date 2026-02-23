@@ -4,8 +4,9 @@
 import os
 
 # Coverage levels
-SR_COVS = [1, 3, 5, 7, 10, 15, 20, 30, 40]  # Short-read
-LR_COVS = [0.5, 1, 3, 5, 7, 10, 15, 20, 30]  # Long-read
+SR_COVS = [1, 3, 5, 7, 10, 15, 20, 30, 40]  # Short-read (9 levels)
+# ONT available: 1x, 3x, 5x, 7x, 10x, 15x, 20x, 30x, 40x (no 0.5x)
+LR_COVS = [1, 3, 5, 7, 10, 15, 20, 30, 40]  # Long-read (9 levels)
 
 # TSV header columns
 HEADER = [
@@ -30,7 +31,7 @@ SAMPLES_HEADER = [
 ILMN_R1 = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R1.fastq.gz"
 ILMN_R2 = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R2.fastq.gz"
 ULTIMA_CRAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ug/HG003_{cov}x.cleaned.cram"
-ONT_CRAM = "/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003/HG003_{cov}x.cleaned.cram"
+ONT_CRAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_{cov}x.cleaned.cram"
 PB_BAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/pacbio/HG003/R0-HG003-D0-0-D0/{cov}p0x/HG003_{cov}p0x.bam"
 
 def fmt_cov(c):
