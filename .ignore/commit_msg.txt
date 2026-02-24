@@ -1,0 +1,16 @@
+fix: remove SR --replace_rg that strips PL:ILLUMINA from short reads
+
+The modular hybrid pipelines applied --replace_rg to SR reads in pass1,
+mapq0_bed, and stage3 rules, replacing their original read group (which
+includes PL:ILLUMINA) with a minimal RG lacking platform info.
+
+The Sentieon hybrid model uses PL:ILLUMINA to identify short reads.
+Without it, SR data was invisible to variant calling (SAD=0,0 for all
+variants), producing identical results regardless of SR coverage depth.
+
+The CLI version never applies --replace_rg to SR reads. This fix matches
+that behavior. SR reads keep their original RG from sr_align (which
+already has the correct SM tag), only LR reads get --replace_rg with LR:1.
+
+Fixes: HIOM-MOD and HIPBM-MOD identical concordance for different SR
+coverage levels (e.g. SR5x vs SR20x both showing F=0.8468).

@@ -1,12 +1,34 @@
 #!/usr/bin/env python3
-"""Generate units.tsv and samples.tsv for hybrid coverage titration matrices."""
+"""Generate units.tsv and samples.tsv for EMPTY hybrid coverage cells only."""
 
 import os
 
-# Coverage levels
+# All possible coverage levels
 SR_COVS = [1, 3, 5, 7, 10, 15, 20, 30, 40]  # Short-read (9 levels)
-# ONT available: 1x, 3x, 5x, 7x, 10x, 15x, 20x, 30x, 40x (no 0.5x)
 LR_COVS = [1, 3, 5, 7, 10, 15, 20, 30, 40]  # Long-read (9 levels)
+
+# Existing SR×LR combinations (from consolidated_concordance.tsv)
+# These cells already have data and should NOT be regenerated
+EXISTING_HIOMR = {  # ILMN+ONT - PrimaryCoverageBin × SecondaryCoverageBin
+    (3, 1), (3, 3), (3, 7),
+    (5, 1), (5, 3), (5, 7),
+    (7, 1), (7, 3), (7, 7),
+    (10, 1), (10, 3), (10, 7),
+    (15, 1), (15, 3), (15, 7),
+}
+
+EXISTING_HUOMR = {  # Ultima+ONT - PrimaryCoverageBin × SecondaryCoverageBin
+    (1, 1), (1, 3), (1, 5), (1, 7),
+    (3, 1), (3, 3), (3, 5), (3, 7),
+    (5, 1), (5, 3), (5, 5), (5, 7),
+    (7, 1), (7, 3), (7, 5), (7, 7),
+    (10, 1), (10, 3), (10, 5), (10, 7),
+    (15, 1), (15, 3), (15, 5), (15, 7),
+}
+
+# PacBio hybrids have no existing data yet - generate full matrix
+EXISTING_HIPMR = set()
+EXISTING_HUPMR = set()
 
 # TSV header columns
 HEADER = [

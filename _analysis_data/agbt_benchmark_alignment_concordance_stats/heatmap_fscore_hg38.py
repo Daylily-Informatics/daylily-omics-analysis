@@ -558,11 +558,11 @@ REF_COV_BIN = 30  # new bin 30 = primary coverage >25 to ≤35
 # Section header labels and their positions (computed dynamically)
 # Future sections: "Hybrid Illumina+PacBio", "Hybrid Ultima+PacBio"
 SECTION_HEADERS = [
-    "Pangenome hprc-v2 (3 platforms, 3 pipelines)",
-    "HuRef hg38 (4 platforms, 9 pipelines)",
-    "Illumina Read Length Titration (1 platform, 1 pipeline)",
-    "Hybrid Illumina+ONT",
-    "Hybrid Ultima+ONT",
+    "Pangenome\nhprc-v2\n(3 platforms,\n3 pipelines)",
+    "HuRef\nhg38\n(4 platforms,\n9 pipelines)",
+    "Illumina\nRead Length\nTitration\n(1 platform,\n1 pipeline)",
+    "Hybrid\nIllumina+ONT",
+    "Hybrid\nUltima+ONT",
 ]
 
 
@@ -693,10 +693,10 @@ def plot_heatmap(mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr,
         if right <= left:
             continue
         mid = (left + right - 1) / 2.0
-        # Section header — bold, above heatmap grid (+15%)
+        # Section header — bold, above heatmap grid, multi-line with tight spacing
         ax.text(mid, n_rows - 0.175, header,
-                ha="center", va="bottom", fontsize=13.23,
-                fontweight="bold", color="#4a5568")
+                ha="center", va="bottom", fontsize=11.5,
+                fontweight="bold", color="#4a5568", linespacing=0.9)
 
     # Mask exclusion-zone hybrid cells that lack hiomr data
     for j in range(n_cols):
@@ -765,19 +765,13 @@ def plot_heatmap(mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr,
                         ax.text(j, y_m, f"{metric_name[0]}:{f_min:.3f}-{f_max:.3f}",
                                 ha="center", va="center",
                                 fontsize=6.33, color=color, alpha=0.8)
-                    if n > 0:
-                        ax.text(j, i - 0.32, f"n={n}",
-                                ha="center", va="center",
-                                fontsize=6.33, color=color, alpha=0.7)
+
                 else:
                     # Standard layout (no ranges or show_debug_ranges=False)
                     ax.text(j, i + 0.1, f"{val:.3f}{asterisk}",
                             ha="center", va="center",
                             fontsize=12.53, fontweight="bold", color=color)  # -10% from 13.92
-                    if n > 0:
-                        ax.text(j, i - 0.32, f"n={n}",
-                                ha="center", va="center",
-                                fontsize=7.59, color=color, alpha=0.7)
+
 
     # Make spacer columns with white coverage labels
     for si in spacer_indices:
@@ -836,7 +830,7 @@ def plot_heatmap(mat, cnt, dep, m_min, m_max, cov_min_arr, cov_max_arr,
         "clinvar_genes": "ClinVar Gene Regions",
     }.get(footprint, footprint)
     ax.set_title(f"{vc_display} {metric_name} Performance: {roi_display}",
-                 fontsize=21.5, fontweight="bold", pad=45)
+                 fontsize=21.5, fontweight="bold", pad=71)
 
     cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.02)
     cbar.ax.tick_params(labelsize=17.1)  # +10%
