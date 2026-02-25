@@ -44,6 +44,8 @@ BENCHMARK_FILES = {
     "ultima_ds": "ultima_ds/benchmarks_summary.tsv",
     "ont_dv19": "ont_dv19/benchmarks_summary.tsv",
     "ilmn_gatk_b": "ilmn_gatk_b/benchmarks_summary.tsv",
+    "hiomr_addl": "src_data/hiomr_addl/benchmarks_summary.tsv",
+    "hibmr_a": "src_data/hibmr_a/benchmarks_summary.tsv",
     # No benchmarks for dragen_fullold or dragen_old
 }
 
@@ -63,6 +65,7 @@ CALLER_DISPLAY = {
     "sentd": "dnascope", "sentdont": "dnascope-ont",
     "sentdpb": "dnascope-pb", "sentdug": "dnascope-ug",
     "sentdhio": "dnascope-hio",
+    "sentdhipmr": "dnascope-hipmr",
 }
 
 _PG_MARKER = "\u200b"

@@ -111,6 +111,7 @@ CALLER_DISPLAY = {
     "sentdpb": "dnascope-pb",
     "sentdug": "dnascope-ug",
     "sentdhio": "dnascope-hio",
+    "sentdhipmr": "dnascope-hipmr",
     "sentdhiomr": "dnascope-hiomr",
     "sentdhuo": "dnascope-huo",
     "sentpg": "dnascope-pg",
@@ -119,7 +120,7 @@ CALLER_DISPLAY = {
 
 # Hybrid callers to compress into a single column per ONT bin.
 # When multiple callers exist at the same ONT bin, keep the max Fscore.
-HYBRID_CALLERS = {"sentdhio", "sentdhiom", "sentdhiomr", "sentdhuomr"}
+HYBRID_CALLERS = {"sentdhio", "sentdhiom", "sentdhiomr", "sentdhuomr", "sentdhipmr"}
 
 # Map measured ONT secondary coverage → display ONT bin
 ONT_BIN_MAP = {

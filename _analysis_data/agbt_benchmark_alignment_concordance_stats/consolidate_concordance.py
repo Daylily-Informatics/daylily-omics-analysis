@@ -21,6 +21,7 @@ TEST_GROUPS = [
     ("hiomr_two", "hiomr_two/giab_concordance_mqc.tsv", "hiomr_two/alignstats_combo_mqc.tsv"),
     ("hiomr_three", "hiomr_three/giab_concordance_mqc.tsv", "hiomr_three/alignstats_combo_mqc.tsv"),
     ("hiomr_four", "hiomr_four/giab_concordance_mqc.tsv", "hiomr_four/alignstats_combo_mqc.tsv"),
+    ("hiomr_addl", "hiomr_addl/giab_concordance_mqc.tsv", None),
     # Ultima+ONT hybrid data
     ("huo_old", "huo_old/giab_concordance_mqc.tsv", "huo_old/alignstats_combo_mqc.tsv"),
     ("huomr_a", "huomr_a/giab_concordance_mqc.tsv", None),
@@ -50,16 +51,20 @@ TEST_GROUPS = [
     ("ilmn_fin_pan2", "ilmn_fin_pan2/giab_concordance_mqc.tsv", None),
     ("pangenome_A", "pangenome_A/giab_concordance_mqc.tsv", None),
     ("pangenome_B", "pangenome_B/giab_concordance_mqc.tsv", None),
+    # ILMN+PacBio hybrid modular refactored
+    ("hibmr_a", "hibmr_a/giab_concordance_mqc.tsv", None),
 ]
 
 ILMN_SOLO_ALIGNSTATS = os.path.join(SRC_DATA_DIR, "ilmn_hg003_ilmn_sentonly/alignstats_combo_mqc.tsv")
 ONT_SOLO_ALIGNSTATS = os.path.join(SRC_DATA_DIR, "ont_ds/ont_patch/alignstats_combo_mqc.tsv")
 
-HIO_PATTERN = re.compile(r"^HIO[ab]-.*-SR(\d+)x-ONT(\d+)b?x-")
+HIO_PATTERN = re.compile(r"^HIO[ab]\d*-.*-SR(\d+)x-ONT(\d+)b?x-")
 HIO_OLD_PATTERN = re.compile(r"^HIOv1_HG003_")
 HUO_PATTERN = re.compile(r"^HUOv1_")
 # HUOIa: Ultima+ONT hybrid modular refactored (e.g. HUOIa-HG003-SR10x-ONT10x-28-D0-PF-UG-ULTIMA)
 HUOI_PATTERN = re.compile(r"^HUOI[ab]-.*-SR(\d+)x-ONT(\d+)b?x-")
+# HIBMR: ILMN+PacBio hybrid modular refactored (e.g. R0-HG003-SR1x-LR1x-0-D0-PCR-FREE-ILMN-NOVASEQ)
+HIBMR_PATTERN = re.compile(r"^R\d+-.*-SR(\d+)x-LR(\d+)x-")
 COV_PATTERN = re.compile(r"HG003-(\d+)x")
 COV_FRACTIONAL_PATTERN = re.compile(r"HG003-(\d+)p(\d+)xa?-")  # e.g. 2p5xa → 2.5
 READLEN_PATTERN = re.compile(r"HG003-\d+x-(\d+)bp-")
@@ -83,6 +88,7 @@ PRIMARY_SEQ_PLATFORM = {
     "hiomr_two": "ILMN",
     "hiomr_three": "ILMN",
     "hiomr_four": "ILMN",
+    "hiomr_addl": "ILMN",
     "huo_old": "Ultima",
     "huomr_a": "Ultima",
     "ilmn_all_downsamples_a": "ILMN",
@@ -107,6 +113,7 @@ PRIMARY_SEQ_PLATFORM = {
     "RLEN": "ILMN",
     "read_len": "ONT",
     "ug_pan": "Ultima",
+    "hibmr_a": "ILMN",
 }
 
 SECONDARY_SEQ_PLATFORM = {
@@ -118,10 +125,13 @@ SECONDARY_SEQ_PLATFORM = {
     "hiomr_two": "ONT",
     "hiomr_three": "ONT",
     "hiomr_four": "ONT",
+    "hiomr_addl": "ONT",
     # Ultima+ONT hybrids
     "huo_old": "ONT",
     "huomr_a": "ONT",
     "sentdhiomr": "ONT",
+    # ILMN+PacBio hybrid
+    "hibmr_a": "PacBio",
 }
 
 # Genome build per test group (default: hg38)
@@ -256,6 +266,7 @@ def main():
                 sample, aligner = row["Sample"], row["Aligner"]
 
                 hio_m = HIO_PATTERN.match(sample)
+                hibmr_m = HIBMR_PATTERN.match(sample)
                 hio_old_m = HIO_OLD_PATTERN.match(sample)
                 huo_m = HUO_PATTERN.match(sample)
                 huoi_m = HUOI_PATTERN.match(sample)
@@ -267,6 +278,10 @@ def main():
                 if hio_m:
                     pri_tgt = int(hio_m.group(1))
                     sec_tgt = int(hio_m.group(2))
+                elif hibmr_m:
+                    # ILMN+PacBio hybrid: R{N}-HG003-SR{X}x-LR{Y}x-
+                    pri_tgt = int(hibmr_m.group(1))
+                    sec_tgt = int(hibmr_m.group(2))
                 elif huoi_m:
                     # HUOIa/b: Ultima+ONT modular refactored (e.g. HUOIa-HG003-SR10x-ONT10x-...)
                     pri_tgt = int(huoi_m.group(1))
@@ -301,6 +316,10 @@ def main():
                     if sec is None:
                         # Extrapolate from linear trend (measured/target ≈ 0.52)
                         sec = (round(sec_tgt * 0.52, 6), round(sec_tgt * 0.52, 1))
+                elif hibmr_m:
+                    # ILMN+PacBio hybrid: use target cov as proxy (no alignstats)
+                    pri = (float(pri_tgt), float(pri_tgt))
+                    sec = (float(sec_tgt), float(sec_tgt))
                 elif huoi_m:
                     # HUOIa/b: Ultima+ONT - use target cov as proxy (no alignstats for huomr_a)
                     # For Ultima primary, use target; for ONT secondary, extrapolate
