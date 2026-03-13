@@ -40,10 +40,10 @@ rule lfq2_indelqual:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.indelqual.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.indelqual.cram.crai",
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram.crai",
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.indelqual.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.{ddup}.indelqual.log",
     conda:
         "../envs/lofreq2_v0.1.yaml"
     threads: config['lofreq2']['threads']
@@ -68,13 +68,13 @@ rule lofreq2:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
-        icram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.indelqual.cram",
-        icrai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.indelqual.cram.crai",
+        icram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram",
+        icrai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram.crai",
         d=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.ready",
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.lfq2.{lfqchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.vcf",
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.lfq2.{lfqchrm}.snv.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.log",
     threads: config['lofreq2']['threads']
     conda:
         "../envs/lofreq2_v0.1.yaml"
@@ -106,27 +106,14 @@ rule lofreq2:
         start_time=$(date +%s);
         dchr=$(echo {params.cpre}{params.dchrm} | sed 's/~/\:/g' | sed 's/23\:/X\:/' | sed 's/24\:/Y\:/' | sed 's/25\:/{params.mito_code}\:/');
 
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/fsx/scratch/lfq2_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
 
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         tdir=$TMPDIR;
 
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
-            exit 11;
-        fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         echo "DCHRM: $dchr" >> {log} 2>&1;
         
@@ -154,17 +141,17 @@ rule lofreq2:
 
 rule lofreq2_sort_index_chunk_vcf:
     input:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.lfq2.{lfqchrm}.snv.vcf",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.vcf",
     priority: 46
     output:
-        tmpvcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.lfq2.{lfqchrm}.snv.tmp.vcf",
-        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.lfq2.{lfqchrm}.snv.sort.vcf",
-        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.lfq2.{lfqchrm}.snv.sort.vcf.gz",
-        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.lfq2.{lfqchrm}.snv.sort.vcf.gz.tbi",
+        tmpvcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.tmp.vcf",
+        vcfsort=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.sort.vcf",
+        vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.sort.vcf.gz",
+        vcftbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.sort.vcf.gz.tbi",
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/log/{sample}.{alnr}.lfq2.{lfqchrm}.snv.sort.vcf.gz.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/log/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.sort.vcf.gz.log",
     resources:
         vcpu=4,
         threads=config['lofreq2']['threads'],
@@ -193,7 +180,7 @@ rule lofreq2_concat_fofn:
     input:
         chunk_tbi=sorted(
             expand(
-                MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/lfq2/vcfs/{dvchm}/{{sample}}.{{alnr}}.lfq2.{dvchm}.snv.sort.vcf.gz.tbi",
+                MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/lfq2/vcfs/{dvchm}/{{sample}}.{{alnr}}.{{ddup}}.lfq2.{dvchm}.snv.sort.vcf.gz.tbi",
                 dvchm=LOFREQ_CHRMS,
             ),
             key=lambda x: float(
@@ -204,22 +191,22 @@ rule lofreq2_concat_fofn:
             ),
         ),
     output:
-        fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.concat.vcf.gz.fofn.tmp",
+        fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.concat.vcf.gz.fofn.tmp",
     threads: 2
     resources:
         vcpu=2,
         threads=2,
         partition=config['lofreq2']['partition'],
     params:
-        fn_stub="{sample}.{alnr}.lfq2.",
+        fn_stub="{sample}.{alnr}.{ddup}.lfq2.",
         cluster_sample=ret_sample,
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.lfq2.concat.fofn.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.lfq2.concat.fofn.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.{ddup}.lfq2.concat.fofn.log",
     shell:
         """
 
@@ -234,20 +221,20 @@ rule lofreq2_concat_fofn:
                 echo $ii >> {output.tmp_fofn};
             fi;
         done;
-        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.lfq2. {output.fin_fofn}) >> {log} 2>&1;
+        (workflow/scripts/sort_concat_chrm_list.py {output.tmp_fofn} {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.lfq2. {output.fin_fofn}) >> {log} 2>&1;
         """
 
 
 rule lofreq2_concat_index_chunks:
     input:
-        fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.concat.vcf.gz.fofn.tmp",
+        fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.concat.vcf.gz.fofn",
+        tmp_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.concat.vcf.gz.fofn.tmp",
     output:
-        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.sort.vcf.gz"),
+        vcfgz=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.sort.vcf.gz"),
         vcfgztemp=temp(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.sort.temp.vcf.gz"
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.sort.temp.vcf.gz"
         ),
-        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.sort.vcf.gz.tbi"),
+        vcfgztbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.sort.vcf.gz.tbi"),
     threads: 4
     resources:
         vcpu=4,
@@ -264,7 +251,7 @@ rule lofreq2_concat_index_chunks:
     conda:
         "../envs/vanilla_v0.1.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.lfq2.snv.merge.sort.gatherered.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.{ddup}.lfq2.snv.merge.sort.gatherered.log",
     shell:
         """
 
@@ -288,13 +275,13 @@ rule lofreq2_concat_index_chunks:
 rule produce_lofreq2_vcf:  # TARGET: lofreq2 vcfs
     input:
         vcftb=expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.sort.vcf.gz",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.sort.vcf.gz",
             sample=SSAMPS,
             alnr=ALIGNERS,
             ddup=DDUP,
         ),
         vcftbi=expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.lfq2.snv.sort.vcf.gz.tbi",
+            MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
             alnr=ALIGNERS,
             ddup=DDUP,
@@ -307,6 +294,8 @@ rule produce_lofreq2_vcf:  # TARGET: lofreq2 vcfs
         "gatheredall.lfq2.log",
     conda:
         "../envs/vanilla_v0.1.yaml"
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         for vcf in {input.vcftb}; do
@@ -324,8 +313,8 @@ rule produce_lofreq2_vcf:  # TARGET: lofreq2 vcfs
 
 rule prep_lofreq2_chunkdirs:
     input:
-        b=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.indelqual.cram",
-        i=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.indelqual.cram.crai",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram",
+        i=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram.crai",
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/lfq2/vcfs/{lfqchrm}/{{sample}}.ready",

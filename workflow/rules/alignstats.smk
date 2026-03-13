@@ -13,6 +13,45 @@ import os
 def fetch_alnr(wildcards):
     return wildcards.alnr
 
+ruleorder: alignstats_bam > alignstats
+
+
+rule alignstats_bam:
+    """Run alignstats on BAM input (Roche SBX Duplex BAMs that stay as BAM, not CRAM)."""
+    input:
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.bam",
+        bai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.bam.bai",
+    output:
+        json=MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
+    wildcard_constraints:
+        alnr="roche",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.alignstats_bam.bench.tsv"
+    threads: config["alignstats"]["threads"]
+    resources:
+        attempt_n=lambda wildcards, attempt:  (attempt + 0),
+        partition=config["alignstats"]["partition"],
+        threads=config["alignstats"]["threads"],
+        vcpu=config["alignstats"]["threads"]
+    log:  MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/logs/{sample}.{alnr}.{ddup}.alignstats.log",
+    params:
+        P=50,
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        n=config["alignstats"]["num_reads_in_mem"],
+        cluster_sample=ret_sample,
+        ld_preload=" "
+        if "ld_preload" not in config["malloc_alt"]
+        else config["malloc_alt"]["ld_preload"],
+        ld_pre=" "
+        if "ld_preload" not in config["alignstats"]
+        else config["alignstats"]["ld_preload"],
+    conda:
+        config["alignstats"]["env_yaml"]
+    shell:
+        "resources/alignstats/alignstats  -C -U  -i {input.bam} -T {params.huref} -o {output.json}  -j bam -v -P {threads} -p {threads} > {log};"
+
+
 rule alignstats:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
@@ -42,7 +81,7 @@ rule alignstats:
     conda:
         config["alignstats"]["env_yaml"]
     shell:
-        "alignstats  -C -U  -i {input.cram} -T {params.huref} -o {output.json}  -j cram -v -P {threads} -p {threads} > {log};"
+        "resources/alignstats/alignstats  -C -U  -i {input.cram} -T {params.huref} -o {output.json}  -j cram -v -P {threads} -p {threads} > {log};"
 
 
 localrules:

@@ -536,6 +536,12 @@ sentdhio:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT1.1.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -570,6 +576,222 @@ sentdhuo:
     partition: "i192,i192mem"
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
     mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid CLI Ultima+PacBio
+sentdhup:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhup_chrms: "19-20"
+    hg38_broad_sentdhup_chrms: "19-20"
+    b37_sentdhup_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    mem_mb: 200000
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid Modular Illumina+PacBio
+sentdhipm:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhipm_chrms: "19-20"
+    hg38_broad_sentdhipm_chrms: "19-20"
+    b37_sentdhipm_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid Modular Ultima+PacBio
+sentdhupm:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhupm_chrms: "19-20"
+    hg38_broad_sentdhupm_chrms: "19-20"
+    b37_sentdhupm_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid Modular Roche+ONT (uses HybridUltimaONT model with Roche short-read data)
+sentdhrom:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhrom_chrms: "19-20"
+    hg38_broad_sentdhrom_chrms: "19-20"
+    b37_sentdhrom_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+sentdhrpm:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhrpm_chrms: "19-20"
+    hg38_broad_sentdhrpm_chrms: "19-20"
+    b37_sentdhrpm_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+
+# Hybrid Modular Refactored Illumina+ONT
+sentdhiomr:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhiomr_chrms: "19-20"
+    hg38_broad_sentdhiomr_chrms: "19-20"
+    b37_sentdhiomr_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid Modular Refactored Illumina+PacBio
+sentdhipmr:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhipmr_chrms: "19-20"
+    hg38_broad_sentdhipmr_chrms: "19-20"
+    b37_sentdhipmr_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid Modular Refactored Ultima+PacBio
+sentdhupmr:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhupmr_chrms: "19-20"
+    hg38_broad_sentdhupmr_chrms: "19-20"
+    b37_sentdhupmr_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
+    max_mem: "4G"
+    pop_vcf: ""
+
+# Hybrid Modular Refactored Ultima+ONT
+sentdhuomr:
+    threads: 7
+    use_threads: 7
+    hg38_sentdhuomr_chrms: "19-20"
+    hg38_broad_sentdhuomr_chrms: "19-20"
+    b37_sentdhuomr_chrms: "19-20"
+    ld_preload: " "
+    env_yaml: "../envs/vanilla_v0.1.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i192,i192mem"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
+    mem_mb: 200000
+    mem_mb_medium: 50000
+    mem_mb_light: 16000
+    threads_medium: 4
+    threads_light: 2
+    use_threads_medium: 4
+    use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
 
@@ -588,7 +810,6 @@ sentdug:
     dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle/dnascope.model"
     mem_mb: 200000
     pop_vcf: ""
-
 
 sentdpb:
     threads: 7
@@ -739,6 +960,7 @@ run_concordance:
 sentieon_haplocaller:
     threads: 7
     partition: "i8"
+    pop_vcf: ""
 
 rtg_vcfstats:
     threads: 7
@@ -790,9 +1012,39 @@ sent_aln_sort_snv:
     bench_repeat: 0
     hapl: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
     gbz: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
-    model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
     pop_vcf: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/pop-v20g41-20251216.vcf.gz"
-    canonical_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38/hg38_canonical.bed"
+    canonical_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
+    dbsnp: "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
+    pcr_free: "true"
+
+sentieon_pangenome_sr:
+    threads: 7
+    env_yaml: "../envs/sent_pangenome_v0.1.yaml"
+    mem_mb: 50000
+    partition: "i8"
+    constraint: ""
+    bench_repeat: 0
+    gbz: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
+    hapl: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
+    model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    canonical_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
+    dbsnp: "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
+    pcr_free: "true"
+
+sentieon_pangenome_ug:
+    threads: 7
+    env_yaml: "../envs/pangenome_ultima_v0.1.yaml"
+    mem_mb: 50000
+    partition: "i8"
+    constraint: ""
+    bench_repeat: 0
+    gbz: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
+    hapl: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
+    model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltimaPangenomeRealignWGS1.0.bundle/SentieonUltimaPangenomeRealignWGS1.0.bundle"
+    pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    canonical_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
     pcr_free: "true"
 
@@ -811,6 +1063,11 @@ sentieon_gatk:
     mbuffer: " | mbuffer -m 1G -q -s 128k "
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""
+    pop_vcf: ""
+    hg38_sentieon_gatk_chrms: "1-24"
+    hg38_broad_sentieon_gatk_chrms: "1-24"
+    b37_sentieon_gatk_chrms: "1-24"
+    partition_other: "i8"
 
 sentieon_markdups:
     threads: 7

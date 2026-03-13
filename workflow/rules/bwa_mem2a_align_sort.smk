@@ -58,11 +58,11 @@ rule bwa_mem2_sort:
         ulimit -n 65536 || echo "ulimit mod failed";
 
 
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         TMPDIR=/dev/shm/bwa2a_tmp_$timestamp;
         mkdir -p $TMPDIR;
         APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         tdir=$TMPDIR;
 

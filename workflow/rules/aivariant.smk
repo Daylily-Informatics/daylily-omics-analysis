@@ -232,10 +232,10 @@ rule aiv:
         log_wdir=${{PWD}}/{log};
         out_wdir=${{PWD}}/$(dirname {output.vcf});
 
-        export TMPDIR=/dev/shm/aiv_tmp_$timestamp;
+        export TMPDIR=/dev/shm/aiv_tmp_${timestamp}_$$;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "VCHRM: $vchr" >> {log} 2>&1;
 
         opwd=${{PWD}};

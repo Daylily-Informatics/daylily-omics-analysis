@@ -109,16 +109,29 @@ The fastest way to experience the workflows is to run the built-in smoke test us
 4. **Dry-run the workflow.**
    ```bash
    dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] -n
+   dy-r produce_snv_concordances -p -k -j 20 -n   # -n for dry-run
    ```
 
 5. **Execute the workflow.**
 
    ```bash
    dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19']
+   dy-r produce_snv_concordances -p -k -j 20      # remove -n to run
    ```
    Results will be written under `results/day/hg38/` and logs (depending on the scope) will collect in `logs/` and `.snakemake/` and w/in each rule output directory.
+
+   **Common workflow targets** (use tab-completion for full list):
+   | Target | Description |
+   |--------|-------------|
+   | `produce_snv_concordances` | Illumina short-read SNV calling + concordance |
+   | `produce_alignstats` | Alignment statistics |
+   | `produce_sentdont_vcf` | ONT long-read SNV calling |
+   | `produce_sentdpb_vcf` | PacBio long-read SNV calling |
+   | `produce_sentdug_vcf` | Ultima SNV calling (requires `hg38_broad`) |
+   | `produce_sentdhio_vcf` | Hybrid Illumina+ONT CLI workflow |
+   | `produce_sentdhuo_vcf` | Hybrid Ultima+ONT CLI workflow (requires `hg38_broad`) |
+   | `produce_sentdhiom_vcf` | Hybrid Illumina+ONT Modular workflow |
+   | `produce_sentdhuom_vcf` | Hybrid Ultima+ONT Modular workflow (requires `hg38_broad`) |
 
 
 For instructions on crafting custom sample/unit tables, enabling additional tools (e.g. Deep19Variant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
@@ -164,9 +177,8 @@ cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 head -n 2 config/units.tsv
 
 
-dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl'] -n # dry run
-dy-r produce_deduplicated_bams -p -j 2 --config genome_build=hg38 aligners=['bwa2a','sent'] dedupers=['dppl']
-# Replace 'dppl' with 'dppl_sent' to run the Sentieon-based duplicate marking option.
+dy-r produce_deduplicated_crams -p -j 20 -n  # dry run
+dy-r produce_deduplicated_crams -p -j 20     # run
 ```
 
 #### More On The `-j` Flag
@@ -230,7 +242,7 @@ cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
 
 # run the test, which will auto detect the sample/unit tables & will run this all via slurm
-dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] -n
+dy-r produce_snv_concordances -p -k -j 20 -n   # dry run
 ```
 
 Which will produce a plan that looks like.
@@ -259,7 +271,7 @@ total                            59              1            192
 Run the test with:
 
 ```bash
-dy-r produce_snv_concordances -p -k -j 6  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] #  -j 6 will run 6 jobs in parallel max, which is done here b/c the test data runs so quickly we do not need to spin up one spor instance per deep19variant job & since 3 dv jobs can run on a 192 instance, this flag will limit creating only  2 instances at a time.
+dy-r produce_snv_concordances -p -k -j 20   # remove -n to run
 ```
 
 _note1:_ the first time you run a pipeline, if the docker images are not cached, there can be a delay in starting jobs as the docker images are cached. They are only pulled 1x per cluster lifetime, so subsequent runs will be faster.
@@ -292,9 +304,9 @@ head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv > config/s
 head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv > config/units.tsv
 
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] -n  # dry run
+dy-r produce_snv_concordances -p -k -j 20 -n   # dry run
 
-dy-r produce_snv_concordances -p -k -j 10  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19'] # run jobs, and wait for completion
+dy-r produce_snv_concordances -p -k -j 20      # run
 ```
 
 
@@ -319,17 +331,17 @@ cp .test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv  config/samples.t
 cp .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv  config/units.tsv
 
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe,'bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep19'] -n  # dry run
+dy-r produce_snv_concordances -p -k -j 20 -n   # dry run
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe','bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep19'] 
+dy-r produce_snv_concordances -p -k -j 20      # run
 
 ```
 
-##### The Whole Magilla (3 aligners, 1 deduper, 5 snv callers, 3 sv callers)
+##### The Whole Magilla (multiple targets)
 
 ```bash
-max_snakemake_tasks_active_at_a_time=2 # for local headnode, maybe 400 for a full cluster
-dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_kat produce_multiqc_final_wgs -p -k -j $max_snakemake_tasks_active_at_a_time --config genome_build=hg38 aligners=['strobe','bwa2a','sent'] dedupers=['dppl'] snv_callers=['oct','sentd','deep19','clair3','lfq2'] sv_callers=['tiddit','manta','dysgu'] -n
+# Run multiple targets together
+dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_multiqc_final_wgs -p -k -j 20 -n
 ```
 
 ## To Create Your Own `config/samples.tsv` and `config/units.tsv`
@@ -587,3 +599,4 @@ X
  
  
 SS
+ 

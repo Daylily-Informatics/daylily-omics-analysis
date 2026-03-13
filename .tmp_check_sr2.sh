@@ -1,0 +1,23 @@
+#!/bin/bash
+STD_BASE="/fsx/analysis_results/ubuntu/hiom_std_chr21_20260220_052436/daylily-omics-analysis"
+SAMPLE="HIOa-HG003-SR3x-ONT1x-8-D0-PF-ILMN-NOVASEQ"
+LOG_DIR="${STD_BASE}/logs/slurm/sentdhiom_sr_align"
+RULE_LOG="${STD_BASE}/results/day/hg38_broad/${SAMPLE}/align/ont/na/snv/sentdhiom/log/${SAMPLE}.ont.na.21.sr_align.log"
+FQ_DIR="${STD_BASE}/results/day/hg38_broad/${SAMPLE}"
+PEM="$HOME/.ssh/lsmc-omics-us-west-2.pem"
+HOST="ubuntu@44.231.76.175"
+
+echo "=== ERR FILES ==="
+ssh -i "$PEM" "$HOST" "ls -lt ${LOG_DIR}/"
+echo ""
+echo "=== BWA MEM COMMAND LINE FROM LATEST ERR ==="
+ssh -i "$PEM" "$HOST" "LATEST_ERR=\$(ls -t ${LOG_DIR}/*.err 2>/dev/null | head -1) && grep -n -A8 'sentieon bwa mem' \$LATEST_ERR | head -20"
+echo ""
+echo "=== RULE LOG ==="
+ssh -i "$PEM" "$HOST" "cat ${RULE_LOG}"
+echo ""
+echo "=== INPUT FILES ==="
+ssh -i "$PEM" "$HOST" "ls -lh ${FQ_DIR}/${SAMPLE}.R1.fastq.gz ${FQ_DIR}/${SAMPLE}.R2.fastq.gz 2>&1"
+echo ""
+echo "=== DONE ==="
+

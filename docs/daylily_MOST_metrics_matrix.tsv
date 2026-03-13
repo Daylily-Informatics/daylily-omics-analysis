@@ -2728,7 +2728,7 @@ tv_1st_ALT	bcftools_stats	1	snv_indel_calling	0	1	0	0	0	0	0	0	0	0	0	0
 Aligner	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 AllVarMeanDP	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 AltId	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
-CmpFootprint	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
+ROI	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 CovBin	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 FDR	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 FN	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
@@ -2736,7 +2736,7 @@ FP	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 Fscore	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 PPV	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 Precision	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
-SNPClass	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
+VariantClass	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 SNVCaller	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 Sample	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0
 Sensitivity-Recall	giab_concordance	1	variant_evaluation	0	0	1	0	0	0	0	0	0	0	0	0

@@ -33,11 +33,11 @@ rule tiddit:
         "docker://quay.io/biocontainers/tiddit:3.7.0--py39h24fbfe6_0"
     shell:
         """
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/dev/shm/tiddit_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         set +euo pipefail;
         rm -rf {output.stub}* || echo rmFailedTiddit;  # verging on overkill cleanup for restarts

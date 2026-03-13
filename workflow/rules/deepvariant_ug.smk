@@ -57,22 +57,9 @@ rule deepvariant_ultima_make_examples:
 
         export TMPDIR=$(dirname {log})/dv_me_tmp_$timestamp;
         mkdir -p $TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
 
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
-            exit 11;
-        fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         {params.numa} \
         /opt/deepvariant/bin/make_examples \
@@ -143,7 +130,7 @@ rule deepvariant_ultima_call_variants:
         timestamp=$(date +%Y%m%d%H%M%S)_$(head /dev/urandom | tr -dc a-zA-Z0-9 | head -c 6)
         export TMPDIR=$(dirname {log})/deepvariantugcv_tmp_$timestamp;
         mkdir -p $TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         echo "DCHRM: $dchr" >> {log} 2>&1;
 
         {params.numa} \

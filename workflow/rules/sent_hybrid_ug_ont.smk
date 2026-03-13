@@ -14,7 +14,7 @@ rule sentdhuo_snv:
     output:
      vcf=temp(MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.gz"),
-     tvcf=temp(MDIR
+     tvcf=touch(MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdhuo/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhuo.{dchrm}.snv.vcf.tmp"),
     wildcard_constraints:
         alnr="|".join(ALIGNERS_UG)
@@ -40,9 +40,9 @@ rule sentdhuo_snv:
 	    mem_mb=config['sentdhuo']['mem_mb'],
     params:
         schrm_mod=get_dchrm_day,
-        huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhuo"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdhuo"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         haploid_bed="",  # dnascope-hybrid does not support --haploid_bed
         diploid_bed=get_diploid_bed_arg,
@@ -52,12 +52,12 @@ rule sentdhuo_snv:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
 
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/fsx/tmp/sentdhuo_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set. Please set the SENTIEON_LICENSE environment variable to the license file path & make this update to your dyinit file as well." >> {log} 2>&1;
@@ -184,11 +184,13 @@ rule sentdhuo_sort_index_chunk_vcf:
     threads: 64 #config["config"]["sort_index_sentdhuona_chunk_vcf"]['threads']
     shell:
         """
-        
-        cp {input.vcf} {output.vcfsort} 2>> {log};
-        bgzip  -@ {threads} {output.vcfsort} >> {log} 2>&1;
+
+        # Input is already bgzipped (.vcf.gz) from sentieon-cli.
+        # Copy directly to .sort.vcf.gz to avoid double-gzipping.
+        cp {input.vcf} {output.vcfgz} 2>> {log};
         tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
-        
+        touch {output.vcfsort};
+
         """
 
 
@@ -258,7 +260,7 @@ rule sentdhuo_concat_index_chunks:
         partition="i192,i192mem,i128"
     priority: 47
     params:
-        huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0)

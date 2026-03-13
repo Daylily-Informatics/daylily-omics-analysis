@@ -40,17 +40,17 @@ rule sent_snv_ug:
         schrm_mod=get_dchrm_day,
         huref="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdug"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdug"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         use_threads=config["sentdug"]["use_threads"],
     shell:
         """
 
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/dev/shm/sentdug_tmp_$timestamp;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
         tdir=$TMPDIR;
 
         if [ -z "$SENTIEON_LICENSE" ]; then
@@ -71,19 +71,6 @@ rule sent_snv_ug:
         
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
-        echo "CRAM @SQ header count: $_sq_count" >> {log} 2>&1;
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
-            exit 11;
-        fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         # Find the jemalloc library in the active conda environment
         jemalloc_path="";

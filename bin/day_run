@@ -73,6 +73,7 @@ _snv_caller_codes=()
 _has_dedupers_config=false
 _has_aligners_config=false
 _has_snv_callers_config=false
+_is_dry_run=false
 
 for _arg in "$@"; do
     # Detect dedup targets
@@ -95,10 +96,22 @@ for _arg in "$@"; do
         produce_sentdpb_vcf)            _snv_caller_codes+=("sentdpb")   ;;
         produce_sentdont_vcf)           _snv_caller_codes+=("sentdont")  ;;
         produce_sentdug_vcf)            _snv_caller_codes+=("sentdug")   ;;
+        # Hybrid CLI callers
         produce_sentdhio_vcf)           _snv_caller_codes+=("sentdhio")  ;;
         produce_sentdhuo_vcf)           _snv_caller_codes+=("sentdhuo")  ;;
+        produce_sentdhip_vcf)           _snv_caller_codes+=("sentdhip")  ;;
+        produce_sentdhup_vcf)           _snv_caller_codes+=("sentdhup")  ;;
+        # Hybrid modular callers
+        produce_sentdhiom_vcf)          _snv_caller_codes+=("sentdhiom") ;;
+        produce_sentdhuom_vcf)          _snv_caller_codes+=("sentdhuom") ;;
+        produce_sentdhipm_vcf)          _snv_caller_codes+=("sentdhipm") ;;
+        produce_sentdhupm_vcf)          _snv_caller_codes+=("sentdhupm") ;;
+        produce_sentdhrom_vcf)          _snv_caller_codes+=("sentdhrom") ;;
+        produce_sentdhrpm_vcf)          _snv_caller_codes+=("sentdhrpm") ;;
+        # Other callers
         produce_sentpg_vcf)             _snv_caller_codes+=("sentpg")    ;;
         produce_deep19_vcf)             _snv_caller_codes+=("deep19")    ;;
+        produce_deep19_r_vcf)           _snv_caller_codes+=("deep19r")   ;;
         produce_deep15_vcf)             _snv_caller_codes+=("deep15")    ;;
         produce_oct_vcf)                _snv_caller_codes+=("oct")       ;;
         produce_clair3_vcf)             _snv_caller_codes+=("clair3")    ;;
@@ -110,12 +123,17 @@ for _arg in "$@"; do
         produce_strelka2_germline_vcf)  _snv_caller_codes+=("slk2g")     ;;
         produce_strelka2_somatic_vcf)   _snv_caller_codes+=("slk2s")     ;;
         produce_sent_TNscope_vcf)       _snv_caller_codes+=("senttn")    ;;
+        produce_rochehc_vcf)            _snv_caller_codes+=("rochehc")   ;;
     esac
     # Check if user already specified these config keys
     case "$_arg" in
         dedupers=*)      _has_dedupers_config=true      ;;
         aligners=*)      _has_aligners_config=true       ;;
         snv_callers=*)   _has_snv_callers_config=true    ;;
+    esac
+    # Detect dry-run flags
+    case "$_arg" in
+        -n|--dry-run|--dryrun)  _is_dry_run=true  ;;
     esac
 done
 
@@ -154,7 +172,11 @@ echo "SMK> D:$cmddt / U:$USER / PWD:$PWD / CMD: (${snakecmd[*]})" >> "$cmd_log"
 
 # Run snakemake command
 colr "Executing: ${snakecmd[*]}"  "$DY_IT0" "$DY_IB0" "$DY_IS1"  1>&2
-( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
+if [[ "$_is_dry_run" == "true" ]]; then
+    $snakecmd
+else
+    ( $snakecmd && echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run && bash bin/util/benchmarks/collect_day_benchmark_data.sh  $DAY_GENOME_BUILD > /dev/null 2>&1 ) || echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
+fi
 ret_code=$?
 
 colr "RETURN CODE: $ret_code" "$DY_IB0" "$DY_IT0" "$DY_IS0" 1>&2

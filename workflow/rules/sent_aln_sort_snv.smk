@@ -45,7 +45,7 @@ rule sent_aln_sort_snv:
         hapl=config["sent_aln_sort_snv"]["hapl"],
         gbz=config["sent_aln_sort_snv"]["gbz"],
         model=config["sent_aln_sort_snv"]["model"],
-        pop_vcf=config["sent_aln_sort_snv"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         canonical_bed=config["sent_aln_sort_snv"]["canonical_bed"],
         dbsnp=config["sent_aln_sort_snv"]["dbsnp"],
         pcr_free=config["sent_aln_sort_snv"]["pcr_free"],
@@ -90,7 +90,7 @@ rule sent_aln_sort_snv:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \\"$TMPDIR\\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         # Find the jemalloc library in the active conda environment
         jemalloc_path="";

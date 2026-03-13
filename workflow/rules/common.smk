@@ -112,8 +112,50 @@ SENTDUG_CHRMS = config["sentdug"][f"{config['genome_build']}_sentdug_chrms"].spl
 SENTDONT_CHRMS = config["sentdont"][f"{config['genome_build']}_sentdont_chrms"].split(",")
 SENTDHUO_CHRMS = config["sentdhuo"][f"{config['genome_build']}_sentdhuo_chrms"].split(",")
 SENTDHIO_CHRMS = config["sentdhio"][f"{config['genome_build']}_sentdhio_chrms"].split(",")
+
+# Per-chromosome expansion of SENTDHIO_CHRMS for transfer-step sharding.
+# Converts range notation like "1-24" into individual values ["1","2",...,"24"].
+# Single values and comma-separated lists are preserved as-is.
+def _expand_chrm_ranges(chrm_list):
+    """Expand chromosome range strings (e.g. '1-24') into individual values."""
+    expanded = []
+    for entry in chrm_list:
+        parts = entry.split("-")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            for i in range(int(parts[0]), int(parts[1]) + 1):
+                expanded.append(str(i))
+        else:
+            expanded.append(entry)
+    return expanded
+
+SENTDHIO_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIO_CHRMS)
+
 SENTDPB_CHRMS = config["sentdpb"][f"{config['genome_build']}_sentdpb_chrms"].split(",")
+
+# CLI hybrid workflows
 SENTDHIP_CHRMS = config["sentdhip"][f"{config['genome_build']}_sentdhip_chrms"].split(",")
+SENTDHUP_CHRMS = config["sentdhup"][f"{config['genome_build']}_sentdhup_chrms"].split(",")
+
+# Modular hybrid workflows reuse the same chromosome configs as their CLI counterparts
+SENTDHUOM_CHRMS = SENTDHUO_CHRMS  # Modular Ultima+ONT hybrid
+SENTDHIOM_CHRMS = SENTDHIO_CHRMS  # Modular Illumina+ONT hybrid
+SENTDHIPM_CHRMS = SENTDHIP_CHRMS  # Modular Illumina+PacBio hybrid
+SENTDHUPM_CHRMS = SENTDHUP_CHRMS  # Modular Ultima+PacBio hybrid
+SENTDHROM_CHRMS = config["sentdhrom"][f"{config['genome_build']}_sentdhrom_chrms"].split(",")  # Modular Roche+ONT hybrid
+SENTDHRPM_CHRMS = config["sentdhrpm"][f"{config['genome_build']}_sentdhrpm_chrms"].split(",")  # Modular Roche+PacBio hybrid
+
+# Modular refactored hybrid workflows - each uses its own config section (r-suffix)
+SENTDHIOMR_CHRMS = config["sentdhiomr"][f"{config['genome_build']}_sentdhiomr_chrms"].split(",")
+SENTDHIOMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIOMR_CHRMS)
+SENTDHIPMR_CHRMS = config["sentdhipmr"][f"{config['genome_build']}_sentdhipmr_chrms"].split(",")
+SENTDHIPMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIPMR_CHRMS)
+SENTDHUPMR_CHRMS = config["sentdhupmr"][f"{config['genome_build']}_sentdhupmr_chrms"].split(",")
+SENTDHUPMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHUPMR_CHRMS)
+SENTDHUOMR_CHRMS = config["sentdhuomr"][f"{config['genome_build']}_sentdhuomr_chrms"].split(",")
+SENTDHUOMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHUOMR_CHRMS)
+
+# Sentieon GATK HaplotypeCaller
+GATK_CHRMS = config["sentieon_gatk"][f"{config['genome_build']}_sentieon_gatk_chrms"].split(",")
 
 # ##### Setting the allowed aligners to run and to which deduper to use.
 # presently, 1+ aligners may run, but all must use the same deduper
@@ -145,6 +187,8 @@ _ALIGNER_TARGET_MAP = {
     "produce_strobe_align_sort_bam": "strobe",
     "produce_sentmm2_align_sort": "sentmm2",
     "produce_sentmm2ont_align_sort": "sentmm2ont",
+    "produce_pangenome_sr_vcf": "pangenome_sr",
+    "produce_pangenome_ug_vcf": "pangenome_ug",
 }
 if not ALIGNERS:
     _auto_aligners_env = os.environ.get('_DY_AUTO_ALIGNERS', '')
@@ -173,7 +217,7 @@ os.system(
 # Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
 # If no dedupers specified, defaults to ['na'] (no dedup).
 DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
-DDUP_VALID_CODES = {"dmd", "smd", "na"}
+DDUP_VALID_CODES = {"dmd", "smd", "spmd", "na"}
 
 DDUP = []
 if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
@@ -251,6 +295,9 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_sentdhio_vcf": "sentdhio",
     "produce_sentdhuo_vcf": "sentdhuo",
     "produce_sentpg_vcf": "sentpg",
+    "produce_pangenome_sr_vcf": "sentpg",
+    "produce_pangenome_ug_vcf": "sentpg",
+    "produce_sentieon_gatk_vcf": "gatk",
     "produce_deep19_vcf": "deep19",
     "produce_deep15_vcf": "deep15",
     "produce_oct_vcf": "oct",
@@ -265,6 +312,11 @@ _SNV_CALLER_TARGET_MAP = {
     "produce_sent_TNscope_vcf": "senttn",
     "produce_rochehc_vcf": "rochehc",
     "produce_deep19_r_vcf": "deep19r",
+    # Modular refactored hybrid targets (r-suffix)
+    "produce_sentdhiomr_vcf": "sentdhiomr",
+    "produce_sentdhipmr_vcf": "sentdhipmr",
+    "produce_sentdhuomr_vcf": "sentdhuomr",
+    "produce_sentdhupmr_vcf": "sentdhupmr",
 }
 if not snv_CALLERS:
     _auto_snv_env = os.environ.get('_DY_AUTO_SNV_CALLERS', '')
@@ -1296,10 +1348,19 @@ def _resolve_sample_sex(wildcards):
 
 
 def get_diploid_bed_arg(wildcards):
+    """Return diploid BED arg for sentieon-cli (-b shorthand)."""
     sex = _resolve_sample_sex(wildcards)
     if sex == "male":
         return f' -b {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
     return f' -b {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
+
+
+def get_diploid_bed_interval_arg(wildcards):
+    """Return diploid BED arg for sentieon driver (--interval flag)."""
+    sex = _resolve_sample_sex(wildcards)
+    if sex == "male":
+        return f' --interval {config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]} '
+    return f' --interval {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
 
 
 def get_haploid_bed_arg(wildcards):
@@ -1344,6 +1405,37 @@ def get_dchrm_day(wildcards):
     else:
         raise Exception(
             "sentD chunks can only be one contiguous range per chunk : ie: 1-4 with the non numerical chrms assigned 23=X, 24=Y, 25=MT"
+        )
+
+    return ret_str
+
+
+def get_gatkchrm(wildcards):
+    """Map gatkchrm wildcard to proper chromosome names for Sentieon GATK HaplotypeCaller."""
+    pchr = GENOME_CHR_PREFIX
+    mito_code = "MT" if "b37" == config['genome_build'] else "M"
+
+    chrm_map = {'23': 'X', '24': 'Y', '25': mito_code}
+
+    def _chrm_name(n):
+        s = str(n)
+        return pchr + chrm_map.get(s, s)
+
+    raw = wildcards.gatkchrm.replace('chr', '')
+    sl = raw.split("-")
+    sl2 = raw.split("~")
+
+    if len(sl2) == 2:
+        ret_str = pchr + wildcards.gatkchrm
+    elif len(sl) == 1:
+        ret_str = _chrm_name(sl[0])
+    elif len(sl) == 2:
+        start = int(sl[0])
+        end = int(sl[1])
+        ret_str = ','.join(_chrm_name(i) for i in range(start, end + 1))
+    else:
+        raise Exception(
+            "gatk chunks can only be one contiguous range per chunk : ie: 1-4 with 23=X, 24=Y, 25=MT"
         )
 
     return ret_str
@@ -1471,7 +1563,7 @@ def instrument(wildcards):
 # (e.g. via auto-detection) but are missing from CRAM_ALIGNERS (which is
 # populated from samples.tsv), reconcile here so they are never routed
 # through the BAM-based no_dedup / markdup rules.
-_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb"}
+_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb", "pangenome_sr", "pangenome_ug"}
 for _a in ALIGNERS:
     if _a in _KNOWN_CRAM_ALIGNERS and _a not in CRAM_ALIGNERS:
         CRAM_ALIGNERS.append(_a)
@@ -1496,13 +1588,33 @@ ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
 # (concordance, peddy, duphold, etc.).
 # ---------------------------------------------------------------------------
 _SNV_CALLER_VALID_ALIGNERS = {
+    # Solo platform callers
     "sentdont":  ["ont", "sentmm2ont"],   # ONT-only caller
     "sentdug":   ["ug"],                   # Ultima-only caller
     "sentdpb":   ["sentmm2"],             # PacBio-only caller
-    "sentdhuo":  ["ug"],                   # Hybrid Ultima+ONT → emits alnr=ug
-    "sentdhio":  ["ont"],                  # Hybrid Ilmn+ONT  → emits alnr=ont
     "rochehc":   ["roche"],               # Roche SBX Duplex HaplotypeCaller
     "deep19r":   ["roche"],               # DeepVariant 1.9 on Roche BAMs
+    # Hybrid CLI callers (ILMN+LR or Ultima+LR)
+    "sentdhio":  ["ont"],                  # Hybrid CLI Ilmn+ONT  → emits alnr=ont
+    "sentdhuo":  ["ug"],                   # Hybrid CLI Ultima+ONT → emits alnr=ug
+    "sentdhip":  ["sentmm2"],             # Hybrid CLI Ilmn+PB   → emits alnr=sentmm2
+    "sentdhup":  ["sentmm2"],             # Hybrid CLI Ultima+PB → emits alnr=sentmm2
+    # Hybrid modular callers
+    "sentdhiom": ["ont"],                  # Modular Hybrid Ilmn+ONT  → emits alnr=ont
+    "sentdhuom": ["ug"],                   # Modular Hybrid Ultima+ONT → emits alnr=ug
+    "sentdhipm": ["sentmm2"],             # Modular Hybrid Ilmn+PB   → emits alnr=sentmm2
+    "sentdhupm": ["sentmm2"],             # Modular Hybrid Ultima+PB → emits alnr=sentmm2
+    "sentdhrom": ["roche"],               # Modular Hybrid Roche+ONT → emits alnr=roche
+    "sentdhrpm": ["roche"],               # Modular Hybrid Roche+PB  → emits alnr=roche
+    # Hybrid modular refactored callers (r-suffix)
+    "sentdhiomr": ["ont"],                 # Modular Refactored Hybrid Ilmn+ONT  → emits alnr=ont
+    "sentdhipmr": ["sentmm2"],            # Modular Refactored Hybrid Ilmn+PB   → emits alnr=sentmm2
+    "sentdhuomr": ["ug"],                  # Modular Refactored Hybrid Ultima+ONT → emits alnr=ug
+    "sentdhupmr": ["ug"],                  # Modular Refactored Hybrid Ultima+PB  → emits alnr=ug
+    # Ensemble callers
+    "ensemble":  ["ont", "pb", "sentmm2"],  # Multi-platform ensemble → emits alnr=ont, pb, or sentmm2
+    # Pangenome callers
+    "sentpg":    ["pangenome_sr", "pangenome_ug"],  # Sentieon pangenome → emits alnr=pangenome_sr or pangenome_ug
 }
 
 

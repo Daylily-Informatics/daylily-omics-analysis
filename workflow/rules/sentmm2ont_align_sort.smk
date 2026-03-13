@@ -14,7 +14,7 @@ ONT_SENTMM2ONT_SAMPS = list(
 rule sentmm2ont_align_sort:
     """Align ONT uBAM with minimap2, sort to CRAM."""
     input:
-        bam=get_ont_bam,
+        cram=get_ont_cramsx,
     output:
         cramo=MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram",
         crami=MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram.crai",
@@ -80,7 +80,7 @@ rule sentmm2ont_align_sort:
         ls -ld "$TMPDIR" >> {log} 2>&1;
         df -h /dev/shm >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
-        trap "rm -rf \"$TMPDIR\" || echo 'TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         tdir="$TMPDIR";
         epocsec=$(date +'%s');
@@ -117,7 +117,7 @@ rule sentmm2ont_align_sort:
             exit 6;
         fi
 
-        samtools fastq -@ 4 -T MM,ML {input.bam} \
+        samtools fastq -@ 4 -T MM,ML {input.cram[0]} \
         {params.longread_trim_head} {params.longread_trim_tail} \
         | LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
         {params.minimap2_opts} \

@@ -6,12 +6,15 @@ __pycache__/
 
 day_stats.json
 DYMEMBERS
-
+*~
 day_pipe_stats.json
-results/
+results/*
+
+_scripts/*
+_tmp_scripts/*
+_analysis*/*
 
 etc/about_me.yaml
-scripts/
 pblogs
 
 .jemalloc_loc

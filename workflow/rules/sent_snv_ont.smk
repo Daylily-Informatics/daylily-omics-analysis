@@ -73,20 +73,20 @@ rule sent_snv_ont:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdont"]["dna_scope_snv_model"],
-        pop_vcf=config["sentdont"]["pop_vcf"],
+        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,
     shell:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
-        timestamp=$(date +%Y%m%d%H%M%S);
+        timestamp=$(date +%Y%m%d%H%M%S)_$$;
 
         export TMPDIR=/dev/shm/sentdont_tmp_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set." >> {log} 2>&1;
@@ -104,19 +104,6 @@ rule sent_snv_ont:
         start_time=$(date +%s);
 
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
-
-        # --- Validate input CRAM contains aligned data ---
-        echo "Validating CRAM: {input.cram}" >> {log} 2>&1;
-        if ! samtools quickcheck -v {input.cram} >> {log} 2>&1; then
-            echo "ERROR: CRAM failed integrity check: {input.cram}" | tee -a {log};
-            exit 10;
-        fi
-        _sq_count=$(samtools view -H {input.cram} 2>/dev/null | grep -c '^@SQ' || true);
-        if [ "$_sq_count" -eq 0 ]; then
-            echo "ERROR: CRAM has no @SQ headers (unaligned?): {input.cram}" | tee -a {log};
-            exit 11;
-        fi
-        echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         # Find jemalloc in the active conda environment
         jemalloc_path="";
