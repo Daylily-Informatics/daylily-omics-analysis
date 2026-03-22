@@ -1,0 +1,32 @@
+
+I then would like you to move to a feature branch to doo the following
+
+I have a daylily-ephemeral-cluster cluster running and headnode accessible from   ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@35.85.81.27
+
+in tmux session tmux  a -t t2
+
+I ran 
+
+dy-r produce_snv_concordances produce_sentD_vcf dedup_doppelmark produce_sentieon_bwa_sort_bam produce_manta produce_tiddit   -p -j 100 -k
+
+and for some reason the manta files are empty, please investigate why, and try ro fix
+
+NEXT, I need to extend the sentieon_hiomr workflow ( I have one running now in  tmux sessoion hiomr, with commands: 
+. dyoainit
+dy-a slurm hg38_broad
+dy-r produce_snv_concordances produce_sentdhiomr_sv produce_sentdhiomr_vcf -p -j 100 -k -n
+dy-r produce_snv_concordances produce_sentdhiomr_sv produce_sentdhiomr_vcf -p -j 100 -k
+
+LEave this runing as a comparator.
+
+I need the following changes made to the hiomr pipeline (and probably some additions more than changes), please come up with a plan of tasks to satisfy these feature reque4sts
+
+Good news on the Sentieon front!
+
+1) All of the intermediate files which are currently deleted have a flag setting which will retain them.   BTW- the short reads produce 1 cram , and the long reads a secondlong read cram.  VCF entries contain annotations informing you how many reads of each caller type support the call . PLEASE CONSULT DOCS ON APPROPRIOATE FLAGS TO KEEP TEMP FILES AND DIRS AND TO EMIT ALL THREE VCF types.
+
+2) There are three vcfs sentieon can emit: snv.vcf (variants 0 to 50bp), sv.vcf(variants of 51 to 10K'ish bp) and cnv.vcf (10K'ish bp and above).  The cnv.vcf was NOT being emitted properly, and I have the fix for this.
+
+3) Special callers:  I have the command invocation for the pre-releaser SegDup Sentieon caller (which includes SMN, PMS2, etc).  https://github.com/Sentieon/segdup-caller
+
+4) Mito calling. I was provided the pre-release version of this caller and will run it.  bin/sentieon_mitochondrial_pipeline.sh
