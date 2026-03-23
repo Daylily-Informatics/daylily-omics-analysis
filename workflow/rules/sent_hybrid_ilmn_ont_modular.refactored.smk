@@ -1613,12 +1613,16 @@ rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modul
 # ===========================================================================
 
 rule sentdhiomr_call_cnvs:
-    """Call copy-number variants using Sentieon CNV algo on LR+SR data"""
+    """Call copy-number variants using Sentieon CNVscope + CNVModelApply on SR data.
+
+    CNVscope is a short-read-only WGS CNV caller. Two-step process:
+      1. CNVscope: read-depth profiling → tmp VCF
+      2. CNVModelApply: ML filtering → final VCF
+    Ref: Hu et al. Front. Bioinform. 2026; PMC12813096
+    """
     input:
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
-        snv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
-        snv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz.tbi",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
+        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
     output:
         cnv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz",
         cnv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
@@ -1639,9 +1643,7 @@ rule sentdhiomr_call_cnvs:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_interval_arg,
         use_threads=config["sentdhiomr"]["use_threads_medium"],
-        cluster_sample=ret_sample,
     shell:
         """
         set -euo pipefail
@@ -1654,36 +1656,31 @@ rule sentdhiomr_call_cnvs:
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         mkdir -p $(dirname {log})
-        echo "Starting CNV calling at $(date)" >> {log}
+        echo "Starting CNV calling (CNVscope) at $(date)" >> {log}
 
-        # Build LR readgroup replacement args: LR reads get LR:1 tag
-        RGIDS=$(samtools view -H {input.lr_cram} | awk '
-            $1=="@RG"{{
-                for(i=1;i<=NF;i++){{
-                    if($i~/^ID:/){{
-                        sub(/^ID:/,"",$i);
-                        print $i
-                    }}
-                }}
-            }}')
+        TMP_CNV_VCF="$TMPDIR/cnvscope_tmp.vcf.gz"
 
-        LR_RG_ARGS=""
-        for rgid in $RGIDS; do
-            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
-        done
-
+        # Step 1: CNVscope - read-depth profiling on SR data
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            $LR_RG_ARGS -i {input.lr_cram} \
-            {params.diploid_bed} \
-            --algo CNV \
+            -i {input.sr_bam} \
+            --algo CNVscope \
             --model {params.model}/cnv.model \
-            -v {input.snv_vcf} \
+            "$TMP_CNV_VCF" >> {log} 2>&1
+
+        echo "CNVscope step completed at $(date)" >> {log}
+
+        # Step 2: CNVModelApply - ML-based filtering
+        sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            --algo CNVModelApply \
+            --model {params.model}/cnv.model \
+            -v "$TMP_CNV_VCF" \
             {output.cnv_vcf} >> {log} 2>&1
 
         bcftools index -t -f {output.cnv_vcf} >> {log} 2>&1
 
-        echo "CNV calling completed at $(date)" >> {log}
+        echo "CNV calling (CNVModelApply) completed at $(date)" >> {log}
         """
 
 
