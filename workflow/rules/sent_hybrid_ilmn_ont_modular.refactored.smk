@@ -1866,6 +1866,12 @@ rule sentdhiomr_call_segdup:
         mkdir -p {params.outdir}
         echo "Starting segdup-caller at $(date)" >> {log}
 
+        # Ensure segdup-caller is installed (pip package from Sentieon)
+        if ! command -v segdup-caller &>/dev/null; then
+            echo "segdup-caller not found — installing from GitHub" >> {log}
+            pip install git+https://github.com/Sentieon/segdup-caller.git >> {log} 2>&1
+        fi
+
         GENES_ARG=""
         if [ -n "{params.genes}" ]; then
             GENES_ARG="--genes {params.genes}"
