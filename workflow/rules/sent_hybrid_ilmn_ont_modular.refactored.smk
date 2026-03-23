@@ -34,6 +34,21 @@ config["sentdhiomr"].setdefault("sample_sm", "hybrid_sample")
 config["sentdhiomr"].setdefault("lr_read_filter", "")
 config["sentdhiomr"].setdefault("sr_read_filter", "")
 
+# Intermediate file retention flags (default: do NOT retain → clean up after final VCF)
+config["sentdhiomr"].setdefault("keep_sr_alignment", False)
+config["sentdhiomr"].setdefault("keep_tmp_dirs", False)
+
+# SegDup caller defaults
+config["sentdhiomr"].setdefault("segdup_sr_model", "")
+config["sentdhiomr"].setdefault("segdup_lr_model", "")
+config["sentdhiomr"].setdefault("segdup_genes", "")
+
+# Mitochondrial pipeline defaults
+config["sentdhiomr"].setdefault("mt_fasta", "")
+config["sentdhiomr"].setdefault("mt_shifted_fasta", "")
+config["sentdhiomr"].setdefault("mt_shift_back_chain", "")
+config["sentdhiomr"].setdefault("mt_blacklist_bed", "")
+
 # Aligner constraint: ONT for long reads
 ALIGNERS_DHIOMR = ["ont"]
 
@@ -376,7 +391,7 @@ rule sentdhiomr_sr_markdup:
             echo "libjemalloc not found in the active conda environment $CONDA_PREFIX." >> {log};
             exit 5;
         fi;
-        
+
         LD_PRELOAD=$LD_PRELOAD sentieon driver \
         -r {params.huref} \
         -t {threads} \
@@ -794,7 +809,7 @@ rule sentdhiomr_stage2:
 
         echo "Stage 2 completed at $(date)" >> {log}
         """
- 
+
 
 # ---------------------------------------------------------------------------
 # Rule 9: Stage 3 - Re-alignment with stage2 outputs
@@ -1423,7 +1438,14 @@ rule sentdhiomr_concat_index_chunks:
         bcftools reheader --threads {threads} -s {output.vcfgz}.rename.txt -o {output.vcfgz} {output.vcfgztemp} >> {log} 2>&1;
         bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
 
-        ##rm -rf $(dirname {output.vcfgz})/vcfs >> {log} 2>&1;
+        # Conditional cleanup of per-chunk tmp dirs (controlled by keep_tmp_dirs config flag)
+        KEEP_TMP="{config[sentdhiomr][keep_tmp_dirs]}"
+        if [ "$KEEP_TMP" = "False" ] || [ "$KEEP_TMP" = "false" ]; then
+            echo "Cleaning up chunk tmp dirs under $(dirname {output.vcfgz})/vcfs/" >> {log} 2>&1;
+            rm -rf $(dirname {output.vcfgz})/vcfs/*/tmp >> {log} 2>&1 || true;
+        else
+            echo "Retaining chunk tmp dirs (keep_tmp_dirs=true)" >> {log} 2>&1;
+        fi
         """
 
 
@@ -1576,6 +1598,155 @@ rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modul
         """
 
 
+# ===========================================================================
+# CNV CALLING: Copy-number variant calling (whole-genome, not chunked)
+# Uses sentieon driver --algo CNV with the model bundle's cnv.model
+# ===========================================================================
+
+rule sentdhiomr_call_cnvs:
+    """Call copy-number variants using Sentieon CNV algo on LR+SR data"""
+    input:
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        snv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
+        snv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz.tbi",
+    output:
+        cnv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz",
+        cnv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.log",
+    threads: config['sentdhiomr']['threads_medium']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhiomr']['threads_medium'],
+        vcpu=config['sentdhiomr']['threads_medium'],
+        mem_mb=config['sentdhiomr']['mem_mb_medium'],
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        model=config["sentdhiomr"]["dna_scope_snv_model"],
+        diploid_bed=get_diploid_bed_interval_arg,
+        use_threads=config["sentdhiomr"]["use_threads_medium"],
+        cluster_sample=ret_sample,
+    shell:
+        """
+        set -euo pipefail
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+
+        timestamp=$(date +%Y%m%d%H%M%S);
+        export TMPDIR="/dev/shm/sentdhiomr_cnv_${{timestamp}}_$$";
+        export SENTIEON_TMPDIR="$TMPDIR";
+        mkdir -p "$TMPDIR";
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+
+        mkdir -p $(dirname {log})
+        echo "Starting CNV calling at $(date)" >> {log}
+
+        # Build LR readgroup replacement args: LR reads get LR:1 tag
+        RGIDS=$(samtools view -H {input.lr_cram} | awk '
+            $1=="@RG"{{
+                for(i=1;i<=NF;i++){{
+                    if($i~/^ID:/){{
+                        sub(/^ID:/,"",$i);
+                        print $i
+                    }}
+                }}
+            }}')
+
+        LR_RG_ARGS=""
+        for rgid in $RGIDS; do
+            LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
+        done
+
+        sentieon driver -r {params.huref} -t {params.use_threads} \
+            --temp_dir $TMPDIR \
+            $LR_RG_ARGS -i {input.lr_cram} \
+            {params.diploid_bed} \
+            --algo CNV \
+            --model {params.model}/cnv.model \
+            -v {input.snv_vcf} \
+            {output.cnv_vcf} >> {log} 2>&1
+
+        bcftools index -t -f {output.cnv_vcf} >> {log} 2>&1
+
+        echo "CNV calling completed at $(date)" >> {log}
+        """
+
+
+localrules:
+    produce_sentdhiomr_cnv,
+
+
+rule produce_sentdhiomr_cnv:  # TARGET: sentieon cnv hybrid ilmn+ont modular cnv vcf
+    input:
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
+            sample=SSAMPS,
+            alnr=ALIGNERS_DHIOMR,
+            ddup=DDUP,
+        ),
+    output:
+        "gatheredall.sentdhiomr.cnv",
+    priority: 48
+    threads: 1
+    log:
+        "gatheredall.sentdhiomr.cnv.log",
+    shell:
+        """( touch {output} ;
+        ls {output} ) >> {log} 2>&1;
+        """
+
+
+# ===========================================================================
+# SR ALIGNMENT EXPORT: Optionally export SR dedup BAM → CRAM for retention
+# Controlled by config[sentdhiomr][keep_sr_alignment] (default: false)
+# ===========================================================================
+
+rule sentdhiomr_export_sr_cram:
+    """Export per-chunk SR dedup BAM to a retained CRAM file (only when keep_sr_alignment=true)"""
+    input:
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam",
+        bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam.bai",
+    output:
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.sr_dedup.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.sr_dedup.cram.crai",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_export.log",
+    threads: config['sentdhiomr']['threads_light']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhiomr']['threads_light'],
+        vcpu=config['sentdhiomr']['threads_light'],
+        mem_mb=config['sentdhiomr']['mem_mb_light'],
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+    shell:
+        """
+        set -euo pipefail
+
+        KEEP_SR="{config[sentdhiomr][keep_sr_alignment]}"
+        if [ "$KEEP_SR" = "False" ] || [ "$KEEP_SR" = "false" ]; then
+            echo "keep_sr_alignment=false; creating empty placeholder" >> {log}
+            touch {output.cram} {output.crai}
+        else
+            echo "Converting SR dedup BAM → CRAM at $(date)" >> {log}
+            samtools view -@ {threads} -T {params.huref} -C -o {output.cram} {input.bam} >> {log} 2>&1
+            samtools index -@ {threads} {output.cram} >> {log} 2>&1
+            echo "SR CRAM export completed at $(date)" >> {log}
+        fi
+        """
+
+
 localrules:
     prep_sentdhiomr_chunkdirs,
 
@@ -1604,4 +1775,292 @@ rule prep_sentdhiomr_chunkdirs:
         mkdir -p $(dirname {output} );
         touch {output};
         ls {output}; ) > {log} 2>&1;
+        """
+
+
+# ===========================================================================
+# SEGDUP CALLER: Targeted variant calling in segmental duplication regions
+# Uses Sentieon segdup-caller CLI with merged SR BAM + LR CRAM
+# ===========================================================================
+
+rule sentdhiomr_merge_sr_bams:
+    """Merge per-chunk SR dedup BAMs into a single whole-genome SR BAM for segdup/mito"""
+    input:
+        bams=sorted(
+            expand(
+                MDIR
+                + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhiomr/vcfs/{dchrm}/tmp/sr_dedup.bam",
+                dchrm=SENTDHIOMR_CHRMS,
+            ),
+            key=lambda x: float(
+                str(x.replace("~", ".").replace(":", "."))
+                .split("vcfs/")[1]
+                .split("/")[0]
+                .split("-")[0]
+            ),
+        ),
+    output:
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
+        bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_merge.log",
+    threads: config['sentdhiomr']['threads_medium']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merge.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhiomr']['threads_medium'],
+        vcpu=config['sentdhiomr']['threads_medium'],
+        mem_mb=config['sentdhiomr']['mem_mb_medium'],
+    shell:
+        """
+        set -euo pipefail
+        echo "Merging per-chunk SR dedup BAMs at $(date)" >> {log}
+
+        samtools merge -@ {threads} -f {output.bam} {input.bams} >> {log} 2>&1
+        samtools index -@ {threads} {output.bam} >> {log} 2>&1
+
+        echo "SR BAM merge completed at $(date)" >> {log}
+        """
+
+
+rule sentdhiomr_call_segdup:
+    """Call variants in segmental duplication regions using segdup-caller CLI"""
+    input:
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
+        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
+        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+    output:
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.log",
+    threads: config['sentdhiomr']['threads_medium']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem",
+        threads=config['sentdhiomr']['threads_medium'],
+        vcpu=config['sentdhiomr']['threads_medium'],
+        mem_mb=config['sentdhiomr']['mem_mb_medium'],
+    params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        sr_model=config["sentdhiomr"]["segdup_sr_model"],
+        lr_model=config["sentdhiomr"]["segdup_lr_model"],
+        genes=config["sentdhiomr"]["segdup_genes"],
+        outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results",
+    shell:
+        """
+        set -euo pipefail
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+
+        mkdir -p $(dirname {log})
+        mkdir -p {params.outdir}
+        echo "Starting segdup-caller at $(date)" >> {log}
+
+        GENES_ARG=""
+        if [ -n "{params.genes}" ]; then
+            GENES_ARG="--genes {params.genes}"
+        fi
+
+        LR_ARGS=""
+        if [ -n "{params.lr_model}" ]; then
+            LR_ARGS="--long {input.lr_cram} --lr_model {params.lr_model}"
+        fi
+
+        segdup-caller \
+            --short {input.sr_bam} \
+            $LR_ARGS \
+            --sr_model {params.sr_model} \
+            --reference {params.huref} \
+            $GENES_ARG \
+            --outdir {params.outdir} \
+            --threads {threads} \
+            --workers 4 >> {log} 2>&1
+
+        touch {output.done}
+        echo "segdup-caller completed at $(date)" >> {log}
+        """
+
+
+localrules:
+    produce_sentdhiomr_segdup,
+
+
+rule produce_sentdhiomr_segdup:  # TARGET: sentieon segdup hybrid ilmn+ont modular segdup
+    input:
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
+            sample=SSAMPS,
+            alnr=ALIGNERS_DHIOMR,
+            ddup=DDUP,
+        ),
+    output:
+        "gatheredall.sentdhiomr.segdup",
+    priority: 48
+    threads: 1
+    log:
+        "gatheredall.sentdhiomr.segdup.log",
+    shell:
+        """( touch {output} ;
+        ls {output} ) >> {log} 2>&1;
+        """
+
+
+
+# ===========================================================================
+# MITOCHONDRIAL CALLING: TNscope-based mito variant calling with shifted ref
+# Replicates bin/sentieon_mitochondrial_pipeline.sh as Snakemake rules
+# Uses dual-alignment (standard + shifted chrM ref) and liftover/merge
+# ===========================================================================
+
+rule sentdhiomr_mito_call:
+    """Mitochondrial variant calling: extract chrM, align to standard+shifted refs, call with TNscope, liftover, merge, filter"""
+    input:
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
+        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
+    output:
+        mito_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz",
+        mito_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz.tbi",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOMR)
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.mito.log",
+    threads: config['sentdhiomr']['threads_light']
+    conda:
+        "../envs/sentieon_v0.3.yaml"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.mito.bench.tsv"
+    resources:
+        partition="i192mem,i192bigmem,i192",
+        threads=config['sentdhiomr']['threads_light'],
+        vcpu=config['sentdhiomr']['threads_light'],
+        mem_mb=config['sentdhiomr']['mem_mb_light'],
+    params:
+        mt_fasta=config["sentdhiomr"]["mt_fasta"],
+        mt_shifted_fasta=config["sentdhiomr"]["mt_shifted_fasta"],
+        mt_shift_back_chain=config["sentdhiomr"]["mt_shift_back_chain"],
+        mt_blacklist_bed=config["sentdhiomr"]["mt_blacklist_bed"],
+        cluster_sample=ret_sample,
+    shell:
+        """
+        set -euo pipefail
+        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+
+        OUTDIR=$(dirname {output.mito_vcf})
+        mkdir -p "$OUTDIR" $(dirname {log})
+        SAMPLE="{params.cluster_sample}"
+        NT={threads}
+
+        timestamp=$(date +%Y%m%d%H%M%S)
+        TMPDIR="/dev/shm/sentdhiomr_mito_${{timestamp}}_$$"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+
+        echo "Starting mitochondrial pipeline at $(date)" >> {log}
+
+        # --- Step 1: Extract chrM paired reads → FASTQs ---
+        samtools view -F 0x4 -F 0x8 -h {input.sr_bam} chrM 2>>{log} | \
+            awk '$0~/^@/ || $7 == "=" {{print}}' | \
+            samtools collate -O -f - "$TMPDIR/collate_$$" 2>>{log} | \
+            samtools fastq -N \
+                -1 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" \
+                -2 "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq.gz" - 2>>{log}
+
+        echo "chrM reads extracted at $(date)" >> {log}
+
+        # --- Helper: AlignAndCall on a chrM reference ---
+        align_and_call() {{
+            local ref="$1" interval="$2" prefix="$3"
+            sentieon bwa mem \
+                -R "@RG\\tID:${{SAMPLE}}\\tSM:${{SAMPLE}}\\tPL:Illumina" \
+                -K 100000000 -v 3 -t $NT -Y "$ref" \
+                "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" \
+                "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq.gz" 2>>{log} | \
+            sentieon util sort -t $NT -i - --sam2bam \
+                -o "$TMPDIR/${{prefix}}.sorted.bam" >> {log} 2>&1
+
+            sentieon driver -t $NT \
+                -i "$TMPDIR/${{prefix}}.sorted.bam" \
+                --algo LocusCollector --fun score_info \
+                "$TMPDIR/${{prefix}}.score.txt" >> {log} 2>&1
+
+            sentieon driver -t $NT \
+                -i "$TMPDIR/${{prefix}}.sorted.bam" \
+                --algo Dedup --score_info "$TMPDIR/${{prefix}}.score.txt" \
+                --metrics "$TMPDIR/${{prefix}}.dedup_metrics.txt" \
+                "$TMPDIR/${{prefix}}.deduped.bam" >> {log} 2>&1
+
+            sentieon driver -t $NT \
+                -i "$TMPDIR/${{prefix}}.deduped.bam" \
+                -r "$ref" --interval "$interval" \
+                --algo TNscope --tumor_sample "$SAMPLE" \
+                --min_tumor_allele_frac 0.005 --prune_factor 20 \
+                --disable_detector sv --resample_depth 100000 \
+                "$TMPDIR/${{prefix}}.raw.tnscope.vcf.gz" >> {log} 2>&1
+        }}
+
+        # --- Step 2: Align+Call on standard and shifted refs in parallel ---
+        align_and_call "{params.mt_fasta}" "chrM:576-16024" "MT" &
+        align_and_call "{params.mt_shifted_fasta}" "chrM:8025-9144" "ShiftedMT" &
+        wait
+        echo "TNscope calling completed at $(date)" >> {log}
+
+        # --- Step 3: Liftover shifted VCF back to standard coords ---
+        picard LiftoverVcf \
+            I="$TMPDIR/ShiftedMT.raw.tnscope.vcf.gz" \
+            O="$TMPDIR/ShiftedMT.shifted_back.vcf.gz" \
+            R="{params.mt_fasta}" \
+            CHAIN="{params.mt_shift_back_chain}" \
+            REJECT="$TMPDIR/ShiftedMT.rejected.vcf" >> {log} 2>&1
+
+        picard MergeVcfs \
+            I="$TMPDIR/ShiftedMT.shifted_back.vcf.gz" \
+            I="$TMPDIR/MT.raw.tnscope.vcf.gz" \
+            O="$TMPDIR/all.tnscope.vcf.gz" >> {log} 2>&1
+
+        echo "Liftover and merge completed at $(date)" >> {log}
+
+        # --- Step 4: Blacklist filter + strand bias annotation ---
+        bcftools view -T ^{params.mt_blacklist_bed} "$TMPDIR/all.tnscope.vcf.gz" 2>>{log} | \
+            bcftools filter -s "Strand_bias" -e "INFO/SOR>=10" 2>>{log} | \
+            sentieon util vcfconvert - {output.mito_vcf} >> {log} 2>&1
+
+        bcftools index -t -f {output.mito_vcf} >> {log} 2>&1
+
+        echo "Mitochondrial pipeline completed at $(date)" >> {log}
+        """
+
+
+localrules:
+    produce_sentdhiomr_mito,
+
+
+rule produce_sentdhiomr_mito:  # TARGET: sentieon mito hybrid ilmn+ont modular mito vcf
+    input:
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz.tbi",
+            sample=SSAMPS,
+            alnr=ALIGNERS_DHIOMR,
+            ddup=DDUP,
+        ),
+    output:
+        "gatheredall.sentdhiomr.mito",
+    priority: 48
+    threads: 1
+    log:
+        "gatheredall.sentdhiomr.mito.log",
+    shell:
+        """( touch {output} ;
+        ls {output} ) >> {log} 2>&1;
         """
