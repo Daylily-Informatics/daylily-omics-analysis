@@ -273,6 +273,14 @@ rule sentdhiomr_pass1:
 
         echo "Starting Pass 1 DNAscope at $(date)" >> {log}
 
+        # Guard: check if ONT CRAM is valid (non-empty with a proper header)
+        ONT_SIZE=$(stat -c%s {input.lr_cram} 2>/dev/null || echo 0)
+        if [ "$ONT_SIZE" -eq 0 ]; then
+            echo "ERROR: ONT CRAM {input.lr_cram} is empty (0 bytes). This sample has no ONT data." >> {log}
+            echo "Cannot run hybrid Illumina+ONT pipeline without ONT reads. Failing explicitly." >> {log}
+            exit 1
+        fi
+
         # Build --replace_rg args: LR reads get LR:1 tag (critical for hybrid.model
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
@@ -1816,6 +1824,8 @@ rule sentdhiomr_merge_sr_bams:
         threads=config['sentdhiomr']['threads_medium'],
         vcpu=config['sentdhiomr']['threads_medium'],
         mem_mb=config['sentdhiomr']['mem_mb_medium'],
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         set -euo pipefail
