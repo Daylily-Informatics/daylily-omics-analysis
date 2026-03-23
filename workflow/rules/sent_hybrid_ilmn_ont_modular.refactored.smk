@@ -1391,7 +1391,8 @@ rule sentdhiomr_concat_fofn:
     resources:
         threads=1
     params:
-        fn_stub="{sample}.{alnr}.{ddup}.sentdhiomr."
+        fn_stub="{sample}.{alnr}.{ddup}.sentdhiomr.",
+        cluster_sample=ret_sample,
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.concat.fofn.bench.tsv"
     conda:
@@ -1738,6 +1739,7 @@ rule sentdhiomr_export_sr_cram:
         mem_mb=config['sentdhiomr']['mem_mb_light'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        cluster_sample=ret_sample,
     shell:
         """
         set -euo pipefail
@@ -1867,6 +1869,7 @@ rule sentdhiomr_call_segdup:
         lr_model=config["sentdhiomr"]["segdup_lr_model"],
         genes=config["sentdhiomr"]["segdup_genes"],
         outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results",
+        cluster_sample=ret_sample,
     shell:
         """
         set -euo pipefail
