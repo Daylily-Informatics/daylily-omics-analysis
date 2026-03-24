@@ -734,10 +734,10 @@ sentdhiomr:
     segdup_lr_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle"
     segdup_genes: ""  # empty = all supported genes; comma-separated list otherwise (e.g. "SMN1,CYP2D6")
     # Mitochondrial calling pipeline config — paths under hg38_broad to match genome build
-    mt_fasta: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.fasta"
-    mt_shifted_fasta: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta"
-    mt_shift_back_chain: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/ShiftBack.chain"
-    mt_blacklist_bed: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/blacklist_sites.hg38.chrM.bed"
+    mt_fasta: "/fsx/scratch/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.fasta"
+    mt_shifted_fasta: "/fsx/scratch/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta"
+    mt_shift_back_chain: "/fsx/scratch/hg38_broad/chrM/ShiftBack.chain"
+    mt_blacklist_bed: "/fsx/scratch/hg38_broad/chrM/blacklist_sites.hg38.chrM.bed"
 
 # Hybrid Modular Refactored Illumina+PacBio
 sentdhipmr:
