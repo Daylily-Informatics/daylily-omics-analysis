@@ -43,22 +43,58 @@ rule manta:
         "../envs/manta_v0.1.yaml"  #config["manta"]["env_yaml"]
     shell:
         """
+        set -euo pipefail
 
-        
-        timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR=/fsx/scratch/manta_tmp_$timestamp;
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+        timestamp=$(date +%Y%m%d%H%M%S)_$$
+        export TMPDIR=/fsx/scratch/manta_tmp_$timestamp
+        mkdir -p $TMPDIR
+        export APPTAINER_HOME=$TMPDIR
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
-        set +euo pipefail;
-        (rm -rf {params.work_dir} || echo rmFail;
-        mkdir -p {params.work_dir}|| echo mkdirERROR ;
-        configManta.py --bam {input.cram} --reference {params.huref} --runDir {params.work_dir}  ;
-        python {params.work_dir}/runWorkflow.py  -j {threads} || echo noFail;) > {log} 2>&1;
-        python workflow/scripts/manta_uniter.py {params.work_dir}/results/variants/diploidSV.vcf.gz {params.work_dir}/results/variants/candidateSV.vcf.gz > {output.vcf} ;
-        ls {output};
-	    rm -rf {params.work_dir}/workspace;
+        mkdir -p $(dirname {log})
+
+        # --- Run Manta (may legitimately fail on some inputs) ---
+        rm -rf {params.work_dir} 2>/dev/null || true
+        mkdir -p {params.work_dir}
+
+        MANTA_OK=true
+        configManta.py --bam {input.cram} --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
+            echo "ERROR: configManta.py failed" >> {log}
+            MANTA_OK=false
+        }}
+
+        if [ "$MANTA_OK" = "true" ]; then
+            python {params.work_dir}/runWorkflow.py -j {threads} >> {log} 2>&1 || {{
+                echo "WARNING: Manta runWorkflow.py exited non-zero" >> {log}
+                MANTA_OK=false
+            }}
+        fi
+
+        # --- Validate Manta produced expected outputs ---
+        DIPLOID_VCF="{params.work_dir}/results/variants/diploidSV.vcf.gz"
+        CANDIDATE_VCF="{params.work_dir}/results/variants/candidateSV.vcf.gz"
+
+        if [ "$MANTA_OK" = "false" ] || [ ! -s "$DIPLOID_VCF" ] || [ ! -s "$CANDIDATE_VCF" ]; then
+            echo "ERROR: Manta did not produce expected output files. Aborting." >> {log}
+            echo "  diploidSV exists/non-empty: $([ -s $DIPLOID_VCF ] && echo YES || echo NO)" >> {log}
+            echo "  candidateSV exists/non-empty: $([ -s $CANDIDATE_VCF ] && echo YES || echo NO)" >> {log}
+            ls -la {params.work_dir}/results/variants/ >> {log} 2>&1 || true
+            exit 1
+        fi
+
+        # --- Merge VCFs (write to temp, then move — prevents empty output on crash) ---
+        TMPVCF="$TMPDIR/manta_merged.vcf"
+        python workflow/scripts/manta_uniter.py "$DIPLOID_VCF" "$CANDIDATE_VCF" > "$TMPVCF" 2>> {log}
+
+        if [ ! -s "$TMPVCF" ]; then
+            echo "ERROR: manta_uniter.py produced empty output" >> {log}
+            exit 1
+        fi
+
+        mv "$TMPVCF" {output.vcf}
+        echo "Manta completed successfully at $(date)" >> {log}
+
+        rm -rf {params.work_dir}/workspace 2>/dev/null || true
         """
 
 

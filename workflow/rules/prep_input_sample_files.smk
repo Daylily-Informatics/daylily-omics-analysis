@@ -547,6 +547,8 @@ rule pre_prep_ont_cram:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
         use_threads=config["prep_input_sample_files"]["use_threads"],
+        ont_cram=lambda wildcards, input: input[0] if len(input) > 0 else "",
+        ont_crai=lambda wildcards, input: input[1] if len(input) > 1 else "",
     log:
         MDIR + "{sample}/align/ont/logs/{sample_lane}.cram.log",
     conda:
@@ -554,13 +556,21 @@ rule pre_prep_ont_cram:
     shell:
         """
         (mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;
+
+        # Guard: if input function returned no ONT data, create empty placeholders
+        if [ -z "{params.ont_cram}" ]; then
+            echo "No ONT data for this sample — creating empty placeholders" >> {log} 2>&1
+            touch {output.cram} {output.crai}
+            exit 0
+        fi
+
         export TMPDIR=$(dirname {log})/tmpdir;
         mkdir -p $TMPDIR || echo {log} dir exists >> {log} 2>&1;
 
         if [[ '{params.downsample}' != 'na' ]]; then
             echo 'downsampling to {params.downsample}' >> {log} 2>&1;
 
-            samtools view -@ {params.use_threads} -T {params.huref} -C -s 33.{params.downsample} {input[0]} -o {output.cram} >> {log} 2>&1;
+            samtools view -@ {params.use_threads} -T {params.huref} -C -s 33.{params.downsample} {params.ont_cram} -o {output.cram} >> {log} 2>&1;
             sleep 5;
             samtools index {output.cram} >> {log} 2>&1;
 
@@ -569,31 +579,31 @@ rule pre_prep_ont_cram:
 
             # Detect file format: if source is BAM (aligned), convert to CRAM.
             # If source is already CRAM, symlink as before.
-            src_fmt=$(htsfile {input[0]} 2>/dev/null | head -1 || echo "unknown");
+            src_fmt=$(htsfile {params.ont_cram} 2>/dev/null | head -1 || echo "unknown");
             echo "Source format detection: $src_fmt" >> {log} 2>&1;
 
             if echo "$src_fmt" | grep -qi 'BAM'; then
                 # Source is BAM — check if aligned (has @SQ lines with SN:)
-                has_sq=$(samtools view -H {input[0]} 2>/dev/null | grep -c '^@SQ' || true);
+                has_sq=$(samtools view -H {params.ont_cram} 2>/dev/null | grep -c '^@SQ' || true);
                 echo "BAM @SQ header count: $has_sq" >> {log} 2>&1;
 
                 if [[ "$has_sq" -gt 0 ]]; then
                     echo 'Aligned BAM detected — converting to CRAM' >> {log} 2>&1;
-                    samtools view -@ {params.use_threads} -T {params.huref} -C {input[0]} -o {output.cram} >> {log} 2>&1;
+                    samtools view -@ {params.use_threads} -T {params.huref} -C {params.ont_cram} -o {output.cram} >> {log} 2>&1;
                     sleep 5;
                     samtools index -@ {params.use_threads} {output.cram} >> {log} 2>&1;
                 else
                     echo 'Unaligned BAM detected — symlinking as-is' >> {log} 2>&1;
-                    {params.c} {input[0]} {output.cram} >> {log} 2>&1;
+                    {params.c} {params.ont_cram} {output.cram} >> {log} 2>&1;
                     sleep 5;
-                    {params.c} {input[1]} {output.crai} >> {log} 2>&1;
+                    {params.c} {params.ont_crai} {output.crai} >> {log} 2>&1;
                 fi
 
             else
                 echo 'CRAM or other format — symlinking' >> {log} 2>&1;
-                {params.c} {input[0]} {output.cram} >> {log} 2>&1;
+                {params.c} {params.ont_cram} {output.cram} >> {log} 2>&1;
                 sleep 5;
-                {params.c} {input[1]} {output.crai} >> {log} 2>&1;
+                {params.c} {params.ont_crai} {output.crai} >> {log} 2>&1;
             fi
         fi
 

@@ -722,6 +722,17 @@ sentdhiomr:
     use_threads_light: 2
     max_mem: "4G"
     pop_vcf: ""
+    keep_sr_alignment: false
+    keep_tmp_dirs: false
+    # SegDup caller config (segdup-caller CLI)
+    segdup_sr_model: ""
+    segdup_lr_model: ""
+    segdup_genes: ""
+    # Mitochondrial calling pipeline config
+    mt_fasta: ""
+    mt_shifted_fasta: ""
+    mt_shift_back_chain: ""
+    mt_blacklist_bed: ""
 
 # Hybrid Modular Refactored Illumina+PacBio
 sentdhipmr:
