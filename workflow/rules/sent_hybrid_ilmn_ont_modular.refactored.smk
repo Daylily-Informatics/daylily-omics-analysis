@@ -1644,6 +1644,7 @@ rule sentdhiomr_call_cnvs:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
         use_threads=config["sentdhiomr"]["use_threads_medium"],
+        cluster_sample=ret_sample,
     shell:
         """
         set -euo pipefail
