@@ -1853,7 +1853,7 @@ rule sentdhiomr_call_segdup:
         MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.log",
     threads: config['sentdhiomr']['threads_medium']
     conda:
-        "../envs/sentieon_v0.3.yaml"
+        "../envs/segdup_v0.1.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.bench.tsv"
     resources:
