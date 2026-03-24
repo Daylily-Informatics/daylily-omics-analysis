@@ -1954,7 +1954,7 @@ rule sentdhiomr_mito_call:
         MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.mito.log",
     threads: config['sentdhiomr']['threads_light']
     conda:
-        "../envs/sentieon_v0.3.yaml"
+        "../envs/sentieon_v0.3b.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.mito.bench.tsv"
     resources:
