@@ -26,3 +26,4 @@ dependencies:
   - pip
   - pip:
     - git+https://github.com/Sentieon/sentieon-cli.git@v1.5.2
+    - git+https://github.com/Sentieon/segdup-caller.git@v0.4.0
