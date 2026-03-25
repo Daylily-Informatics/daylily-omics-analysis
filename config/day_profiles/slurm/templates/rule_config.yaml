@@ -707,9 +707,9 @@ sentdhrpm:
 sentdhiomr:
     threads: 192
     use_threads: 188
-    hg38_sentdhiomr_chrms: "1-24"
-    hg38_broad_sentdhiomr_chrms: "1-24"
-    b37_sentdhiomr_chrms: "1-24"
+    hg38_sentdhiomr_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17-19,20-25"
+    hg38_broad_sentdhiomr_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17-19,20-25"
+    b37_sentdhiomr_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17-19,20-25"
     ld_preload: " "
     env_yaml: "../envs/sentieon_v0.3.yaml"
     sentD_gather_env: "../envs/sentieon_v0.3.yaml"
