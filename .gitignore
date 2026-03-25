@@ -10,6 +10,8 @@ DYMEMBERS
 day_pipe_stats.json
 results/*
 
+.DS_Store
+
 _scripts/*
 _tmp_scripts/*
 _analysis*/*

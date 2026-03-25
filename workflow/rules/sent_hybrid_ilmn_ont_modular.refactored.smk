@@ -43,6 +43,9 @@ config["sentdhiomr"].setdefault("segdup_sr_model", "")
 config["sentdhiomr"].setdefault("segdup_lr_model", "")
 config["sentdhiomr"].setdefault("segdup_genes", "")
 
+# Parse segdup genes into a list for per-gene rule expansion
+SEGDUP_GENES = [g.strip() for g in config["sentdhiomr"]["segdup_genes"].split(",") if g.strip()]
+
 # Mitochondrial pipeline defaults
 config["sentdhiomr"].setdefault("mt_fasta", "")
 config["sentdhiomr"].setdefault("mt_shifted_fasta", "")
@@ -1838,34 +1841,35 @@ rule sentdhiomr_merge_sr_bams:
         """
 
 
-rule sentdhiomr_call_segdup:
-    """Call variants in segmental duplication regions using segdup-caller CLI"""
+rule sentdhiomr_call_segdup_gene:
+    """Call variants in a single segmental duplication gene using segdup-caller CLI.
+    Each gene runs as an independent job for failure isolation and parallelism."""
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
         sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
     output:
-        done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.done",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr="|".join(ALIGNERS_DHIOMR),
+        gene="|".join(SEGDUP_GENES),
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.log",
-    threads: config['sentdhiomr']['threads_medium']
+        MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.log",
+    threads: 48
     conda:
-        "../envs/sentieon_v0.3.yaml"
+        "../envs/segdup_v0.1.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
-        threads=config['sentdhiomr']['threads_medium'],
-        vcpu=config['sentdhiomr']['threads_medium'],
+        threads=48,
+        vcpu=48,
         mem_mb=config['sentdhiomr']['mem_mb_medium'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         sr_model=config["sentdhiomr"]["segdup_sr_model"],
         lr_model=config["sentdhiomr"]["segdup_lr_model"],
-        genes=config["sentdhiomr"]["segdup_genes"],
         outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results",
         cluster_sample=ret_sample,
     shell:
@@ -1875,17 +1879,12 @@ rule sentdhiomr_call_segdup:
 
         mkdir -p $(dirname {log})
         mkdir -p {params.outdir}
-        echo "Starting segdup-caller at $(date)" >> {log}
+        echo "Starting segdup-caller for gene {wildcards.gene} at $(date)" >> {log}
 
         # Ensure segdup-caller is installed (pip package from Sentieon)
         if ! command -v segdup-caller &>/dev/null; then
             echo "segdup-caller not found — installing from GitHub" >> {log}
             pip install git+https://github.com/Sentieon/segdup-caller.git >> {log} 2>&1
-        fi
-
-        GENES_ARG=""
-        if [ -n "{params.genes}" ]; then
-            GENES_ARG="--genes {params.genes}"
         fi
 
         LR_ARGS=""
@@ -1898,18 +1897,38 @@ rule sentdhiomr_call_segdup:
             $LR_ARGS \
             --sr_model {params.sr_model} \
             --reference {params.huref} \
-            $GENES_ARG \
+            --genes {wildcards.gene} \
             --outdir {params.outdir} \
             --threads {threads} \
-            --workers 4 >> {log} 2>&1
+            --workers 1 >> {log} 2>&1
 
         touch {output.done}
-        echo "segdup-caller completed at $(date)" >> {log}
+        echo "segdup-caller for gene {wildcards.gene} completed at $(date)" >> {log}
+        """
+
+
+rule sentdhiomr_call_segdup:
+    """Gather per-gene segdup results into a single done sentinel."""
+    input:
+        expand(
+            MDIR
+            + "{{sample}}/align/{{alnr}}/{{ddup}}/segdup/sentdhiomr/{{sample}}.{{alnr}}.{{ddup}}.sentdhiomr.segdup.{gene}.done",
+            gene=SEGDUP_GENES,
+        ),
+    output:
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
+    wildcard_constraints:
+        alnr="|".join(ALIGNERS_DHIOMR)
+    threads: 1
+    shell:
+        """
+        touch {output.done}
         """
 
 
 localrules:
     produce_sentdhiomr_segdup,
+    sentdhiomr_call_segdup,
 
 
 rule produce_sentdhiomr_segdup:  # TARGET: sentieon segdup hybrid ilmn+ont modular segdup
@@ -1954,7 +1973,7 @@ rule sentdhiomr_mito_call:
         MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.mito.log",
     threads: config['sentdhiomr']['threads_light']
     conda:
-        "../envs/sentieon_v0.3.yaml"
+        "../envs/sentieon_v0.3b.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.mito.bench.tsv"
     resources:
