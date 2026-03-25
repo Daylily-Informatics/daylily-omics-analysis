@@ -18,7 +18,7 @@ def gen_ped_file(wildcards):
         ped_sex = 1
     else:
         ped_sex = 0
-    ped_f = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/peddy/{wildcards.sample}.{wildcards.alnr}.{wildcards.snv}.peddy.ped"
+    ped_f = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/peddy/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.peddy.ped"
     os.system(f"mkdir -p $(dirname {ped_f});")
     ped_fh = open(ped_f, "w")
     ped_fh.write(f"{wildcards.sample}\t{wildcards.sample}\t0\t0\t{ped_sex}\t0\n")
@@ -29,17 +29,17 @@ def gen_ped_file(wildcards):
 rule peddy:
     input:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz",
         # Generalize this for other var callers
         ped_f=gen_ped_file,
     output:
         prefix=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.",
         done=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done",
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/log/{sample}.{alnr}.{snv}.peddy.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/log/{sample}.{alnr}.{ddup}.{snv}.peddy.log",
     threads: config["peddy"]["threads"]
     resources:
         vcpu=config["peddy"]["threads"],
@@ -74,7 +74,7 @@ localrules:
 rule produce_peddy:  # TARGET: just produce peddy results
     input:
         [
-            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{snv}.peddy.done"
+            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
             for sample in SSAMPS
             for ddup in DDUP
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
