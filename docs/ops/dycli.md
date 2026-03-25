@@ -59,7 +59,7 @@ dy-m --interval 5 --block-and-poll
 
 The monitor displays:
 1. **Directory Stats** - Size, existence, last modified time
-2. **Command History** - Last 5 commands from `day_cmds.log`
+2. **Command History** - Last 5 commands from `day_cmd.log`
 3. **SLURM Job Status** - Active jobs and their status
 4. **Snakemake Master Log** - Latest 20 lines of Snakemake output
 5. **Recent SLURM Logs** - Last 5 SLURM output/error files with tail

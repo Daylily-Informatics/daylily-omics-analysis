@@ -1,10 +1,19 @@
-# Running The Bundled Tests
-Daylily comes with a test dataset of 0.01x coverage data.  This will automatically be used when running a pipeline if not supercede with an `config/analysis_manifest.csv` file.  To run, simply execute:
+# Running the Bundled Smoke Test
+
+Daylily ships with bundled 0.01x HG002 input tables for a minimal operator test.
+Stage those tables into `config/`, then run a small target in `local` mode.
+
 ```bash
-# from the cloned root directory
+# from the cloned repository root
 
-source dyinit source dyinit  --project <PROJECT>
-dy-a local
-dy-r produce_deduplicated_bams
+. dyoainit
+dy-a local hg38
 
+cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
+cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
+
+dy-r produce_alignstats -p -j 1 -n
+dy-r produce_alignstats -p -j 1
 ```
+
+If you only want a validation pass, stop after the dry-run command.
