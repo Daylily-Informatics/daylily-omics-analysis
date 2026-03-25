@@ -66,12 +66,19 @@ _dyg() {
     COMPREPLY=($(compgen -W "$options" -- "${COMP_WORDS[$COMP_CWORD]}"))
 }
 
-
+# Completion for day-monitor
+_dym() {
+    if [[ "${COMP_WORDS[$COMP_CWORD]}" == -* ]]; then
+        local options="--workdir --interval --block-and-poll -h --help"
+        COMPREPLY=($(compgen -W "$options" -- "${COMP_WORDS[$COMP_CWORD]}"))
+    fi
+}
 
 # Register completion functions
 complete -F _dya day-activate dy-a day_activate
 complete -F _dyb day-build day_build dy-b
 complete -F _dyd day-deactivate day_deactivate dy-d
 complete -F _dyr day-run dy-r
+complete -F _dym day-monitor dy-m
 complete -F _scc day-script-cmds
 complete -F _dyg gay-set-genome-build dy-g
