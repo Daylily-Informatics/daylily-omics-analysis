@@ -1971,16 +1971,16 @@ rule sentdhiomr_mito_call:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.mito.log",
-    threads: config['sentdhiomr']['threads_light']
+    threads: config['sentdhiomr']['threads_medium']
     conda:
         "../envs/sentieon_v0.3b.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.mito.bench.tsv"
     resources:
         partition="i192mem,i192bigmem,i192",
-        threads=config['sentdhiomr']['threads_light'],
-        vcpu=config['sentdhiomr']['threads_light'],
-        mem_mb=config['sentdhiomr']['mem_mb_light'],
+        threads=config['sentdhiomr']['threads_medium'],
+        vcpu=config['sentdhiomr']['threads_medium'],
+        mem_mb=config['sentdhiomr']['mem_mb_medium'],
     params:
         mt_fasta=config["sentdhiomr"]["mt_fasta"],
         mt_shifted_fasta=config["sentdhiomr"]["mt_shifted_fasta"],
