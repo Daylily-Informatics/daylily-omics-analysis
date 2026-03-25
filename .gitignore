@@ -4,6 +4,9 @@ __pycache__/
 *$py.class
 .vscode/
 
+config/samples.tsv
+config/units.tsv
+
 day_stats.json
 DYMEMBERS
 *~
