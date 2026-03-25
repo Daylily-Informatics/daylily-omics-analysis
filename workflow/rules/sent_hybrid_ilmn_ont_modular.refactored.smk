@@ -2012,11 +2012,11 @@ rule sentdhiomr_mito_call:
             awk '$0~/^@/ || $7 == "=" {{print}}' | \
             samtools collate -O - "$TMPDIR/collate_$$" 2>>{log} | \
             samtools fastq -N \
-                -1 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" \
-                -2 "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq.gz" - 2>>{log}
+                -1 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" \
+                -2 "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq" - 2>>{log}
 
         # Validate that reads were actually extracted
-        R1_LINES=$(zcat "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" 2>/dev/null | head -4 | wc -l)
+        R1_LINES=$(head -4 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" | wc -l)
         if [ "$R1_LINES" -lt 4 ]; then
             echo "FATAL: No chrM paired reads extracted from {input.sr_bam}" >> {log}
             exit 1
@@ -2029,8 +2029,8 @@ rule sentdhiomr_mito_call:
             sentieon bwa mem \
                 -R "@RG\\tID:${{SAMPLE}}\\tSM:${{SAMPLE}}\\tPL:Illumina" \
                 -K 100000000 -v 3 -t $NT -Y "$ref" \
-                "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" \
-                "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq.gz" 2>>{log} | \
+                "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" \
+                "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq" 2>>{log} | \
             sentieon util sort -t $NT -i - --sam2bam \
                 -o "$TMPDIR/${{prefix}}.sorted.bam" >> {log} 2>&1
 
