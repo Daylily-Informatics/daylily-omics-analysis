@@ -1,7 +1,0 @@
-I messed up the output file of produce_snv_concordances, i changed the 
-
-    AllVarMeanDP    CovBin  Aligner SNVCaller
-HG002-sent-sentd-SNPts  SNPts   HG002   339556068.0     339287228.0     19320.0 249520.0        2720.0  0.9577032317494434      0.9281356940931409      0.9999919832579302      0.01078338090707263    0.9892166190929274      0.9892166190929274      HG002   giabHC_x_clinvar_genes  -1      -2      sent    sentd
-HG002-sent-sentd-SNPtv  SNPtv   HG002   339556068.0     339433879.0     9254.0  112935.0        1446.0  0.9547702582745065      0.9242648683596724      0.9999957399837509      0.01264195976604506    0.9873580402339549      0.9873580402339549      HG002   giabHC_x_clinvar_genes  -1      -2      sent    sentd
-HG002-sent-sentd-INS_50 INS_50  HG002   339556068.0     339528216.0     2338.0  25514.0 484.0   0.9475951717734448      0.9160562975728852      0.9999985744945862      0.018616816678206017   0.981383183321794       0.981383183321794       HG002   giabHC_x_clinvar_genes  -1      -2      sent    sentd
-HG002-sent-sentd-INS_gt50       INS_gt50        HG002   339556068.0     339556066.0     2.0     0.0     0.0             0.0     1.0                             HG002   giabHC_x_clinvar_genes -1      -2      sent    sentd
