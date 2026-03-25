@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# Monitor script for Daylily analysis directories
+# Usage: day-monitor [--workdir PATH] [--interval SECONDS] [--block-and-poll]
+#        dy-m [--workdir PATH] [--interval SECONDS] [--block-and-poll]
+
+set -euo pipefail
+
+# Configuration
+WORKDIR="${DAY_ROOT:-.}"
+INTERVAL=30
+BLOCK_AND_POLL=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --workdir) WORKDIR="$2"; shift 2 ;;
+    --interval) INTERVAL="$2"; shift 2 ;;
+    --block-and-poll) BLOCK_AND_POLL=true; shift ;;
+    -h|--help) 
+      echo "Usage: day-monitor [OPTIONS]"
+      echo ""
+      echo "Monitor Daylily analysis workflow status."
+      echo ""
+      echo "Options:"
+      echo "  --workdir PATH         Analysis directory (default: DAY_ROOT)"
+      echo "  --interval SECONDS     Update interval (default: 30)"
+      echo "  --block-and-poll       Block until workflow completes"
+      echo "  -h, --help             Show this help message"
+      exit 0
+      ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+# Validate workdir
+if [[ ! -d "$WORKDIR" ]]; then
+  echo "ERROR: Workdir does not exist: $WORKDIR" >&2
+  exit 1
+fi
+
+# Function to get Snakemake master log status
+get_snakemake_status() {
+  if [[ -d "$WORKDIR/.snakemake/log" ]]; then
+    latest_log=$(ls -t "$WORKDIR/.snakemake/log" 2>/dev/null | head -1)
+    if [[ -n "$latest_log" ]]; then
+      echo "=== Snakemake Master Log (Latest) ==="
+      tail -20 "$WORKDIR/.snakemake/log/$latest_log"
+    fi
+  else
+    echo "No Snakemake logs found"
+  fi
+}
+
+# Function to get SLURM job status
+get_slurm_status() {
+  echo "=== SLURM Job Status ==="
+  if ! command -v squeue >/dev/null 2>&1; then
+    echo "ERROR: squeue not found on PATH" >&2
+    return 0
+  fi
+
+  local squeue_output
+  if ! squeue_output=$(squeue -u ubuntu --format='%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' 2>&1); then
+    echo "ERROR: failed to query SLURM job status" >&2
+    echo "$squeue_output" >&2
+    return 0
+  fi
+
+  echo "$squeue_output"
+}
+
+# Function to get recent SLURM logs
+get_recent_slurm_logs() {
+  if [[ -d "$WORKDIR/logs/slurm" ]]; then
+    echo "=== Recent SLURM Logs (last 5 files) ==="
+    find "$WORKDIR/logs/slurm" -type f \( -name '*.out' -o -name '*.err' \) -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -5 | cut -d' ' -f2- | while read f; do
+      echo "File: $f"
+      tail -5 "$f"
+      echo '---'
+    done
+  else
+    echo "No SLURM logs directory found"
+  fi
+}
+
+# Function to get command history
+get_command_history() {
+  if [[ -f "$WORKDIR/day_cmd.log" ]]; then
+    echo "=== Command History (last 5 commands) ==="
+    tail -5 "$WORKDIR/day_cmd.log"
+  else
+    echo "No command history found"
+  fi
+}
+
+# Function to get directory stats
+get_directory_stats() {
+  echo "=== Directory Stats ==="
+  echo "Workdir: $WORKDIR"
+  echo "Exists: $([ -d "$WORKDIR" ] && echo 'YES' || echo 'NO')"
+  if [[ -d "$WORKDIR" ]]; then
+    echo "Size: $(du -sh "$WORKDIR" 2>/dev/null | cut -f1)"
+    echo "Last modified: $(ls -ld "$WORKDIR" | awk '{print $6, $7, $8}')"
+  fi
+}
+
+# Function to check if workflow is complete
+is_workflow_complete() {
+  if [[ -f "$WORKDIR/daylily.successful_run" ]]; then
+    return 0
+  fi
+  if [[ -f "$WORKDIR/daylily.failed_run" ]]; then
+    return 1
+  fi
+  return 2  # Still running
+}
+
+# Main monitoring loop
+echo "Starting monitor for $WORKDIR"
+echo "Update interval: ${INTERVAL}s"
+if [[ "$BLOCK_AND_POLL" == "true" ]]; then
+  echo "Block-and-poll mode: Will exit when workflow completes"
+else
+  echo "Press Ctrl+C to stop"
+fi
+echo ""
+
+while true; do
+  clear
+  echo "=== Daylily Analysis Monitor ==="
+  echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+  echo ""
+  
+  get_directory_stats
+  echo ""
+  
+  get_command_history
+  echo ""
+  
+  get_slurm_status
+  echo ""
+  
+  get_snakemake_status
+  echo ""
+  
+  get_recent_slurm_logs
+  echo ""
+  
+  # Check if workflow is complete in block-and-poll mode
+  if [[ "$BLOCK_AND_POLL" == "true" ]]; then
+    if is_workflow_complete; then
+      echo "✓ Workflow completed successfully!"
+      exit 0
+    else
+      workflow_rc=$?
+      if [[ $workflow_rc -eq 1 ]]; then
+      echo "✗ Workflow failed!"
+      exit 1
+      fi
+    fi
+  fi
+  
+  echo "Next update in ${INTERVAL}s (Ctrl+C to stop)..."
+  sleep "$INTERVAL"
+done
+

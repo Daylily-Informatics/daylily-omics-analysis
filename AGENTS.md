@@ -1,3 +1,11 @@
+# CRITICAL - SSH LOGIN SHELLS (READ FIRST)
+**EVERY SSH command to remote hosts MUST use `bash -l -c`**
+- **PATTERN (MANDATORY)**: `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"`
+- **WHY**: Login shells initialize PATH, conda, aliases, functions
+- **WITHOUT login shell**: Commands fail silently (squeue not found, conda unavailable, etc.)
+- **NEVER deviate** from this pattern. No exceptions.
+- See "SSH Commands" section below for details and examples.
+
 # AWS CREDENTIALS
 Ask user for profile name to set AWS_PROFILE to, never use default as profile name.
 
@@ -47,7 +55,7 @@ If given an AWS_PROFILE, region, cluster name, pem file, and optionally the : pa
 
 ## SSH Commands
 **CRITICAL REQUIREMENTS**:
-1. **Always use login shells** when running SSH commands. Use `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"` to ensure the full shell environment (including PATH and conda) is available.
+1. Always use login shells when running SSH commands. Use `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"` to ensure the full shell environment (including PATH and conda) is available.
 2. **Never use SSM (Systems Manager)** — always use direct SSH with login shells.
 3. **`squeue` must be on PATH** — if `squeue` is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
 
