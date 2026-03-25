@@ -1,3 +1,11 @@
+# CRITICAL - SSH LOGIN SHELLS (READ FIRST)
+**EVERY SSH command to remote hosts MUST use `bash -l -c`**
+- **PATTERN (MANDATORY)**: `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"`
+- **WHY**: Login shells initialize PATH, conda, aliases, functions
+- **WITHOUT login shell**: Commands fail silently (squeue not found, conda unavailable, etc.)
+- **NEVER deviate** from this pattern. No exceptions.
+- See "SSH Commands" section below for details and examples.
+
 # AWS CREDENTIALS
 Ask user for profile name to set AWS_PROFILE to, never use default as profile name.
 
