@@ -2,11 +2,15 @@
 
 Daylily Omics Analysis is the operator runbook and workflow repository for Daylily whole-genome analysis. It provides the Snakemake workflows, `dy-*` CLI entrypoints, sample/unit table conventions, monitoring helpers, and benchmarking hooks used to run short-read, long-read, and hybrid analyses on a Daylily ephemeral cluster or in smaller local mode.
 
+[![Latest release](https://img.shields.io/github/v/release/Daylily-Informatics/daylily-omics-analysis?label=latest%20release&color=teal&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/releases) [![Latest tag](https://img.shields.io/github/v/tag/Daylily-Informatics/daylily-omics-analysis?label=latest%20tag&color=pink&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/tags)
+
 > **This repo does not create the cluster.** Infrastructure lifecycle lives in [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster). This repo assumes you already have a working headnode/FSx environment or a compatible local install.
 
 > **Production advice:** use tagged releases when you need stability. `main` is active development.
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Highlights
 
@@ -50,7 +54,9 @@ What success looks like:
 - **Benchmark/cost hooks** on successful non-dry-run executions
 - **A lot of workflow surface area** without hiding the operator entrypoints behind wrapper magic
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Architecture at a Glance
 
@@ -89,7 +95,9 @@ What success looks like:
 
 > The cluster is ephemeral. The bucket is durable. That is the point.
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Cost Monitoring & Budget Enforcement
 
@@ -112,7 +120,9 @@ Main cost drivers:
 3. FSx retention and size
 4. retained EBS/other cluster resources after deletion
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Installation -- Quickest Start
 
@@ -154,7 +164,9 @@ dy-r produce_alignstats -p -j 1 -n
 dy-r produce_alignstats -p -j 1
 ```
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Installation -- Detailed
 
@@ -197,7 +209,9 @@ ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'cd /fsx/analysis_results/ubun
 | `dy-g <hg38|hg38_broad|b37>` | Set genome build directly |
 | `dy-d reset` | Reset a shell that got into a weird state |
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Create / Validate / Operate
 
@@ -336,7 +350,9 @@ Representative deletion command *after export is complete*:
 pcluster delete-cluster -n <cluster-name> --region <region>
 ```
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Automation Helper
 
@@ -381,7 +397,9 @@ Relevant background docs:
 - [`docs/benchmarks/`](docs/benchmarks)
 - [`docs/ops/cost_tagging.md`](docs/ops/cost_tagging.md)
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Monitoring / Troubleshooting / Known Issues
 
@@ -400,7 +418,9 @@ Relevant background docs:
 2. **Historical docs still mention `analysis_manifest.csv`.**
    Current workflow entry expects paired `samples.tsv` and `units.tsv` inputs.
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Documentation
 
@@ -415,7 +435,9 @@ Start with the docs that still match the current workflow shape.
 | [`docs/benchmarks/`](docs/benchmarks) | Benchmark and performance context |
 | [`docs/whitepaper/README.md`](docs/whitepaper/README.md) | Background and whitepaper material |
 
----
+<p valign="middle"><a href=http://www.workwithcolor.com/color-converter-01.htm?cp=ff8c00><img src="docs/images/0000002.png" valign="bottom" ></a></p>
+
+<p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
 ## Historical Material / Contributing / Why This Exists
 

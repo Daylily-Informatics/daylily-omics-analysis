@@ -7,15 +7,15 @@
 rule vep:
     input:
         vcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{snv}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz",
     output:
         ovcfgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.vcf",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.vcf",
         done=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.done"),
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.done"),
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/log/{sample}.{alnr}.{snv}.vep.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/log/{sample}.{alnr}.{ddup}.{snv}.vep.log",
     threads: config["vep"]["threads"]
     resources:
         vcpu=config["vep"]["threads"],
@@ -62,7 +62,7 @@ rule produce_vep:  # TARGET: just produce vep results
     input:
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{snv}.vep.done",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.done",
             sample=SSAMPS,
             alnr=ALIGNERS,
             ddup=DDUP,

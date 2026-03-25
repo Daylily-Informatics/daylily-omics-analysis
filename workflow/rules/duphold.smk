@@ -14,11 +14,11 @@ rule duphold:
         bai=(MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam.bai"),
         snv_vcf=(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz"
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{ddup}.{snv_caller}.snv.sort.vcf.gz"
         ),
         snv_vcftbi=(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz.tbi"
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{ddup}.{snv_caller}.snv.sort.vcf.gz.tbi"
         ),
         sv_vcf=(
             MDIR
