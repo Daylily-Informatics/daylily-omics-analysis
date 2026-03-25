@@ -731,7 +731,7 @@ sentdhiomr:
     keep_tmp_dirs: false
     # SegDup caller config (segdup-caller CLI) — uses standard DNAscope bundles
     segdup_sr_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle"
-    segdup_lr_model: "/fsx/analysis_results/ubuntu/shared_models/sentieon-202503.02/DNAscopeONT2.2.bundle"
+    segdup_lr_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
     segdup_genes: "CFH,CYP11B1,CYP2D6,GBA,NCF1,PMS2,SMN1,STRC,HBA"  # all supported genes; RCCX excluded (RCCX1_RCCX2.dat still missing in segdup-caller v0.4.0)
     # Mitochondrial calling pipeline config — paths under hg38_broad to match genome build
     mt_fasta: "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.fasta"
