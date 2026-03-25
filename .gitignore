@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 .vscode/
+dist/
+daylily_omics_analysis.egg-info/
+build/
 
 day_stats.json
 DYMEMBERS
