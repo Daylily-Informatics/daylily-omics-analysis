@@ -13,6 +13,7 @@ Comprehensive test suite for all CLI commands and their integration.
   - Help documentation
   - Option parsing (--workdir, --interval, --block-and-poll)
   - Workdir validation
+  - Block-and-poll completion behavior
 - `day-activate` / `dy-a` command
 - `day-run` / `dy-r` command
 - `day-set-genome-build` / `dy-g` command
@@ -28,7 +29,7 @@ Comprehensive test suite for all CLI commands and their integration.
 # From repository root
 bash tests/test_cli_commands.sh
 
-# Expected output: All 21 tests should pass
+# Expected output: All 22 tests should pass
 ```
 
 ## Test Results
@@ -44,6 +45,8 @@ Daylily CLI Command Test Suite
 ✓ PASS: day-monitor accepts --interval option
 ✓ PASS: day-monitor accepts --block-and-poll option
 ✓ PASS: day-monitor accepts --workdir option
+✓ PASS: day-monitor reads day_cmd.log
+✓ PASS: day-monitor block-and-poll waits for completion
 ✓ PASS: day-activate exists
 ✓ PASS: day-run exists and is executable
 ✓ PASS: day-set-genome-build exists
@@ -62,8 +65,8 @@ Daylily CLI Command Test Suite
 ==========================================
 Test Results
 ==========================================
-Total:  21
-Passed: 21
+Total:  22
+Passed: 22
 Failed: 0
 ==========================================
 ```

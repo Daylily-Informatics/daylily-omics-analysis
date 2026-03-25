@@ -31,6 +31,17 @@ test_result() {
   fi
 }
 
+create_fake_squeue() {
+  local fakebin="$1"
+
+  mkdir -p "$fakebin"
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'echo "JOBID PARTITION NAME USER ST TIME NODES NODELIST(REASON)"' \
+    > "$fakebin/squeue"
+  chmod +x "$fakebin/squeue"
+}
+
 # Test 1: day-monitor help
 test_day_monitor_help() {
   bin/day_monitor --help > /tmp/test_monitor_help.txt 2>&1
@@ -47,7 +58,7 @@ test_day_monitor_help_short() {
 
 # Test 3: day-monitor validates workdir
 test_day_monitor_invalid_workdir() {
-  bin/day_monitor --workdir /nonexistent/path 2>&1 | grep -q "ERROR: Workdir does not exist" || true
+  bin/day_monitor --workdir /nonexistent/path 2>&1 | grep -q "ERROR: Workdir does not exist"
   test_result "day-monitor validates workdir" $?
 }
 
@@ -73,12 +84,16 @@ test_day_monitor_workdir_option() {
 # Test 7: day-monitor reads day_cmd.log
 test_day_monitor_reads_day_cmd_log() {
   local tmpdir
+  local fakebin
   tmpdir=$(mktemp -d)
+  fakebin="$tmpdir/fakebin"
+
+  create_fake_squeue "$fakebin"
 
   printf 'dy-r produce_alignstats -p -j 1\n' > "$tmpdir/day_cmd.log"
   touch "$tmpdir/daylily.successful_run"
 
-  TERM=xterm bin/day_monitor --workdir "$tmpdir" --block-and-poll > /tmp/test_monitor_cmd_log.txt 2>&1
+  TERM=xterm PATH="$fakebin:$PATH" bin/day_monitor --workdir "$tmpdir" --block-and-poll > /tmp/test_monitor_cmd_log.txt 2>&1
   grep -q 'dy-r produce_alignstats -p -j 1' /tmp/test_monitor_cmd_log.txt
   local exit_code=$?
 
@@ -86,85 +101,117 @@ test_day_monitor_reads_day_cmd_log() {
   test_result "day-monitor reads day_cmd.log" $exit_code
 }
 
-# Test 8: day-activate script exists (sourced, not executed)
+# Test 8: day-monitor keeps polling until workflow completes
+test_day_monitor_block_and_poll_waits() {
+  local tmpdir
+  local fakebin
+  local monitor_pid
+  local exit_code
+
+  tmpdir=$(mktemp -d)
+  fakebin="$tmpdir/fakebin"
+
+  create_fake_squeue "$fakebin"
+  printf 'dy-r produce_alignstats -p -j 1\n' > "$tmpdir/day_cmd.log"
+
+  TERM=xterm PATH="$fakebin:$PATH" bin/day_monitor --workdir "$tmpdir" --interval 1 --block-and-poll > /tmp/test_monitor_block_and_poll.txt 2>&1 &
+  monitor_pid=$!
+
+  sleep 2
+  touch "$tmpdir/daylily.successful_run"
+
+  wait "$monitor_pid"
+  exit_code=$?
+
+  if [[ $exit_code -eq 0 ]] && grep -q "Workflow completed successfully" /tmp/test_monitor_block_and_poll.txt; then
+    exit_code=0
+  else
+    exit_code=1
+  fi
+
+  rm -rf "$tmpdir"
+  test_result "day-monitor block-and-poll waits for completion" $exit_code
+}
+
+# Test 9: day-activate script exists (sourced, not executed)
 test_day_activate_exists() {
   [[ -f bin/day_activate ]]
   test_result "day-activate exists" $?
 }
 
-# Test 8: day-run script exists and is executable
+# Test 10: day-run script exists and is executable
 test_day_run_exists() {
   [[ -x bin/day_run ]]
   test_result "day-run exists and is executable" $?
 }
 
-# Test 9: day-set-genome-build script exists (sourced, not executed)
+# Test 11: day-set-genome-build script exists (sourced, not executed)
 test_day_set_genome_build_exists() {
   [[ -f bin/day_set_genome_build ]]
   test_result "day-set-genome-build exists" $?
 }
 
-# Test 10: day-deactivate script exists (sourced, not executed)
+# Test 12: day-deactivate script exists (sourced, not executed)
 test_day_deactivate_exists() {
   [[ -f bin/day_deactivate ]]
   test_result "day-deactivate exists" $?
 }
 
-# Test 11: dyoainit defines day-monitor alias
+# Test 13: dyoainit defines day-monitor alias
 test_dyoainit_monitor_alias() {
   grep -q 'alias day-monitor="bin/day_monitor"' dyoainit
   test_result "dyoainit defines day-monitor alias" $?
 }
 
-# Test 12: dyoainit defines dy-m alias
+# Test 14: dyoainit defines dy-m alias
 test_dyoainit_dy_m_alias() {
   grep -q 'alias dy-m="bin/day_monitor"' dyoainit
   test_result "dyoainit defines dy-m alias" $?
 }
 
-# Test 13: tabcomp.bash has monitor completion
+# Test 15: tabcomp.bash has monitor completion
 test_tabcomp_monitor_completion() {
   grep -q '_dym()' bin/tabcomp.bash
   test_result "tabcomp.bash has monitor completion function" $?
 }
 
-# Test 14: tabcomp.bash registers monitor completion
+# Test 16: tabcomp.bash registers monitor completion
 test_tabcomp_monitor_registration() {
   grep -q 'complete -F _dym day-monitor dy-m' bin/tabcomp.bash
   test_result "tabcomp.bash registers monitor completion" $?
 }
 
-# Test 15: day-monitor script is valid bash
+# Test 17: day-monitor script is valid bash
 test_day_monitor_bash_syntax() {
   bash -n bin/day_monitor 2>&1
   test_result "day-monitor has valid bash syntax" $?
 }
 
-# Test 16: day-activate script is valid bash
+# Test 18: day-activate script is valid bash
 test_day_activate_bash_syntax() {
   bash -n bin/day_activate 2>&1
   test_result "day-activate has valid bash syntax" $?
 }
 
-# Test 17: day-run script is valid bash
+# Test 19: day-run script is valid bash
 test_day_run_bash_syntax() {
   bash -n bin/day_run 2>&1
   test_result "day-run has valid bash syntax" $?
 }
 
-# Test 18: AGENTS.md documents monitor command
+# Test 20: AGENTS.md documents monitor command
 test_agents_md_monitor_docs() {
   grep -q "Log Locations for SLURM-based Workflows" AGENTS.md
   test_result "AGENTS.md documents SLURM log locations" $?
 }
 
-# Test 19: AGENTS.md documents SSH login shells
+# Test 21: AGENTS.md documents SSH login shells
 test_agents_md_ssh_docs() {
   grep -q "Always use login shells when running SSH commands" AGENTS.md
   test_result "AGENTS.md documents SSH login shell requirement" $?
 }
 
-# Test 20: dycli.md documents monitor command
+# Test 22: dycli.md documents monitor command
 test_dycli_md_monitor_docs() {
   grep -q "day-monitor" docs/ops/dycli.md
   test_result "dycli.md documents day-monitor command" $?
@@ -185,6 +232,7 @@ main() {
   test_day_monitor_block_and_poll_option
   test_day_monitor_workdir_option
   test_day_monitor_reads_day_cmd_log
+  test_day_monitor_block_and_poll_waits
   test_day_activate_exists
   test_day_run_exists
   test_day_set_genome_build_exists

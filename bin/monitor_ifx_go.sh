@@ -43,19 +43,29 @@ count_units() {
 }
 
 count_running_jobs_global() {
-  if ! command -v squeue &> /dev/null; then
-    echo "ERROR: squeue not found on PATH" >&2
-    exit 1
-  fi
-  squeue -u ubuntu --format='%T' 2>/dev/null | grep -c '^RUNNING$' || echo "0"
+  count_jobs_global_by_state "RUNNING"
 }
 
 count_pending_jobs_global() {
+  count_jobs_global_by_state "PENDING"
+}
+
+count_jobs_global_by_state() {
+  local state="$1"
+
   if ! command -v squeue &> /dev/null; then
     echo "ERROR: squeue not found on PATH" >&2
     exit 1
   fi
-  squeue -u ubuntu --format='%T' 2>/dev/null | grep -c '^PENDING$' || echo "0"
+
+  local squeue_output
+  if ! squeue_output=$(squeue -u ubuntu --format='%T' 2>&1); then
+    echo "ERROR: failed to query SLURM job status" >&2
+    echo "$squeue_output" >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$squeue_output" | grep -c "^${state}$" || true
 }
 
 has_success_marker() {

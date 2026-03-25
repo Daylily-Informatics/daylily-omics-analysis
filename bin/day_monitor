@@ -54,7 +54,19 @@ get_snakemake_status() {
 # Function to get SLURM job status
 get_slurm_status() {
   echo "=== SLURM Job Status ==="
-  squeue -u ubuntu --format='%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' 2>/dev/null || echo "No active SLURM jobs"
+  if ! command -v squeue >/dev/null 2>&1; then
+    echo "ERROR: squeue not found on PATH" >&2
+    return 0
+  fi
+
+  local squeue_output
+  if ! squeue_output=$(squeue -u ubuntu --format='%.18i %.9P %.8j %.8u %.2t %.10M %.6D %R' 2>&1); then
+    echo "ERROR: failed to query SLURM job status" >&2
+    echo "$squeue_output" >&2
+    return 0
+  fi
+
+  echo "$squeue_output"
 }
 
 # Function to get recent SLURM logs
@@ -136,14 +148,15 @@ while true; do
   
   # Check if workflow is complete in block-and-poll mode
   if [[ "$BLOCK_AND_POLL" == "true" ]]; then
-    is_workflow_complete
-    status=$?
-    if [[ $status -eq 0 ]]; then
+    if is_workflow_complete; then
       echo "✓ Workflow completed successfully!"
       exit 0
-    elif [[ $status -eq 1 ]]; then
+    else
+      workflow_rc=$?
+      if [[ $workflow_rc -eq 1 ]]; then
       echo "✗ Workflow failed!"
       exit 1
+      fi
     fi
   fi
   
