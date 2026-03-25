@@ -2005,13 +2005,22 @@ rule sentdhiomr_mito_call:
         echo "Starting mitochondrial pipeline at $(date)" >> {log}
 
         # --- Step 1: Extract chrM paired reads → FASTQs ---
+        # NOTE: Do NOT use -f (fast mode) on samtools collate — it produces
+        # broken R1/R2 pairing on merged BAMs, causing BWA to report
+        # "paired reads have different names" and output 0 aligned reads.
         samtools view -F 0x4 -F 0x8 -h {input.sr_bam} chrM 2>>{log} | \
             awk '$0~/^@/ || $7 == "=" {{print}}' | \
-            samtools collate -O -f - "$TMPDIR/collate_$$" 2>>{log} | \
+            samtools collate -O - "$TMPDIR/collate_$$" 2>>{log} | \
             samtools fastq -N \
                 -1 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" \
                 -2 "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq.gz" - 2>>{log}
 
+        # Validate that reads were actually extracted
+        R1_LINES=$(zcat "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq.gz" 2>/dev/null | head -4 | wc -l)
+        if [ "$R1_LINES" -lt 4 ]; then
+            echo "FATAL: No chrM paired reads extracted from {input.sr_bam}" >> {log}
+            exit 1
+        fi
         echo "chrM reads extracted at $(date)" >> {log}
 
         # --- Helper: AlignAndCall on a chrM reference ---
@@ -2047,9 +2056,26 @@ rule sentdhiomr_mito_call:
 
         # --- Step 2: Align+Call on standard and shifted refs in parallel ---
         align_and_call "{params.mt_fasta}" "chrM:576-16024" "MT" &
+        PID_MT=$!
         align_and_call "{params.mt_shifted_fasta}" "chrM:8025-9144" "ShiftedMT" &
-        wait
+        PID_SHIFTED=$!
+
+        # Wait for both and capture exit codes
+        MT_RC=0; wait $PID_MT || MT_RC=$?
+        SHIFTED_RC=0; wait $PID_SHIFTED || SHIFTED_RC=$?
+        if [ $MT_RC -ne 0 ] || [ $SHIFTED_RC -ne 0 ]; then
+            echo "FATAL: align_and_call failed — MT exit=$MT_RC, ShiftedMT exit=$SHIFTED_RC" >> {log}
+            exit 1
+        fi
         echo "TNscope calling completed at $(date)" >> {log}
+
+        # Verify expected VCF outputs exist before liftover
+        for VCF in "$TMPDIR/MT.raw.tnscope.vcf.gz" "$TMPDIR/ShiftedMT.raw.tnscope.vcf.gz"; do
+            if [ ! -f "$VCF" ]; then
+                echo "FATAL: Expected VCF not produced: $VCF" >> {log}
+                exit 1
+            fi
+        done
 
         # --- Step 3: Liftover shifted VCF back to standard coords ---
         picard LiftoverVcf \
