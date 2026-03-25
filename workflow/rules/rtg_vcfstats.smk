@@ -15,12 +15,12 @@ rule rtg_vcfstats:
     """https://github.com/RealTimeGenomics/rtg-tools"""
     input:
         svgz=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{ddup}.{snv_caller}.snv.sort.vcf.gz",
         svtbi=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{snv_caller}.snv.sort.vcf.gz.tbi",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{ddup}.{snv_caller}.snv.sort.vcf.gz.tbi",
     output:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{snv_caller}.rtg.vcfstats.txt",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcfstats.txt",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv_caller}.rtgvcfstats.bench.tsv"
     threads: config["rtg_vcfstats"]["threads"]
@@ -34,7 +34,7 @@ rule rtg_vcfstats:
         config["rtg_vcfstats"]["env_yaml"]
     log:
         MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/logs/{sample}.{alnr}.{snv_caller}.rtg.vcf.stats.log",
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/logs/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcf.stats.log",
     shell:
         """
         mkdir -p {params.work_dir} > {log} 2>&1 ;

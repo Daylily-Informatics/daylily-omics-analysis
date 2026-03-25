@@ -54,7 +54,7 @@ rule aggregate_report_components:
         f"{MDIR}other_reports/giab_concordance_mqc.tsv",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{snv_caller}.bcfstats.tsv",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
@@ -114,7 +114,7 @@ rule aggregate_report_components:
         #f"{MDIR}logs/all_svVCF_dupheld.done",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{snv_caller}.rtg.vcfstats.txt",
+            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcfstats.txt",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
