@@ -1,5 +1,6 @@
 # Daylily Omics Analysis
-_0.7.357_
+
+[![Latest release](https://img.shields.io/github/v/release/Daylily-Informatics/daylily-omics-analysis?label=latest%20release&color=teal&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/releases) [![Latest tag](https://img.shields.io/github/v/tag/Daylily-Informatics/daylily-omics-analysis?label=latest%20tag&color=pink&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/tags)
 
 Daylily Omics Analysis provides the Snakemake-based workflows that power the Daylily whole genome sequencing (WGS) platform.  The pipelines support short-read, long-read and hybrid analyses, deliver concordance and QC reporting, and surface cost telemetry so that analytical performance can be evaluated alongside runtime and spend.  The repository previously lived alongside the infrastructure automation in a monorepo; it now focuses exclusively on analysis.  Cluster lifecycle management is handled by the companion project [daylily-ephemeral-cluster](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).
 
@@ -86,38 +87,27 @@ The fastest way to experience the workflows is to run the built-in smoke test us
   _VIA `daylily-ephemeral-cluster` Utilities:_
    - See the [README](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster/blob/main/README.md) for more information.
 
-1. **Initialise the Daylily CLI and activate a profile.**
+2. **Initialise the Daylily CLI.**
    ```bash
-   # from the repository root
-   bash               # start a clean shell session if connecting via SSH
-   . dyoainit           # configures the DAYOA conda env and CLI helpers
-
-   ```
-2. **Build the daylily-omics-analysis conda env (only necessary once per headnode creation).**
-   ```bash
-   . dyoainit
-   dy-b BUILD
+   . dyoainit                    # source from the repo root — do NOT execute as a subprocess
+   . dyoainit --project <name>   # pass an explicit AWS budget name when required
    ```
 
-3. **Activate The (local or slurm) Executor & Set The Genome Build.**
+3. **Activate an executor and genome build.**
    ```bash
-   . dyoainit
-   dy-a [local|slurm] hg38    # or `dy-a slurm hg38` to target the cluster profile
+   dy-a slurm hg38    # or: dy-a local hg38  (single-machine debugging)
    ```
 
 4. **Dry-run the workflow.**
    ```bash
-   dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
+   dy-r produce_snv_concordances -p -k -j 20 -n
    ```
 
 5. **Execute the workflow.**
-
    ```bash
-   dy-a slurm hg38
-   dy-r produce_snv_concordances -p -k -j 6 --config galigners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep']
+   dy-r produce_snv_concordances -p -k -j 20
    ```
-   Results will be written under `results/day/hg38/` and logs (depending on the scope) will collect in `logs/` and `.snakemake/` and w/in each rule output directory.
+   Results land under `results/day/hg38/`.  Logs: `.snakemake/log/` (master), `logs/slurm/<task>/` (per-job), `day_cmd.log` (command history).  A `daylily.successful_run` marker is written on clean completion.
 
 
 For instructions on crafting custom sample/unit tables, enabling additional tools (e.g. DeepVariant, Octopus, Clair3, Manta, Tiddit, etc.) and working with the GIAB 30× datasets, continue with the [First Ephemeral Cluster Analysis](docs/first_ephemeral_cluster_analysis.md) guide.
@@ -131,24 +121,67 @@ For instructions on crafting custom sample/unit tables, enabling additional tool
 | [`docs/advanced/`](docs/advanced) | Deep dives on specialised workflows, benchmarking, and operations. |
 | [`docs/reports/`](docs/reports) | Example concordance and QC outputs from previous Daylily runs. |
 | [`docs/whitepaper/`](docs/whitepaper) | Background material for the forthcoming Daylily whitepaper. |
+| [`docs/ops/dycli.md`](docs/ops/dycli.md) | Current CLI command summary. |
+| [`docs/ops/config.md`](docs/ops/config.md) | Configuration notes. |
+
+## Architecture at a Glance
+
+1. **`daylily-ephemeral-cluster` creates and operates compute.** It provisions the ParallelCluster headnode, FSx mount, PCUI, budgets, and surrounding AWS scaffolding.
+2. **This repo provides workflow execution and operator ergonomics.** `dyoainit` exposes the Daylily CLI aliases, validates project/budget context, and ensures the environment is ready.
+3. **Profiles map the same targets to different execution backends.** `dy-a local <build>` runs locally. `dy-a slurm <build>` routes work through Slurm.
+4. **Reference data is shared and build-scoped.** References and annotations are expected under `/fsx/data/genomic_data/...`; outputs are written into the analysis clone.
+5. **Logs are split by responsibility.** Read them in this order: `.snakemake/log/<timestamp>` → `logs/slurm/<task>/*.out` → `day_cmd.log`.
+
+## CLI Reference
+
+| Command | Purpose |
+| --- | --- |
+| `dy-a <local\|slurm> <build>` | Activate executor and genome build |
+| `dy-r <targets...> [snakemake flags]` | Run workflows |
+| `dy-m [--interval N] [--workdir PATH] [--block-and-poll]` | Monitor active work |
+| `dy-g <hg38\|hg38_broad\|b37>` | Set genome build without re-activating |
+| `dy-d reset` | Reset a shell that got into a weird state |
+
+## Reference Data / Log Locations
+
+| Item | Location |
+| --- | --- |
+| Sample table | `config/samples.tsv` |
+| Unit table | `config/units.tsv` |
+| Smoke-test tables | `.test_data/data/0.01xwgs_HG002_hg38.{samples,units}.tsv` |
+| Results | `results/day/<build>/` |
+| Snakemake master log | `.snakemake/log/<timestamp>` (read first) |
+| Slurm task logs | `logs/slurm/<taskname>/*.{out,err}` |
+| Command history | `day_cmd.log` |
+| Success/failure markers | `daylily.successful_run`, `daylily.failed_run` |
+| References | `/fsx/data/genomic_data/organism_references/H_sapiens/<build>` |
+| Annotations | `/fsx/data/genomic_data/organism_annotations/H_sapiens/<build>` |
 
 ## Repository Layout
 
 ```
+.
+├── bin/                # CLI wrappers (day_run, day_activate, day_monitor, …)
+├── config/             # Snakemake profiles, tool config, and manifests
+├── docs/               # user guides, ops runbooks, and background material
+├── resources/          # supporting data staged on the cluster FSx volume
+├── workflow/           # Snakemake rules, environments, and shared logic
+└── .test_data/         # bundled smoke-test data
+```
+
 ### Run A Local Test Workflow
 
 #### First, clone this repository into a new analysis directory.
 
-Create a directory for your analysis under `/fsx/analysis_results/ubuntu/` and clone this repository into it using git.
+Prefer a dedicated workdir on FSx.  Use `day-clone` if available on the headnode, or a plain `git clone`.
 
 ```bash
 mkdir -p /fsx/analysis_results/ubuntu/first_analysis
 cd /fsx/analysis_results/ubuntu/first_analysis
-git clone <repository-url> daylily
-cd daylily
-
+git clone git@github.com:Daylily-Informatics/daylily-omics-analysis.git
+cd daylily-omics-analysis
 ```
-  > *note*: if you have an active DAYOA conda env, begin a fresh bash shell from your new analysis dir, `bash`.
+  > *note*: if you have an active DAYOA conda env, begin a fresh bash shell from your new analysis dir with `bash`.
 
 #### Next, init daylily, set the genome, stage sample/unit tables and run a test workflow.
 
@@ -231,7 +264,7 @@ cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
 # run the test, which will auto detect the sample/unit tables & will run this all via slurm
-dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n
+dy-r produce_snv_concordances -p -k -j 2 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['sentd'] -n
 ```
 
 Which will produce a plan that looks like.
@@ -260,7 +293,7 @@ total                            59              1            192
 Run the test with:
 
 ```bash
-dy-r produce_snv_concordances -p -k -j 6  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] #  -j 6 will run 6 jobs in parallel max, which is done here b/c the test data runs so quickly we do not need to spin up one spor instance per deepvariant job & since 3 dv jobs can run on a 192 instance, this flag will limit creating only  2 instances at a time.
+dy-r produce_snv_concordances -p -k -j 6  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['sentd'] #  -j 6 limits concurrent jobs; 3 jobs can run on a single i192 instance, so this keeps the test from spinning up many spots at once.
 ```
 
 _note1:_ the first time you run a pipeline, if the docker images are not cached, there can be a delay in starting jobs as the docker images are cached. They are only pulled 1x per cluster lifetime, so subsequent runs will be faster.
@@ -294,9 +327,9 @@ head -n 2 .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv > config/uni
 
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] -n  # dry run
+dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['sentd'] -n  # dry run
 
-dy-r produce_snv_concordances -p -k -j 10  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep'] # run jobs, and wait for completion
+dy-r produce_snv_concordances -p -k -j 10  --config genome_build=hg38 aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['sentd'] # run jobs, and wait for completion
 ```
 
 
@@ -322,9 +355,9 @@ cp .test_data/data/giab_30x_hg38_analysis_manifest.units.tsv  config/units.tsv
 
 export DAY_CONTAINERIZED=false # or true to use pre-built container of all analysis envs. false will create each conda env as needed
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe,'bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep'] -n  # dry run
+dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe','bwa2a'] dedupers=['dppl'] snv_callers=['oct','sentd'] -n  # dry run
 
-dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe','bwa2a'] dedupers=['dppl'] snv_callers=['oct','deep'] 
+dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['strobe','bwa2a'] dedupers=['dppl'] snv_callers=['oct','sentd']
 
 ```
 
@@ -332,16 +365,57 @@ dy-r produce_snv_concordances -p -k -j 10 --config genome_build=hg38 aligners=['
 
 ```bash
 max_snakemake_tasks_active_at_a_time=2 # for local headnode, maybe 400 for a full cluster
-dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_kat produce_multiqc_final_wgs -p -k -j $max_snakemake_tasks_active_at_a_time --config genome_build=hg38 aligners=['strobe','bwa2a','sent'] dedupers=['dppl'] snv_callers=['oct','sentd','deep','clair3','lfq2'] sv_callers=['tiddit','manta','dysgu'] -n
+dy-r produce_snv_concordances produce_manta produce_tiddit produce_dysgu produce_kat produce_multiqc_final_wgs -p -k -j $max_snakemake_tasks_active_at_a_time --config genome_build=hg38 aligners=['strobe','bwa2a','sent'] dedupers=['dppl'] snv_callers=['oct','sentd','deep19','clair3','lfq2'] sv_callers=['tiddit','manta','dysgu'] -n
 ```
 
 ## To Create Your Own `config/samples.tsv` and `config/units.tsv`
 
-The paired tables are required to run the daylily pipeline. They should be created by following the column layout shown in the smoke-test examples under `.test_data/data/`. Updated helpers for generating the tables from lab manifests are in progress; for legacy workflows you may still use `./bin/daylily-analysis-samples-to-manifest-new` and then convert the output into the new structure.
+Paired `samples.tsv` and `units.tsv` tables are required.  Copy one of the smoke-test templates under `.test_data/data/` and edit it, or use `bin/fetch_err_sources.py` to generate tables from ENA accessions (outputs land in `conf/` by default).
 
-**this script is still in development, more docs to come**, run with `-h` for now and see the example [etc/analysis_samples.tsv template](etc/analysis_samples.tsv) file for the format of the `analysis_samples.tsv` file. You also need to have a valid ephemeral cluster available.
+```bash
+bin/fetch_err_sources.py --parallel 2 ERR3989446
+cp conf/err_source_<timestamp>_samples.tsv config/samples.tsv
+cp conf/err_source_<timestamp>_units.tsv config/units.tsv
+```
 
-**TODO** document this
+> Older `analysis_manifest.csv` language is legacy.  Current runs expect paired `samples.tsv` + `units.tsv`.
+
+---
+
+## Common Targets
+
+| Target | What it does | Typical build |
+| --- | --- |--- |
+| `produce_snv_concordances` | Illumina short-read SNV calling + concordance | `hg38` |
+| `produce_alignstats` | Alignment statistics | any |
+| `produce_sentdont_vcf` | ONT long-read SNV calling | `hg38` |
+| `produce_sentdpb_vcf` | PacBio long-read SNV calling | `hg38` |
+| `produce_sentdug_vcf` | Ultima SNV calling | `hg38_broad` |
+| `produce_sentdhio_vcf` | Hybrid Illumina + ONT CLI workflow | `hg38` |
+| `produce_sentdhuo_vcf` | Hybrid Ultima + ONT CLI workflow | `hg38_broad` |
+| `produce_sentdhiom_vcf` | Hybrid Illumina + ONT modular workflow | `hg38` |
+| `produce_sentdhuom_vcf` | Hybrid Ultima + ONT modular workflow | `hg38_broad` |
+| `produce_deep19_vcf` | DeepVariant 1.9 germline | `hg38` |
+| `produce_manta` / `produce_tiddit` / `produce_dysgu` | Structural variant calling | `hg38` |
+| `produce_multiqc_final_wgs` | Aggregate QC report | any |
+
+Use `dy-r help` and tab completion for the full list.
+
+## Automation Helper
+
+For tmux sessions and lightweight automation, `bin/augment_setup_and_run_dayoa.bash` collapses init, activate, and run into one sourced command:
+
+```bash
+# Dry-run
+source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_snv_concordances" "-p -k -j 20" "-n"
+
+# Production run
+source bin/augment_setup_and_run_dayoa.bash slurm hg38 "produce_snv_concordances" "-p -k -j 20"
+```
+
+Arguments: `<executor> <genome_build> "<targets>" "<snakemake_flags>" ["-n"]`
+
+> This script must be **sourced**, not executed, because `dyoainit` uses `return`.
 
 ---
 
@@ -352,7 +426,7 @@ The references supported via cloning public references s3 bucket are `b37`, `hg3
 ### b37
 - with no alt contigs.
 
-### h38
+### hg38
 - with no alt contigs.
 
 ### hg38_broad
@@ -469,18 +543,27 @@ pcluster delete-cluster -n <cluster-name> --region us-west-2
 
 <p valign="middle"><img src="docs/images/000000.png" valign="bottom" ></p>
 
+## Known Issues
+
+1. **`dy-b` / `day-build` is not a canonical operator command.** Historical help text may mention it, but `dyoainit` does not expose it as a normal alias. Do not build your runbook around `dy-b`.
+2. **Historical docs still mention `analysis_manifest.csv`.** Current workflow expects paired `samples.tsv` + `units.tsv` inputs.
+3. **First cold-cluster spot acquisition** can take ~10 minutes. Hang tight and monitor with `watch squeue`.
+4. **First container/image pulls** also add latency on a fresh cluster; subsequent runs are faster.
+
+---
+
 # Other Monitoring Tools
 
 ## PCUI (Parallel Cluster User Interface)
 ... For real, use it!
 
 ## Quick SSH Into Headnode
-(also, can be done via pcui)
 
-`bin/daylily-ssh-into-headnode`
+Use the PCUI or a standard SSH command:
 
-_alias it for your shell:_ `alias goday="source ~/git_repos/daylily/bin/daylily-ssh-into-headnode"`
-
+```bash
+ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'squeue -u ubuntu'"
+```
 
 ---
 
@@ -542,20 +625,6 @@ Daylily relies on a variety of pre-built reference data and resources to run. Th
 
 _note:_ you can choose to eliminate the data for `b37` or `hg38` to save on storage costs. In addition, you may choose to eliminate the GIAB fastq files if you do not intend to run concordance or benchmarking tests (which is advised against as this framework was developed explicitly to facilitate these types of comparisons in an ongoing way).
 
-##### Top Level Diretories
-
-See the secion on [shared Fsx filesystem](#shared-fsx-filesystem) for more on hos this bucket interacts with these ephemeral cluster region specific S3 buckets.
-
-```text
-.
-├── bin/                # helper scripts used by the CLI and workflows
-├── config/             # Snakemake profiles, tool configuration, and manifests
-├── docs/               # user guides, whitepaper drafts, metrics and demos
-├── resources/          # supporting resources staged on the cluster FSx volume
-├── workflow/           # Snakemake rules, environments and shared logic
-└── .test_data/         # small data bundles for smoke testing
-```
-
 ## Intention
 
 > The goal of daylily is to enable more rigorous comparisons of informatics tools by formalising their compute environments and establishing hardware profiles that reproduce each tool’s accuracy and runtime/cost performance. This approach is general and not tied to a single toolset; while AWS is involved, nothing prevents deployment elsewhere. AWS simply offers a standardised hardware environment accessible to anyone with an account. By “compute environment,” I mean more than a container—containers alone don’t guarantee hardware performance, and cost/runtime considerations demand reproducibility on specific hardware. Though daylily uses containers and conda, it remains agnostic about the tools themselves. I have three main aims:
@@ -585,4 +654,3 @@ Contributions that improve reproducibility, expand workflow coverage, or enhance
 ## License
 
 This project is released under the terms of the [MIT License](LICENSE).
-X
