@@ -4,7 +4,7 @@
 
 Daylily Omics Analysis provides the Snakemake-based workflows that power the Daylily whole genome sequencing (WGS) platform.  The pipelines support short-read, long-read and hybrid analyses, deliver concordance and QC reporting, and surface cost telemetry so that analytical performance can be evaluated alongside runtime and spend.  The repository previously lived alongside the infrastructure automation in a monorepo; it now focuses exclusively on analysis.  Cluster lifecycle management is handled by the companion project [daylily-ephemeral-cluster](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster).
 
-> **Beta notice:** tagged releases are the preferred entry point for production use (for example `0.7.336`).  The `main` branch is used for active development and may change without notice.
+> **cost of analysis** is a critical factor in deciding what tools to run, and hisotircally cost tracking / budgeting was an afterthought and involved a great deal of inference.  Daylily was designed, out of the box, to be cost aware to the vcpu-second allowing real time cost observability and all the great things that come from that.
 
 ## Relationship to `daylily-ephemeral-cluster`
 
