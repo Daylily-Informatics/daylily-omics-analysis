@@ -37,3 +37,12 @@ daylily.failed_run
 daylily.successful_run
 logs/
 unlock_fails.log
+# TLS material
+certs/
+tls/
+ssl/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
