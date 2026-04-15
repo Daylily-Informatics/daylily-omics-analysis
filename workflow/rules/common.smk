@@ -3,6 +3,110 @@ from snakemake.exceptions import WorkflowError
 import re
 import os
 import pandas as pd
+
+
+BOOTSTRAP_UNIT_COLUMNS = [
+    "RUNID",
+    "SAMPLEID",
+    "EXPERIMENTID",
+    "LANEID",
+    "BARCODEID",
+    "LIBPREP",
+    "SEQ_PLATFORM",
+    "SEQ_VENDOR",
+    "ILMN_R1_PATH",
+    "ILMN_R2_PATH",
+    "PACBIO_R1_PATH",
+    "PACBIO_R2_PATH",
+    "ONT_R1_PATH",
+    "ONT_R2_PATH",
+    "UG_R1_PATH",
+    "UG_R2_PATH",
+    "SUBSAMPLE_PCT",
+    "ILMN_TRIM_READ_LENGTH",
+    "LONGREADTRIM_READ_LENGTH",
+    "LONGREADTRIM_MODE",
+    "ONT_BAM",
+    "ONT_BAM_ALIGNER",
+    "ONT_BAM_SNV_CALLER",
+    "ROCHE_BAM",
+    "ROCHE_BAM_ALIGNER",
+    "SR_VCF_PATH",
+    "LR_VCF_PATH",
+    "ROCHE_BAM_SNV_CALLER",
+    "ROCHE_DOWNSAMPLE_RATIO",
+    "AMPLIFICATION_TYPE",
+    "ALIGNED_REF_UID",
+]
+
+
+def _resolve_units_table_path():
+    override_path = config.get("units_table", "")
+    if override_path not in ["", None, "None"]:
+        return os.path.abspath(str(override_path))
+    return os.path.abspath(os.path.join("config", "units.tsv"))
+
+
+def _load_units_table(path: str, allow_bootstrap: bool = False):
+    if not os.path.exists(path):
+        if allow_bootstrap:
+            return None
+        raise WorkflowError(
+            f"The units table was not found at {path}. Create config/units.tsv or set --config units_table=/path/to/units.tsv."
+        )
+
+    if os.path.getsize(path) == 0:
+        if allow_bootstrap:
+            return None
+        raise WorkflowError(f"The units table at {path} is empty.")
+
+    unit_df = load_tsv_as_str(path)
+    if unit_df.empty:
+        if allow_bootstrap:
+            return None
+        raise WorkflowError(
+            f"The units table at {path} has headers but no data rows."
+        )
+    return unit_df
+
+
+def _bootstrap_sample_id(sample_df: pd.DataFrame) -> str:
+    preferred = config.get("just_this_sample", "")
+    if preferred not in ["", None, "None"]:
+        preferred = str(preferred)
+        if "SAMPLEID" in sample_df.columns:
+            sample_ids = set(sample_df["SAMPLEID"].astype(str).tolist())
+            if preferred in sample_ids:
+                return preferred
+    if sample_df.empty:
+        raise WorkflowError(
+            "Bootstrap mode requires at least one sample row in samples.tsv."
+        )
+    return str(sample_df.iloc[0]["SAMPLEID"])
+
+
+def _build_bootstrap_unit_records(sample_df: pd.DataFrame) -> pd.DataFrame:
+    sample_id = _bootstrap_sample_id(sample_df)
+    bclconvert_cfg = config.get("bclconvert", {})
+    run_id = config["bclconvert_bootstrap_run_id"]
+    bootstrap_row = {column: "na" for column in BOOTSTRAP_UNIT_COLUMNS}
+    bootstrap_row.update(
+        {
+            "RUNID": run_id,
+            "SAMPLEID": sample_id,
+            "EXPERIMENTID": run_id,
+            "LANEID": "1",
+            "BARCODEID": "bootstrap",
+            "LIBPREP": str(bclconvert_cfg.get("libprep", "na") or "na"),
+            "SEQ_PLATFORM": str(
+                bclconvert_cfg.get("seq_platform_override", "na") or "na"
+            ),
+            "SEQ_VENDOR": str(bclconvert_cfg.get("seq_vendor", "na") or "na"),
+            "ILMN_R1_PATH": "na",
+            "ILMN_R2_PATH": "na",
+        }
+    )
+    return pd.DataFrame([bootstrap_row])
 import sys
 import yaml
 import multiprocessing
@@ -21,6 +125,70 @@ RU = [""]
 config = config  # noqa   ### Just needed to quiet linters
 cluster_config = cluster_config  # noqa   ### Just needed to quiet linters
 
+BCL_BOOTSTRAP_TARGETS = {
+    "produce_bclconvert_fastqs",
+    "produce_bclconvert_fastqs_and_metrics",
+}
+
+
+def _requested_targets():
+    return {arg for arg in sys.argv[1:] if not str(arg).startswith("-")}
+
+
+def _boolish(value, default=False):
+    if value in [None, "", "None"]:
+        return default
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _sanitize_run_id(value):
+    text = str(value or "").strip()
+    if text == "":
+        return ""
+    text = re.sub(r"[\\/]+", "_", text)
+    text = re.sub(r"\s+", "_", text)
+    text = re.sub(r"[^A-Za-z0-9._-]+", "_", text)
+    text = re.sub(r"_+", "_", text)
+    return text.strip("._-")
+
+
+def _read_samplesheet_run_name(sample_sheet_path):
+    if sample_sheet_path in ["", None, "None"]:
+        return ""
+    try:
+        with open(sample_sheet_path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                if line.startswith("RunName,"):
+                    return line.split(",", 1)[1].strip()
+    except OSError:
+        return ""
+    return ""
+
+
+def _derive_bcl_bootstrap_run_id():
+    bcl_cfg = config.get("bclconvert", {})
+    configured = _sanitize_run_id(bcl_cfg.get("run_id", ""))
+    if configured:
+        return configured
+    sample_sheet = bcl_cfg.get("sample_sheet", "SampleSheet.csv")
+    run_name = _sanitize_run_id(_read_samplesheet_run_name(sample_sheet))
+    if run_name:
+        return run_name
+    fallback = _sanitize_run_id(os.path.splitext(os.path.basename(sample_sheet))[0])
+    return fallback or "bclconvert_bootstrap"
+
+
+BCL_BOOTSTRAP_MODE = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS) or _boolish(
+    config.get("bootstrap_bclconvert", False)
+)
+BCL_BOOTSTRAP_RUN_ID = _derive_bcl_bootstrap_run_id()
+config["bootstrap_bclconvert"] = BCL_BOOTSTRAP_MODE
+config["bclconvert_bootstrap_run_id"] = BCL_BOOTSTRAP_RUN_ID
+config["_bclconvert_bootstrap_mode"] = BCL_BOOTSTRAP_MODE
+config["_bclconvert_run_id"] = BCL_BOOTSTRAP_RUN_ID
+
 
 # ##### Generate the day top level directories
 if "conda_prefix" not in config:
@@ -35,9 +203,6 @@ os.system(f"touch {config['jem_dot']}")
 # NOT REALLY IMPLEMENTED YET
 config["failed_samples"] = {}  ### USE SAMPLE SHEET FOR THIS
 
-
-# ##### Safety sort of the yaml defined crms
-config["glimpse"] = {"impute_chrms": "2"}
 
 def first_val(df, col):
     if df.empty:
@@ -424,11 +589,7 @@ samples_table_path = _resolve_table(
     f"{config['genome_build']}_samples_table",
     "samples.tsv",
 )
-units_table_path = _resolve_table(
-    "units_table",
-    f"{config['genome_build']}_units_table",
-    "units.tsv",
-)
+units_table_path = _resolve_units_table_path()
 
 config["samples_table"] = samples_table_path
 config["units_table"] = units_table_path
@@ -441,8 +602,6 @@ print(
     f"A    N   A   L  Y S I S    UNIT TABLE DETECTED ::: {units_table_path}",
     file=sys.stderr,
 )
-
-import pandas as pd
 
 def load_tsv_as_str(path: str) -> pd.DataFrame:
     # Force *everything* to string; no NA magic.
@@ -470,18 +629,25 @@ def normalize_boolish(df: pd.DataFrame, cols=("IS_POSITIVE_CONTROL", "IS_NEGATIV
     return df
 
 sample_records = load_tsv_as_str(samples_table_path)
-unit_records   = load_tsv_as_str(units_table_path)
 
 sample_records.columns = [c.upper() for c in sample_records.columns]
-unit_records.columns   = [c.upper() for c in unit_records.columns]
 
 sample_records = normalize_boolish(sample_records)
 
 if sample_records.empty:
     raise WorkflowError("The samples table is empty. Please provide at least one sample entry.")
 
-if unit_records.empty:
-    raise WorkflowError("The units table is empty. Please provide at least one sequencing unit entry.")
+unit_records = _load_units_table(units_table_path, allow_bootstrap=BCL_BOOTSTRAP_MODE)
+bootstrap_unit_context = False
+if unit_records is None:
+    if not BCL_BOOTSTRAP_MODE:
+        raise WorkflowError(
+            "The units table is empty. Please provide at least one sequencing unit entry."
+        )
+    unit_records = _build_bootstrap_unit_records(sample_records)
+    bootstrap_unit_context = True
+
+unit_records.columns = [c.upper() for c in unit_records.columns]
 
 validate(sample_records, schema="../schemas/samples.schema.yaml")
 validate(unit_records, schema="../schemas/units.schema.yaml")
@@ -590,6 +756,9 @@ if "analysis_unit_uid" in metadata.columns:
     metadata["analysis_unit_uid"] = metadata["analysis_unit_uid"]
 else:
     metadata["analysis_unit_uid"] = metadata.apply(_build_analysis_unit, axis=1)
+
+if bootstrap_unit_context:
+    metadata["analysis_unit_uid"] = config["bclconvert_bootstrap_run_id"]
 
 if metadata["analysis_unit_uid"].duplicated().any():
     dupes = metadata[metadata["analysis_unit_uid"].duplicated()]["analysis_unit_uid"].tolist()
@@ -1049,7 +1218,7 @@ def get_samp_ids():
                 samps[ii] = True
         else:
             samps[ii] = True
-    if len(samps.keys()) == 0 and "run_b2fq" not in config:
+    if len(samps.keys()) == 0 and "run_b2fq" not in config and not BCL_BOOTSTRAP_MODE:
         raise Exception(
             "NO SAMPLES HAVE BEEN LOADED TO THE SAMPS ARRAY -or- if running Bcl2FQ, the --config run_b2fq=true and assoc params are not set."
         )

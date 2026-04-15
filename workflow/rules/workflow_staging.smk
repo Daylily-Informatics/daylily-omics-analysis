@@ -17,6 +17,12 @@ localrules:
     yield_ref,
 
 
+def _workflow_staging_cluster_sample():
+    if config.get("_bclconvert_bootstrap_mode"):
+        return str(config.get("_bclconvert_run_id", "bclconvert_bootstrap"))
+    return f"{RU[0]}_{EX[0]}"
+
+
 rule workflow_staging:
     input:
         "logs/supporting_data_staging.done",
@@ -24,7 +30,7 @@ rule workflow_staging:
         "logs/workflow_staging.done",
     threads: 1
     params:
-        cluster_sample=f"{RU[0]}_{EX[0]}",
+        cluster_sample=_workflow_staging_cluster_sample(),
         res=config["dirs"]["operational"]["results"],
         ops_log=config["dirs"]["operational"]["logs"],
         tmp=config["dirs"]["operational"]["tmp"],
@@ -51,4 +57,3 @@ rule yield_ref:
     threads: 1
     shell:
         "touch {output};"
-
