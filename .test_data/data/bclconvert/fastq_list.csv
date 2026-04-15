@@ -1,0 +1,4 @@
+RGID,RGSM,RGLB,Lane,Read1File,Read2File
+RG001,Omega_XTR_1-2-200_180,Omega_XTR_1-2-200_180,1,/tmp/Omega_XTR_1-2-200_180_L001_R1_001.fastq.gz,/tmp/Omega_XTR_1-2-200_180_L001_R2_001.fastq.gz
+RG002,Beckman_XTR_1-2-200_180,Beckman_XTR_1-2-200_180,2,/tmp/Beckman_XTR_1-2-200_180_L002_R1_001.fastq.gz,/tmp/Beckman_XTR_1-2-200_180_L002_R2_001.fastq.gz
+RGUND,Undetermined,Undetermined,1,/tmp/Undetermined_S0_L001_R1_001.fastq.gz,/tmp/Undetermined_S0_L001_R2_001.fastq.gz
