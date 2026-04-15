@@ -108,6 +108,23 @@ bcl2fq:
     2fq_use_bases_mask: ''
     partition: "i8"
 
+bclconvert:
+    run_dir: ""
+    sample_sheet: "SampleSheet.csv"
+    output_root: "results/bclconvert"
+    run_id: ""
+    libprep: "PCR-FREE"
+    seq_vendor: "ILMN"
+    seq_platform_override: ""
+    force: false
+    keep_undetermined_fastqs: true
+    sampleproject_subdirectories: false
+    strict_mode: false
+    first_tile_only: false
+    extra_args: ""
+    threads: 7
+    partition: "i8"
+
 bcl2fq_by_lane:
     threads: 7
     partition: "i8"

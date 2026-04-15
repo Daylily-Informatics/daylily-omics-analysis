@@ -1,0 +1,4 @@
+Lane,SampleID,Index,# Reads,# Perfect Index Reads,# One Mismatch Index Reads,# Two Mismatch Index Reads,% Reads,% Perfect Index Reads,% One Index Reads,% Two Index Reads,# of ≥ Q30 Bases (PF),Mean Quality Score (PF),QualityScoreSum,ReadNumber
+1,Omega_XTR_1-2-200_180,TGGCCAGGGC+ACGTATGATT,1000,920,60,20,95.24,92.00,6.00,2.00,280000,36.2,36200,1
+1,Undetermined,,50,0,0,0,4.76,0.00,0.00,0.00,12000,20.1,1005,1
+2,Beckman_XTR_1-2-200_180,GACTTCGGTG+AAGACATGGA,1200,1100,80,20,100.00,91.67,6.67,1.67,336000,35.8,42960,1
