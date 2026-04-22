@@ -1,0 +1,463 @@
+{
+  "schema_version": "1",
+  "catalog_version": "1.0.0",
+  "repository": "daylily-omics-analysis",
+  "display_name": "Daylily Omics Analysis",
+  "workflows": [
+    {
+      "workflow_id": "test_help",
+      "display_name": "CLI Help Smoke Test",
+      "description": "Validate the dy-cli shell wiring and command composition without launching a real analysis.",
+      "supported_genome_builds": [
+        "hg38",
+        "hg38_broad",
+        "b37"
+      ],
+      "default_genome_build": "hg38",
+      "supported_execution_profiles": [
+        "local",
+        "slurm"
+      ],
+      "default_execution_profile": "local",
+      "required_inputs": [],
+      "targets": [
+        "help"
+      ],
+      "options": [
+        {
+          "option_id": "print_commands",
+          "label": "Print shell commands",
+          "description": "Include -p so Snakemake prints the composed shell commands.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-p"
+        },
+        {
+          "option_id": "jobs",
+          "label": "Parallel jobs",
+          "description": "Maximum active jobs passed to dy-r.",
+          "type": "integer",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 20,
+          "render_as": "arg",
+          "flag": "-j"
+        }
+      ]
+    },
+    {
+      "workflow_id": "germline_wgs_snv",
+      "display_name": "Germline WGS SNV",
+      "description": "Whole-genome germline SNV calling with concordance and alignment statistics.",
+      "supported_genome_builds": [
+        "hg38"
+      ],
+      "default_genome_build": "hg38",
+      "supported_execution_profiles": [
+        "slurm",
+        "local"
+      ],
+      "default_execution_profile": "slurm",
+      "required_inputs": [
+        {
+          "input_id": "workset_manifest",
+          "label": "Workset manifest",
+          "description": "A saved or uploaded workset manifest that will be staged into samples.tsv and units.tsv before launch.",
+          "required": true
+        }
+      ],
+      "targets": [
+        "produce_alignstats",
+        "produce_snv_concordances"
+      ],
+      "options": [
+        {
+          "option_id": "print_commands",
+          "label": "Print shell commands",
+          "description": "Include -p so Snakemake prints the composed shell commands.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-p"
+        },
+        {
+          "option_id": "keep_going",
+          "label": "Keep going on failure",
+          "description": "Include -k so independent jobs continue when a rule fails.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-k"
+        },
+        {
+          "option_id": "jobs",
+          "label": "Parallel jobs",
+          "description": "Maximum active jobs passed to dy-r.",
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 500,
+          "render_as": "arg",
+          "flag": "-j"
+        },
+        {
+          "option_id": "aligners",
+          "label": "Aligners",
+          "description": "Short-read aligners included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "bwa2a"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "bwa2a",
+              "label": "BWA-MEM2A"
+            },
+            {
+              "value": "sent",
+              "label": "Sentieon"
+            },
+            {
+              "value": "strobe",
+              "label": "StrobeAlign"
+            }
+          ]
+        },
+        {
+          "option_id": "dedupers",
+          "label": "Dedupers",
+          "description": "Duplicate-marking methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "dppl"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "dppl",
+              "label": "Doppelmark"
+            }
+          ]
+        },
+        {
+          "option_id": "snv_callers",
+          "label": "SNV callers",
+          "description": "SNV calling methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "sentd"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "sentd",
+              "label": "Sentieon DNAscope"
+            },
+            {
+              "value": "oct",
+              "label": "Octopus"
+            },
+            {
+              "value": "deep19",
+              "label": "DeepVariant 1.9"
+            },
+            {
+              "value": "clair3",
+              "label": "Clair3"
+            },
+            {
+              "value": "lfq2",
+              "label": "LoFreq2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "workflow_id": "germline_wgs_snv_sv",
+      "display_name": "Germline WGS SNV + SV",
+      "description": "Whole-genome germline SNV plus structural-variant calling with concordance, QC, and alignment statistics.",
+      "supported_genome_builds": [
+        "hg38"
+      ],
+      "default_genome_build": "hg38",
+      "supported_execution_profiles": [
+        "slurm",
+        "local"
+      ],
+      "default_execution_profile": "slurm",
+      "required_inputs": [
+        {
+          "input_id": "workset_manifest",
+          "label": "Workset manifest",
+          "description": "A saved or uploaded workset manifest that will be staged into samples.tsv and units.tsv before launch.",
+          "required": true
+        }
+      ],
+      "targets": [
+        "produce_alignstats",
+        "produce_snv_concordances",
+        "produce_manta",
+        "produce_tiddit",
+        "produce_dysgu",
+        "produce_multiqc_final_wgs"
+      ],
+      "options": [
+        {
+          "option_id": "print_commands",
+          "label": "Print shell commands",
+          "description": "Include -p so Snakemake prints the composed shell commands.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-p"
+        },
+        {
+          "option_id": "keep_going",
+          "label": "Keep going on failure",
+          "description": "Include -k so independent jobs continue when a rule fails.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-k"
+        },
+        {
+          "option_id": "jobs",
+          "label": "Parallel jobs",
+          "description": "Maximum active jobs passed to dy-r.",
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 500,
+          "render_as": "arg",
+          "flag": "-j"
+        },
+        {
+          "option_id": "aligners",
+          "label": "Aligners",
+          "description": "Short-read aligners included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "strobe",
+            "bwa2a"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "bwa2a",
+              "label": "BWA-MEM2A"
+            },
+            {
+              "value": "sent",
+              "label": "Sentieon"
+            },
+            {
+              "value": "strobe",
+              "label": "StrobeAlign"
+            }
+          ]
+        },
+        {
+          "option_id": "dedupers",
+          "label": "Dedupers",
+          "description": "Duplicate-marking methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "dppl"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "dppl",
+              "label": "Doppelmark"
+            }
+          ]
+        },
+        {
+          "option_id": "snv_callers",
+          "label": "SNV callers",
+          "description": "SNV calling methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "oct",
+            "sentd"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "sentd",
+              "label": "Sentieon DNAscope"
+            },
+            {
+              "value": "oct",
+              "label": "Octopus"
+            },
+            {
+              "value": "deep19",
+              "label": "DeepVariant 1.9"
+            },
+            {
+              "value": "clair3",
+              "label": "Clair3"
+            },
+            {
+              "value": "lfq2",
+              "label": "LoFreq2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "workflow_id": "germline_wgs_kitchensink",
+      "display_name": "Germline WGS Kitchensink",
+      "description": "Broad germline WGS run with multiple aligners, SNV callers, SV callers, KAT, MultiQC, and alignment statistics.",
+      "supported_genome_builds": [
+        "hg38"
+      ],
+      "default_genome_build": "hg38",
+      "supported_execution_profiles": [
+        "slurm",
+        "local"
+      ],
+      "default_execution_profile": "slurm",
+      "required_inputs": [
+        {
+          "input_id": "workset_manifest",
+          "label": "Workset manifest",
+          "description": "A saved or uploaded workset manifest that will be staged into samples.tsv and units.tsv before launch.",
+          "required": true
+        }
+      ],
+      "targets": [
+        "produce_alignstats",
+        "produce_snv_concordances",
+        "produce_manta",
+        "produce_tiddit",
+        "produce_dysgu",
+        "produce_kat",
+        "produce_multiqc_final_wgs"
+      ],
+      "options": [
+        {
+          "option_id": "print_commands",
+          "label": "Print shell commands",
+          "description": "Include -p so Snakemake prints the composed shell commands.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-p"
+        },
+        {
+          "option_id": "keep_going",
+          "label": "Keep going on failure",
+          "description": "Include -k so independent jobs continue when a rule fails.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-k"
+        },
+        {
+          "option_id": "jobs",
+          "label": "Parallel jobs",
+          "description": "Maximum active jobs passed to dy-r.",
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 500,
+          "render_as": "arg",
+          "flag": "-j"
+        },
+        {
+          "option_id": "aligners",
+          "label": "Aligners",
+          "description": "Short-read aligners included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "strobe",
+            "bwa2a",
+            "sent"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "bwa2a",
+              "label": "BWA-MEM2A"
+            },
+            {
+              "value": "sent",
+              "label": "Sentieon"
+            },
+            {
+              "value": "strobe",
+              "label": "StrobeAlign"
+            }
+          ]
+        },
+        {
+          "option_id": "dedupers",
+          "label": "Dedupers",
+          "description": "Duplicate-marking methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "dppl"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "dppl",
+              "label": "Doppelmark"
+            }
+          ]
+        },
+        {
+          "option_id": "snv_callers",
+          "label": "SNV callers",
+          "description": "SNV calling methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "oct",
+            "sentd",
+            "deep19",
+            "clair3",
+            "lfq2"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "sentd",
+              "label": "Sentieon DNAscope"
+            },
+            {
+              "value": "oct",
+              "label": "Octopus"
+            },
+            {
+              "value": "deep19",
+              "label": "DeepVariant 1.9"
+            },
+            {
+              "value": "clair3",
+              "label": "Clair3"
+            },
+            {
+              "value": "lfq2",
+              "label": "LoFreq2"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

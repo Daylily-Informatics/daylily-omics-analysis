@@ -1,0 +1,7 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+tag_regex = "^(?P<version>\\d+\\.\\d+\\.\\d+(?:[A-Za-z0-9.+-]*)?)$"
+local_scheme = "no-local-version"
