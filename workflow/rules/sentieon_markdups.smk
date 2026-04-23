@@ -76,15 +76,19 @@ rule sent_dedup:
         export SENTIEON_TMPDIR=$sentieon_tmp;
         export APPTAINER_HOME=$TMPDIR;
 
-        score_file={output.score};
-        metrics_file={output.metrics};
-        rm -f "$score_file" "$metrics_file";
-        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_file=$score_file metrics_file=$metrics_file status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_file" "$metrics_file" >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        score_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.smd.score.txt;
+        metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt;
+        score_out={output.score};
+        metrics_out={output.metrics};
+        rm -f "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out";
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
         ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1;
-        echo "SCORE_FILE: $score_file" >> {log};
-        echo "METRICS_FILE: $metrics_file" >> {log};
+        echo "SCORE_TMP: $score_tmp" >> {log};
+        echo "METRICS_TMP: $metrics_tmp" >> {log};
+        echo "SCORE_OUT: $score_out" >> {log};
+        echo "METRICS_OUT: $metrics_out" >> {log};
 
         read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
 
@@ -101,24 +105,32 @@ rule sent_dedup:
             --input {input.bam} \
             --reference {params.reference} \
             --thread_count {threads} \
-            --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
+            --algo LocusCollector --fun score_info "$score_tmp" >> {log} 2>&1;
 
-        if [ ! -s "$score_file" ]; then
-            echo "LocusCollector did not create a non-empty score file: $score_file" >> {log} 2>&1;
-            ls -l "$score_file" >> {log} 2>&1 || true;
+        if [ ! -s "$score_tmp" ]; then
+            echo "LocusCollector did not create a non-empty score file: $score_tmp" >> {log} 2>&1;
+            ls -l "$score_tmp" >> {log} 2>&1 || true;
             find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
             exit 6;
         fi;
+        cp "$score_tmp" "$score_out";
 
         {params.numa} LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
             --input {input.bam} \
             --reference {params.reference} \
             --thread_count {threads} \
             --algo Dedup \
-            --score_info "$score_file" \
-            --metrics "$metrics_file" \
+            --score_info "$score_tmp" \
+            --metrics "$metrics_tmp" \
             {params.cram_opts} \
             {output.cram} >> {log} 2>&1;
+
+        if [ ! -s "$metrics_tmp" ]; then
+            echo "Dedup did not create a non-empty metrics file: $metrics_tmp" >> {log} 2>&1;
+            ls -l "$metrics_tmp" >> {log} 2>&1 || true;
+            exit 7;
+        fi;
+        cp "$metrics_tmp" "$metrics_out";
 
         samtools index -@ {params.index_threads} {output.cram} {output.crai} >> {log} 2>&1;
 
