@@ -18,6 +18,8 @@ rule sent_dedup:
     output:
         cram=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram",
         crai=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram.crai",
+        score=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.score.txt",
+        metrics=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.metrics.txt",
     wildcard_constraints:
         alnr="|".join(OG_ALIGNERS) if OG_ALIGNERS else r"(?!x)x"
     threads: SENT_DEDUP_CFG["threads"]
@@ -42,10 +44,6 @@ rule sent_dedup:
         tmp_base=SENT_DEDUP_CFG["tmp_base"],
         sentieon_driver=SENT_CFG["driver_path"],
         index_threads=SENT_DEDUP_CFG["index_threads"],
-        metrics_path=lambda wildcards: (
-            f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/smd/"
-            f"{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt"
-        ),
     log:
         MDIR + "{sample}/align/{alnr}/smd/logs/dedupe.smd.{sample}.{alnr}.log",
     shell:
@@ -78,14 +76,15 @@ rule sent_dedup:
         export SENTIEON_TMPDIR=$sentieon_tmp;
         export APPTAINER_HOME=$TMPDIR;
 
-        score_file={params.tmp_base}/daylily_smd_score_$timestamp.{wildcards.sample}.{wildcards.alnr}.score.txt;
-        metrics_tmp={params.tmp_base}/daylily_smd_metrics_$timestamp.{wildcards.sample}.{wildcards.alnr}.metrics.txt;
-        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_file=$score_file metrics_tmp=$metrics_tmp status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_file" "$metrics_tmp" >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" "$score_file" "$metrics_tmp" "$score_file"_* "$metrics_tmp"_* 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        score_file={output.score};
+        metrics_file={output.metrics};
+        rm -f "$score_file" "$metrics_file";
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_file=$score_file metrics_file=$metrics_file status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_file" "$metrics_file" >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
         ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1;
         echo "SCORE_FILE: $score_file" >> {log};
-        echo "METRICS_TMP: $metrics_tmp" >> {log};
+        echo "METRICS_FILE: $metrics_file" >> {log};
 
         read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
 
@@ -117,16 +116,11 @@ rule sent_dedup:
             --thread_count {threads} \
             --algo Dedup \
             --score_info "$score_file" \
-            --metrics "$metrics_tmp" \
+            --metrics "$metrics_file" \
             {params.cram_opts} \
             {output.cram} >> {log} 2>&1;
 
         samtools index -@ {params.index_threads} {output.cram} {output.crai} >> {log} 2>&1;
-
-        if [ -f "$metrics_tmp" ]; then
-            rm -f {params.metrics_path};
-            mv "$metrics_tmp" {params.metrics_path};
-        fi;
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));
