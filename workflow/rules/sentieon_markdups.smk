@@ -77,9 +77,8 @@ rule sent_dedup:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base}/smd_sentieon_tmp_$timestamp;
-        sentieon_tmp=$TMPDIR/sentieon_tmp;
-        mkdir -p "$sentieon_tmp";
-        export SENTIEON_TMPDIR=$sentieon_tmp;
+        mkdir -p "$TMPDIR";
+        export SENTIEON_TMPDIR=$TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
 
         score_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.smd.score.txt;
@@ -87,7 +86,7 @@ rule sent_dedup:
         score_out={params.score_out};
         metrics_out={params.metrics_out};
         rm -f "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out";
-        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
         ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1;
@@ -116,7 +115,7 @@ rule sent_dedup:
         if [ ! -s "$score_tmp" ]; then
             echo "LocusCollector did not create a non-empty score file: $score_tmp" >> {log} 2>&1;
             ls -l "$score_tmp" >> {log} 2>&1 || true;
-            find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
+            find "$TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true;
             exit 6;
         fi;
         cp "$score_tmp" "$score_out";
