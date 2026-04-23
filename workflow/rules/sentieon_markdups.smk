@@ -77,9 +77,10 @@ rule sent_dedup:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base};
-        work_tmp=$TMPDIR/smd_sentieon_tmp_$timestamp;
+        work_tmp=$TMPDIR/smd_meta_tmp_$timestamp;
         out_tmp_dir=$work_tmp/outputs;
-        export SENTIEON_TMPDIR=$work_tmp/sentieon_tmp;
+        driver_tmp=$TMPDIR/smd_driver_tmp_$timestamp;
+        export SENTIEON_TMPDIR=$driver_tmp;
         export APPTAINER_HOME=$work_tmp/apptainer_home;
         mkdir -p "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
 
@@ -88,13 +89,14 @@ rule sent_dedup:
         score_out={params.score_out};
         metrics_out={params.metrics_out};
         rm -f "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out";
-        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp out_tmp_dir=$out_tmp_dir SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp out_tmp_dir=$out_tmp_dir SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
-        ls -ld "$TMPDIR" "$work_tmp" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
+        ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
         mkdir -p "$(dirname "$score_out")" "$(dirname "$metrics_out")";
         echo "TMPDIR_BASE: $TMPDIR" >> {log};
         echo "WORK_TMP: $work_tmp" >> {log};
+        echo "DRIVER_TMP: $driver_tmp" >> {log};
         echo "OUT_TMP_DIR: $out_tmp_dir" >> {log};
         echo "SCORE_TMP: $score_tmp" >> {log};
         echo "METRICS_TMP: $metrics_tmp" >> {log};
