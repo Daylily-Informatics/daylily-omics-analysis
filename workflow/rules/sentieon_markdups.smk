@@ -78,26 +78,24 @@ rule sent_dedup:
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base};
         work_tmp=$TMPDIR/smd_meta_tmp_$timestamp;
-        out_tmp_dir=$work_tmp/outputs;
         driver_tmp=$TMPDIR/smd_driver_tmp_$timestamp;
         export SENTIEON_TMPDIR=$driver_tmp;
         export APPTAINER_HOME=$work_tmp/apptainer_home;
-        mkdir -p "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
+        mkdir -p "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
 
-        score_tmp=$out_tmp_dir/{wildcards.sample}.{wildcards.alnr}.smd.score.txt;
-        metrics_tmp=$out_tmp_dir/{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt;
         score_out={params.score_out};
         metrics_out={params.metrics_out};
-        rm -f "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out";
-        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp out_tmp_dir=$out_tmp_dir SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        score_tmp=$score_out;
+        metrics_tmp=$metrics_out;
+        rm -f "$score_out" "$metrics_out";
+        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" "$(dirname "$score_out")" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
-        ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
+        ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
         mkdir -p "$(dirname "$score_out")" "$(dirname "$metrics_out")";
         echo "TMPDIR_BASE: $TMPDIR" >> {log};
         echo "WORK_TMP: $work_tmp" >> {log};
         echo "DRIVER_TMP: $driver_tmp" >> {log};
-        echo "OUT_TMP_DIR: $out_tmp_dir" >> {log};
         echo "SCORE_TMP: $score_tmp" >> {log};
         echo "METRICS_TMP: $metrics_tmp" >> {log};
         echo "SCORE_OUT: $score_out" >> {log};
@@ -126,7 +124,6 @@ rule sent_dedup:
             find "$TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true;
             exit 6;
         fi;
-        cp "$score_tmp" "$score_out";
 
         {params.numa} LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
             --input {input.bam} \
@@ -143,7 +140,6 @@ rule sent_dedup:
             ls -l "$metrics_tmp" >> {log} 2>&1 || true;
             exit 7;
         fi;
-        cp "$metrics_tmp" "$metrics_out";
 
         samtools index -@ {params.index_threads} {output.cram} {output.crai} >> {log} 2>&1;
 
