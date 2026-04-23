@@ -77,19 +77,22 @@ rule sent_dedup:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base}/smd_sentieon_tmp_$timestamp;
-        mkdir -p "$TMPDIR";
-        export SENTIEON_TMPDIR=$TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
+        out_tmp_dir=$TMPDIR/outputs;
+        export SENTIEON_TMPDIR=$TMPDIR/sentieon_tmp;
+        export APPTAINER_HOME=$TMPDIR/apptainer_home;
+        mkdir -p "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
 
-        score_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.smd.score.txt;
-        metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt;
+        score_tmp=$out_tmp_dir/{wildcards.sample}.{wildcards.alnr}.smd.score.txt;
+        metrics_tmp=$out_tmp_dir/{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt;
         score_out={params.score_out};
         metrics_out={params.metrics_out};
         rm -f "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out";
-        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR out_tmp_dir=$out_tmp_dir SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp score_out=$score_out metrics_out=$metrics_out status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$score_out" "$metrics_out" >> {log} 2>&1 || true; find "$TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
-        ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" "$out_tmp_dir" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
+        mkdir -p "$(dirname "$score_out")" "$(dirname "$metrics_out")";
+        echo "OUT_TMP_DIR: $out_tmp_dir" >> {log};
         echo "SCORE_TMP: $score_tmp" >> {log};
         echo "METRICS_TMP: $metrics_tmp" >> {log};
         echo "SCORE_OUT: $score_out" >> {log};
