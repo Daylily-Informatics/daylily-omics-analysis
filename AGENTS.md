@@ -49,6 +49,8 @@ If the user explicitly asks for SSM/daylily-ec brokered access, connect with the
 AWS_PROFILE=<profile> daylily-ec headnode connect --profile <profile> --region <region> --cluster <cluster>
 ```
 
+The resulting SSM shell must be the `ubuntu` user running a bash login shell. Verify with `id -un` and `echo "$0"`; if the shell is not a login bash shell, run `exec bash -l` before `day-clone`, `tmux`, `source dyoainit`, `dy-a`, or `dy-r`.
+
 If using direct SSH, every remote command must use the login-shell pattern documented below:
 
 ```bash
