@@ -69,6 +69,15 @@ command -v squeue
 ### Create and use a persistent tmux session
 Create one named session per launched pipeline. Do not reuse unrelated existing sessions.
 
+Before sending keys, attaching, capturing output, or otherwise interacting with an existing tmux session, verify the session has exactly one window and exactly one pane. If either check fails, stop and report an error instead of guessing which pane is active.
+
+```bash
+window_count=$(tmux list-windows -t <session_name> -F '#{window_index}' | wc -l)
+pane_count=$(tmux list-panes -a -F '#{session_name}' | awk '$1 == "<session_name>" {n++} END {print n + 0}')
+test "$window_count" -eq 1
+test "$pane_count" -eq 1
+```
+
 ```bash
 tmux new-session -d -s <session_name>
 tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu' Enter

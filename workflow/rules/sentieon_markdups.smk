@@ -64,22 +64,23 @@ rule sent_dedup:
 
         TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
         itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type || echo "unknown");
-        echo "INSTANCE TYPE: $itype" > {log};
+        echo "===== sent_dedup attempt $(date -u +%Y-%m-%dT%H:%M:%SZ) =====" >> {log};
+        echo "INSTANCE TYPE: $itype" >> {log};
         echo "INSTANCE TYPE: $itype";
         start_time=$(date +%s);
 
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR={params.tmp_base}/smd_sentieon_$timestamp;
-        score_dir=$TMPDIR/score;
+        export TMPDIR={params.tmp_base}/smd_sentieon_tmp_$timestamp;
+        score_dir={params.tmp_base}/smd_sentieon_score_$timestamp;
         sentieon_tmp=$TMPDIR/sentieon_tmp;
         mkdir -p "$score_dir" "$sentieon_tmp";
         export SENTIEON_TMPDIR=$sentieon_tmp;
         export APPTAINER_HOME=$TMPDIR;
-        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR status=$status" >> {log} 2>&1; df -h "$TMPDIR" >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR SCORE_DIR=$score_dir status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1 || true; find "$score_dir" "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" "$score_dir" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
-        df -h "$TMPDIR" >> {log} 2>&1;
+        df -h {params.tmp_base} >> {log} 2>&1;
         ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1;
 
         score_file=$score_dir/{wildcards.sample}.{wildcards.alnr}.score.txt;
@@ -104,7 +105,7 @@ rule sent_dedup:
 
         if [ ! -s "$score_file" ]; then
             echo "LocusCollector did not create a non-empty score file: $score_file" >> {log} 2>&1;
-            find "$TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
+            find "$score_dir" "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
             exit 6;
         fi;
 
