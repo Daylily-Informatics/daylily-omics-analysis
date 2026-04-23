@@ -281,7 +281,7 @@ doppelmark:
     view_threads: 8
     view_mem: "2G"
     mbuffer_mem: "1G"
-    partition: "i192mem"
+    partition: "i192mem,i192bigmem"
     mem_mb: 200000 ## potentially this can be set to by dynamic by input bam size
     clip_padding: 800  # 600000
     shard_size: 50000000
@@ -296,9 +296,9 @@ doppelmark:
     numa: " OMP_NUM_THREADS=192 OMP_PROC_BIND=close OMP_PLACES=threads OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
     constraint: ""  # " --constraint 'm7gb768|r7gb1536' "
 
-doppelmark_sentieon:
+sent_dedup:
     threads: 192
-    partition: "i192mem"
+    partition: "i192mem,i192bigmem"
     mem_mb: 200000
     env_yaml: "../envs/sentieon_v0.1.yaml"
     numactl: "  OMP_NUM_THREADS=192 OMP_PROC_BIND=close OMP_PLACES=threads OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
@@ -1006,6 +1006,7 @@ sentieon_dnascope:
     partition: "i192,i192mem"
 
 sentieon:
+    driver_path: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
     threads: 192
     bwa_threads: 96
     benchmark_runs: 0

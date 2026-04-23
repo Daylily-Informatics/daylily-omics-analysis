@@ -6,10 +6,10 @@
 # No conditional guard — rule is always defined.
 # Selection is via target rules expanding over ddup=DDUP.
 
-DOPPEL_SENT_CFG = config.get("doppelmark_sentieon", {})
-SENT_CFG = config.get("sentieon", {})
+SENT_DEDUP_CFG = config["sent_dedup"]
+SENT_CFG = config["sentieon"]
 
-rule doppelmark_sentieon_dups:
+rule sent_dedup:
     """Runs duplicate marking on the merged BAM using Sentieon → CRAM."""
     input:
         bam=MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.sort.bam",
@@ -20,41 +20,28 @@ rule doppelmark_sentieon_dups:
         crai=MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram.crai",
     wildcard_constraints:
         alnr="|".join(OG_ALIGNERS) if OG_ALIGNERS else r"(?!x)x"
-    threads: DOPPEL_SENT_CFG.get("threads", 1)
+    threads: SENT_DEDUP_CFG["threads"]
     benchmark:
         repeat(
             MDIR + "{sample}/benchmarks/{sample}.{alnr}.smd.mrkdup.bench.tsv",
             0,
         )
     conda:
-        DOPPEL_SENT_CFG.get(
-            "env_yaml",
-            SENT_CFG.get("env_yaml", "../envs/sentieon_v0.1.yaml"),
-        )
+        SENT_DEDUP_CFG["env_yaml"]
     resources:
-        threads=DOPPEL_SENT_CFG.get("threads", 1),
-        partition=DOPPEL_SENT_CFG.get("partition", "i8"),
-        vcpu=DOPPEL_SENT_CFG.get("threads", 1),
-        mem_mb=DOPPEL_SENT_CFG.get("mem_mb", 64000),
-        constraint=DOPPEL_SENT_CFG.get("constraint", ""),
+        threads=SENT_DEDUP_CFG["threads"],
+        partition=SENT_DEDUP_CFG["partition"],
+        vcpu=SENT_DEDUP_CFG["threads"],
+        mem_mb=SENT_DEDUP_CFG["mem_mb"],
+        constraint=SENT_DEDUP_CFG["constraint"],
     params:
         cluster_sample=ret_sample,
         reference=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        numa=DOPPEL_SENT_CFG.get("numactl", ""),
-        cram_opts=DOPPEL_SENT_CFG.get(
-            "cram_opts",
-            " --cram_write_options version=3.0,compressor=rans ",
-        ),
-        tmp_base=DOPPEL_SENT_CFG.get("tmp_base", "/dev/shm"),
-        optical_distance=DOPPEL_SENT_CFG.get(
-            "optical_distance",
-            config.get("doppelmark", {}).get("optical_distance", 2500),
-        ),
-        sentieon_driver=SENT_CFG.get(
-            "driver_path",
-            "/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon",
-        ),
-        index_threads=DOPPEL_SENT_CFG.get("index_threads", 4),
+        numa=SENT_DEDUP_CFG["numactl"],
+        cram_opts=SENT_DEDUP_CFG["cram_opts"],
+        tmp_base=SENT_DEDUP_CFG["tmp_base"],
+        sentieon_driver=SENT_CFG["driver_path"],
+        index_threads=SENT_DEDUP_CFG["index_threads"],
         metrics_path=lambda wildcards: (
             f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/smd/"
             f"{wildcards.sample}.{wildcards.alnr}.smd.metrics.txt"
@@ -85,13 +72,18 @@ rule doppelmark_sentieon_dups:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base}/smd_sentieon_$timestamp;
-        mkdir -p "$TMPDIR";
-        export SENTIEON_TMPDIR=$TMPDIR;
+        score_dir=$TMPDIR/score;
+        sentieon_tmp=$TMPDIR/sentieon_tmp;
+        mkdir -p "$score_dir" "$sentieon_tmp";
+        export SENTIEON_TMPDIR=$sentieon_tmp;
         export APPTAINER_HOME=$TMPDIR;
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR status=$status" >> {log} 2>&1; df -h "$TMPDIR" >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1 || true; rm -rf "$TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
-        score_file=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.score.txt;
-        metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.metrics.txt;
+        df -h "$TMPDIR" >> {log} 2>&1;
+        ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1;
+
+        score_file=$score_dir/{wildcards.sample}.{wildcards.alnr}.score.txt;
+        metrics_tmp=$score_dir/{wildcards.sample}.{wildcards.alnr}.metrics.txt;
 
         read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
 
@@ -109,6 +101,12 @@ rule doppelmark_sentieon_dups:
             --reference {params.reference} \
             --thread_count {threads} \
             --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
+
+        if [ ! -s "$score_file" ]; then
+            echo "LocusCollector did not create a non-empty score file: $score_file" >> {log} 2>&1;
+            find "$TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
+            exit 6;
+        fi;
 
         {params.numa} LD_PRELOAD=$LD_PRELOAD {params.sentieon_driver} driver \
             --input {input.bam} \

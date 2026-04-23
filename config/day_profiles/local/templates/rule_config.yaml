@@ -296,7 +296,7 @@ doppelmark:
     dop_opts:  " -max-depth 30000 "
     constraint: " "
 
-doppelmark_sentieon:
+sent_dedup:
     threads: 7
     partition: "i8"
     mem_mb: 50000
@@ -1035,6 +1035,7 @@ samtools_markdups:
     partition: "i8"
 
 sentieon:
+    driver_path: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
     threads: 7
     bwa_threads: 7
     benchmark_runs: 0
