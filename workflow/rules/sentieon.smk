@@ -74,13 +74,19 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR=/dev/shm/sentieon_tmp_$timestamp;
-        export SENTIEON_TMPDIR=$TMPDIR;
+        export TMPDIR=/dev/shm;
+        work_tmp=$TMPDIR/sentieon_tmp_$timestamp;
+        sort_tmp=$work_tmp/sort_tmp;
+        export SENTIEON_TMPDIR=$work_tmp/sentieon_driver_tmp;
+        export APPTAINER_HOME=$work_tmp/apptainer_home;
 
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
-        tdir=$TMPDIR;
+        mkdir -p "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
+        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp sort_tmp=$sort_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME status=$status" >> {log} 2>&1; df -h /dev/shm >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        echo "TMPDIR_BASE: $TMPDIR" >> {log};
+        echo "WORK_TMP: $work_tmp" >> {log};
+        echo "SORT_TMP: $sort_tmp" >> {log};
+        echo "SENTIEON_TMPDIR: $SENTIEON_TMPDIR" >> {log};
+        echo "APPTAINER_HOME: $APPTAINER_HOME" >> {log};
 
         # Find the jemalloc library in the active conda environment
         jemalloc_path="";
@@ -125,7 +131,7 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         --cram_write_options version=3.0,compressor=rans \
         --sortblock_thread_count {params.sort_threads} \
         --bam_compression 1 \
-	    --temp_dir $TMPDIR \
+        --temp_dir "$sort_tmp" \
         --intermediate_compress_level 1  \
         --block_size {params.sort_thread_mem}   \
         --sam2bam \
@@ -136,7 +142,6 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         end_time=$(date +%s);
     	elapsed_time=$((($end_time - $start_time) / 60));
         echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
-        rm -rf $tdir;
         """
 
 localrules: produce_sentieon_bwa_sort_bam,
