@@ -73,18 +73,19 @@ rule sent_dedup:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR={params.tmp_base}/smd_sentieon_tmp_$timestamp;
-        score_dir={params.tmp_base}/smd_sentieon_score_$timestamp;
         sentieon_tmp=$TMPDIR/sentieon_tmp;
-        mkdir -p "$score_dir" "$sentieon_tmp";
+        mkdir -p "$sentieon_tmp";
         export SENTIEON_TMPDIR=$sentieon_tmp;
         export APPTAINER_HOME=$TMPDIR;
-        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR SCORE_DIR=$score_dir status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1 || true; find "$score_dir" "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" "$score_dir" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+
+        score_file={params.tmp_base}/daylily_smd_score_$timestamp.{wildcards.sample}.{wildcards.alnr}.score.txt;
+        metrics_tmp={params.tmp_base}/daylily_smd_metrics_$timestamp.{wildcards.sample}.{wildcards.alnr}.metrics.txt;
+        trap 'status=$?; echo "Cleanup TMPDIR=$TMPDIR score_file=$score_file metrics_tmp=$metrics_tmp status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1 || true; ls -l "$score_file" "$metrics_tmp" >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true; rm -rf "$TMPDIR" "$score_file" "$metrics_tmp" "$score_file"_* "$metrics_tmp"_* 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
-        ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" "$score_dir" >> {log} 2>&1;
-
-        score_file=$score_dir/{wildcards.sample}.{wildcards.alnr}.score.txt;
-        metrics_tmp=$score_dir/{wildcards.sample}.{wildcards.alnr}.metrics.txt;
+        ls -ld "$TMPDIR" "$SENTIEON_TMPDIR" >> {log} 2>&1;
+        echo "SCORE_FILE: $score_file" >> {log};
+        echo "METRICS_TMP: $metrics_tmp" >> {log};
 
         read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
 
@@ -105,7 +106,8 @@ rule sent_dedup:
 
         if [ ! -s "$score_file" ]; then
             echo "LocusCollector did not create a non-empty score file: $score_file" >> {log} 2>&1;
-            find "$score_dir" "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
+            ls -l "$score_file" >> {log} 2>&1 || true;
+            find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls >> {log} 2>&1 || true;
             exit 6;
         fi;
 
