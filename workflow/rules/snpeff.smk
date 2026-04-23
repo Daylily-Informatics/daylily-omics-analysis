@@ -44,14 +44,13 @@ localrules:
 
 rule produce_snpeff:  # TARGET: just produce snpeff results
     input:
-        expand(
+        [
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/snpeff/{sample}.{alnr}.{ddup}.{snv}.snpeff.vcf.gz.tbi",
-            sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
-            snv=snv_CALLERS,
-        ),
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/snpeff/{sample}.{alnr}.{ddup}.{snv}.snpeff.vcf.gz.tbi"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
     output:
         "logs/snpeff_gathered.done",
     shell:

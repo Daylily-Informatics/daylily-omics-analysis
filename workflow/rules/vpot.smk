@@ -39,13 +39,12 @@ localrules:
 
 rule produce_vpot:  # TARGET: run VPOT across all samples
     input:
-        expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done",
-            sample=SSAMPS,
-            alnr=ALIGNERS,
-            ddup=DDUP,
-            snv=snv_CALLERS,
-        ),
+        [
+            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALIGNERS, snv_CALLERS)
+        ],
     output:
         "logs/vpot_gathered.done",
     shell:

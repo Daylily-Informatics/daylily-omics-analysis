@@ -60,14 +60,13 @@ localrules:
 
 rule produce_vep:  # TARGET: just produce vep results
     input:
-        expand(
+        [
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.done",
-            sample=SSAMPS,
-            alnr=ALIGNERS,
-            ddup=DDUP,
-            snv=snv_CALLERS,
-        ),
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.done"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALIGNERS, snv_CALLERS)
+        ],
     output:
         "logs/vep_gathered.done",
     shell:

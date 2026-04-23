@@ -41,10 +41,10 @@ localrules:
 
 rule produce_bcfvcfstats:  # TARGET:  jusg genvcfstats
     input:
-        expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv",
-            sample=SSAMPS,
-            alnr=ALIGNERS,
-            ddup=DDUP,
-            snv_caller=snv_CALLERS
-        ),
+        [
+            MDIR
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],

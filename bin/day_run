@@ -93,6 +93,7 @@ for _arg in "$@"; do
     # Detect SNV caller targets
     case "$_arg" in
         produce_sentD_vcf)              _snv_caller_codes+=("sentd")     ;;
+        produce_cgt7p_vcf)              _snv_caller_codes+=("cgt7p")     ;;
         produce_sentdpb_vcf)            _snv_caller_codes+=("sentdpb")   ;;
         produce_sentdont_vcf)           _snv_caller_codes+=("sentdont")  ;;
         produce_sentdug_vcf)            _snv_caller_codes+=("sentdug")   ;;

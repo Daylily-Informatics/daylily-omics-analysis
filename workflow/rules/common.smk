@@ -253,6 +253,7 @@ else:
 
 # SNV caller chunk arrays
 SENTD_CHRMS = config["sentD"][f"{config['genome_build']}_sentD_chrms"].split(",")
+CGT7P_CHRMS = config["cgt7p"][f"{config['genome_build']}_cgt7p_chrms"].split(",")
 DEEPD_CHRMS = config["deepvariant"][f"{config['genome_build']}_deep_chrms"].split(",")
 DEEP19R_CHRMS = config["deepvariant_1_9_roche"][f"{config['genome_build']}_deep_chrms"].split(",")
 OCTO_CHRMS = config["octopus"][f"{config['genome_build']}_octo_chrms"].split(",")
@@ -454,6 +455,7 @@ else:
 # or from sys.argv for direct snakemake invocations.
 _SNV_CALLER_TARGET_MAP = {
     "produce_sentD_vcf": "sentd",
+    "produce_cgt7p_vcf": "cgt7p",
     "produce_sentdpb_vcf": "sentdpb",
     "produce_sentdont_vcf": "sentdont",
     "produce_sentdug_vcf": "sentdug",
@@ -1758,6 +1760,7 @@ ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
 # ---------------------------------------------------------------------------
 _SNV_CALLER_VALID_ALIGNERS = {
     # Solo platform callers
+    "cgt7p":    ["sent"],                 # Complete Genomics/MGI DNAscope over Sentieon BWA MEM
     "sentdont":  ["ont", "sentmm2ont"],   # ONT-only caller
     "sentdug":   ["ug"],                   # Ultima-only caller
     "sentdpb":   ["sentmm2"],             # PacBio-only caller

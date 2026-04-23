@@ -24,6 +24,130 @@ Always `conda activate DAY-EC`, little is done in this repo from a mac, but most
   - ACTIVATE: `dy-a local hg38` to activate the local execution env, or  `dy-a slurm hg38` to activate the slurm execution env. Note, the second argument is the genome build, and must be set. In practice, this is almost always `hg38`, but could be `b37` or `hg38_broad`. 
   - RUN: `dy-r help` to see the available targets, and the init output should tell you how to run the common workflow. Important flags: -n for dry run, -p to print helpful info to stdout, -j for job limit (local should be 1 or 2, slurm can be 300-500), -k to keep going if a job fails... the dy-r cli command actually composes a complex snakemake command given these user command line specified ones. Run `dy-r --help` for all of them.
 
+## Headnode Persistent tmux Pipeline Launch Spec
+Use this pattern when a user asks an agent to launch Daylily workflow commands on an AWS ParallelCluster headnode and leave the run inspectable after the agent disconnects.
+
+### Required launch inputs
+- AWS profile, region, and cluster name. Do not use the default AWS profile; ask the user when it is not specified.
+- Workset code for `day-clone -d`, such as `take1` or `agbt_ug`.
+- Git ref for `day-clone -t`, usually `main` unless the user gives another ref.
+- S3 paths for `config/samples.tsv` and `config/units.tsv`.
+- Genome build for `dy-a`, usually `hg38_broad` for Ultima and hybrid examples here.
+- `dy-r` targets and flags.
+- A unique, descriptive tmux session name that includes the workset/pipeline/date.
+
+### Connect to the headnode
+From a Mac terminal, activate `DAY-EC` first:
+
+```bash
+eval "$(conda shell.zsh hook)" && conda activate DAY-EC
+```
+
+If the user explicitly asks for SSM/daylily-ec brokered access, connect with the requested profile:
+
+```bash
+AWS_PROFILE=<profile> daylily-ec headnode connect --profile <profile> --region <region> --cluster <cluster>
+```
+
+If using direct SSH, every remote command must use the login-shell pattern documented below:
+
+```bash
+ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c '<command>'"
+```
+
+After connecting, verify you are `ubuntu` and that required commands are present. Fail loudly if any are missing:
+
+```bash
+id -un
+command -v day-clone
+command -v tmux
+command -v squeue
+```
+
+### Create and use a persistent tmux session
+Create one named session per launched pipeline. Do not reuse unrelated existing sessions.
+
+```bash
+tmux new-session -d -s <session_name>
+tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu' Enter
+tmux send-keys -t <session_name> 'day-clone -t <git_ref> -d <workset_code>' Enter
+tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu/<workset_code>/daylily-omics-analysis' Enter
+```
+
+Stage manifests exactly from the verified S3 locations:
+
+```bash
+tmux send-keys -t <session_name> 'mkdir -p ./config' Enter
+tmux send-keys -t <session_name> 'aws s3 cp <samples_s3_uri> ./config/samples.tsv' Enter
+tmux send-keys -t <session_name> 'aws s3 cp <units_s3_uri> ./config/units.tsv' Enter
+```
+
+When the user asks for only the first four lines of `units.tsv`, trim explicitly and verify:
+
+```bash
+tmux send-keys -t <session_name> "awk 'NR <= 4' ./config/units.tsv > ./config/units.tsv.tmp" Enter
+tmux send-keys -t <session_name> 'mv ./config/units.tsv.tmp ./config/units.tsv' Enter
+tmux send-keys -t <session_name> 'wc -l ./config/units.tsv' Enter
+```
+
+Initialize and launch interactively, one command per `tmux send-keys`. Do not combine `source dyoainit && dy-a ... && dy-r ...` into one shell line; `dy-a`/`dy-r` may be shell functions or aliases defined by `dyoainit` and may not resolve later in the same parsed command. Do not run `source dyoainit` under `set -u`; `dyoainit` may reference unset variables before assigning defaults.
+
+```bash
+tmux send-keys -t <session_name> 'source dyoainit' Enter
+tmux send-keys -t <session_name> 'dy-a slurm <genome_build>' Enter
+tmux send-keys -t <session_name> 'dy-r <targets> <snakemake_flags> &' Enter
+```
+
+### Verify launch before reporting success
+Check the tmux pane, SLURM queue, and controller process. `squeue` must be on `PATH`; if it is not available, treat that as a failed status check.
+
+```bash
+tmux capture-pane -pt <session_name> -S -120
+squeue -u ubuntu | head -80
+ps -fu ubuntu | awk '/snakemake|dy-r|day_run/ && !/awk/ {print}' | head -40
+```
+
+Report the session name and attach command back to the user:
+
+```bash
+tmux attach -t <session_name>
+```
+
+### Worked examples
+Hybrid ILMN+ONT `take1`:
+
+```bash
+tmux new-session -d -s take1_hiom_rerun_20260422
+tmux send-keys -t take1_hiom_rerun_20260422 'cd /fsx/analysis_results/ubuntu' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'day-clone -t main -d take1' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'cd /fsx/analysis_results/ubuntu/take1/daylily-omics-analysis' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'mkdir -p ./config' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260309T122755Z/analysis_results/ubuntu/take1/daylily-omics-analysis/config/samples.tsv ./config/samples.tsv' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260309T122755Z/analysis_results/ubuntu/take1/daylily-omics-analysis/config/units.tsv ./config/units.tsv' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 "awk 'NR <= 4' ./config/units.tsv > ./config/units.tsv.tmp" Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'mv ./config/units.tsv.tmp ./config/units.tsv' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'source dyoainit' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'dy-a slurm hg38_broad' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'dy-r produce_snv_concordances produce_sentdhiom_sv produce_sentdhiom_vcf -p -j 100 -k &' Enter
+```
+
+Solo Ultima `agbt_ug`:
+
+```bash
+tmux new-session -d -s agbt_ug_ultima_rerun_20260422
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'cd /fsx/analysis_results/ubuntu' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'day-clone -t main -d agbt_ug' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'cd /fsx/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'mkdir -p ./config' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260216T130001Z/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis/config/samples.tsv ./config/samples.tsv' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260216T130001Z/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis/config/units.tsv ./config/units.tsv' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 "awk 'NR <= 4' ./config/units.tsv > ./config/units.tsv.tmp" Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'mv ./config/units.tsv.tmp ./config/units.tsv' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'source dyoainit' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'dy-a slurm hg38_broad' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'dy-r produce_sentdug_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 &' Enter
+```
+
 ## Wrapper Script (alternative to dy-r)
 `bin/augment_setup_and_run_dayoa.bash` combines init, activate, and run into a single sourced command. Useful for tmux sessions and automation.
 
@@ -56,7 +180,7 @@ If given an AWS_PROFILE, region, cluster name, pem file, and optionally the : pa
 ## SSH Commands
 **CRITICAL REQUIREMENTS**:
 1. Always use login shells when running SSH commands. Use `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"` to ensure the full shell environment (including PATH and conda) is available.
-2. **Never use SSM (Systems Manager)** — always use direct SSH with login shells.
+2. **Never use SSM (Systems Manager)** unless the user explicitly asks for SSM or `daylily-ec headnode connect` in the current thread. When SSM is explicitly requested, use the brokered `daylily-ec headnode connect` pattern in "Headnode Persistent tmux Pipeline Launch Spec".
 3. **`squeue` must be on PATH** — if `squeue` is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
 
 ## Terminal Heredoc Corruption

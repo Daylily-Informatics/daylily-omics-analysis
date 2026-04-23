@@ -938,6 +938,26 @@ sentD:
     mem_mb: 200000
     pop_vcf: ""
 
+cgt7p:
+    regions_to_call: '  '
+    testing_model: '  '
+    threads: 7
+    gather_threads: 4
+    hg38_cgt7p_chrms: "21"
+    hg38_broad_cgt7p_chrms: "19,21"
+    b37_cgt7p_chrms: "19,21"
+    ld_preload: " "
+    env_yaml: "../envs/sentD_v0.2.yaml"
+    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    bench_repeat: 0
+    numactl: " "
+    partition: "i8"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle"
+    max_mem: "100G"
+    mem_mb: 200000
+    gather_mem_mb: 50000
+    pop_vcf: ""
+
 sort_index_sentD_chunk_vcf:
     threads: 7
     env_yaml: "../envs/vanilla_v0.1.yaml"
