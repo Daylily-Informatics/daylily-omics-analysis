@@ -2,14 +2,10 @@
 # ------------------------------------------------------
 # caller code: cgt7p
 #
-# This caller intentionally reuses the existing short-read Sentieon BWA MEM
-# alignment and configured deduper outputs, then swaps only the DNAscope model.
+# This caller intentionally uses the Complete Genomics / MGI specific
+# Sentieon alignment output and matching DNAscope model member.
 
 CGT7P_DNASCOPE_MODEL = config["cgt7p"]["dna_scope_snv_model"]
-# Production path is the working short-read DNAscope model file. The
-# DNAscopeMGIWGS2.x bundle artifacts in the current Sentieon cache fail to
-# decode under 202503.02, while this model loads successfully on the same CRAM.
-# /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model
 
 
 rule cgt7p_DNAscope:
@@ -27,7 +23,7 @@ rule cgt7p_DNAscope:
             + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.cgt7p.{dchrm}.snv.vcf.tmp"
         ),
     wildcard_constraints:
-        alnr="sent",
+        alnr="sentcg",
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/log/vcfs/{sample}.{alnr}.{ddup}.cgt7p.{dchrm}.snv.log",
@@ -57,13 +53,16 @@ rule cgt7p_DNAscope:
         """
         export bwt_max_mem={params.max_mem};
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR=/dev/shm/cgt7p_tmp_$timestamp;
-        export SENTIEON_TMPDIR=$TMPDIR;
-        mkdir -p $TMPDIR;
-        export APPTAINER_HOME=$TMPDIR;
+        main_bashpid=${{BASHPID:-}};
+        tmp_root=$(dirname {log})/../tmp;
+        mkdir -p "$tmp_root";
+        export TMPDIR="$tmp_root";
+        meta_tmp=$TMPDIR/cgt7p_meta_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR/cgt7p_driver_$timestamp;
+        export APPTAINER_HOME=$meta_tmp/apptainer_home;
+        mkdir -p "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
 
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
-        tdir=$TMPDIR;
+        trap 'status=$?; if [ "${{BASHPID:-}}" != "$main_bashpid" ]; then exit "$status"; fi; if [ "$status" -eq 0 ]; then rm -rf "$meta_tmp" "$SENTIEON_TMPDIR" 2>/dev/null || true; else echo "Preserving scratch after failure under $TMPDIR" >> {log} 2>&1; fi; trap - EXIT; exit "$status"' EXIT;
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
         if [ -z "${{SENTIEON_LICENSE:-}}" ]; then
@@ -114,7 +113,7 @@ rule cgt7p_sort_index_chunk_vcf:
         vcftbi=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.cgt7p.{dchrm}.snv.sort.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="sent",
+        alnr="sentcg",
     conda:
         config["cgt7p"]["sentD_gather_env"]
     log:
@@ -161,7 +160,7 @@ rule cgt7p_concat_fofn:
         tmp_fofn=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/{sample}.{alnr}.{ddup}.cgt7p.snv.concat.vcf.gz.fofn.tmp",
     wildcard_constraints:
-        alnr="sent",
+        alnr="sentcg",
     threads: 1
     resources:
         threads=1
@@ -196,7 +195,7 @@ rule cgt7p_concat_index_chunks:
         vcfgztbi=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/{sample}.{alnr}.{ddup}.cgt7p.snv.sort.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="sent",
+        alnr="sentcg",
     threads: config["cgt7p"]["gather_threads"]
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
@@ -239,7 +238,7 @@ rule clear_combined_cgt7p_vcf:  # TARGET: clear combined cgt7p vcf so chunks can
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/{sample}.{alnr}.{ddup}.cgt7p.snv.sort.vcf.gz",
             sample=SSAMPS,
-            alnr=["sent"],
+            alnr=["sentcg"],
             ddup=DDUP,
         ),
     threads: 2
@@ -260,7 +259,7 @@ rule produce_cgt7p_vcf:  # TARGET: Complete Genomics MGI Sentieon DNAscope VCF
             MDIR
             + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/{sample}.{alnr}.{ddup}.cgt7p.snv.sort.vcf.gz.tbi",
             sample=SSAMPS,
-            alnr=["sent"],
+            alnr=["sentcg"],
             ddup=DDUP,
         ),
     output:
@@ -289,7 +288,7 @@ rule prep_cgt7p_chunkdirs:
             dchrm=CGT7P_CHRMS,
         ),
     wildcard_constraints:
-        alnr="sent",
+        alnr="sentcg",
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/logs/{sample}.{alnr}.chunkdirs.log",

@@ -913,7 +913,7 @@ cgt7p:
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/dnascope.model"
     max_mem: "100G"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
@@ -1022,6 +1022,25 @@ sentieon:
     mbuffer: " | mbuffer -m 128G -q -s 2M  "  #" mbuffer -m 2G -q -s 1M "
     bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""  # " --constraint 'm7gb768|r7gb1536' "
+
+sentieon_cgt7p:
+    driver_path: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
+    threads: 192
+    bwa_threads: 96
+    benchmark_runs: 0
+    max_mem: "180G"
+    sent_opts: "  -k 19 -Y -M -K 10000000 "
+    env_yaml: "../envs/sentieon_v0.1.yaml"
+    mem_mb: 300000
+    block_size: 8G
+    partition: "i192mem,i192bigmem"
+    sort_threads: 96
+    igz: "  igzip -cd -T 32 "
+    sort_thread_mem: "4G"
+    mbuffer: " | mbuffer -m 128G -q -s 2M  "
+    bwa_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/bwa.model"
+    read_group_platform: "DNBSEQ"
+    constraint: ""
 
 sent_aln_sort_snv:
     threads: 192

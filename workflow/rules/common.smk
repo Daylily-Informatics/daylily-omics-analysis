@@ -350,6 +350,8 @@ else:
 _ALIGNER_TARGET_MAP = {
     "produce_bwa_mem2_sort_bam": "bwa2a",
     "produce_sentieon_bwa_sort_bam": "sent",
+    "produce_sentieon_cgt7p_bwa_sort_bam": "sentcg",
+    "produce_cgt7p_vcf": "sentcg",
     "produce_strobe_align_sort_bam": "strobe",
     "produce_sentmm2_align_sort": "sentmm2",
     "produce_sentmm2ont_align_sort": "sentmm2ont",
@@ -1760,7 +1762,7 @@ ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
 # ---------------------------------------------------------------------------
 _SNV_CALLER_VALID_ALIGNERS = {
     # Solo platform callers
-    "cgt7p":    ["sent"],                 # Complete Genomics/MGI DNAscope over Sentieon BWA MEM
+    "cgt7p":    ["sentcg"],               # Complete Genomics/MGI DNAscope over MGI-tuned Sentieon BWA MEM
     "sentdont":  ["ont", "sentmm2ont"],   # ONT-only caller
     "sentdug":   ["ug"],                   # Ultima-only caller
     "sentdpb":   ["sentmm2"],             # PacBio-only caller
