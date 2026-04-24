@@ -6,8 +6,10 @@
 # alignment and configured deduper outputs, then swaps only the DNAscope model.
 
 CGT7P_DNASCOPE_MODEL = config["cgt7p"]["dna_scope_snv_model"]
-# Expected production model:
-# /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle
+# Production path is the working short-read DNAscope model file. The
+# DNAscopeMGIWGS2.x bundle artifacts in the current Sentieon cache fail to
+# decode under 202503.02, while this model loads successfully on the same CRAM.
+# /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model
 
 
 rule cgt7p_DNAscope:

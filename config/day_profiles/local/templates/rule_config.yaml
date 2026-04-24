@@ -952,7 +952,7 @@ cgt7p:
     bench_repeat: 0
     numactl: " "
     partition: "i8"
-    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
     max_mem: "100G"
     mem_mb: 200000
     gather_mem_mb: 50000

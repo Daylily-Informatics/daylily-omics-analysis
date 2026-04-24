@@ -913,7 +913,7 @@ cgt7p:
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle"
+    dna_scope_snv_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
     max_mem: "100G"
     pop_vcf: "/fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
