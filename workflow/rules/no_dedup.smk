@@ -38,6 +38,7 @@ rule no_dedup:
         """
         set -euo pipefail
 
+        mkdir -p $(dirname {output.cram}) $(dirname {log});
         touch {log};
         TOKEN=$(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600');
         itype=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-type || echo "unknown");
@@ -58,4 +59,3 @@ rule no_dedup:
         echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
 
         """
-
