@@ -74,7 +74,7 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         ulimit -n 65536 || echo "ulimit mod failed" > {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        main_bashpid=${BASHPID:-};
+        main_bashpid=${{BASHPID:-}};
         export TMPDIR=/dev/shm;
         meta_tmp=$TMPDIR/sentieon_meta_$timestamp;
         sort_tmp=$TMPDIR/sentieon_sort_$timestamp;
@@ -82,7 +82,7 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         export APPTAINER_HOME=$meta_tmp/apptainer_home;
 
         mkdir -p "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
-        trap 'status=$?; if [ "${BASHPID:-}" != "$main_bashpid" ]; then exit "$status"; fi; echo "Cleanup TMPDIR_BASE=$TMPDIR meta_tmp=$meta_tmp sort_tmp=$sort_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME status=$status" >> {log} 2>&1; df -h /dev/shm >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$meta_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; find "$meta_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$sort_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$meta_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; if [ "${{BASHPID:-}}" != "$main_bashpid" ]; then exit "$status"; fi; echo "Cleanup TMPDIR_BASE=$TMPDIR meta_tmp=$meta_tmp sort_tmp=$sort_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME status=$status" >> {log} 2>&1; df -h /dev/shm >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$meta_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; find "$meta_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$sort_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$meta_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
         echo "TMPDIR_BASE: $TMPDIR" >> {log};
         echo "META_TMP: $meta_tmp" >> {log};
         echo "SORT_TMP: $sort_tmp" >> {log};
