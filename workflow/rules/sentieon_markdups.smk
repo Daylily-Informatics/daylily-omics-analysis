@@ -76,6 +76,7 @@ rule sent_dedup:
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
+        main_bashpid=${BASHPID:-};
         export TMPDIR={params.tmp_base};
         work_tmp=$TMPDIR/smd_meta_tmp_$timestamp;
         driver_tmp=$TMPDIR/smd_driver_tmp_$timestamp;
@@ -88,7 +89,7 @@ rule sent_dedup:
         score_tmp=$score_out;
         metrics_tmp=$metrics_out;
         rm -f "$score_out" "$metrics_out";
-        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" "$(dirname "$score_out")" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; if [ "${BASHPID:-}" != "$main_bashpid" ]; then exit "$status"; fi; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp status=$status" >> {log} 2>&1; df -h {params.tmp_base} >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" "$(dirname "$score_out")" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
         ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
