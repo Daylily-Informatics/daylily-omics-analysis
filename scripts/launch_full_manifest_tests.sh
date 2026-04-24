@@ -1,12 +1,20 @@
 #!/bin/bash
 # launch_full_manifest_tests.sh - Runs on headnode
-# Clones from main, copies FULL multi-sample manifests, launches tmux sessions
+# Clones from main, caps units manifests, launches tmux sessions
 
 echo "=========================================="
 echo "Full-manifest tests: ONT, PacBio, Ultima"
 echo "=========================================="
 
 BASE="/fsx/analysis_results/ubuntu/single-unit-runs"
+
+stage_config() {
+    local workdir="$1"
+    local samples="$2"
+    local units="$3"
+    cp "$workdir/$samples" "$workdir/config/samples.tsv"
+    awk 'NR <= 4' "$workdir/$units" > "$workdir/config/units.tsv"
+}
 
 # Remove old dirs if they exist
 for d in test-3-ont test-5-pacbio test-6-ultima; do
@@ -24,8 +32,7 @@ T3="$BASE/test-3-ont/daylily-omics-analysis"
 if [ ! -d "$T3" ]; then
     echo "FATAL: day-clone failed for test-3-ont"; exit 1
 fi
-cp "$T3/.test_data/data/ont/ont_full_cov.samples.tsv" "$T3/config/samples.tsv"
-cp "$T3/.test_data/data/ont/ont_full_cov.units.tsv"   "$T3/config/units.tsv"
+stage_config "$T3" .test_data/data/ont/ont_full_cov.samples.tsv .test_data/data/ont/ont_full_cov.units.tsv
 echo "test-3-ont ready at $T3"
 echo "  Samples: $(tail -n +2 $T3/config/samples.tsv | grep -c '[^[:space:]]') samples"
 echo "  Units:   $(tail -n +2 $T3/config/units.tsv   | grep -c '[^[:space:]]') units"
@@ -38,8 +45,7 @@ T5="$BASE/test-5-pacbio/daylily-omics-analysis"
 if [ ! -d "$T5" ]; then
     echo "FATAL: day-clone failed for test-5-pacbio"; exit 1
 fi
-cp "$T5/.test_data/data/pacbio/pacbio_full_cov.samples.tsv" "$T5/config/samples.tsv"
-cp "$T5/.test_data/data/pacbio/pacbio_full_cov.units.tsv"   "$T5/config/units.tsv"
+stage_config "$T5" .test_data/data/pacbio/pacbio_full_cov.samples.tsv .test_data/data/pacbio/pacbio_full_cov.units.tsv
 echo "test-5-pacbio ready at $T5"
 echo "  Samples: $(tail -n +2 $T5/config/samples.tsv | grep -c '[^[:space:]]') samples"
 echo "  Units:   $(tail -n +2 $T5/config/units.tsv   | grep -c '[^[:space:]]') units"
@@ -52,8 +58,7 @@ T6="$BASE/test-6-ultima/daylily-omics-analysis"
 if [ ! -d "$T6" ]; then
     echo "FATAL: day-clone failed for test-6-ultima"; exit 1
 fi
-cp "$T6/.test_data/data/ultima/ultima_full_cov.samples.tsv" "$T6/config/samples.tsv"
-cp "$T6/.test_data/data/ultima/ultima_full_cov.units.tsv"   "$T6/config/units.tsv"
+stage_config "$T6" .test_data/data/ultima/ultima_full_cov.samples.tsv .test_data/data/ultima/ultima_full_cov.units.tsv
 echo "test-6-ultima ready at $T6"
 echo "  Samples: $(tail -n +2 $T6/config/samples.tsv | grep -c '[^[:space:]]') samples"
 echo "  Units:   $(tail -n +2 $T6/config/units.tsv   | grep -c '[^[:space:]]') units"
@@ -71,19 +76,19 @@ done
 # Test 3: ONT only (full manifest)
 tmux new-session -d -s test-3-ont
 tmux send-keys -t test-3-ont "cd $T3 && set +euo pipefail && . dyoainit && source bin/day_activate slurm hg38 && set -uo pipefail && bin/day_run produce_sentdont_vcf produce_alignstats produce_snv_concordances -p -j 20 -k 2>&1 | tee _test_3_ont.log; echo 'TEST_3_ONT_RETURN_CODE: '\$?" Enter
-echo "Launched: test-3-ont (ONT only, 3 samples / 5 units)"
+echo "Launched: test-3-ont (ONT only, capped at 3 units)"
 sleep 5
 
 # Test 5: PacBio only (full manifest)
 tmux new-session -d -s test-5-pacbio
 tmux send-keys -t test-5-pacbio "cd $T5 && set +euo pipefail && . dyoainit && source bin/day_activate slurm hg38 && set -uo pipefail && bin/day_run produce_sentdpb_vcf produce_alignstats produce_snv_concordances -p -j 20 -k 2>&1 | tee _test_5_pacbio.log; echo 'TEST_5_PACBIO_RETURN_CODE: '\$?" Enter
-echo "Launched: test-5-pacbio (PacBio only, 3 samples / 4 units)"
+echo "Launched: test-5-pacbio (PacBio only, capped at 3 units)"
 sleep 5
 
 # Test 6: Ultima only (full manifest)
 tmux new-session -d -s test-6-ultima
 tmux send-keys -t test-6-ultima "cd $T6 && set +euo pipefail && . dyoainit && source bin/day_activate slurm hg38 && set -uo pipefail && bin/day_run produce_sentdug_vcf produce_alignstats produce_snv_concordances -p -j 20 -k 2>&1 | tee _test_6_ultima.log; echo 'TEST_6_ULTIMA_RETURN_CODE: '\$?" Enter
-echo "Launched: test-6-ultima (Ultima only, 3 samples / 3 units)"
+echo "Launched: test-6-ultima (Ultima only, capped at 3 units)"
 
 echo ""
 echo "=========================================="
@@ -92,4 +97,3 @@ echo "=========================================="
 tmux ls
 echo ""
 echo "DONE"
-

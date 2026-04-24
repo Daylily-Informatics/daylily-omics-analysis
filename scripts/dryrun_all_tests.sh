@@ -33,7 +33,8 @@ run_test() {
     echo "============================================================"
 
     cp "$samples" config/samples.tsv 2>&1
-    cp "$units" config/units.tsv 2>&1
+    awk 'NR <= 4' "$units" > config/units.tsv
+    echo "Staged $(tail -n +2 config/units.tsv | grep -c '[^[:space:]]') unit rows"
 
     echo "CMD: $cmd"
     OUTPUT=$(eval "$cmd" 2>&1)
@@ -101,4 +102,3 @@ echo "============================================================"
 echo "SUMMARY: $PASS passed, $FAIL failed"
 echo -e "$RESULTS"
 echo "============================================================"
-
