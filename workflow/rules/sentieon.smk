@@ -75,15 +75,15 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/dev/shm;
-        work_tmp=$TMPDIR/sentieon_tmp_$timestamp;
-        sort_tmp=$work_tmp/sort_tmp;
-        export SENTIEON_TMPDIR=$work_tmp/sentieon_driver_tmp;
-        export APPTAINER_HOME=$work_tmp/apptainer_home;
+        meta_tmp=$TMPDIR/sentieon_meta_$timestamp;
+        sort_tmp=$TMPDIR/sentieon_sort_$timestamp;
+        export SENTIEON_TMPDIR=$TMPDIR/sentieon_driver_tmp_$timestamp;
+        export APPTAINER_HOME=$meta_tmp/apptainer_home;
 
         mkdir -p "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
-        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp sort_tmp=$sort_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME status=$status" >> {log} 2>&1; df -h /dev/shm >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$work_tmp" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
+        trap 'status=$?; echo "Cleanup TMPDIR_BASE=$TMPDIR meta_tmp=$meta_tmp sort_tmp=$sort_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME status=$status" >> {log} 2>&1; df -h /dev/shm >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$meta_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1 || true; find "$meta_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$sort_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$SENTIEON_TMPDIR" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -rf "$meta_tmp" "$sort_tmp" "$SENTIEON_TMPDIR" 2>/dev/null || true; trap - EXIT; exit "$status"' EXIT;
         echo "TMPDIR_BASE: $TMPDIR" >> {log};
-        echo "WORK_TMP: $work_tmp" >> {log};
+        echo "META_TMP: $meta_tmp" >> {log};
         echo "SORT_TMP: $sort_tmp" >> {log};
         echo "SENTIEON_TMPDIR: $SENTIEON_TMPDIR" >> {log};
         echo "APPTAINER_HOME: $APPTAINER_HOME" >> {log};
