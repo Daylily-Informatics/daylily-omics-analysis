@@ -179,6 +179,24 @@ def test_gatk_contam_env_includes_cram_compat_tools() -> None:
     assert "samtools" in text
 
 
+def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
+    text = (REPO_ROOT / "workflow" / "rules" / "gatk_contam.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'mem_mb = config["gatk_contam"].get("mem_mb", 32000)' in text
+    assert '--java-options "-Xmx{resources.mem_mb}m' in text
+    assert "--interval-merging-rule OVERLAPPING_ONLY" in text
+
+    for config_path in (
+        "config/day_profiles/slurm/templates/rule_config.yaml",
+        "config/day_profiles/local/templates/rule_config.yaml",
+    ):
+        config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
+        gatk_config = config_text[config_text.index("gatk_contam:") :]
+        assert "mem_mb: 32000" in gatk_config[:200]
+
+
 def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:
     text = (REPO_ROOT / "bin" / "util" / "gatk_cram_compat.sh").read_text(
         encoding="utf-8"
