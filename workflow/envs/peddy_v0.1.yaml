@@ -6,6 +6,7 @@ channels:
   - defaults
 dependencies:
   - peddy
-  - python
+  - python>=3.9,<3.13
+  - numpy<2
   - glances
  

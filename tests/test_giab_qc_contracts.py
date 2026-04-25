@@ -125,6 +125,21 @@ def test_peddy_rule_hard_fails_and_does_not_unconditionally_mark_done() -> None:
 
 
 @pytest.mark.parametrize(
+    "env_path",
+    [
+        "workflow/envs/peddy_v0.1.yaml",
+        "workflow/envs/peddy.yaml",
+    ],
+)
+def test_peddy_env_pins_numpy_and_python_for_peddy_048(env_path: str) -> None:
+    text = (REPO_ROOT / env_path).read_text(encoding="utf-8")
+
+    assert "peddy" in text
+    assert "python>=3.9,<3.13" in text
+    assert "numpy<2" in text
+
+
+@pytest.mark.parametrize(
     ("rule_path", "target_rule", "expected"),
     [
         (
