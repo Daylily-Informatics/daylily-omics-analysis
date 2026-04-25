@@ -106,7 +106,7 @@ def parse_args(argv=None):
     parser.add_argument("--primary-seed", type=int, default=20260425)
     parser.add_argument("--donor-seed", type=int, default=20260426)
     parser.add_argument("--run-id", default="GIABCONTAM20260425")
-    parser.add_argument("--sample-prefix", default="HG002_HG003_contam")
+    parser.add_argument("--sample-prefix", default="HG002-HG003-contam")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--keep-components", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
@@ -169,7 +169,7 @@ def level_label(level):
 
 
 def contamination_sample_id(primary_sample, donor_sample, level):
-    return f"{primary_sample}_{donor_sample}_contam_{level_label(Decimal(str(level)))}"
+    return f"{primary_sample}-{donor_sample}-contam-{level_label(Decimal(str(level)))}"
 
 
 def require_tool(name):
@@ -219,7 +219,7 @@ def build_plan(args):
             )
 
         label = level_label(level)
-        sample_id = f"{args.sample_prefix}_{label}"
+        sample_id = f"{args.sample_prefix}-{label}"
         rows.append(
             {
                 "index": index,
@@ -540,7 +540,7 @@ def write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor
             {
                 "RUNID": args.run_id,
                 "SAMPLEID": row["sample_id"],
-                "EXPERIMENTID": f"HG002_5x_HG003_{row['label']}",
+                "EXPERIMENTID": f"HG002-5x-HG003-{row['label']}",
                 "LANEID": str(row["index"]),
                 "BARCODEID": "D0",
                 "LIBPREP": "PCR-FREE",

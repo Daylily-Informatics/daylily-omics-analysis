@@ -261,7 +261,7 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     args = SimpleNamespace(
         levels="0.1,5",
         output_dir="/fsx/scratch/dayoa_qc_contam/giab_hg002_hg003_5x_20260425",
-        sample_prefix="HG002_HG003_contam",
+        sample_prefix="HG002-HG003-contam",
         target_coverage="5",
         primary_coverage="5",
         donor_coverage="30",
@@ -269,8 +269,8 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     out_dir, rows = module.build_plan(args)
     assert str(out_dir) == args.output_dir
     assert [row["sample_id"] for row in rows] == [
-        "HG002_HG003_contam_0p1pct",
-        "HG002_HG003_contam_5pct",
+        "HG002-HG003-contam-0p1pct",
+        "HG002-HG003-contam-5pct",
     ]
     assert rows[0]["primary_fraction"] == module.Decimal("0.999")
     assert rows[0]["donor_fraction"] == module.Decimal("0.0001666666666666666666666666667")
@@ -310,8 +310,8 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     plan = _read_tsv(local_out_dir / "contamination_plan.tsv")
 
     assert [row["SAMPLEID"] for row in samples] == [
-        "HG002_HG003_contam_0p1pct",
-        "HG002_HG003_contam_5pct",
+        "HG002-HG003-contam-0p1pct",
+        "HG002-HG003-contam-5pct",
     ]
     assert [row["SUBSAMPLE_PCT"] for row in units] == ["", ""]
     assert [row["contamination_percent"] for row in plan] == ["0.1", "5"]
@@ -336,10 +336,10 @@ def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:
     )
     synthetic_root = tmp_path / "synthetic"
     results_root = tmp_path / "results"
-    sample_id = "HG002_HG003_contam_5pct"
+    sample_id = "HG002-HG003-contam-5pct"
     result_sample = (
         results_root
-        / f"GIABCONTAM20260425-{sample_id}-HG002_5x_HG003_5pct-1-D0-PCR-FREE-ILMN-NOVASEQ"
+        / f"GIABCONTAM20260425-{sample_id}-HG002-5x-HG003-5pct-1-D0-PCR-FREE-ILMN-NOVASEQ"
         / "align"
         / "sent"
         / "dmd"
