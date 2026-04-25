@@ -210,6 +210,10 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
 
     parsed_levels = [float(level) for level in module.parse_levels(module.DEFAULT_LEVELS)]
     assert parsed_levels == SYNTHETIC_LEVELS_PCT
+    args_defaults = module.parse_args([])
+    assert args_defaults.primary_coverage == "30"
+    assert args_defaults.primary_r1.endswith("/HG002_30x_R1.fastq.gz")
+    assert args_defaults.primary_r2.endswith("/HG002_30x_R2.fastq.gz")
 
     args = SimpleNamespace(
         levels="0.1,5",

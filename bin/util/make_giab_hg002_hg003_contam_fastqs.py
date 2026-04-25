@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build deterministic HG002 FASTQs with synthetic HG003 contamination.
 
-The default inputs are the GIAB Illumina NovaSeqX HG002 5x FASTQs plus HG003
-30x donor FASTQs on the Daylily headnode. For each requested contamination
-level, the script samples HG002 to the remaining primary fraction and HG003 to
-the donor fraction needed for an approximately constant target coverage.
+The default inputs are the GIAB Illumina NovaSeqX HG002 and HG003 30x FASTQs on
+the Daylily headnode. For each requested contamination level, the script samples
+HG002 to the remaining primary fraction and HG003 to the donor fraction needed
+for an approximately constant target coverage.
 """
 
 import argparse
@@ -78,7 +78,7 @@ def default_path(name):
     return str(Path(DEFAULT_READ_ROOT) / name)
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description=(
             "Create paired HG002/HG003 synthetic contamination FASTQs and "
@@ -88,15 +88,15 @@ def parse_args():
     parser.add_argument("--output-dir", default=DEFAULT_OUT_DIR)
     parser.add_argument("--levels", default=DEFAULT_LEVELS)
     parser.add_argument("--target-coverage", default="5")
-    parser.add_argument("--primary-coverage", default="5")
+    parser.add_argument("--primary-coverage", default="30")
     parser.add_argument("--donor-coverage", default="30")
     parser.add_argument(
         "--primary-r1",
-        default=default_path("downsampled/HG002_5x_R1.fastq.gz"),
+        default=default_path("HG002_30x_R1.fastq.gz"),
     )
     parser.add_argument(
         "--primary-r2",
-        default=default_path("downsampled/HG002_5x_R2.fastq.gz"),
+        default=default_path("HG002_30x_R2.fastq.gz"),
     )
     parser.add_argument("--donor-r1", default=default_path("HG003_30x_R1.fastq.gz"))
     parser.add_argument("--donor-r2", default=default_path("HG003_30x_R2.fastq.gz"))
@@ -109,7 +109,7 @@ def parse_args():
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--keep-components", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def decimal_arg(value, name):
