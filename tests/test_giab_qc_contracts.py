@@ -289,6 +289,54 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     assert "seqkit" not in script_text.lower()
 
 
+def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:
+    module = _load_module(
+        REPO_ROOT / "bin" / "util" / "summarize_contamination_expected_vs_observed.py",
+        "contam_summary_under_test",
+    )
+    synthetic_root = tmp_path / "synthetic"
+    results_root = tmp_path / "results"
+    sample_id = "HG002_HG003_contam_5pct"
+    result_sample = (
+        results_root
+        / f"GIABCONTAM20260425-{sample_id}-HG002_5x_HG003_5pct-1-D0-PCR-FREE-ILMN-NOVASEQ"
+        / "align"
+        / "sent"
+        / "dmd"
+        / "alignqc"
+        / "contam"
+    )
+    gatk_path = result_sample / "gatk" / f"{sample_id}.sent.dmd.gatk.tsv"
+    vb2_path = result_sample / "vb2" / f"{sample_id}.sent.dmd.vb2.tsv"
+    synthetic_root.mkdir(parents=True)
+    gatk_path.parent.mkdir(parents=True)
+    vb2_path.parent.mkdir(parents=True)
+    (synthetic_root / "contamination_plan.tsv").write_text(
+        "sample_id\tcontamination_percent\n"
+        f"{sample_id}\t5\n",
+        encoding="utf-8",
+    )
+    gatk_path.write_text("SEQ_ID\tFREEMIX\nsample\t0.047\n", encoding="utf-8")
+    vb2_path.write_text("SEQ_ID\tFREEMIX\nsample\t0.052\n", encoding="utf-8")
+
+    rc = module.main(
+        [
+            "--synthetic-root",
+            str(synthetic_root),
+            "--results-root",
+            str(results_root),
+        ]
+    )
+
+    assert rc == 0
+    rows = _read_tsv(synthetic_root / "observed_vs_expected_contam.tsv")
+    assert rows[0]["expected_contamination_pct"] == "5"
+    assert rows[0]["gatk_contamination_pct"] == "4.7"
+    assert rows[0]["gatk_delta_pct"] == "-0.3"
+    assert rows[0]["verifybamid2_contamination_pct"] == "5.2"
+    assert rows[0]["verifybamid2_delta_pct"] == "0.2"
+
+
 def test_relatedness_classification_interface_and_manifest_validation(tmp_path: Path) -> None:
     pd = pytest.importorskip("pandas")
     pytest.importorskip("jinja2")
