@@ -169,6 +169,32 @@ def test_contamination_target_expansion_includes_deduper_level(
     assert "ddup=DDUP" in target_text
 
 
+def test_gatk_contam_env_includes_cram_compat_tools() -> None:
+    text = (REPO_ROOT / "workflow" / "envs" / "gatkcontam_v0.1.yaml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "gatk4" in text
+    assert "htslib" in text
+    assert "samtools" in text
+
+
+def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
+    rule_text = (REPO_ROOT / "workflow" / "rules" / "verifybamid2_contam.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert "--SVDPrefix {params.db_prefix}" in rule_text
+    assert "--RefVCF {params.site_vcf}" not in rule_text
+
+    for config_path in (
+        "config/supporting_files/hg38_supporting_files.yaml",
+        "config/supporting_files/hg38_broad_supporting_files.yaml",
+    ):
+        config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
+        assert "chr20_verbam/chr20.random1000.vcf.gz" in config_text
+
+
 def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path: Path) -> None:
     module = _load_synthetic_contam_module()
 
