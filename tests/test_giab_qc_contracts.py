@@ -184,9 +184,11 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
         encoding="utf-8"
     )
 
-    assert 'mem_mb = config["gatk_contam"].get("mem_mb", 32000)' in text
-    assert '--java-options "-Xmx{resources.mem_mb}m' in text
+    assert 'mem_mb = config["gatk_contam"].get("mem_mb", 80000)' in text
+    assert 'java_heap_mb = config["gatk_contam"].get("java_heap_mb", 64000)' in text
+    assert '--java-options "-Xmx{params.java_heap_mb}m' in text
     assert "--interval-merging-rule OVERLAPPING_ONLY" in text
+    assert "--disable-bam-index-caching" in text
 
     for config_path in (
         "config/day_profiles/slurm/templates/rule_config.yaml",
@@ -194,7 +196,8 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
     ):
         config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
         gatk_config = config_text[config_text.index("gatk_contam:") :]
-        assert "mem_mb: 32000" in gatk_config[:200]
+        assert "mem_mb: 80000" in gatk_config[:240]
+        assert "java_heap_mb: 64000" in gatk_config[:240]
 
 
 def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:

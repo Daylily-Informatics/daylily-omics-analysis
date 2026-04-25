@@ -31,10 +31,11 @@ rule gatk_contam:
     resources:
         vcpu = config["gatk_contam"]["threads"],
         partition = config["gatk_contam"]["partition"],
-        mem_mb = config["gatk_contam"].get("mem_mb", 32000)
+        mem_mb = config["gatk_contam"].get("mem_mb", 80000)
     params:
         cluster_sample = ret_sample,
-        alnr = get_alnr
+        alnr = get_alnr,
+        java_heap_mb = config["gatk_contam"].get("java_heap_mb", 64000)
     shell:
         r"""
         set -euo pipefail;
@@ -44,16 +45,17 @@ rule gatk_contam:
         SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {input.ref_fa} --mode bam --threads {threads} 2>> {log})";
         echo "gatk_contam SAFE_IN=${{SAFE_IN}}" >> {log};
 
-        gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=${{TMPDIR:-/tmp}}" GetPileupSummaries \
+        gatk --java-options "-Xmx{params.java_heap_mb}m -Djava.io.tmpdir=${{TMPDIR:-/tmp}}" GetPileupSummaries \
           -I "${{SAFE_IN}}" \
           -V {input.sites_vcf} \
           -R {input.ref_fa} \
           -L {input.sites_vcf} \
           --interval-merging-rule OVERLAPPING_ONLY \
+          --disable-bam-index-caching \
           -O {output.pile_merged} \
           >> {log} 2>&1;
 
-        gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=${{TMPDIR:-/tmp}}" CalculateContamination \
+        gatk --java-options "-Xmx{params.java_heap_mb}m -Djava.io.tmpdir=${{TMPDIR:-/tmp}}" CalculateContamination \
           -I {output.pile_merged} \
           -O {output.contam} \
           >> {log} 2>&1;
