@@ -55,16 +55,40 @@ rule peddy:
         config["peddy"]["env_yaml"]
     shell:
         """
-        mkdir -p $(dirname {log}) > {log} ;
-        echo 'runnning peddy' >> {log} ;
-        set +euo pipefail;
-        ( ({params.ld_preload} peddy  -p {threads}  --plot --prefix {output.prefix} --loglevel DEBUG {input.vcfgz} {input.ped_f}) || (ls . && sleep 1 && echo 'peddy exited with an error.  If this is a small depth of coverate vs. the genome sample, then this may be a pca failure which can be ignored, run the command by hand to see the detailed error') ) || (sleep 1 && echo 'masking error' ) >> {log};
         set -euo pipefail;
-        echo "DONE" >> {log} ;
-        echo reallydone > {output.done} ;
-        echo reallydone > {output.prefix} ;
-        touch {output.done} ;
-        touch {output.prefix} ;
+
+        mkdir -p "$(dirname "{log}")" "$(dirname "{output.done}")"
+        : > "{log}"
+        rm -f "{output.done}" "{output.prefix}"
+
+        printf 'running peddy\n' >> "{log}"
+        {params.ld_preload} peddy -p {threads} --plot --prefix "{output.prefix}" --loglevel DEBUG "{input.vcfgz}" "{input.ped_f}" >> "{log}" 2>&1 || {{
+            peddy_status=$?
+            printf 'ERROR: peddy exited with status %s\n' "$peddy_status" | tee -a "{log}" >&2
+            exit "$peddy_status"
+        }}
+
+        for expected_output in \
+            "{output.prefix}peddy.ped" \
+            "{output.prefix}ped_check.csv" \
+            "{output.prefix}sex_check.csv" \
+            "{output.prefix}het_check.csv" \
+            "{output.prefix}background_pca.json" \
+            "{output.prefix}html" \
+            "{output.prefix}vs.html" \
+            "{output.prefix}ped_check.png" \
+            "{output.prefix}het_check.png" \
+            "{output.prefix}sex_check.png"
+        do
+            if [[ ! -s "$expected_output" ]]; then
+                printf 'ERROR: peddy completed but expected output is missing or empty: %s\n' "$expected_output" | tee -a "{log}" >&2
+                exit 1
+            fi
+        done
+
+        printf 'reallydone\n' > "{output.done}"
+        printf 'reallydone\n' > "{output.prefix}"
+        printf 'DONE\n' >> "{log}"
         """
 
 

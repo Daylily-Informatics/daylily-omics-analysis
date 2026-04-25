@@ -66,7 +66,7 @@ localrules:
 rule produce_contam_estimate:  # TARGET:  jusg gen contam
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,

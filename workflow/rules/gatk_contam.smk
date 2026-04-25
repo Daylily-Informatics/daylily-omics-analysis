@@ -73,7 +73,7 @@ localrules:
 rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estimates
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/contam/gatk/{sample}.{alnr}.gatk.tsv",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,

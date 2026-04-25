@@ -1,0 +1,599 @@
+#!/usr/bin/env python3
+"""Build deterministic HG002 FASTQs with synthetic HG003 contamination.
+
+The default inputs are the GIAB Illumina NovaSeqX HG002 5x FASTQs plus HG003
+30x donor FASTQs on the Daylily headnode. For each requested contamination
+level, the script samples HG002 to the remaining primary fraction and HG003 to
+the donor fraction needed for an approximately constant target coverage.
+"""
+
+import argparse
+import csv
+import shlex
+import shutil
+import subprocess
+import sys
+from decimal import Decimal, InvalidOperation, getcontext
+from pathlib import Path
+
+getcontext().prec = 28
+
+DEFAULT_LEVELS = "0.1,0.5,1,2,3,4,5,10,20,30"
+CONTAMINATION_LEVELS_PCT = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 20, 30]
+DEFAULT_OUT_DIR = "/fsx/scratch/dayoa_qc_contam/giab_hg002_hg003_5x_20260425"
+DEFAULT_READ_ROOT = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
+DEFAULT_TRUTH_DIR = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG002/"
+
+SAMPLES_HEADER = [
+    "SAMPLEID",
+    "SAMPLESOURCE",
+    "SAMPLECLASS",
+    "BIOLOGICAL_SEX",
+    "CONCORDANCE_CONTROL_PATH",
+    "IS_POSITIVE_CONTROL",
+    "IS_NEGATIVE_CONTROL",
+    "SAMPLE_TYPE",
+    "TUM_NRM_SAMPLEID_MATCH",
+    "EXTERNAL_SAMPLE_ID",
+    "N_X",
+    "N_Y",
+    "TRUTH_DATA_DIR",
+]
+
+UNITS_HEADER = [
+    "RUNID",
+    "SAMPLEID",
+    "EXPERIMENTID",
+    "LANEID",
+    "BARCODEID",
+    "LIBPREP",
+    "SEQ_VENDOR",
+    "SEQ_PLATFORM",
+    "ILMN_R1_PATH",
+    "ILMN_R2_PATH",
+    "PACBIO_R1_PATH",
+    "PACBIO_R2_PATH",
+    "ONT_R1_PATH",
+    "ONT_R2_PATH",
+    "UG_R1_PATH",
+    "UG_R2_PATH",
+    "SUBSAMPLE_PCT",
+    "ILMN_TRIM_READ_LENGTH",
+    "SAMPLEUSE",
+    "BWA_KMER",
+    "DEEP_MODEL",
+    "ULTIMA_CRAM",
+    "ULTIMA_CRAM_ALIGNER",
+    "ULTIMA_CRAM_SNV_CALLER",
+    "ONT_CRAM",
+    "ONT_CRAM_ALIGNER",
+    "ONT_CRAM_SNV_CALLER",
+    "PB_BAM",
+    "PB_BAM_ALIGNER",
+    "PB_BAM_SNV_CALLER",
+]
+
+
+def default_path(name):
+    return str(Path(DEFAULT_READ_ROOT) / name)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Create paired HG002/HG003 synthetic contamination FASTQs and "
+            "Daylily samples.tsv/units.tsv manifests."
+        )
+    )
+    parser.add_argument("--output-dir", default=DEFAULT_OUT_DIR)
+    parser.add_argument("--levels", default=DEFAULT_LEVELS)
+    parser.add_argument("--target-coverage", default="5")
+    parser.add_argument("--primary-coverage", default="5")
+    parser.add_argument("--donor-coverage", default="30")
+    parser.add_argument(
+        "--primary-r1",
+        default=default_path("downsampled/HG002_5x_R1.fastq.gz"),
+    )
+    parser.add_argument(
+        "--primary-r2",
+        default=default_path("downsampled/HG002_5x_R2.fastq.gz"),
+    )
+    parser.add_argument("--donor-r1", default=default_path("HG003_30x_R1.fastq.gz"))
+    parser.add_argument("--donor-r2", default=default_path("HG003_30x_R2.fastq.gz"))
+    parser.add_argument("--truth-dir", default=DEFAULT_TRUTH_DIR)
+    parser.add_argument("--threads", type=int, default=16)
+    parser.add_argument("--primary-seed", type=int, default=20260425)
+    parser.add_argument("--donor-seed", type=int, default=20260426)
+    parser.add_argument("--run-id", default="GIABCONTAM20260425")
+    parser.add_argument("--sample-prefix", default="HG002_HG003_contam")
+    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--keep-components", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
+    return parser.parse_args()
+
+
+def decimal_arg(value, name):
+    try:
+        parsed = Decimal(str(value))
+    except InvalidOperation as exc:
+        raise ValueError(f"{name} must be numeric: {value}") from exc
+    if parsed <= 0:
+        raise ValueError(f"{name} must be greater than zero: {value}")
+    return parsed
+
+
+def parse_levels(levels_text):
+    levels = []
+    for raw in levels_text.split(","):
+        item = raw.strip()
+        if not item:
+            continue
+        level = decimal_arg(item, "contamination level")
+        if level >= 100:
+            raise ValueError(f"contamination level must be less than 100: {item}")
+        levels.append(level)
+    if not levels:
+        raise ValueError("at least one contamination level is required")
+    return levels
+
+
+def calculate_mix_counts(total_read_pairs, contamination_pct):
+    total = int(total_read_pairs)
+    if total <= 0:
+        raise ValueError("total_read_pairs must be greater than zero")
+    pct = decimal_arg(contamination_pct, "contamination_pct")
+    if pct >= 100:
+        raise ValueError("contamination_pct must be less than 100")
+    donor = int((Decimal(total) * pct / Decimal("100")).to_integral_value())
+    return {
+        "total_read_pairs": total,
+        "primary_read_pairs": total - donor,
+        "donor_read_pairs": donor,
+    }
+
+
+def fmt_decimal(value):
+    text = format(value, "f")
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return text
+
+
+def fmt_fraction(value):
+    return f"{value:.12f}".rstrip("0").rstrip(".")
+
+
+def level_label(level):
+    return fmt_decimal(level).replace(".", "p") + "pct"
+
+
+def contamination_sample_id(primary_sample, donor_sample, level):
+    return f"{primary_sample}_{donor_sample}_contam_{level_label(Decimal(str(level)))}"
+
+
+def require_tool(name):
+    path = shutil.which(name)
+    if path is None:
+        raise FileNotFoundError(f"required tool not found on PATH: {name}")
+    return path
+
+
+def require_file(path_text):
+    path = Path(path_text).expanduser()
+    if not path.is_file():
+        raise FileNotFoundError(f"required input FASTQ is missing: {path}")
+    return path
+
+
+def abs_output_dir(path_text):
+    path = Path(path_text).expanduser()
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return path
+
+
+def build_plan(args):
+    levels = parse_levels(args.levels)
+    target_cov = decimal_arg(args.target_coverage, "target coverage")
+    primary_cov = decimal_arg(args.primary_coverage, "primary coverage")
+    donor_cov = decimal_arg(args.donor_coverage, "donor coverage")
+    out_dir = abs_output_dir(args.output_dir)
+    fastq_dir = out_dir / "fastqs"
+    tmp_dir = out_dir / ".tmp_components"
+    rows = []
+
+    for index, level in enumerate(levels, start=1):
+        contam_fraction = level / Decimal("100")
+        primary_fraction = target_cov * (Decimal("1") - contam_fraction) / primary_cov
+        donor_fraction = target_cov * contam_fraction / donor_cov
+        if primary_fraction <= 0 or primary_fraction > 1:
+            raise ValueError(
+                "primary sampling fraction is outside (0, 1]: "
+                f"level={fmt_decimal(level)} pct fraction={fmt_fraction(primary_fraction)}"
+            )
+        if donor_fraction <= 0 or donor_fraction > 1:
+            raise ValueError(
+                "donor sampling fraction is outside (0, 1]: "
+                f"level={fmt_decimal(level)} pct fraction={fmt_fraction(donor_fraction)}"
+            )
+
+        label = level_label(level)
+        sample_id = f"{args.sample_prefix}_{label}"
+        rows.append(
+            {
+                "index": index,
+                "level": level,
+                "label": label,
+                "sample_id": sample_id,
+                "primary_fraction": primary_fraction,
+                "donor_fraction": donor_fraction,
+                "r1": fastq_dir / f"{sample_id}_R1.fastq.gz",
+                "r2": fastq_dir / f"{sample_id}_R2.fastq.gz",
+                "tmp": tmp_dir / label,
+            }
+        )
+    return out_dir, rows
+
+
+def build_manifest_rows(
+    output_root,
+    primary_sample="HG002",
+    donor_sample="HG003",
+    levels_pct=None,
+    truth_dir=DEFAULT_TRUTH_DIR,
+):
+    out_dir = Path(output_root)
+    levels = levels_pct or CONTAMINATION_LEVELS_PCT
+    samples = []
+    units = []
+    expected = []
+    for index, level in enumerate(levels, start=1):
+        level_dec = Decimal(str(level))
+        sample_id = contamination_sample_id(primary_sample, donor_sample, level_dec)
+        r1 = out_dir / "fastqs" / f"{sample_id}_R1.fastq.gz"
+        r2 = out_dir / "fastqs" / f"{sample_id}_R2.fastq.gz"
+        samples.append(
+            {
+                "SAMPLEID": sample_id,
+                "SAMPLESOURCE": "blood",
+                "SAMPLECLASS": "research",
+                "BIOLOGICAL_SEX": "male",
+                "CONCORDANCE_CONTROL_PATH": truth_dir,
+                "IS_POSITIVE_CONTROL": "true",
+                "IS_NEGATIVE_CONTROL": "false",
+                "SAMPLE_TYPE": "gdna",
+                "TUM_NRM_SAMPLEID_MATCH": "",
+                "EXTERNAL_SAMPLE_ID": primary_sample,
+                "N_X": "1",
+                "N_Y": "1",
+                "TRUTH_DATA_DIR": truth_dir,
+            }
+        )
+        unit = {field: "" for field in UNITS_HEADER}
+        unit.update(
+            {
+                "RUNID": "GIABCONTAM20260425",
+                "SAMPLEID": sample_id,
+                "EXPERIMENTID": f"{primary_sample}-5x-{donor_sample}-{level_label(level_dec)}",
+                "LANEID": str(index),
+                "BARCODEID": "D0",
+                "LIBPREP": "PCR-FREE",
+                "SEQ_VENDOR": "ILMN",
+                "SEQ_PLATFORM": "NOVASEQ",
+                "ILMN_R1_PATH": str(r1),
+                "ILMN_R2_PATH": str(r2),
+                "SUBSAMPLE_PCT": "na",
+                "SAMPLEUSE": "posControl",
+                "BWA_KMER": "19",
+                "DEEP_MODEL": "WGS",
+            }
+        )
+        units.append(unit)
+        expected.append(
+            {
+                "SAMPLEID": sample_id,
+                "EXPECTED_CONTAMINATION_PCT": fmt_decimal(level_dec),
+                "PRIMARY_SAMPLE": primary_sample,
+                "DONOR_SAMPLE": donor_sample,
+                "DONOR_ILMN_R1_PATH": default_path(f"{donor_sample}_30x_R1.fastq.gz"),
+                "DONOR_ILMN_R2_PATH": default_path(f"{donor_sample}_30x_R2.fastq.gz"),
+            }
+        )
+    return {
+        "samples": samples,
+        "units": units,
+        "expected_contamination": expected,
+    }
+
+
+def check_expected_outputs(out_dir, rows, force):
+    expected = [
+        out_dir / "samples.tsv",
+        out_dir / "units.tsv",
+        out_dir / "contamination_plan.tsv",
+    ]
+    for row in rows:
+        expected.extend([row["r1"], row["r2"]])
+    present = [path for path in expected if path.exists()]
+    if present and not force:
+        joined = "\n".join(f"  {path}" for path in present)
+        raise FileExistsError(
+            "refusing to overwrite existing generated outputs; pass --force to replace:\n"
+            + joined
+        )
+
+
+def run_cmd(argv, dry_run):
+    print("+ " + shlex.join([str(part) for part in argv]), flush=True)
+    if dry_run:
+        return
+    subprocess.run([str(part) for part in argv], check=True)
+
+
+def run_seqkit_sample(input_path, output_path, fraction, seed, threads, dry_run):
+    if not dry_run:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+    run_cmd(
+        [
+            "seqkit",
+            "sample",
+            "-j",
+            str(threads),
+            "--line-width=0",
+            "--quiet",
+            f"--rand-seed={seed}",
+            "--seq-type=dna",
+            f"--proportion={fmt_fraction(fraction)}",
+            str(input_path),
+            "-o",
+            str(output_path),
+        ],
+        dry_run,
+    )
+
+
+def combine_gzip_members(component_a, component_b, output_path, threads, dry_run):
+    print(
+        "+ "
+        + shlex.join(
+            [
+                "pigz",
+                "-dc",
+                str(component_a),
+                str(component_b),
+                "|",
+                "pigz",
+                "-p",
+                str(threads),
+                "-c",
+                ">",
+                str(output_path),
+            ]
+        ),
+        flush=True,
+    )
+    if dry_run:
+        return
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("wb") as out_handle:
+        reader = subprocess.Popen(
+            ["pigz", "-dc", str(component_a), str(component_b)],
+            stdout=subprocess.PIPE,
+        )
+        writer = subprocess.Popen(
+            ["pigz", "-p", str(threads), "-c"],
+            stdin=reader.stdout,
+            stdout=out_handle,
+        )
+        if reader.stdout is not None:
+            reader.stdout.close()
+        writer_rc = writer.wait()
+        reader_rc = reader.wait()
+    if reader_rc != 0:
+        raise subprocess.CalledProcessError(reader_rc, "pigz -dc")
+    if writer_rc != 0:
+        raise subprocess.CalledProcessError(writer_rc, "pigz -c")
+
+
+def require_nonempty(path):
+    if not path.is_file():
+        raise FileNotFoundError(f"expected output was not created: {path}")
+    if path.stat().st_size == 0:
+        raise RuntimeError(f"expected output is empty: {path}")
+
+
+def generate_fastqs(args, rows, primary_r1, primary_r2, donor_r1, donor_r2):
+    for row in rows:
+        tmp = row["tmp"]
+        if tmp.exists() and args.force and not args.dry_run:
+            shutil.rmtree(tmp)
+        if not args.dry_run:
+            tmp.mkdir(parents=True, exist_ok=True)
+        primary_component_r1 = tmp / "primary.R1.fastq.gz"
+        primary_component_r2 = tmp / "primary.R2.fastq.gz"
+        donor_component_r1 = tmp / "donor.R1.fastq.gz"
+        donor_component_r2 = tmp / "donor.R2.fastq.gz"
+
+        print(
+            "Building "
+            f"{row['sample_id']} "
+            f"({fmt_decimal(row['level'])}% HG003 donor)",
+            flush=True,
+        )
+        run_seqkit_sample(
+            primary_r1,
+            primary_component_r1,
+            row["primary_fraction"],
+            args.primary_seed,
+            args.threads,
+            args.dry_run,
+        )
+        run_seqkit_sample(
+            primary_r2,
+            primary_component_r2,
+            row["primary_fraction"],
+            args.primary_seed,
+            args.threads,
+            args.dry_run,
+        )
+        run_seqkit_sample(
+            donor_r1,
+            donor_component_r1,
+            row["donor_fraction"],
+            args.donor_seed,
+            args.threads,
+            args.dry_run,
+        )
+        run_seqkit_sample(
+            donor_r2,
+            donor_component_r2,
+            row["donor_fraction"],
+            args.donor_seed,
+            args.threads,
+            args.dry_run,
+        )
+
+        combine_gzip_members(
+            primary_component_r1,
+            donor_component_r1,
+            row["r1"],
+            args.threads,
+            args.dry_run,
+        )
+        combine_gzip_members(
+            primary_component_r2,
+            donor_component_r2,
+            row["r2"],
+            args.threads,
+            args.dry_run,
+        )
+
+        if not args.dry_run:
+            require_nonempty(row["r1"])
+            require_nonempty(row["r2"])
+        if not args.keep_components and not args.dry_run:
+            shutil.rmtree(tmp)
+
+
+def write_tsv(path, header, rows):
+    with path.open("w", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=header,
+            delimiter="\t",
+            lineterminator="\n",
+            extrasaction="ignore",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor_r2):
+    if args.dry_run:
+        print("Dry run: not writing manifests.", flush=True)
+        return
+    samples = []
+    units = []
+    plan = []
+    for row in rows:
+        samples.append(
+            {
+                "SAMPLEID": row["sample_id"],
+                "SAMPLESOURCE": "blood",
+                "SAMPLECLASS": "research",
+                "BIOLOGICAL_SEX": "male",
+                "CONCORDANCE_CONTROL_PATH": args.truth_dir,
+                "IS_POSITIVE_CONTROL": "true",
+                "IS_NEGATIVE_CONTROL": "false",
+                "SAMPLE_TYPE": "gdna",
+                "TUM_NRM_SAMPLEID_MATCH": "",
+                "EXTERNAL_SAMPLE_ID": "HG002",
+                "N_X": "1",
+                "N_Y": "1",
+                "TRUTH_DATA_DIR": args.truth_dir,
+            }
+        )
+        units.append(
+            {
+                "RUNID": args.run_id,
+                "SAMPLEID": row["sample_id"],
+                "EXPERIMENTID": f"HG002_5x_HG003_{row['label']}",
+                "LANEID": str(row["index"]),
+                "BARCODEID": "D0",
+                "LIBPREP": "PCR-FREE",
+                "SEQ_VENDOR": "ILMN",
+                "SEQ_PLATFORM": "NOVASEQ",
+                "ILMN_R1_PATH": str(row["r1"]),
+                "ILMN_R2_PATH": str(row["r2"]),
+                "SAMPLEUSE": "posControl",
+                "BWA_KMER": "19",
+                "DEEP_MODEL": "WGS",
+            }
+        )
+        plan.append(
+            {
+                "sample_id": row["sample_id"],
+                "contamination_percent": fmt_decimal(row["level"]),
+                "target_coverage": args.target_coverage,
+                "primary_sample": "HG002",
+                "primary_r1": str(primary_r1),
+                "primary_r2": str(primary_r2),
+                "primary_coverage": args.primary_coverage,
+                "primary_seqkit_fraction": fmt_fraction(row["primary_fraction"]),
+                "primary_seed": str(args.primary_seed),
+                "donor_sample": "HG003",
+                "donor_r1": str(donor_r1),
+                "donor_r2": str(donor_r2),
+                "donor_coverage": args.donor_coverage,
+                "donor_seqkit_fraction": fmt_fraction(row["donor_fraction"]),
+                "donor_seed": str(args.donor_seed),
+                "output_r1": str(row["r1"]),
+                "output_r2": str(row["r2"]),
+            }
+        )
+
+    empty_unit_fields = {key: "" for key in UNITS_HEADER}
+    full_units = []
+    for row in units:
+        merged = empty_unit_fields.copy()
+        merged.update(row)
+        full_units.append(merged)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_tsv(out_dir / "samples.tsv", SAMPLES_HEADER, samples)
+    write_tsv(out_dir / "units.tsv", UNITS_HEADER, full_units)
+    write_tsv(out_dir / "contamination_plan.tsv", list(plan[0].keys()), plan)
+    print(f"Wrote {out_dir / 'samples.tsv'}", flush=True)
+    print(f"Wrote {out_dir / 'units.tsv'}", flush=True)
+    print(f"Wrote {out_dir / 'contamination_plan.tsv'}", flush=True)
+
+
+def main():
+    args = parse_args()
+    if args.threads < 1:
+        raise ValueError("--threads must be at least 1")
+
+    require_tool("seqkit")
+    require_tool("pigz")
+    primary_r1 = require_file(args.primary_r1)
+    primary_r2 = require_file(args.primary_r2)
+    donor_r1 = require_file(args.donor_r1)
+    donor_r2 = require_file(args.donor_r2)
+    out_dir, rows = build_plan(args)
+    if not args.dry_run:
+        check_expected_outputs(out_dir, rows, args.force)
+
+    print(f"Output directory: {out_dir}", flush=True)
+    print(f"Contamination levels: {args.levels}", flush=True)
+    print(f"Target coverage: {args.target_coverage}x", flush=True)
+    generate_fastqs(args, rows, primary_r1, primary_r2, donor_r1, donor_r2)
+    write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor_r2)
+    print("Done.", flush=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        sys.exit(1)
