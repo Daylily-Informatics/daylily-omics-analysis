@@ -230,6 +230,8 @@ def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:
     assert "OUT_EXPLICIT=1" in text
     assert "samtools quickcheck" in text
     assert "Reusing existing default OUT" in text
+    assert "Removing corrupt default OUT before regeneration" in text
+    assert "Removing empty default OUT before regeneration" in text
 
 
 def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:

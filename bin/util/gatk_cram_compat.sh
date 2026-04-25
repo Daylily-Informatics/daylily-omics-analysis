@@ -19,6 +19,7 @@ Notes:
   - For CRAM operations, REF.fa (and .fai) must match the CRAM's reference.
   - Prints the path to the GATK-compatible file on stdout.
   - Reuses an existing default derived OUT when it passes samtools quickcheck.
+  - Removes and regenerates a corrupt default derived OUT.
   - Does NOT overwrite an explicit --out target.
 EOF
 }
@@ -69,12 +70,14 @@ emit_existing_out_if_safe() {
     exit 3
   fi
   if [[ ! -s "$OUT" ]]; then
-    echo "❌ Existing default OUT is empty: $OUT" >&2
-    exit 3
+    echo "⚠️  Removing empty default OUT before regeneration: $OUT" >&2
+    rm -f "$OUT" "${OUT}.bai" "${OUT%.*}.bai" "${OUT}.csi" "${OUT}.crai" "${OUT%.*}.crai"
+    return 0
   fi
   samtools quickcheck "$OUT" || {
-    echo "❌ Existing default OUT failed samtools quickcheck: $OUT" >&2
-    exit 3
+    echo "⚠️  Removing corrupt default OUT before regeneration: $OUT" >&2
+    rm -f "$OUT" "${OUT}.bai" "${OUT%.*}.bai" "${OUT}.csi" "${OUT}.crai" "${OUT%.*}.crai"
+    return 0
   }
   if [[ "$MODE" == "bam" && ! -r "${OUT}.bai" && ! -r "${OUT%.*}.bai" && ! -r "${OUT}.csi" ]]; then
     samtools index -@ "$THREADS" "$OUT"
