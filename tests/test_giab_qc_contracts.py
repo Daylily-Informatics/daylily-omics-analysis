@@ -203,6 +203,22 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
         assert exclusive in gatk_config[:240]
 
 
+def test_gatk_contam_uses_sparse_chr_prefixed_af_sites() -> None:
+    expected = (
+        "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/"
+        "snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz"
+    )
+
+    for config_path in (
+        "config/supporting_files/hg38_supporting_files.yaml",
+        "config/supporting_files/hg38_broad_supporting_files.yaml",
+    ):
+        config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
+        gatk_config = config_text[config_text.index("    gatk:") :]
+        assert f"af_sites: {expected}" in gatk_config[:800]
+        assert "af-only-gnomad.hg38.vcf.gz" not in gatk_config[:800]
+
+
 def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:
     text = (REPO_ROOT / "bin" / "util" / "gatk_cram_compat.sh").read_text(
         encoding="utf-8"
