@@ -51,8 +51,9 @@ HTS_LINE="$(htsfile "$IN" 2>/dev/null || true)"
 # Examples:
 #   "reads.bam: BAM version 1 compressed sequence data"
 #   "reads.cram: CRAM version 3.1 compressed sequence data"
-FMT="$(printf "%s\n" "$HTS_LINE" | awk -F': ' '{print $2}' | awk '{print $1}')"
-VER="$(printf "%s\n" "$HTS_LINE" | awk -F'version ' '{print $2}' | awk '{print $1}')"
+HTS_DESC="$(printf "%s\n" "$HTS_LINE" | sed -E 's/^[^:]*:[[:space:]]*//')"
+FMT="$(printf "%s\n" "$HTS_DESC" | awk '{print $1}')"
+VER="$(printf "%s\n" "$HTS_DESC" | sed -nE 's/.*version[[:space:]]+([0-9.]+).*/\1/p')"
 
 # Helper: print and exit with original file if already compatible
 emit_original_and_exit() { printf "%s\n" "$IN"; exit 0; }

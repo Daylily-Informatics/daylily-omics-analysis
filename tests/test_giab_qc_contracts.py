@@ -179,6 +179,16 @@ def test_gatk_contam_env_includes_cram_compat_tools() -> None:
     assert "samtools" in text
 
 
+def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:
+    text = (REPO_ROOT / "bin" / "util" / "gatk_cram_compat.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "sed -E 's/^[^:]*:[[:space:]]*//'" in text
+    assert "version[[:space:]]+" in text
+    assert "awk -F': '" not in text
+
+
 def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
     rule_text = (REPO_ROOT / "workflow" / "rules" / "verifybamid2_contam.smk").read_text(
         encoding="utf-8"
