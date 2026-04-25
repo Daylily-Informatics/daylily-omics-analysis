@@ -1,3 +1,5 @@
+> **Historical design note.** This file captures an earlier RTG concordance refactor discussion. Verify implementation details against `workflow/rules/rtg_vcfeval.smk` and current tests before using it as guidance.
+
 You’re right: this is “old bash grown around a pipeline” code. The slowness and gnarliness are mostly structural, not algorithmic.
 
 What’s actually being used right now

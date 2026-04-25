@@ -1,124 +1,89 @@
-# Remote Test Execution Guide
+# Remote Test Execution
 
-## Overview
-This document captures the patterns for running daylily pipeline tests remotely on the AWS ParallelCluster headnode via SSH and tmux.
+This guide describes the supported pattern for running Daylily workflow tests on an AWS ParallelCluster headnode and leaving the run inspectable after the launching terminal disconnects.
 
-## Prerequisites
-- SSH access to headnode: `ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@<HEADNODE_IP>`
-- Analysis directories created via `day-clone`
-- Manifest files (`samples.tsv`, `units.tsv`) in place
+## Access
 
-## Key Command Pattern
-
-**Critical**: Use `&&` chaining with explicit paths. The `day_activate` script uses `return` which breaks multi-line bash scripts but works in chained commands.
+If using brokered access through `daylily-ephemeral-cluster`:
 
 ```bash
-cd /fsx/analysis_results/ubuntu/<ANALYSIS_DIR>/daylily-omics-analysis && \
-. ~/.bashrc && \
-. dyoainit && \
-source bin/day_activate slurm hg38 && \
-bin/day_run <TARGETS> <FLAGS> 2>&1 | tee /tmp/<SESSION_NAME>.log
+AWS_PROFILE=<profile> daylily-ec headnode connect \
+  --profile <profile> \
+  --region <region> \
+  --cluster <cluster>
 ```
 
-## Creating Tmux Sessions
+The resulting shell should be `ubuntu` running login `bash`. Verify:
 
-### Single Session Creation
 ```bash
-ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@<HEADNODE_IP> '
-source ~/.bashrc
-tmux new-session -d -s <SESSION_NAME>
-tmux send-keys -t <SESSION_NAME> "cd <ANALYSIS_DIR> && . ~/.bashrc && . dyoainit && source bin/day_activate slurm hg38 && bin/day_run <TARGETS> <FLAGS> 2>&1 | tee /tmp/<SESSION_NAME>.log" Enter
-'
+id -un
+echo "$0"
+command -v day-clone
+command -v tmux
+command -v squeue
 ```
 
-### Batch Session Creation Example
+If using direct SSH, wrap remote commands in a login shell:
+
 ```bash
-ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@<HEADNODE_IP> '
-source ~/.bashrc
-
-# Kill existing sessions if needed
-for sess in test-ilmn-5x-run test-ont-5x-run test-pb-5x-run; do
-  tmux kill-session -t $sess 2>/dev/null
-done
-
-# Illumina 5x
-tmux new-session -d -s test-ilmn-5x-run
-tmux send-keys -t test-ilmn-5x-run "cd /fsx/analysis_results/ubuntu/test-ilmn-5x-dry/daylily-omics-analysis && . ~/.bashrc && . dyoainit && source bin/day_activate slurm hg38 && bin/day_run produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf produce_alignstats dedup_doppelmark -p -k -j 10 -T 1 2>&1 | tee /tmp/test-ilmn-5x-run.log" Enter
-
-echo "Created sessions"
-tmux ls
-'
+ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'squeue -u ubuntu'"
 ```
 
-## Target Rules by Platform
+## Persistent Tmux Launch
 
-### Single-Platform Workflows
+Use one tmux session per workflow. Before interacting with an existing session, verify it has exactly one window and one pane:
 
-| Platform | Targets | Notes |
-|----------|---------|-------|
-| **Illumina** (FASTQ) | `produce_snv_concordances produce_sentieon_bwa_sort_bam produce_sentD_vcf produce_alignstats dedup_doppelmark` | Needs alignment + dedup + calling |
-| **ONT** (pre-aligned) | `produce_snv_concordances produce_alignstats` | CRAM input, uses cram aligners |
-| **PacBio** (pre-aligned) | `produce_snv_concordances produce_alignstats` | CRAM input |
-| **Ultima** (pre-aligned) | `produce_snv_concordances produce_alignstats` | CRAM input |
+```bash
+window_count=$(tmux list-windows -t <session_name> -F '#{window_index}' | wc -l)
+pane_count=$(tmux list-panes -a -F '#{session_name}' | awk '$1 == "<session_name>" {n++} END {print n + 0}')
+test "$window_count" -eq 1
+test "$pane_count" -eq 1
+```
 
-### Hybrid Workflows (Monolithic CLI-based)
+Create and initialize a workset one command at a time:
 
-| Workflow | Targets | Notes |
-|----------|---------|-------|
-| **Illumina+ONT** | `produce_sentdhio_vcf produce_alignstats produce_snv_concordances` | Uses sentdhio (sentieon-cli) |
-| **Ultima+ONT** | `produce_sentdhuo_vcf produce_alignstats produce_snv_concordances` | Uses sentdhuo (sentieon-cli) |
+```bash
+tmux new-session -d -s <session_name>
+tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu' Enter
+tmux send-keys -t <session_name> 'day-clone -t <git_ref> -d <workset_code>' Enter
+tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu/<workset_code>/daylily-omics-analysis' Enter
+tmux send-keys -t <session_name> 'source dyoainit' Enter
+tmux send-keys -t <session_name> 'dy-a slurm hg38' Enter
+tmux send-keys -t <session_name> 'dy-r <targets> -p -j 20 -k -T 1 -n' Enter
+tmux send-keys -t <session_name> 'dy-r <targets> -p -j 20 -k -T 1 &' Enter
+```
 
-### Hybrid Workflows (Modular - NEW)
-
-| Workflow | Targets | Notes |
-|----------|---------|-------|
-| **Illumina+ONT** | `produce_sentdhiom_vcf produce_alignstats produce_snv_concordances` | Uses sentdhiom (modular rules) |
-| **Ultima+ONT** | `produce_sentdhuom_vcf produce_alignstats produce_snv_concordances` | Uses sentdhuom (modular rules) |
-
-## Common Flags
-
-| Flag | Description |
-|------|-------------|
-| `-p` | Print shell commands |
-| `-k` | Keep going on errors |
-| `-j N` | Max N parallel jobs (slurm: 10-500, local: 1-2) |
-| `-n` | Dry-run only |
-| `-T 1` | Max 1 retry per job |
+Do not combine `source dyoainit`, `dy-a`, and `dy-r` into one parsed shell line in tmux. The activation commands define shell functions and completion in the current shell.
 
 ## Monitoring
 
-### Check Slurm Queue
+Use this order:
+
+1. verify tmux shape
+2. `squeue -u ubuntu`
+3. `ps -fu ubuntu | grep -E 'snakemake|day_run|dy-r'`
+4. latest `.snakemake/log/*.snakemake.log`
+5. newest relevant `logs/slurm/<rule>/*.{out,err}`
+6. stable rule log under `results/day/<build>/<sample>/.../logs/`
+
+For active compute nodes:
+
 ```bash
-ssh ... 'source ~/.bashrc && /opt/slurm/bin/squeue -u ubuntu --format="%.10i %.50j %.8T %.12M"'
+ssh <node-name> "bash -l -c 'df -h /dev/shm; free -g; uptime; ps -fu ubuntu | grep -E \"sentieon|samtools|mbuffer|day_run|snakemake\" | grep -v grep'"
 ```
 
-### Check Tmux Session Output
-```bash
-ssh ... 'source ~/.bashrc && tmux capture-pane -t <SESSION_NAME> -p | tail -30'
-```
+Only inspect or control jobs for the workset under test. Do not cancel unrelated Slurm jobs.
 
-### Check All Sessions
-```bash
-ssh ... 'source ~/.bashrc && for sess in $(tmux ls -F "#{session_name}"); do echo "=== $sess ==="; tmux capture-pane -t $sess -p | tail -10; done'
-```
+## Common Target Sets
 
-### Check Log Files
-```bash
-ssh ... 'source ~/.bashrc && tail -50 /tmp/<SESSION_NAME>.log'
-```
+| Workflow | Targets |
+| --- | --- |
+| Illumina SNV/concordance | `produce_snv_concordances produce_alignstats` |
+| Complete Genomics/MGI | `produce_alignstats produce_cgt7p_vcf produce_snv_concordances` |
+| ONT | `produce_sentdont_vcf produce_alignstats produce_snv_concordances` |
+| PacBio | `produce_sentdpb_vcf produce_alignstats produce_snv_concordances` |
+| Ultima | `produce_sentdug_vcf produce_alignstats produce_snv_concordances` |
+| Hybrid Illumina+ONT modular | `produce_sentdhiom_vcf produce_alignstats produce_snv_concordances` |
+| Hybrid Ultima+ONT modular | `produce_sentdhuom_vcf produce_alignstats produce_snv_concordances` |
 
-## Troubleshooting
-
-### Common Issues
-
-1. **"unrecognized arguments"**: Check snakemake flag names (`-T` not `--attempts`)
-2. **MissingInputException**: Ensure upstream targets are included (e.g., alignment before concordance)
-3. **YAML parse errors**: Check for unresolved git merge conflicts in config files
-4. **conda not found**: Ensure `. ~/.bashrc` is first in command chain
-5. **BAM index format**: ONT needs `.csi` indexes, not `.bai`
-
-### Index Creation for ONT
-```bash
-samtools index -c /path/to/file.bam  # Creates .bam.csi
-```
-
+Dry-run first with `-n`.

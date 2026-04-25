@@ -156,7 +156,6 @@ Ensure:
 
 ## See Also
 
-- [Hybrid Workflows](./hybrid_workflows.md)
-- [Concordance Analysis](./concordance.md)
-- [SNV Calling](./snv_calling.md)
-
+- [`docs/ops/dir_and_file_scheme.md`](../ops/dir_and_file_scheme.md)
+- [`docs/ops/config.md`](../ops/config.md)
+- [`docs/ops/dycli.md`](../ops/dycli.md)

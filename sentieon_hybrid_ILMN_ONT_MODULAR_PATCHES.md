@@ -1,3 +1,5 @@
+> **Historical design note.** This file captures an earlier modular hybrid investigation. Verify current behavior against the `workflow/rules/sent_hybrid_*_modular.smk` files and current tests before using it as guidance.
+
 REQUIRED PATCHES
 
 Below are minimal patches that move the modular workflow toward CLI-equivalent behavior for the items you listed. They are written as unified diffs against sent_hybrid_ilmn_ont_modular.smk (rule names referenced exactly as in your file).

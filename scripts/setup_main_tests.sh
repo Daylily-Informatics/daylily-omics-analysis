@@ -8,6 +8,14 @@ echo "=========================================="
 
 BASE="/fsx/analysis_results/ubuntu/single-unit-runs"
 
+stage_config() {
+    local workdir="$1"
+    local samples="$2"
+    local units="$3"
+    cp "$workdir/$samples" "$workdir/config/samples.tsv"
+    awk 'NR <= 4' "$workdir/$units" > "$workdir/config/units.tsv"
+}
+
 # Remove old test dirs if they exist
 for d in test-2-main test-4-main test-1-main; do
     if [ -d "$BASE/$d" ]; then
@@ -26,8 +34,7 @@ if [ ! -d "$T2" ]; then
     mkdir -p "$BASE/test-2-main"
     git clone --branch main git@github.com:Daylily-Informatics/daylily-omics-analysis.git "$T2"
 fi
-cp "$T2/.test_data/data/hybrid/ilmn_ont_full_cov.samples.tsv" "$T2/config/samples.tsv"
-cp "$T2/.test_data/data/hybrid/ilmn_ont_full_cov.units.tsv" "$T2/config/units.tsv"
+stage_config "$T2" .test_data/data/hybrid/ilmn_ont_full_cov.samples.tsv .test_data/data/hybrid/ilmn_ont_full_cov.units.tsv
 echo "test-2-main ready at $T2"
 
 # --- Clone test-4-main (ILMN only) ---
@@ -40,8 +47,7 @@ if [ ! -d "$T4" ]; then
     mkdir -p "$BASE/test-4-main"
     git clone --branch main git@github.com:Daylily-Informatics/daylily-omics-analysis.git "$T4"
 fi
-cp "$T4/.test_data/data/ilmn/ilmn_full_cov.samples.tsv" "$T4/config/samples.tsv"
-cp "$T4/.test_data/data/ilmn/ilmn_full_cov.units.tsv" "$T4/config/units.tsv"
+stage_config "$T4" .test_data/data/ilmn/ilmn_full_cov.samples.tsv .test_data/data/ilmn/ilmn_full_cov.units.tsv
 echo "test-4-main ready at $T4"
 
 # --- Clone test-1-main (Hybrid Ultima+ONT) ---
@@ -54,8 +60,7 @@ if [ ! -d "$T1" ]; then
     mkdir -p "$BASE/test-1-main"
     git clone --branch main git@github.com:Daylily-Informatics/daylily-omics-analysis.git "$T1"
 fi
-cp "$T1/.test_data/data/hybrid/ultima_ont_full_cov.samples.tsv" "$T1/config/samples.tsv"
-cp "$T1/.test_data/data/hybrid/ultima_ont_full_cov.units.tsv" "$T1/config/units.tsv"
+stage_config "$T1" .test_data/data/hybrid/ultima_ont_full_cov.samples.tsv .test_data/data/hybrid/ultima_ont_full_cov.units.tsv
 echo "test-1-main ready at $T1"
 
 echo ""

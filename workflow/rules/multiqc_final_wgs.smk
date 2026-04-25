@@ -52,14 +52,13 @@ localrules:
 rule aggregate_report_components:
     input:
         f"{MDIR}other_reports/giab_concordance_mqc.tsv",
-        expand(
+        [
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv",
-            sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
-            snv_caller=snv_CALLERS,
-        ),
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
         f"{MDIR}other_reports/normcovevenness_combo_mqc.tsv",
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
@@ -112,14 +111,13 @@ rule aggregate_report_components:
         "logs/peddy_gathered.done",
         f"{MDIR}other_reports/alignstats_combo_mqc.tsv",
         #f"{MDIR}logs/all_svVCF_dupheld.done",
-        expand(
+        [
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcfstats.txt",
-            sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
-            snv_caller=snv_CALLERS,
-        ),
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcfstats.txt"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
     threads: 2
     output:
         f"{MDIR}logs/report_components_aggregated.done",
@@ -209,4 +207,3 @@ def get_fin_mqc(wildcards):
 rule produce_multiqc_final_wgs:  # TARGET : Generated All WGS Reports
     input:
         MDIR+ "reports/DAY_final_multiqc.html"
-

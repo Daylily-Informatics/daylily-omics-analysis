@@ -86,6 +86,8 @@ for _arg in "$@"; do
     case "$_arg" in
         produce_bwa_mem2_sort_bam)      _aligner_codes+=("bwa2a")       ;;
         produce_sentieon_bwa_sort_bam)  _aligner_codes+=("sent")        ;;
+        produce_sentieon_cgt7p_bwa_sort_bam) _aligner_codes+=("sentcg") ;;
+        produce_cgt7p_vcf)              _aligner_codes+=("sentcg")      ;;
         produce_strobe_align_sort_bam)  _aligner_codes+=("strobe")      ;;
         produce_sentmm2_align_sort)     _aligner_codes+=("sentmm2")     ;;
         produce_sentmm2ont_align_sort)  _aligner_codes+=("sentmm2ont")  ;;
@@ -93,6 +95,7 @@ for _arg in "$@"; do
     # Detect SNV caller targets
     case "$_arg" in
         produce_sentD_vcf)              _snv_caller_codes+=("sentd")     ;;
+        produce_cgt7p_vcf)              _snv_caller_codes+=("cgt7p")     ;;
         produce_sentdpb_vcf)            _snv_caller_codes+=("sentdpb")   ;;
         produce_sentdont_vcf)           _snv_caller_codes+=("sentdont")  ;;
         produce_sentdug_vcf)            _snv_caller_codes+=("sentdug")   ;;

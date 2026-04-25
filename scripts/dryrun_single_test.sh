@@ -8,41 +8,42 @@ cd "$ADIR"
 
 TESTNUM="${1:?Usage: source $0 <test_num 1-6>}"
 
+stage_config() {
+    local samples="$1"
+    local units="$2"
+    cp "$samples" config/samples.tsv
+    awk 'NR <= 4' "$units" > config/units.tsv
+}
+
 case "$TESTNUM" in
     1)
         NAME="Hybrid Ultima+ONT"
-        cp .test_data/data/hybrid/ultima_ont_full_cov.samples.tsv config/samples.tsv
-        cp .test_data/data/hybrid/ultima_ont_full_cov.units.tsv config/units.tsv
+        stage_config .test_data/data/hybrid/ultima_ont_full_cov.samples.tsv .test_data/data/hybrid/ultima_ont_full_cov.units.tsv
         CMD="dy-r produce_sentdhuo_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -n"
         ;;
     2)
         NAME="Hybrid Ilmn+ONT"
-        cp .test_data/data/hybrid/ilmn_ont_full_cov.samples.tsv config/samples.tsv
-        cp .test_data/data/hybrid/ilmn_ont_full_cov.units.tsv config/units.tsv
+        stage_config .test_data/data/hybrid/ilmn_ont_full_cov.samples.tsv .test_data/data/hybrid/ilmn_ont_full_cov.units.tsv
         CMD="dy-r produce_sentdhio_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -n"
         ;;
     3)
         NAME="ONT only"
-        cp .test_data/data/ont/ont_full_cov.samples.tsv config/samples.tsv
-        cp .test_data/data/ont/ont_full_cov.units.tsv config/units.tsv
+        stage_config .test_data/data/ont/ont_full_cov.samples.tsv .test_data/data/ont/ont_full_cov.units.tsv
         CMD="dy-r produce_sentD_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -n"
         ;;
     4)
         NAME="ILMN ONLY"
-        cp .test_data/data/ilmn/ilmn_full_cov.samples.tsv config/samples.tsv
-        cp .test_data/data/ilmn/ilmn_full_cov.units.tsv config/units.tsv
+        stage_config .test_data/data/ilmn/ilmn_full_cov.samples.tsv .test_data/data/ilmn/ilmn_full_cov.units.tsv
         CMD="dy-r produce_sentieon_bwa_sort_bam produce_bwa_mem2_sort_bam dedup_doppelmark dedup_sentieon produce_sentD_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -n"
         ;;
     5)
         NAME="PB only"
-        cp .test_data/data/pacbio/pacbio_full_cov.samples.tsv config/samples.tsv
-        cp .test_data/data/pacbio/pacbio_full_cov.units.tsv config/units.tsv
+        stage_config .test_data/data/pacbio/pacbio_full_cov.samples.tsv .test_data/data/pacbio/pacbio_full_cov.units.tsv
         CMD="dy-r produce_sentdpb_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -n"
         ;;
     6)
         NAME="Ultima only"
-        cp .test_data/data/ultima/ultima_full_cov.samples.tsv config/samples.tsv
-        cp .test_data/data/ultima/ultima_full_cov.units.tsv config/units.tsv
+        stage_config .test_data/data/ultima/ultima_full_cov.samples.tsv .test_data/data/ultima/ultima_full_cov.units.tsv
         CMD="dy-r produce_sentdug_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -n"
         ;;
     *)
@@ -58,4 +59,3 @@ echo "============================================================"
 eval "$CMD"
 echo "TEST $TESTNUM RETURN CODE: $?"
 echo "============================================================"
-

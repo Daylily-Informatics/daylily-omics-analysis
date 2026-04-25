@@ -1,105 +1,88 @@
-# DY-CLI
+# Daylily CLI
 
-The Daylily CLI provides a streamlined interface for running genomics workflows.
+The Daylily CLI is a set of shell entrypoints around Snakemake. Run commands from an analysis clone, usually under `/fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis` on a headnode.
 
-## Basic Workflow
-
-```bash
-# Initialize the dy-cli
-. dyoainit --project <PROJECT>
-
-# Activate execution environment and genome build
-dy-a slurm hg38          # or: dy-a local hg38, dy-a slurm hg38_broad
-
-# Run workflows using target names (tab-complete available)
-dy-r produce_snv_concordances -p -k -j 20 -n   # dry-run
-dy-r produce_snv_concordances -p -k -j 20      # execute
-
-# Monitor workflow progress (in another terminal)
-dy-m --interval 10
-
-# Deactivate/reset environment
-dy-d reset
-```
-
-## CLI Commands
-
-| Command | Short | Description |
-|---------|-------|-------------|
-| `day-activate` | `dy-a` | Activate execution environment (local/slurm) and genome build |
-| `day-run` | `dy-r` | Run Snakemake workflow with targets and flags |
-| `day-monitor` | `dy-m` | Monitor workflow status (Snakemake, SLURM, logs) |
-| `day-set-genome-build` | `dy-g` | Set genome build (hg38, hg38_broad, b37) |
-| `day-deactivate` | `dy-d` | Deactivate environment (use `dy-d reset` for hard reset) |
-
-## Monitoring Workflows
-
-The `day-monitor` (or `dy-m`) command provides real-time monitoring of analysis workflows:
-
-### Basic Usage
+## Basic Pattern
 
 ```bash
-# Monitor with default 30-second updates
-dy-m
+source dyoainit
+dy-a slurm hg38
 
-# Monitor with custom interval (10 seconds)
-dy-m --interval 10
-
-# Monitor specific directory
-dy-m --workdir /fsx/analysis_results/ubuntu/ifx_go
-
-# Block and poll until workflow completes
-dy-m --block-and-poll
-
-# Block with custom interval
-dy-m --interval 5 --block-and-poll
-```
-
-### Monitor Output
-
-The monitor displays:
-1. **Directory Stats** - Size, existence, last modified time
-2. **Command History** - Last 5 commands from `day_cmd.log`
-3. **SLURM Job Status** - Active jobs and their status
-4. **Snakemake Master Log** - Latest 20 lines of Snakemake output
-5. **Recent SLURM Logs** - Last 5 SLURM output/error files with tail
-
-### Block-and-Poll Mode
-
-Use `--block-and-poll` to wait for workflow completion:
-
-```bash
-# Start workflow in one terminal
+dy-r produce_snv_concordances -p -k -j 20 -n
 dy-r produce_snv_concordances -p -k -j 20
-
-# Monitor in another terminal (blocks until done)
-dy-m --block-and-poll --interval 5
 ```
 
-Exit codes:
-- `0` - Workflow completed successfully
-- `1` - Workflow failed
-- Continues polling if still running
+Use `dy-a local hg38` for local debugging and smoke tests.
+
+## Commands
+
+| Command | Alias | Purpose |
+| --- | --- | --- |
+| `day-activate` | `dy-a` | Activate an executor profile and genome build. |
+| `day-run` | `dy-r` | Build and execute the Snakemake command. |
+| `day-monitor` | `dy-m` | Display command history, Slurm status, master log tails, and recent Slurm logs. |
+| `day-set-genome-build` | `dy-g` | Change the active genome build. |
+| `day-deactivate` | `dy-d` | Reset Daylily shell state. |
+
+`source dyoainit` wires these aliases/functions into the current shell. Source it; do not execute it as a subprocess.
+
+## Common `dy-r` Flags
+
+| Flag | Meaning |
+| --- | --- |
+| `-n` | Dry-run only. |
+| `-p` | Print shell commands. |
+| `-k` | Keep independent jobs going after a failure. |
+| `-j N` | Limit active Snakemake jobs. |
+| `-T N` | Snakemake retry/attempt flag used by existing Daylily run commands. |
+| `--retries N` | Snakemake retry attempts in long form. |
+| `--rerun-incomplete` | Re-run incomplete outputs. |
+| `--keep-incomplete` | Keep failed partial outputs for debugging. |
+| `--keep-temp` | Daylily convenience flag translated by `bin/day_run` to Snakemake `--notemp`. |
+| `--config key=value` | Override workflow config. Lists are commonly passed as `aligners=[sent]`. |
+
+`bin/day_run` records invocations in `day_cmd.log`.
+
+## Monitoring
+
+```bash
+dy-m
+dy-m --interval 10
+dy-m --workdir /fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis
+dy-m --block-and-poll --interval 30
+```
+
+`day-monitor` reports:
+
+1. directory and marker status
+2. last commands from `day_cmd.log`
+3. Slurm queue status
+4. latest Snakemake master-log tail
+5. recent Slurm log tails
+
+For manual debugging, use this order:
+
+1. `squeue -u ubuntu`
+2. `ps -fu ubuntu | grep -E 'snakemake|day_run|dy-r'`
+3. latest `.snakemake/log/*.snakemake.log` by mtime
+4. newest relevant `logs/slurm/<rule>/*.{out,err}` by mtime
+5. stable rule log under `results/day/<build>/<sample>/.../logs/`
 
 ## Common Targets
 
-| Target | Description | Genome Build |
-|--------|-------------|--------------|
-| `produce_snv_concordances` | Illumina short-read SNV + concordance | hg38 |
-| `produce_alignstats` | Alignment statistics | any |
-| `produce_sentdont_vcf` | ONT long-read SNV calling | hg38 |
-| `produce_sentdpb_vcf` | PacBio long-read SNV calling | hg38 |
-| `produce_sentdug_vcf` | Ultima SNV calling | hg38_broad |
-| `produce_sentdhio_vcf` | Hybrid Illumina+ONT CLI | hg38 |
-| `produce_sentdhuo_vcf` | Hybrid Ultima+ONT CLI | hg38_broad |
-| `produce_sentdhiom_vcf` | Hybrid Illumina+ONT Modular | hg38 |
-| `produce_sentdhuom_vcf` | Hybrid Ultima+ONT Modular | hg38_broad |
+| Target | Description |
+| --- | --- |
+| `produce_alignstats` | Alignment statistics and aggregate report. |
+| `produce_snv_concordances` | GIAB/RTG concordance for available truth data. |
+| `produce_sentD_vcf` | Illumina Sentieon DNAscope. |
+| `produce_deep19_vcf` | DeepVariant 1.9. |
+| `produce_sentdont_vcf` | ONT Sentieon SNV calling. |
+| `produce_sentdpb_vcf` | PacBio Sentieon SNV calling. |
+| `produce_sentdug_vcf` | Ultima Genomics SNV calling. |
+| `produce_cgt7p_vcf` | Complete Genomics/MGI Sentieon DNAscope via `sentcg`. |
+| `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid workflow. |
+| `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid workflow. |
+| `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant workflows. |
+| `produce_multiqc_final_wgs` | Final MultiQC aggregation. |
 
-## Tab Completion
-
-- `dy-r <TAB>` - lists all available targets
-- `dy-r target -<TAB>` - lists snakemake flags
-- `dy-a <TAB>` - lists available profiles (local, slurm)
-- `dy-m -<TAB>` - lists monitor options (--workdir, --interval, --block-and-poll)
-
-
+Use `dy-r help` and tab completion for the full target list.

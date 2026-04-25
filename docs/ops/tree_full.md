@@ -1,3 +1,5 @@
+> **Historical example tree.** The canonical current layout is [`dir_and_file_scheme.md`](dir_and_file_scheme.md). This file remains as a legacy illustrative tree and may omit newer callers such as `sentcg/cgt7p`.
+
 <pre>
 {b38,hg38}/
 ├── RIH0_ANA0-HG002_DBC0_0
@@ -209,4 +211,3 @@
         ├── all__mqc_fin_a.log
         └── all_mqc_fin_b.log
 </pre>
-
