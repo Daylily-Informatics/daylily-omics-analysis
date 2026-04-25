@@ -225,7 +225,7 @@ When jobs are running via the SLURM profile in `/fsx/analysis_results/ubuntu/<wo
    - Contains: Output and errors from individual rule executions
 
 4. **Command History Log**
-   - Location: `day_cmds.log`
+   - Location: `day_cmd.log`
    - Contains: Record of all `dy-r` command invocations
 
 **Debugging Strategy**: Start with the Snakemake master log to identify which rules failed, then check the corresponding SLURM logs by job ID and timestamp to see detailed error messages.

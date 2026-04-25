@@ -1,3 +1,5 @@
+> **Historical design note.** This file captures an earlier modular hybrid read-group investigation. Verify current behavior against the `workflow/rules/sent_hybrid_*_modular.smk` files and current tests before using it as guidance.
+
 how can i match this behavior in the modular?
 
 The modular pipeline does not implement CLI’s SM validation and conditional SR replace_rg behavior (sentieon_cli/dnascope_hybrid.py: DNAscopeHybridPipeline.validate_readgroups, sentieon_cli/dnascope_hybrid.py: RgInfo.__init__).

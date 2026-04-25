@@ -1,3 +1,5 @@
+> **Historical example.** Current workflows use paired `config/samples.tsv` and `config/units.tsv`. This directory remains only for legacy `analysis_manifest.csv` conversion reference.
+
 # Analysis Manifest Details
 
 **THIS IS ALL ACTIVELY BEING DEPRECATED IN FAVOR OF MOVING TO SNAKEMAKE v8 PATTERNS**
@@ -148,7 +150,7 @@ The analysis manifest feels quite natural for setting sample specific behaviour,
 
 ---
 
-required columns ([examples](../config/day_example_analysis_manifests))
+required columns from legacy example manifests
 
 ---
 

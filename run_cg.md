@@ -1,3 +1,5 @@
+> **Historical run note.** This file records a specific April 2026 Complete Genomics HG003 launch plan. For current operator guidance, use [`docs/workflows/complete_genomics_sentieon.md`](docs/workflows/complete_genomics_sentieon.md) and [`docs/remote_test_execution.md`](docs/remote_test_execution.md).
+
 **Launch Sentieon Complete Genomics `sentcg` HG003 Run**
 
 **Summary**

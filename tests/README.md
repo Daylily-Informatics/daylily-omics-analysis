@@ -1,100 +1,33 @@
-# Daylily CLI Tests
+# Daylily Test Suite
 
-This directory contains test suites for the Daylily CLI commands.
+This directory contains shell and Python checks for the current CLI, workflow catalog, BCL Convert bootstrap, and Complete Genomics Sentieon wiring.
 
-## Test Files
+## Running The Core Checks
 
-### `test_cli_commands.sh`
-
-Comprehensive test suite for all CLI commands and their integration.
-
-**Tests covered:**
-- `day-monitor` / `dy-m` command functionality
-  - Help documentation
-  - Option parsing (--workdir, --interval, --block-and-poll)
-  - Workdir validation
-  - Block-and-poll completion behavior
-- `day-activate` / `dy-a` command
-- `day-run` / `dy-r` command
-- `day-set-genome-build` / `dy-g` command
-- `day-deactivate` / `dy-d` command
-- CLI aliases in `dyoainit`
-- Tab completion in `bin/tabcomp.bash`
-- Bash syntax validation
-- Documentation coverage in AGENTS.md and docs/ops/dycli.md
-
-**Running the tests:**
+From the repository root:
 
 ```bash
-# From repository root
 bash tests/test_cli_commands.sh
-
-# Expected output: All 22 tests should pass
+bash tests/test_bclconvert_bootstrap.sh
+python -m pytest tests/test_complete_genomics_sentieon.py tests/test_workflow_catalog.py
 ```
 
-## Test Results
-
-```
-==========================================
-Daylily CLI Command Test Suite
-==========================================
-
-✓ PASS: day-monitor --help
-✓ PASS: day-monitor -h
-✓ PASS: day-monitor validates workdir
-✓ PASS: day-monitor accepts --interval option
-✓ PASS: day-monitor accepts --block-and-poll option
-✓ PASS: day-monitor accepts --workdir option
-✓ PASS: day-monitor reads day_cmd.log
-✓ PASS: day-monitor block-and-poll waits for completion
-✓ PASS: day-activate exists
-✓ PASS: day-run exists and is executable
-✓ PASS: day-set-genome-build exists
-✓ PASS: day-deactivate exists
-✓ PASS: dyoainit defines day-monitor alias
-✓ PASS: dyoainit defines dy-m alias
-✓ PASS: tabcomp.bash has monitor completion function
-✓ PASS: tabcomp.bash registers monitor completion
-✓ PASS: day-monitor has valid bash syntax
-✓ PASS: day-activate has valid bash syntax
-✓ PASS: day-run has valid bash syntax
-✓ PASS: AGENTS.md documents SLURM log locations
-✓ PASS: AGENTS.md documents SSH login shell requirement
-✓ PASS: dycli.md documents day-monitor command
-
-==========================================
-Test Results
-==========================================
-Total:  22
-Passed: 22
-Failed: 0
-==========================================
-```
-
-## Adding New Tests
-
-To add new tests:
-
-1. Create a test function following the pattern:
-   ```bash
-   test_my_feature() {
-     # Test logic here
-     test_result "Description of test" $?
-   }
-   ```
-
-2. Call the function in the `main()` function
-
-3. Run the test suite to verify
-
-## CI/CD Integration
-
-These tests can be integrated into CI/CD pipelines:
+On macOS, activate `DAY-EC` first:
 
 ```bash
-# Exit code 0 = all tests passed
-# Exit code 1 = one or more tests failed
-bash tests/test_cli_commands.sh
-echo $?
+eval "$(conda shell.zsh hook)"
+conda activate DAY-EC
 ```
 
+## Files
+
+| File | Coverage |
+| --- | --- |
+| `test_cli_commands.sh` | `day-monitor`, `day-activate`, `day-run`, `day-set-genome-build`, `day-deactivate`, aliases, completion, shell syntax, and selected docs coverage. |
+| `test_bclconvert_bootstrap.sh` | BCL Convert bootstrap scripts, fixtures, generated units table behavior, and report expectations. |
+| `test_complete_genomics_sentieon.py` | MGI bundle paths, `DNBSEQ` platform, and `produce_cgt7p_vcf` routing to `sentcg/cgt7p`. |
+| `test_workflow_catalog.py` | `load_workflow_catalog()` and `render_workflow_command()` behavior. |
+
+## Notes
+
+These tests are intentionally lightweight. They validate repository wiring and documented contracts; they do not replace full Snakemake dry-runs or headnode execution tests for workflow changes.

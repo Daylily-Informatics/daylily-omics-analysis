@@ -1,3 +1,5 @@
+> **Historical run note.** This file records a specific hybrid ILMN+ONT rerun. For current target and launch patterns, use [`COMMANDS_MUST_RUN.md`](COMMANDS_MUST_RUN.md) and [`docs/remote_test_execution.md`](docs/remote_test_execution.md).
+
 # SSM Launch Plan For `take1` On `mk-gotime3`
 
 ## Summary

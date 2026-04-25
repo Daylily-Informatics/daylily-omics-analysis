@@ -1,3 +1,5 @@
+> **Historical example tree.** The canonical current layout is [`dir_and_file_scheme.md`](dir_and_file_scheme.md). This file remains as a legacy illustrative tree and may omit newer callers such as `sentcg/cgt7p`.
+
 ```bash
 
 {b37,hg38}/

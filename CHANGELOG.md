@@ -1,6 +1,7 @@
 ## Changelog
 
 ### [Unreleased]
+- Refreshed operator and developer documentation to match the current sample/unit table model, dy-cli behavior, Complete Genomics `sentcg/smd/cgt7p` workflow, and workflow catalog API.
 - Added Parascopy copy-number calling workflow, configuration entries, and execution environment.
 
 ### [0.7.147] - 2024-11-30

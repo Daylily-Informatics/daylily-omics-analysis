@@ -1,3 +1,5 @@
+> **Historical run note.** This file records a specific mk-gotime3 planning session and S3 evidence. For current target and launch patterns, use [`COMMANDS_MUST_RUN.md`](COMMANDS_MUST_RUN.md) and [`docs/remote_test_execution.md`](docs/remote_test_execution.md).
+
 # 8-Agent Plan For `hyb_runbook.md` And `mk-gotime3` Reruns
 
 ## Objective

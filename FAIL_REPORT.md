@@ -1,3 +1,5 @@
+> **Historical run note.** This file records a specific IFX-GO failure investigation. Verify current workflow behavior against the code and current logs before using it as guidance.
+
 # IFX-GO Workflow Failure Report
 **Date**: 2026-03-25 08:30 UTC  
 **Cluster**: inflextion-g24  
@@ -58,4 +60,3 @@ Connection refused / License server down
 - VCF Inventory: `./vcf_inventory.tsv`
 - Snakemake Log: `/fsx/analysis_results/ubuntu/ifx_go/daylily-omics-analysis/.snakemake/log/2026-03-25T*.snakemake.log`
 - Rule Logs: `results/day/*/align/ont/na/segdup/sentdhiomr/log/*.log`
-

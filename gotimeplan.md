@@ -1,3 +1,5 @@
+> **Historical run note.** This file records a specific mk-gotime3 planning session. For current launch mechanics, use [`docs/remote_test_execution.md`](docs/remote_test_execution.md) and [`docs/first_ephemeral_cluster_analysis.md`](docs/first_ephemeral_cluster_analysis.md).
+
 # 8-Agent Plan For `hyb_runbook.md` And `mk-gotime3` Reruns
 
 ## Objective

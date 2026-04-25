@@ -1,3 +1,5 @@
+> **Historical run note.** This file records a specific hybrid/Ultima rerun plan and verified S3 paths. For current target and launch patterns, use [`COMMANDS_MUST_RUN.md`](COMMANDS_MUST_RUN.md) and [`docs/remote_test_execution.md`](docs/remote_test_execution.md).
+
 # Hybrid And Ultima Rerun Runbook
 
 This runbook records two verified Daylily omics rerun examples and the `mk-gotime3` launch handoffs for running trimmed-manifest reruns. Do not perform destructive AWS actions. Do not add fallback behavior. If any required command fails, stop loudly and report the failure.
