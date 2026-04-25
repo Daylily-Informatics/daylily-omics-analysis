@@ -9,6 +9,7 @@ for an approximately constant target coverage.
 
 import argparse
 import csv
+import random
 import shlex
 import shutil
 import subprocess
@@ -330,69 +331,122 @@ def run_cmd(argv, dry_run):
     subprocess.run([str(part) for part in argv], check=True)
 
 
-def run_seqkit_sample(input_path, output_path, fraction, seed, threads, dry_run):
-    if not dry_run:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-    run_cmd(
-        [
-            "seqkit",
-            "sample",
-            "-j",
-            str(threads),
-            "--line-width=0",
-            "--quiet",
-            f"--rand-seed={seed}",
-            "--seq-type=dna",
-            f"--proportion={fmt_fraction(fraction)}",
-            str(input_path),
-            "-o",
-            str(output_path),
-        ],
-        dry_run,
+def read_fastq_record(handle, source):
+    lines = [handle.readline() for _ in range(4)]
+    if not lines[0]:
+        if any(lines[1:]):
+            raise RuntimeError(f"truncated FASTQ record at end of {source}")
+        return None
+    if any(not line for line in lines[1:]):
+        raise RuntimeError(f"truncated FASTQ record in {source}")
+    return b"".join(lines)
+
+
+def open_pigz_reader(path):
+    return subprocess.Popen(
+        ["pigz", "-dc", str(path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
 
 
-def combine_gzip_members(component_a, component_b, output_path, threads, dry_run):
+def open_pigz_writer(path, mode, threads):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    out_handle = path.open(mode)
+    proc = subprocess.Popen(
+        ["pigz", "-p", str(threads), "-c"],
+        stdin=subprocess.PIPE,
+        stdout=out_handle,
+        stderr=subprocess.PIPE,
+    )
+    return proc, out_handle
+
+
+def close_writer(proc, handle, label):
+    if proc.stdin is not None:
+        proc.stdin.close()
+    stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
+    rc = proc.wait()
+    handle.close()
+    if rc != 0:
+        raise subprocess.CalledProcessError(rc, f"pigz writer for {label}", stderr=stderr)
+
+
+def close_reader(proc, label):
+    stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
+    rc = proc.wait()
+    if rc != 0:
+        raise subprocess.CalledProcessError(rc, f"pigz reader for {label}", stderr=stderr)
+
+
+def write_records_to_matching_outputs(record_r1, record_r2, rows, random_value, writers, fraction_key):
+    kept = 0
+    for row in rows:
+        if random_value >= float(row[fraction_key]):
+            continue
+        writer_r1, writer_r2 = writers[row["label"]]
+        writer_r1.stdin.write(record_r1)
+        writer_r2.stdin.write(record_r2)
+        kept += 1
+    return kept
+
+
+def stream_sample_source(source_name, r1_path, r2_path, rows, fraction_key, seed, threads, append):
+    mode = "ab" if append else "wb"
+    writer_threads = max(1, min(threads, 2))
     print(
-        "+ "
-        + shlex.join(
-            [
-                "pigz",
-                "-dc",
-                str(component_a),
-                str(component_b),
-                "|",
-                "pigz",
-                "-p",
-                str(threads),
-                "-c",
-                ">",
-                str(output_path),
-            ]
-        ),
+        "+ stream paired FASTQs with deterministic sampling: "
+        f"{source_name} seed={seed} writer_threads={writer_threads}",
         flush=True,
     )
-    if dry_run:
-        return
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("wb") as out_handle:
-        reader = subprocess.Popen(
-            ["pigz", "-dc", str(component_a), str(component_b)],
-            stdout=subprocess.PIPE,
-        )
-        writer = subprocess.Popen(
-            ["pigz", "-p", str(threads), "-c"],
-            stdin=reader.stdout,
-            stdout=out_handle,
-        )
-        if reader.stdout is not None:
-            reader.stdout.close()
-        writer_rc = writer.wait()
-        reader_rc = reader.wait()
-    if reader_rc != 0:
-        raise subprocess.CalledProcessError(reader_rc, "pigz -dc")
-    if writer_rc != 0:
-        raise subprocess.CalledProcessError(writer_rc, "pigz -c")
+    writers = {}
+    active_writers = {}
+    for row in rows:
+        proc_r1, handle_r1 = open_pigz_writer(row["r1"], mode, writer_threads)
+        proc_r2, handle_r2 = open_pigz_writer(row["r2"], mode, writer_threads)
+        writers[row["label"]] = (proc_r1, proc_r2, handle_r1, handle_r2)
+        active_writers[row["label"]] = (proc_r1, proc_r2)
+
+    reader_r1 = open_pigz_reader(r1_path)
+    reader_r2 = open_pigz_reader(r2_path)
+    rng = random.Random(seed)
+    processed = 0
+    kept_writes = 0
+    try:
+        if reader_r1.stdout is None or reader_r2.stdout is None:
+            raise RuntimeError("pigz reader did not expose stdout")
+        while True:
+            record_r1 = read_fastq_record(reader_r1.stdout, r1_path)
+            record_r2 = read_fastq_record(reader_r2.stdout, r2_path)
+            if record_r1 is None and record_r2 is None:
+                break
+            if record_r1 is None or record_r2 is None:
+                raise RuntimeError(f"paired FASTQs have different record counts: {source_name}")
+            processed += 1
+            kept_writes += write_records_to_matching_outputs(
+                record_r1,
+                record_r2,
+                rows,
+                rng.random(),
+                active_writers,
+                fraction_key,
+            )
+            if processed % 5_000_000 == 0:
+                print(
+                    f"{source_name}: processed {processed} read pairs; "
+                    f"output writes={kept_writes}",
+                    flush=True,
+                )
+    finally:
+        for label, (proc_r1, proc_r2, handle_r1, handle_r2) in writers.items():
+            close_writer(proc_r1, handle_r1, f"{label} R1")
+            close_writer(proc_r2, handle_r2, f"{label} R2")
+        close_reader(reader_r1, f"{source_name} R1")
+        close_reader(reader_r2, f"{source_name} R2")
+    print(
+        f"{source_name}: processed {processed} read pairs; output writes={kept_writes}",
+        flush=True,
+    )
 
 
 def require_nonempty(path):
@@ -404,75 +458,44 @@ def require_nonempty(path):
 
 def generate_fastqs(args, rows, primary_r1, primary_r2, donor_r1, donor_r2):
     for row in rows:
-        tmp = row["tmp"]
-        if tmp.exists() and args.force and not args.dry_run:
-            shutil.rmtree(tmp)
-        if not args.dry_run:
-            tmp.mkdir(parents=True, exist_ok=True)
-        primary_component_r1 = tmp / "primary.R1.fastq.gz"
-        primary_component_r2 = tmp / "primary.R2.fastq.gz"
-        donor_component_r1 = tmp / "donor.R1.fastq.gz"
-        donor_component_r2 = tmp / "donor.R2.fastq.gz"
-
         print(
             "Building "
             f"{row['sample_id']} "
             f"({fmt_decimal(row['level'])}% HG003 donor)",
             flush=True,
         )
-        run_seqkit_sample(
-            primary_r1,
-            primary_component_r1,
-            row["primary_fraction"],
-            args.primary_seed,
-            args.threads,
-            args.dry_run,
-        )
-        run_seqkit_sample(
-            primary_r2,
-            primary_component_r2,
-            row["primary_fraction"],
-            args.primary_seed,
-            args.threads,
-            args.dry_run,
-        )
-        run_seqkit_sample(
-            donor_r1,
-            donor_component_r1,
-            row["donor_fraction"],
-            args.donor_seed,
-            args.threads,
-            args.dry_run,
-        )
-        run_seqkit_sample(
-            donor_r2,
-            donor_component_r2,
-            row["donor_fraction"],
-            args.donor_seed,
-            args.threads,
-            args.dry_run,
-        )
-
-        combine_gzip_members(
-            primary_component_r1,
-            donor_component_r1,
-            row["r1"],
-            args.threads,
-            args.dry_run,
-        )
-        combine_gzip_members(
-            primary_component_r2,
-            donor_component_r2,
-            row["r2"],
-            args.threads,
-            args.dry_run,
-        )
-
+        if args.dry_run:
+            print(
+                "+ would stream primary and donor paired FASTQs into "
+                f"{row['r1']} and {row['r2']}",
+                flush=True,
+            )
+    if args.dry_run:
+        return
+    stream_sample_source(
+        "HG002 primary",
+        primary_r1,
+        primary_r2,
+        rows,
+        "primary_fraction",
+        args.primary_seed,
+        args.threads,
+        append=False,
+    )
+    stream_sample_source(
+        "HG003 donor",
+        donor_r1,
+        donor_r2,
+        rows,
+        "donor_fraction",
+        args.donor_seed,
+        args.threads,
+        append=True,
+    )
+    for row in rows:
         if not args.dry_run:
             require_nonempty(row["r1"])
             require_nonempty(row["r2"])
-        if not args.keep_components and not args.dry_run:
-            shutil.rmtree(tmp)
 
 
 def write_tsv(path, header, rows):
@@ -539,13 +562,13 @@ def write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor
                 "primary_r1": str(primary_r1),
                 "primary_r2": str(primary_r2),
                 "primary_coverage": args.primary_coverage,
-                "primary_seqkit_fraction": fmt_fraction(row["primary_fraction"]),
+                "primary_sampling_fraction": fmt_fraction(row["primary_fraction"]),
                 "primary_seed": str(args.primary_seed),
                 "donor_sample": "HG003",
                 "donor_r1": str(donor_r1),
                 "donor_r2": str(donor_r2),
                 "donor_coverage": args.donor_coverage,
-                "donor_seqkit_fraction": fmt_fraction(row["donor_fraction"]),
+                "donor_sampling_fraction": fmt_fraction(row["donor_fraction"]),
                 "donor_seed": str(args.donor_seed),
                 "output_r1": str(row["r1"]),
                 "output_r2": str(row["r2"]),
@@ -573,7 +596,6 @@ def main():
     if args.threads < 1:
         raise ValueError("--threads must be at least 1")
 
-    require_tool("seqkit")
     require_tool("pigz")
     primary_r1 = require_file(args.primary_r1)
     primary_r2 = require_file(args.primary_r2)

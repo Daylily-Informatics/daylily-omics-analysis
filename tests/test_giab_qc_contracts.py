@@ -273,6 +273,17 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     assert [row["SUBSAMPLE_PCT"] for row in units] == ["", ""]
     assert [row["contamination_percent"] for row in plan] == ["0.1", "5"]
     assert [row["donor_sample"] for row in plan] == ["HG003", "HG003"]
+    assert [row["primary_sampling_fraction"] for row in plan] == ["0.999", "0.95"]
+    assert [row["donor_sampling_fraction"] for row in plan] == [
+        "0.000166666667",
+        "0.008333333333",
+    ]
+
+    script_text = (
+        REPO_ROOT / "bin" / "util" / "make_giab_hg002_hg003_contam_fastqs.py"
+    ).read_text(encoding="utf-8")
+    assert 'require_tool("pigz")' in script_text
+    assert "seqkit" not in script_text.lower()
 
 
 def test_relatedness_classification_interface_and_manifest_validation(tmp_path: Path) -> None:
