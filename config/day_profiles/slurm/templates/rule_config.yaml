@@ -1160,6 +1160,7 @@ gatk_contam:
     threads: 24
     mem_mb: 80000
     java_heap_mb: 64000
+    exclusive: "--exclusive"
     ld_preload: " "
     partition: "i192,i192mem,i128"
 

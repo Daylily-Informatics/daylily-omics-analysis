@@ -186,18 +186,21 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
 
     assert 'mem_mb = config["gatk_contam"].get("mem_mb", 80000)' in text
     assert 'java_heap_mb = config["gatk_contam"].get("java_heap_mb", 64000)' in text
+    assert 'exclusive = config["gatk_contam"].get("exclusive", "--exclusive")' in text
     assert '--java-options "-Xmx{params.java_heap_mb}m' in text
     assert "--interval-merging-rule OVERLAPPING_ONLY" in text
     assert "--disable-bam-index-caching" in text
 
-    for config_path in (
-        "config/day_profiles/slurm/templates/rule_config.yaml",
-        "config/day_profiles/local/templates/rule_config.yaml",
-    ):
+    expected_exclusive = {
+        "config/day_profiles/slurm/templates/rule_config.yaml": 'exclusive: "--exclusive"',
+        "config/day_profiles/local/templates/rule_config.yaml": 'exclusive: ""',
+    }
+    for config_path, exclusive in expected_exclusive.items():
         config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
         gatk_config = config_text[config_text.index("gatk_contam:") :]
         assert "mem_mb: 80000" in gatk_config[:240]
         assert "java_heap_mb: 64000" in gatk_config[:240]
+        assert exclusive in gatk_config[:240]
 
 
 def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:

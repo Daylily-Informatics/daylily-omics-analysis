@@ -31,7 +31,8 @@ rule gatk_contam:
     resources:
         vcpu = config["gatk_contam"]["threads"],
         partition = config["gatk_contam"]["partition"],
-        mem_mb = config["gatk_contam"].get("mem_mb", 80000)
+        mem_mb = config["gatk_contam"].get("mem_mb", 80000),
+        exclusive = config["gatk_contam"].get("exclusive", "--exclusive")
     params:
         cluster_sample = ret_sample,
         alnr = get_alnr,
