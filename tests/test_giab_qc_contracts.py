@@ -257,8 +257,22 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     assert parsed_levels == SYNTHETIC_LEVELS_PCT
     args_defaults = module.parse_args([])
     assert args_defaults.primary_coverage == "30"
+    assert args_defaults.primary_sample == "HG002"
+    assert args_defaults.donor_sample == "HG003"
+    assert args_defaults.sample_prefix == "HG002-HG003-contam"
     assert args_defaults.primary_r1.endswith("/HG002_30x_R1.fastq.gz")
     assert args_defaults.primary_r2.endswith("/HG002_30x_R2.fastq.gz")
+    assert args_defaults.donor_r1.endswith("/HG003_30x_R1.fastq.gz")
+    assert args_defaults.donor_r2.endswith("/HG003_30x_R2.fastq.gz")
+
+    hg001_hg007_args = module.parse_args(
+        ["--primary-sample", "HG001", "--donor-sample", "HG007"]
+    )
+    assert hg001_hg007_args.sample_prefix == "HG001-HG007-contam"
+    assert hg001_hg007_args.primary_r1.endswith("/HG001_30x_R1.fastq.gz")
+    assert hg001_hg007_args.primary_r2.endswith("/HG001_30x_R2.fastq.gz")
+    assert hg001_hg007_args.donor_r1.endswith("/HG007_30x_R1.fastq.gz")
+    assert hg001_hg007_args.donor_r2.endswith("/HG007_30x_R2.fastq.gz")
 
     args = SimpleNamespace(
         levels="0.1,5",
@@ -283,6 +297,8 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
         dry_run=False,
         truth_dir="/truth/HG002/",
         run_id="GIABCONTAM20260425",
+        primary_sample="HG002",
+        donor_sample="HG003",
         target_coverage="5",
         primary_coverage="5",
         donor_coverage="30",
@@ -317,6 +333,7 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     ]
     assert [row["SUBSAMPLE_PCT"] for row in units] == ["", ""]
     assert [row["contamination_percent"] for row in plan] == ["0.1", "5"]
+    assert [row["primary_sample"] for row in plan] == ["HG002", "HG002"]
     assert [row["donor_sample"] for row in plan] == ["HG003", "HG003"]
     assert [row["primary_sampling_fraction"] for row in plan] == ["0.999", "0.95"]
     assert [row["donor_sampling_fraction"] for row in plan] == [
@@ -329,6 +346,57 @@ def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path
     ).read_text(encoding="utf-8")
     assert 'require_tool("pigz")' in script_text
     assert "seqkit" not in script_text.lower()
+
+
+def test_synthetic_contamination_manifests_accept_arbitrary_giab_pair(
+    tmp_path: Path,
+) -> None:
+    module = _load_synthetic_contam_module()
+    args = SimpleNamespace(
+        levels="0.5",
+        output_dir=str(tmp_path / "synthetic"),
+        sample_prefix="HG001-HG007-contam",
+        target_coverage="5",
+        primary_coverage="30",
+        donor_coverage="30",
+    )
+    out_dir, rows = module.build_plan(args)
+    assert rows[0]["sample_id"] == "HG001-HG007-contam-0p5pct"
+
+    manifest_args = SimpleNamespace(
+        dry_run=False,
+        truth_dir="/truth/HG001/",
+        run_id="GIABCONTAMHG001HG00720260426",
+        primary_sample="HG001",
+        donor_sample="HG007",
+        target_coverage="5",
+        primary_coverage="30",
+        donor_coverage="30",
+        primary_seed=20260425,
+        donor_seed=20260426,
+    )
+    module.write_manifests(
+        manifest_args,
+        out_dir,
+        rows,
+        Path("/inputs/HG001_30x_R1.fastq.gz"),
+        Path("/inputs/HG001_30x_R2.fastq.gz"),
+        Path("/inputs/HG007_30x_R1.fastq.gz"),
+        Path("/inputs/HG007_30x_R2.fastq.gz"),
+    )
+
+    samples = _read_tsv(out_dir / "samples.tsv")
+    units = _read_tsv(out_dir / "units.tsv")
+    plan = _read_tsv(out_dir / "contamination_plan.tsv")
+
+    assert samples[0]["SAMPLEID"] == "HG001-HG007-contam-0p5pct"
+    assert samples[0]["EXTERNAL_SAMPLE_ID"] == "HG001"
+    assert units[0]["RUNID"] == "GIABCONTAMHG001HG00720260426"
+    assert units[0]["EXPERIMENTID"] == "HG001-5x-HG007-0p5pct"
+    assert plan[0]["primary_sample"] == "HG001"
+    assert plan[0]["donor_sample"] == "HG007"
+    assert plan[0]["primary_r1"] == "/inputs/HG001_30x_R1.fastq.gz"
+    assert plan[0]["donor_r1"] == "/inputs/HG007_30x_R1.fastq.gz"
 
 
 def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:

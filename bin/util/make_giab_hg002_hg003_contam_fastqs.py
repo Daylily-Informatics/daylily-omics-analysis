@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build deterministic HG002 FASTQs with synthetic HG003 contamination.
+"""Build deterministic GIAB FASTQs with synthetic GIAB contamination.
 
 The default inputs are the GIAB Illumina NovaSeqX HG002 and HG003 30x FASTQs on
 the Daylily headnode. For each requested contamination level, the script samples
-HG002 to the remaining primary fraction and HG003 to the donor fraction needed
-for an approximately constant target coverage.
+the primary dataset to the remaining primary fraction and the donor dataset to
+the donor fraction needed for an approximately constant target coverage.
 """
 
 import argparse
@@ -21,6 +21,8 @@ getcontext().prec = 28
 
 DEFAULT_LEVELS = "0.1,0.5,1,2,3,4,5,10,20,30"
 CONTAMINATION_LEVELS_PCT = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 20, 30]
+DEFAULT_PRIMARY_SAMPLE = "HG002"
+DEFAULT_DONOR_SAMPLE = "HG003"
 DEFAULT_OUT_DIR = "/fsx/scratch/dayoa_qc_contam/giab_hg002_hg003_5x_20260425"
 DEFAULT_READ_ROOT = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
 DEFAULT_TRUTH_DIR = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG002/"
@@ -82,35 +84,48 @@ def default_path(name):
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         description=(
-            "Create paired HG002/HG003 synthetic contamination FASTQs and "
+            "Create paired GIAB synthetic contamination FASTQs and "
             "Daylily samples.tsv/units.tsv manifests."
         )
     )
     parser.add_argument("--output-dir", default=DEFAULT_OUT_DIR)
     parser.add_argument("--levels", default=DEFAULT_LEVELS)
     parser.add_argument("--target-coverage", default="5")
+    parser.add_argument("--primary-sample", default=DEFAULT_PRIMARY_SAMPLE)
+    parser.add_argument("--donor-sample", default=DEFAULT_DONOR_SAMPLE)
     parser.add_argument("--primary-coverage", default="30")
     parser.add_argument("--donor-coverage", default="30")
     parser.add_argument(
         "--primary-r1",
-        default=default_path("HG002_30x_R1.fastq.gz"),
+        default=None,
     )
     parser.add_argument(
         "--primary-r2",
-        default=default_path("HG002_30x_R2.fastq.gz"),
+        default=None,
     )
-    parser.add_argument("--donor-r1", default=default_path("HG003_30x_R1.fastq.gz"))
-    parser.add_argument("--donor-r2", default=default_path("HG003_30x_R2.fastq.gz"))
+    parser.add_argument("--donor-r1", default=None)
+    parser.add_argument("--donor-r2", default=None)
     parser.add_argument("--truth-dir", default=DEFAULT_TRUTH_DIR)
     parser.add_argument("--threads", type=int, default=16)
     parser.add_argument("--primary-seed", type=int, default=20260425)
     parser.add_argument("--donor-seed", type=int, default=20260426)
     parser.add_argument("--run-id", default="GIABCONTAM20260425")
-    parser.add_argument("--sample-prefix", default="HG002-HG003-contam")
+    parser.add_argument("--sample-prefix", default=None)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--keep-components", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.primary_r1 is None:
+        args.primary_r1 = default_path(f"{args.primary_sample}_30x_R1.fastq.gz")
+    if args.primary_r2 is None:
+        args.primary_r2 = default_path(f"{args.primary_sample}_30x_R2.fastq.gz")
+    if args.donor_r1 is None:
+        args.donor_r1 = default_path(f"{args.donor_sample}_30x_R1.fastq.gz")
+    if args.donor_r2 is None:
+        args.donor_r2 = default_path(f"{args.donor_sample}_30x_R2.fastq.gz")
+    if args.sample_prefix is None:
+        args.sample_prefix = f"{args.primary_sample}-{args.donor_sample}-contam"
+    return args
 
 
 def decimal_arg(value, name):
@@ -461,7 +476,7 @@ def generate_fastqs(args, rows, primary_r1, primary_r2, donor_r1, donor_r2):
         print(
             "Building "
             f"{row['sample_id']} "
-            f"({fmt_decimal(row['level'])}% HG003 donor)",
+            f"({fmt_decimal(row['level'])}% {args.donor_sample} donor)",
             flush=True,
         )
         if args.dry_run:
@@ -473,7 +488,7 @@ def generate_fastqs(args, rows, primary_r1, primary_r2, donor_r1, donor_r2):
     if args.dry_run:
         return
     stream_sample_source(
-        "HG002 primary",
+        f"{args.primary_sample} primary",
         primary_r1,
         primary_r2,
         rows,
@@ -483,7 +498,7 @@ def generate_fastqs(args, rows, primary_r1, primary_r2, donor_r1, donor_r2):
         append=False,
     )
     stream_sample_source(
-        "HG003 donor",
+        f"{args.donor_sample} donor",
         donor_r1,
         donor_r2,
         rows,
@@ -530,7 +545,7 @@ def write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor
                 "IS_NEGATIVE_CONTROL": "false",
                 "SAMPLE_TYPE": "gdna",
                 "TUM_NRM_SAMPLEID_MATCH": "",
-                "EXTERNAL_SAMPLE_ID": "HG002",
+                "EXTERNAL_SAMPLE_ID": args.primary_sample,
                 "N_X": "1",
                 "N_Y": "1",
                 "TRUTH_DATA_DIR": args.truth_dir,
@@ -540,7 +555,7 @@ def write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor
             {
                 "RUNID": args.run_id,
                 "SAMPLEID": row["sample_id"],
-                "EXPERIMENTID": f"HG002-5x-HG003-{row['label']}",
+                "EXPERIMENTID": f"{args.primary_sample}-5x-{args.donor_sample}-{row['label']}",
                 "LANEID": str(row["index"]),
                 "BARCODEID": "D0",
                 "LIBPREP": "PCR-FREE",
@@ -558,13 +573,13 @@ def write_manifests(args, out_dir, rows, primary_r1, primary_r2, donor_r1, donor
                 "sample_id": row["sample_id"],
                 "contamination_percent": fmt_decimal(row["level"]),
                 "target_coverage": args.target_coverage,
-                "primary_sample": "HG002",
+                "primary_sample": args.primary_sample,
                 "primary_r1": str(primary_r1),
                 "primary_r2": str(primary_r2),
                 "primary_coverage": args.primary_coverage,
                 "primary_sampling_fraction": fmt_fraction(row["primary_fraction"]),
                 "primary_seed": str(args.primary_seed),
-                "donor_sample": "HG003",
+                "donor_sample": args.donor_sample,
                 "donor_r1": str(donor_r1),
                 "donor_r2": str(donor_r2),
                 "donor_coverage": args.donor_coverage,
