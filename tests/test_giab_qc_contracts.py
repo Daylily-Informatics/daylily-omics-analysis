@@ -49,7 +49,10 @@ def _load_synthetic_contam_module() -> ModuleType:
     )
     for path in [*candidate_paths, *dynamic_candidates]:
         if path.exists():
-            return _load_module(path, "synthetic_contamination_under_test")
+            module = _load_module(path, "synthetic_contamination_under_test")
+            required = {"parse_levels", "DEFAULT_LEVELS", "build_plan", "write_manifests"}
+            if required.issubset(set(dir(module))):
+                return module
     pytest.fail(
         "Expected a synthetic contamination generator module under bin/util or "
         "workflow/scripts; it must expose parse_levels, DEFAULT_LEVELS, build_plan, "
@@ -154,6 +157,12 @@ def test_peddy_env_pins_numpy_and_python_for_peddy_048(env_path: str) -> None:
             "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/"
             "{sample}.{alnr}.{ddup}.vb2.tsv",
         ),
+        (
+            "workflow/rules/site_mix_contam.smk",
+            "produce_site_mix_contam_estimate",
+            "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/"
+            "{sample}.{alnr}.{ddup}.site_mix.tsv",
+        ),
     ],
 )
 def test_contamination_target_expansion_includes_deduper_level(
@@ -248,6 +257,28 @@ def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
     ):
         config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
         assert "chr20_verbam/chr20.random1000.vcf.gz" in config_text
+
+
+def test_site_mix_contam_rule_is_target_genotype_free() -> None:
+    rule_text = (REPO_ROOT / "workflow" / "rules" / "site_mix_contam.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert "genotype_free_contam_estimator.py" in rule_text
+    assert "--bam {input.cram}" in rule_text
+    assert "--sites-vcf {input.sites_vcf}" in rule_text
+    assert "truth" not in rule_text.lower()
+    assert "expected" not in rule_text.lower()
+    assert "candidate_manifest" in rule_text
+
+    for config_path in (
+        "config/day_profiles/slurm/templates/rule_config.yaml",
+        "config/day_profiles/local/templates/rule_config.yaml",
+    ):
+        config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
+        section = config_text[config_text.index("site_mix_contam:") :]
+        assert 'candidate_manifest: ""' in section[:800]
+        assert "sites_vcf:" in section[:800]
 
 
 def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path: Path) -> None:

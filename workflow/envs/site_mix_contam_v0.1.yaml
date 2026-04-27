@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - anaconda
+  - defaults
+dependencies:
+  - python>=3.10,<3.13
+  - samtools=1.21
+  - htslib=1.21
