@@ -319,6 +319,17 @@ dysgu_sort_index:
     threads: 7
     partition: "i8"
 
+expansionhunter:
+    version: "5.0.0"
+    threads: 16
+    mem_mb: 32000
+    partition: "i8"
+    env_yaml: "../envs/expansionhunter_v0.1.yaml"
+    variant_catalog: "resources/strchive/STRchive-disease-loci.hg38.stranger.json"
+    analysis_mode: "seeking"
+    region_extension_length: 1000
+    extra_args: ""
+
 fastp:
     threads: 7
     env_yaml: "../envs/fastp_v0.1.yaml"

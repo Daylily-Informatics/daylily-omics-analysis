@@ -78,14 +78,14 @@ for record in vcf_reader:
                         vcf_out_ds["classes"]["ins_gt50"].write_record(record)
                         ins_gt50_count += 1
                 else:
-                    l = 0
+                    max_alt_len = 0
                     for il in record.ALT:
-                        if len(il) > l:
-                            l = il
-                    if l < 51:
+                        if len(il) > max_alt_len:
+                            max_alt_len = len(il)
+                    if max_alt_len < 51:
                         vcf_out_ds["classes"]["ins_50"].write_record(record)
                         ins_50_count += 1
-                    elif l > 50:
+                    elif max_alt_len > 50:
                         vcf_out_ds["classes"]["ins_gt50"].write_record(record)
                         ins_gt50_count += 1
                     else:

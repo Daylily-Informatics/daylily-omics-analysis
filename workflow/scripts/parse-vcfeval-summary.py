@@ -87,9 +87,9 @@ new_summary_out_fh.write(
 )
 ctr = 0
 for i in summary_fh:
-    l = i.lstrip(" ").rstrip()
+    line = i.lstrip(" ").rstrip()
     if ctr == 3:
-        sl = re.split(r" +", l)
+        sl = re.split(r" +", line)
         threshold = sl[0]
         tp_baseline = float(sl[1])
         tp = float(sl[2])
@@ -198,11 +198,11 @@ print(ds_var, file=sys.stderr)
 df = pd.DataFrame(ds_var)
 try:
     df["TgtRegionSize"] = df["TP"]["tgtRegionSize"]
-except Exception as e:
+except Exception:
     df["TgtRegionSize"] = None
 try:
     df = df.drop("tgtRegionSize")
-except Exception as e:
+except Exception:
     pass
 
 df["TN"] = None
@@ -238,29 +238,29 @@ for i in df.iterrows():
         df["Precision"][i[0]] = float(i[1]["TP"]) / (
             float(i[1]["TP"]) + float(i[1]["FP"])
         )
-    except:
+    except Exception:
         df["Precision"][i[0]] = None
     try:
         df["Sensitivity-Recall"][i[0]] = float(i[1]["TP"]) / (
             float(i[1]["TP"]) + float(i[1]["FN"])
         )
-    except:
+    except Exception:
         df["Sensitivity-Recall"][i[0]] = None
     try:
         df["Specificity"][i[0]] = float(i[1]["TN"]) / (
             float(i[1]["TN"]) + float(i[1]["FP"])
         )
-    except:
+    except Exception:
         df["Specificity"][i[0]] = None
     try:
         df["FDR"][i[0]] = float(i[1]["FP"]) / (float(i[1]["TP"]) + float(i[1]["FP"]))
-    except:
+    except Exception:
         df["FDR"][i[0]] = None
     try:
         df["PPV"][i[0]] = 1.0 - float(
             float(i[1]["FP"]) / (float(i[1]["TP"]) + float(i[1]["FP"]))
         )
-    except:
+    except Exception:
         df["PPV"][i[0]] = None
     try:  # TPTPFP = Precision TPTPFN--Sensitivity
         df["Fscore"][i[0]] = 2.0 * (
@@ -273,7 +273,7 @@ for i in df.iterrows():
                 + (float(i[1]["TP"]) / (float(i[1]["TP"]) + float(i[1]["FN"])))
             )
         )
-    except:
+    except Exception:
         df["Fscore"][i[0]] = None
 
 df["mqc_id"] = f"{sample}-{alnr}-{snv_caller}-{subset}"

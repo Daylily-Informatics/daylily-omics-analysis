@@ -43,6 +43,7 @@ module_order:
   - bcftools
   - kat
   - custom_content 
+  - expansionhunter
   - giab_concordance
   - norm_cov_evenness_combo
   - rules_benchmark_data
@@ -145,6 +146,14 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'alignstats_combo'
+  expansionhunter:
+    id: 'expansionhunter'
+    section_name: 'ExpansionHunter STR Report'
+    description: 'Disease-locus short tandem repeat calls from ExpansionHunter and STRchive annotations'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'expansionhunter'
   alignstats_gs:
     id: 'alignstats_gs'
     section_name: 'alignstats_gs'
@@ -176,6 +185,8 @@ sp:
     fn: "other_reports/rules_benchmark_data_mqc.tsv"
   alignstats_combo:
     fn: "other_reports/alignstats_combo_mqc.tsv"
+  expansionhunter:
+    fn: "other_reports/expansionhunter_mqc.tsv"
   alignstats_gs:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 

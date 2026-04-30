@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - expansionhunter=5.0.0
+  - htslib
+  - python=3.11
+  - samtools=1.21

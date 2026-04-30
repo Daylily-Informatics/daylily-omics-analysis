@@ -53,8 +53,66 @@ if [[ "$GENOME_CODE" != "hg38" && "$GENOME_CODE" != "hg38_broad" && "$GENOME_COD
 fi
 
 # --- Initialise and activate -----------------------------------------------
+_DYOA_WRAPPER_POSITIONAL_ARGS=("$@")
+_DYOA_WRAPPER_HAD_ERREXIT=0
+_DYOA_WRAPPER_HAD_NOUNSET=0
+case "$-" in
+    *e*)
+        _DYOA_WRAPPER_HAD_ERREXIT=1
+        set +e
+        ;;
+esac
+case "$-" in
+    *u*)
+        _DYOA_WRAPPER_HAD_NOUNSET=1
+        set +u
+        ;;
+esac
+set --
 source dyoainit
+_DYOA_WRAPPER_INIT_STATUS=$?
+set -- "${_DYOA_WRAPPER_POSITIONAL_ARGS[@]}"
+unset _DYOA_WRAPPER_POSITIONAL_ARGS
+if [[ "$_DYOA_WRAPPER_HAD_NOUNSET" -eq 1 ]]; then
+    set -u
+fi
+unset _DYOA_WRAPPER_HAD_NOUNSET
+if [[ "$_DYOA_WRAPPER_HAD_ERREXIT" -eq 1 ]]; then
+    set -e
+fi
+unset _DYOA_WRAPPER_HAD_ERREXIT
+if [[ "$_DYOA_WRAPPER_INIT_STATUS" -ne 0 ]]; then
+    return "$_DYOA_WRAPPER_INIT_STATUS" 2>/dev/null || exit "$_DYOA_WRAPPER_INIT_STATUS"
+fi
+unset _DYOA_WRAPPER_INIT_STATUS
+_DYOA_WRAPPER_HAD_ERREXIT=0
+_DYOA_WRAPPER_HAD_NOUNSET=0
+case "$-" in
+    *e*)
+        _DYOA_WRAPPER_HAD_ERREXIT=1
+        set +e
+        ;;
+esac
+case "$-" in
+    *u*)
+        _DYOA_WRAPPER_HAD_NOUNSET=1
+        set +u
+        ;;
+esac
 source bin/day_activate "$LOCAL_OR_SLURM" "$GENOME_CODE"
+_DYOA_WRAPPER_ACTIVATE_STATUS=$?
+if [[ "$_DYOA_WRAPPER_HAD_NOUNSET" -eq 1 ]]; then
+    set -u
+fi
+unset _DYOA_WRAPPER_HAD_NOUNSET
+if [[ "$_DYOA_WRAPPER_HAD_ERREXIT" -eq 1 ]]; then
+    set -e
+fi
+unset _DYOA_WRAPPER_HAD_ERREXIT
+if [[ "$_DYOA_WRAPPER_ACTIVATE_STATUS" -ne 0 ]]; then
+    return "$_DYOA_WRAPPER_ACTIVATE_STATUS" 2>/dev/null || exit "$_DYOA_WRAPPER_ACTIVATE_STATUS"
+fi
+unset _DYOA_WRAPPER_ACTIVATE_STATUS
 
 # --- Run (word-split targets/flags intentionally) --------------------------
 # shellcheck disable=SC2086

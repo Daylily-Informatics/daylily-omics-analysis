@@ -212,3 +212,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
     popvcf:
         class: file_only
         name: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
+    strchive:
+      disease_loci_hg38_stranger_json:
+        class: file_only
+        name: resources/strchive/STRchive-disease-loci.hg38.stranger.json
