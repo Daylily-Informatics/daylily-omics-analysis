@@ -129,6 +129,7 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 | [`docs/ops/dycli.md`](docs/ops/dycli.md) | CLI command behavior and monitoring. |
 | [`docs/ops/config.md`](docs/ops/config.md) | Profiles, config precedence, sample/unit schema notes. |
 | [`docs/ops/tests.md`](docs/ops/tests.md) | Local validation commands. |
+| [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md) | Code-sourced catalog of Daylily tool integrations, evidence, outputs, and tests. |
 | [`docs/ops/dir_and_file_scheme.md`](docs/ops/dir_and_file_scheme.md) | Current result layout and naming conventions. |
 | [`docs/ops/workflow_catalog.md`](docs/ops/workflow_catalog.md) | Packaged workflow catalog API and current contents. |
 | [`docs/workflows/complete_genomics_sentieon.md`](docs/workflows/complete_genomics_sentieon.md) | Complete Genomics/MGI `sentcg/smd/cgt7p` workflow. |
