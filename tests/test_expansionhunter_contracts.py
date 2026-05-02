@@ -209,6 +209,7 @@ def test_expansionhunter_rule_declares_required_outputs_and_command_args() -> No
     for expected in (
         "rule expansionhunter_call:",
         "rule expansionhunter_json_to_tsv:",
+        "rule produce_expansion_hunter:",
         "rule produce_expansionhunter:",
         "rule produce_expansionhunter_multiqc:",
         "rule expansionhunter_multiqc:",
@@ -229,6 +230,14 @@ def test_expansionhunter_rule_declares_required_outputs_and_command_args() -> No
     ):
         assert expected in rule_text
 
+    assert (
+        "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram"
+        in rule_text
+    )
+    assert (
+        "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai"
+        in rule_text
+    )
     assert "config[\"supporting_files\"][\"files\"][\"huref\"][\"fasta\"]" in rule_text
     assert "variant_catalog" in rule_text
     assert "--min-locus-coverage" not in rule_text
@@ -246,6 +255,7 @@ def test_expansionhunter_rule_routes_supported_short_read_platforms() -> None:
     assert "wildcards.alnr == \"ug\"" in rule_text
     assert "wildcards.ddup != \"na\"" in rule_text
     assert "_expansionhunter_sample_supports_aligner" in rule_text
+    assert "lambda wildcards: _expansionhunter_target_paths(\"tsv\")" in rule_text
     assert "SEQ_VENDOR" in rule_text
     assert "SEQ_PLATFORM" in rule_text
     assert "ULTIMA_CRAM_ALIGNER" in rule_text

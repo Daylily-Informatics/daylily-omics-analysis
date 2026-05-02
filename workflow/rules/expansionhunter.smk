@@ -234,6 +234,7 @@ rule expansionhunter_json_to_tsv:
 localrules:
     expansionhunter_gather,
     expansionhunter_multiqc,
+    produce_expansion_hunter,
     produce_expansionhunter,
     produce_expansionhunter_multiqc,
 
@@ -305,7 +306,12 @@ rule expansionhunter_multiqc:
         """
 
 
-rule produce_expansionhunter:  # TARGET: run ExpansionHunter for sent/sentcg deduped CRAMs and ug na CRAMs
+rule produce_expansion_hunter:  # TARGET: run ExpansionHunter for ILMN, Complete Genomics/MGI, and Ultima short-read CRAMs
+    input:
+        lambda wildcards: _expansionhunter_target_paths("tsv")
+
+
+rule produce_expansionhunter:  # TARGET: alias for produce_expansion_hunter
     input:
         lambda wildcards: _expansionhunter_target_paths("tsv")
 
