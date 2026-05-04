@@ -176,6 +176,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     ):
         assert expected in relatedness
 
+    assert "--genome-build" not in relatedness
     assert "PAIR_COLUMNS" in report_script
     assert "relationship\": \"no_pairs\"" in report_script
 

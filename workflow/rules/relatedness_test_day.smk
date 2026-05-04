@@ -110,13 +110,11 @@ rule somalier_extract:
             somalier extract \
               --sites {params.sites} \
               --fasta {params.ref} \
-              --genome-build {params.build} \
               -o {params.prefix} \
               {params.input_path}
         elif [[ "{params.input_type}" == "vcf" ]]; then
             somalier extract \
               --sites {params.sites} \
-              --genome-build {params.build} \
               --unknown \
               -o {params.prefix} \
               {params.input_path}
