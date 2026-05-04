@@ -26,6 +26,8 @@ def test_ont_fastq_manifest_rows_route_to_sentmm2ont_cram_aligner() -> None:
     assert "metadata.apply(_validate_ont_fastq_unit, axis=1)" in common
     assert 'ont_r2_path not in {"", "na", "none"}' in common
     assert 'CRAM_ALIGNERS.append("sentmm2ont")' in common
+    assert "def get_raw_R2s(wildcards):" in common
+    assert "if _clean_component(i):" in common
 
 
 def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:

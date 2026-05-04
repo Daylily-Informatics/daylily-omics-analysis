@@ -1262,7 +1262,8 @@ def get_raw_R1s(wildcards):
     for i in samples[samples["sample"] == wildcards.sample][
         "r1_path"
     ]:  # .loc[wildcards.sample, "sample_lane"]['sample_lane']:
-        r1s.append(i)
+        if _clean_component(i):
+            r1s.append(i)
     return sorted(r1s)
 
 
@@ -1271,7 +1272,8 @@ def get_raw_R2s(wildcards):
     for i in samples[samples["sample"] == wildcards.sample][
         "r2_path"
     ]:  # .loc[wildcards.sample, "sample_lane"]:
-        r2s.append(i)
+        if _clean_component(i):
+            r2s.append(i)
     return sorted(r2s)
 
 
