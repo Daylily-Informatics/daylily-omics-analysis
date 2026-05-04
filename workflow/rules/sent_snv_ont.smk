@@ -8,6 +8,10 @@ import os
 
 ALIGNERS_ONT = ["ont", "sentmm2ont"]
 
+# ONT-only sentdont produces SNV/indel and SV VCFs; DayOA has no ONT-only
+# sentdont CNV target. Hybrid CNV support, where present, is separate.
+SENTDONT_CNV_SUPPORTED = False
+
 
 def get_sentdont_cram(wildcards):
     """Return CRAM input for sentdont SNV calling.

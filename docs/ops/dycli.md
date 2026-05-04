@@ -83,6 +83,9 @@ For manual debugging, use this order:
 | `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid workflow. |
 | `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid workflow. |
 | `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant workflows. |
-| `produce_multiqc_final_wgs` | Final MultiQC aggregation. |
+| `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
+| `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
+| `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
+| `produce_multiqc_final`, `produce_multiqc_final_wgs` | Final routine MultiQC aggregation. |
 
 Use `dy-r help` and tab completion for the full target list.

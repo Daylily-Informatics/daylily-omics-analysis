@@ -87,7 +87,10 @@ Common flags passed through `dy-r`:
 | `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid Sentieon workflow. |
 | `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
 | `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant callers. |
-| `produce_multiqc_final_wgs` | Final MultiQC aggregation. |
+| `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
+| `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
+| `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
+| `produce_multiqc_final`, `produce_multiqc_final_wgs` | Final routine MultiQC aggregation. |
 
 ## Complete Genomics / MGI WGS
 
@@ -129,6 +132,7 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 | [`docs/ops/dycli.md`](docs/ops/dycli.md) | CLI command behavior and monitoring. |
 | [`docs/ops/config.md`](docs/ops/config.md) | Profiles, config precedence, sample/unit schema notes. |
 | [`docs/ops/tests.md`](docs/ops/tests.md) | Local validation commands. |
+| [`docs/ops/multiqc_qc_targets.md`](docs/ops/multiqc_qc_targets.md) | Staged MultiQC targets, runtime gating, and routine vs optional QC policy. |
 | [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md) | Code-sourced catalog of Daylily tool integrations, evidence, outputs, and tests. |
 | [`docs/ops/dir_and_file_scheme.md`](docs/ops/dir_and_file_scheme.md) | Current result layout and naming conventions. |
 | [`docs/ops/workflow_catalog.md`](docs/ops/workflow_catalog.md) | Packaged workflow catalog API and current contents. |

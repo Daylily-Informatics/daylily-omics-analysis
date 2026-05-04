@@ -17,6 +17,21 @@ DEFAULT_THRESHOLDS = {
     "unrelated_max_relatedness": 0.20,
 }
 
+PAIR_COLUMNS = [
+    "sample_a",
+    "sample_b",
+    "sex_a",
+    "sex_b",
+    "family_id_a",
+    "family_id_b",
+    "relatedness",
+    "ibs0",
+    "relationship",
+    "expected_relationship",
+    "status",
+    "note",
+]
+
 
 @dataclass(frozen=True)
 class ClassifiedPair:
@@ -185,7 +200,9 @@ def classify_pairs(
 
 
 def rows_to_frame(rows: list[ClassifiedPair]) -> pd.DataFrame:
-    return pd.DataFrame([row.__dict__ for row in rows])
+    if not rows:
+        return pd.DataFrame(columns=PAIR_COLUMNS)
+    return pd.DataFrame([row.__dict__ for row in rows], columns=PAIR_COLUMNS)
 
 
 def write_report(
@@ -198,12 +215,17 @@ def write_report(
     Path(output_pairs).parent.mkdir(parents=True, exist_ok=True)
     pairs_frame.to_csv(output_pairs, sep="\t", index=False)
 
-    summary = (
-        pairs_frame.groupby(["relationship", "status"], dropna=False)
-        .size()
-        .reset_index(name="pair_count")
-        .sort_values(["relationship", "status"])
-    )
+    if pairs_frame.empty:
+        summary = pd.DataFrame(
+            [{"relationship": "no_pairs", "status": "NA", "pair_count": 0}]
+        )
+    else:
+        summary = (
+            pairs_frame.groupby(["relationship", "status"], dropna=False)
+            .size()
+            .reset_index(name="pair_count")
+            .sort_values(["relationship", "status"])
+        )
     summary.to_csv(output_summary, sep="\t", index=False)
 
     template = Template(

@@ -16,7 +16,7 @@ rule alignstats_gather:
             + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
-            ddup=DDUP,
+            ddup=qc_alignment_dedupers(),
         ),
     output:
         f"{MDIR}other_reports/alignstats_summary_gather.done",

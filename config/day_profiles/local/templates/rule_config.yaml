@@ -319,6 +319,13 @@ dysgu_sort_index:
     threads: 7
     partition: "i8"
 
+multiqc_qc:
+    enable_long_running: false
+    enable_tools: []
+    disable_tools: []
+    include_no_dedup_alignment_qc: true
+    runtime_gate_minutes: 45
+
 expansionhunter:
     version: "5.0.0"
     threads: 16
@@ -1220,6 +1227,19 @@ site_mix_contam:
     max_contamination: 0.5
     grid_step: 0.001
     max_candidate_sources: 8
+
+relatedness:
+    env_yaml: "../envs/somalier.yaml"
+    report_env_yaml: "../envs/report.yaml"
+    threads: 4
+    partition: "i8"
+    somalier_sites_vcf: /fsx/data/tool_specific_resources/H_sapiens/hg38/somalier/sites.GRCh38.vcf.gz
+    expected_relationships: ""
+    relationship_thresholds:
+        duplicate_min_relatedness: 0.95
+        first_degree_min_relatedness: 0.40
+        parent_child_max_ibs0: 2.0
+        unrelated_max_relatedness: 0.20
 
 gen_samstats:
     threads: 8

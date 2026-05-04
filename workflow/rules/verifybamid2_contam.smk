@@ -67,6 +67,6 @@ rule produce_contam_estimate:  # TARGET:  jusg gen contam
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
         ),

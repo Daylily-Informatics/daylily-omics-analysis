@@ -10,6 +10,9 @@
 # for your data.  They are also heavy early adopters to
 # The distant change in VCF spec to BND format.
 
+import csv
+import os
+
 
 rule rtg_vcfstats:
     """https://github.com/RealTimeGenomics/rtg-tools"""
@@ -42,4 +45,45 @@ rule rtg_vcfstats:
         ls {output};
         """
 
+
+localrules:
+    rtg_vcfstats_gather,
+
+
+rule rtg_vcfstats_gather:
+    input:
+        [
+            MDIR
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcfstats.txt"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ]
+    output:
+        MDIR + "other_reports/rtg_vcfstats_mqc.tsv"
+    run:
+        os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
+        fieldnames = [
+            "sample_id",
+            "aligner",
+            "deduper",
+            "snv_caller",
+            "source_path",
+            "status",
+        ]
+        with open(output[0], "w", newline="") as out_handle:
+            writer = csv.DictWriter(out_handle, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            for path in input:
+                sample, aligner, deduper, caller = _variant_qc_parts(path)
+                writer.writerow(
+                    {
+                        "sample_id": sample,
+                        "aligner": aligner,
+                        "deduper": deduper,
+                        "snv_caller": caller,
+                        "source_path": path,
+                        "status": "ok",
+                    }
+                )
 

@@ -80,6 +80,6 @@ rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estima
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
         )

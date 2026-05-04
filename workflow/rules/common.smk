@@ -5,6 +5,53 @@ import os
 import pandas as pd
 
 
+def _as_boolish(value):
+    if isinstance(value, bool):
+        return value
+    if value in [None, ""]:
+        return False
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _as_config_list(value):
+    if value in [None, "", "None"]:
+        return []
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+MULTIQC_QC_LONG_RUNNING_TOOLS = {
+    "fastv",
+    "kat",
+    "vep",
+    "snpeff",
+}
+
+
+def qc_tool_enabled(tool, *, long_running=False, default=True):
+    """Return whether a QC integration belongs in routine staged MultiQC targets."""
+    cfg = config.get("multiqc_qc", {})
+    enabled = set(_as_config_list(cfg.get("enable_tools", [])))
+    disabled = set(_as_config_list(cfg.get("disable_tools", [])))
+    if tool in disabled:
+        return False
+    if tool in enabled:
+        return True
+    is_long = long_running or tool in MULTIQC_QC_LONG_RUNNING_TOOLS
+    if is_long and not _as_boolish(cfg.get("enable_long_running", False)):
+        return False
+    return default
+
+
+def qc_alignment_dedupers():
+    cfg = config.get("multiqc_qc", {})
+    ddups = set(DDUP)
+    if _as_boolish(cfg.get("include_no_dedup_alignment_qc", True)):
+        ddups.add("na")
+    return sorted(ddups)
+
+
 BOOTSTRAP_UNIT_COLUMNS = [
     "RUNID",
     "SAMPLEID",
@@ -728,6 +775,26 @@ def _clean_component(value):
     return re.sub(r"\s+", "", value)
 
 
+def _is_ont_fastq_unit(row):
+    ont_r1_path = _clean_component(row.get("ONT_R1_PATH", "")).lower()
+    return (
+        str(row.get("SEQ_VENDOR", "") or "").strip().upper() == "ONT"
+        and ont_r1_path not in {"", "na", "none"}
+    )
+
+
+def _validate_ont_fastq_unit(row):
+    if not _is_ont_fastq_unit(row):
+        return
+    ont_r2_path = _clean_component(row.get("ONT_R2_PATH", "")).lower()
+    if ont_r2_path not in {"", "na", "none"}:
+        raise WorkflowError(
+            "ONT FASTQ units are single-end in DayOA: "
+            f"analysis unit {row['analysis_unit_uid']} has ONT_R2_PATH='{ont_r2_path}'. "
+            "Set ONT_R2_PATH to 'na' or empty."
+        )
+
+
 def _build_analysis_unit(row):
     parts = [
         _clean_component(row["RUNID"]),
@@ -769,6 +836,8 @@ if metadata["analysis_unit_uid"].duplicated().any():
     raise WorkflowError(
         f"Duplicate analysis unit identifiers detected: {sorted(set(dupes))}"
     )
+
+metadata.apply(_validate_ont_fastq_unit, axis=1)
 
 def _select_reads(row):
     for r1, r2 in [
@@ -1069,6 +1138,11 @@ for _, row in samples.iterrows():
         aval = str(row.get(aligner_col, "") or "").strip()
         if aval and aval.lower() not in {"na", "none", "hyb"}:
             CRAM_ALIGNERS.append(aval)
+
+    # ONT FASTQ rows align through sentmm2ont and then use the CRAM passthrough
+    # into downstream ONT DNAscope rules.
+    if _is_ont_fastq_unit(row):
+        CRAM_ALIGNERS.append("sentmm2ont")
 
     # Track BAM-only aligners (Roche stays as BAM, not CRAM)
     for aligner_col in ("ROCHE_BAM_ALIGNER",):
@@ -1750,6 +1824,7 @@ BAM_ALIGNERS = sorted(set(BAM_ALIGNERS))
 
 OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS)-set(BAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
+QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))
 
 # ---------------------------------------------------------------------------
 # SNV caller → valid output aligners mapping.

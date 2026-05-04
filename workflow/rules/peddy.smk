@@ -1,4 +1,5 @@
 import os
+import csv
 
 # ##### PEDDY - Pedigree Tools
 # ----------------------------
@@ -93,7 +94,62 @@ rule peddy:
 
 
 localrules:
+    peddy_sample_qc_gather,
     produce_peddy,
+
+
+rule peddy_sample_qc_gather:
+    input:
+        [
+            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
+    output:
+        MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
+    run:
+        os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
+        fieldnames = [
+            "sample_id",
+            "aligner",
+            "deduper",
+            "snv_caller",
+            "reported_sex",
+            "predicted_sex",
+            "sex_check_status",
+            "het_check_status",
+            "ped_check_status",
+            "peddy_prefix",
+        ]
+        with open(output[0], "w", newline="") as out_handle:
+            writer = csv.DictWriter(out_handle, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            for done_path in input:
+                name = os.path.basename(str(done_path)).replace(".peddy.done", "")
+                parts = name.split(".")
+                sample, aligner, deduper, caller = parts[0], parts[1], parts[2], parts[3]
+                prefix = str(done_path).replace(".peddy.done", ".peddy.")
+                sex_file = prefix + "sex_check.csv"
+                sex_row = {}
+                if os.path.exists(sex_file):
+                    with open(sex_file, newline="") as handle:
+                        rows = list(csv.DictReader(handle))
+                    sex_row = rows[0] if rows else {}
+                writer.writerow(
+                    {
+                        "sample_id": sample,
+                        "aligner": aligner,
+                        "deduper": deduper,
+                        "snv_caller": caller,
+                        "reported_sex": sex_row.get("ped_sex", ""),
+                        "predicted_sex": sex_row.get("predicted_sex", ""),
+                        "sex_check_status": sex_row.get("error", ""),
+                        "het_check_status": "generated",
+                        "ped_check_status": "generated",
+                        "peddy_prefix": prefix,
+                    }
+                )
 
 rule produce_peddy:  # TARGET: just produce peddy results
     input:
@@ -103,6 +159,7 @@ rule produce_peddy:  # TARGET: just produce peddy results
             for ddup in DDUP
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
         ],
+        MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
     output:
         "logs/peddy_gathered.done",
     shell:

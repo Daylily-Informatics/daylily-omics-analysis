@@ -1,20 +1,44 @@
-####### sentmm2ont – minimap2 alignment for ONT unaligned BAM reads
-# Aligns unaligned ONT BAM → CRAM via minimap2 -ax map-ont | samtools sort
+####### sentmm2ont – minimap2 alignment for ONT reads
+# Aligns ONT FASTQ or unaligned BAM → CRAM via minimap2 -ax map-ont | samtools sort
 # Optional long-read trimming via LONGREADTRIM_READ_LENGTH / LONGREADTRIM_MODE.
-# No deduplication step: ONT long reads aligned from uBAM do not require it.
+# No deduplication step: ONT long reads do not require it.
 
-# Filter SAMPS to only those with ONT_BAM_ALIGNER == 'sentmm2ont'
 ONT_SENTMM2ONT_SAMPS = list(
     samples[
-        samples["ONT_BAM_ALIGNER"].isin(["sentmm2ont"])
+        samples.apply(
+            lambda row: _is_ont_fastq_unit(row)
+            or str(row.get("ONT_BAM_ALIGNER", "") or "").strip() == "sentmm2ont",
+            axis=1,
+        )
     ]["sample_lane"].unique()
 )
 
 
+def get_sentmm2ont_reads(wildcards):
+    row = samples[samples["sample_lane"] == wildcards.sample].iloc[0]
+    if _is_ont_fastq_unit(row):
+        return os.path.abspath(_clean_component(row.get("ONT_R1_PATH", "")))
+    bam_inputs = get_ont_bam(wildcards)
+    if not bam_inputs:
+        raise WorkflowError(f"sample {wildcards.sample} has no ONT reads for sentmm2ont.")
+    return bam_inputs[0]
+
+
+def get_sentmm2ont_input_kind(wildcards):
+    row = samples[samples["sample_lane"] == wildcards.sample].iloc[0]
+    if _is_ont_fastq_unit(row):
+        return "fastq"
+    if str(row.get("ONT_BAM_ALIGNER", "") or "").strip() == "sentmm2ont":
+        return "ubam"
+    raise WorkflowError(
+        f"sample {wildcards.sample} is not a sentmm2ont ONT FASTQ/uBAM unit."
+    )
+
+
 rule sentmm2ont_align_sort:
-    """Align ONT uBAM with minimap2, sort to CRAM."""
+    """Align ONT FASTQ or uBAM with minimap2, sort to CRAM."""
     input:
-        cram=get_ont_cramsx,
+        reads=get_sentmm2ont_reads,
     output:
         cramo=MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram",
         crami=MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram.crai",
@@ -47,6 +71,7 @@ rule sentmm2ont_align_sort:
         rgpg="minimap2",
         longread_trim_head=get_longread_trim_head,
         longread_trim_tail=get_longread_trim_tail,
+        input_kind=get_sentmm2ont_input_kind,
     conda:
         config["sentmm2ont_align_sort"]["env_yaml"]
     shell:
@@ -117,8 +142,20 @@ rule sentmm2ont_align_sort:
             exit 6;
         fi
 
-        samtools fastq -@ 4 -T MM,ML {input.cram[0]} \
-        {params.longread_trim_head} {params.longread_trim_tail} \
+        (
+            if [[ "{params.input_kind}" == "fastq" ]]; then
+                if [[ "{input.reads}" == *.gz || "{input.reads}" == *.bgz ]]; then
+                    gzip -dc -- {input.reads};
+                else
+                    cat -- {input.reads};
+                fi
+            elif [[ "{params.input_kind}" == "ubam" ]]; then
+                samtools fastq -@ 4 -T MM,ML {input.reads};
+            else
+                echo "ERROR: unsupported sentmm2ont input kind: {params.input_kind}" >> {log} 2>&1;
+                exit 8;
+            fi
+        ) {params.longread_trim_head} {params.longread_trim_tail} \
         | LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
         {params.minimap2_opts} \
         -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
@@ -147,4 +184,3 @@ localrules: produce_sentmm2ont_align_sort,
 rule produce_sentmm2ont_align_sort:  # TARGET: produce_sentmm2ont_align_sort
     input:
         expand(MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram", sample=ONT_SENTMM2ONT_SAMPS)
-
