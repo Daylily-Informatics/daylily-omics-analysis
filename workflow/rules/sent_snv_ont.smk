@@ -8,8 +8,11 @@ import os
 
 ALIGNERS_ONT = ["ont", "sentmm2ont"]
 
-# ONT-only sentdont produces SNV/indel and SV VCFs; DayOA has no ONT-only
-# sentdont CNV target. Hybrid CNV support, where present, is separate.
+# ONT-only sentdont produces SNV/indel VCFs. SV calling is handled by the
+# explicit TIDDIT target; the Sentieon long-read SV subpipeline is skipped here
+# because it can fail when low-output ONT samples do not generate a phased BED.
+# DayOA has no ONT-only sentdont CNV target. Hybrid CNV support, where present,
+# is separate.
 SENTDONT_CNV_SUPPORTED = False
 
 
@@ -134,7 +137,7 @@ rule sent_snv_ont:
 
         # --- sentieon-cli dnascope-longread (ONT) ---
         # The CLI runs the full two-pass phased pipeline internally.
-        # Outputs: <basename>.vcf.gz (SNV/indel) and <basename>.sv.vcf.gz (SV)
+        # Output: <basename>.vcf.gz (SNV/indel). SV is handled by TIDDIT.
         cli_out="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sentdont";
 
         echo "sentieon-cli dnascope-longread starting: model={params.model} tech=ONT" >> {log} 2>&1;
@@ -146,6 +149,7 @@ rule sent_snv_ont:
             -d "{params.pop_vcf}" \
             -t {threads} \
             --tech ONT \
+            --skip_svs \
             {params.diploid_bed} {params.haploid_bed} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
 
@@ -168,14 +172,8 @@ rule sent_snv_ont:
             exit 20;
         fi
 
-        # --- Reheader SV VCF ---
-        if [ -f "${{cli_out}}.sv.vcf.gz" ]; then
-            bcftools reheader -s "$TMPDIR/rename.txt" -o {output.svvcfgz} "${{cli_out}}.sv.vcf.gz" >> {log} 2>&1;
-            bcftools index -f -t --threads {threads} -o {output.svvcfgztbi} {output.svvcfgz} >> {log} 2>&1;
-        else
-            echo "WARNING: SV VCF not produced; creating empty placeholder" >> {log} 2>&1;
-            touch {output.svvcfgz} {output.svvcfgztbi};
-        fi
+        echo "Sentieon ONT SV calling skipped; TIDDIT is the ONT SV target." >> {log} 2>&1;
+        touch {output.svvcfgz} {output.svvcfgztbi};
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));

@@ -50,13 +50,15 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
         assert cfg["sentmm2ont_align_sort"]["minimap2_opts"].strip() == "-ax map-ont"
 
 
-def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
+def test_sentdont_outputs_snv_and_uses_tiddit_for_sv() -> None:
     rule = _read("workflow/rules/sent_snv_ont.smk")
 
     assert 'ALIGNERS_ONT = ["ont", "sentmm2ont"]' in rule
     assert "sentieon-cli dnascope-longread" in rule
     assert "--tech ONT" in rule
+    assert "--skip_svs" in rule
     assert "svvcfgz=MDIR" in rule
     assert ".sentdont.sv.vcf.gz" in rule
+    assert "TIDDIT is the ONT SV target" in rule
     assert "SENTDONT_CNV_SUPPORTED = False" in rule
     assert "produce_sentdont_cnv" not in rule
