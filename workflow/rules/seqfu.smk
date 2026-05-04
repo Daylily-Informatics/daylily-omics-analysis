@@ -52,7 +52,7 @@ localrules:
 
 rule compile_seqfu:
     input:
-        expand(MDIR + "{sample}/seqqc/seqfu/{sample}.seqfu.done", sample=SAMPS),
+        expand(MDIR + "{sample}/seqqc/seqfu/{sample}.seqfu.done", sample=PAIRED_FASTQ_SAMPS),
     container:
         None
     output:

@@ -54,6 +54,8 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
         assert f'"{tool}"' in common
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
+    assert "FASTQ_SAMPS" in common
+    assert "PAIRED_FASTQ_SAMPS" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
 
 
@@ -77,6 +79,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"kat\", long_running=True)" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
+    assert "sample=FASTQ_SAMPS" in text
+    assert "sample=PAIRED_FASTQ_SAMPS" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
     for expected in (

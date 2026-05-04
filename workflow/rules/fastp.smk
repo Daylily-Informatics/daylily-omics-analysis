@@ -52,7 +52,7 @@ localrules:
 
 rule produce_fastp:  # TARGET: produce fastp qc
     input:
-        expand(MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done", sample=SAMPS),
+        expand(MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done", sample=PAIRED_FASTQ_SAMPS),
     output:
         MDIR + "logs/multiqc/fastp.done",
     shell:

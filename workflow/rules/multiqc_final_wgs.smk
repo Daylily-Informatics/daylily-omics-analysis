@@ -17,7 +17,7 @@ def _sequence_qc_native_inputs(wildcards):
     paths = []
     if qc_tool_enabled("fastqc"):
         paths.extend(
-            expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SAMPS)
+            expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=FASTQ_SAMPS)
         )
     if qc_tool_enabled("fastp"):
         paths.extend(
@@ -27,10 +27,10 @@ def _sequence_qc_native_inputs(wildcards):
                     MDIR + "{sample}/seqqc/fastp/{sample}.fastp.json",
                     MDIR + "{sample}/seqqc/fastp/{sample}.fastp.html",
                 ],
-                sample=SAMPS,
+                sample=PAIRED_FASTQ_SAMPS,
             )
         )
-    if qc_tool_enabled("seqfu"):
+    if qc_tool_enabled("seqfu") and PAIRED_FASTQ_SAMPS:
         paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
     if qc_tool_enabled("kat", long_running=True):
         paths.extend(expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SAMPS))
@@ -41,7 +41,7 @@ def _sequence_qc_native_inputs(wildcards):
                     MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json",
                     MDIR + "{sample}/seqqc/fastv/{sample}.fastv.html",
                 ],
-                sample=SAMPS,
+                sample=PAIRED_FASTQ_SAMPS,
             )
         )
     return paths

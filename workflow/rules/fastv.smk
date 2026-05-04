@@ -48,7 +48,7 @@ rule fastv:
 
 rule produce_fastv:  # TARGET: fastv output
     input:
-        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json", sample=SAMPS),
+        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json", sample=PAIRED_FASTQ_SAMPS),
     output:
         MDIR + "logs/multiqc/fastv.done",
     shell:

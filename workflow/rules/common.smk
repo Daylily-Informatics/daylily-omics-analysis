@@ -1320,6 +1320,21 @@ if "remove_samples" in config:
         SAMPS.remove(rs)
         print(f"SAMPLE REMOVED: {rs}")
 
+
+def _sample_has_read(sample, column):
+    return any(
+        _clean_component(path)
+        for path in samples[samples["sample"] == sample][column]
+    )
+
+
+FASTQ_SAMPS = [sample for sample in SAMPS if _sample_has_read(sample, "r1_path")]
+PAIRED_FASTQ_SAMPS = [
+    sample
+    for sample in FASTQ_SAMPS
+    if _sample_has_read(sample, "r2_path")
+]
+
 SSAMPS = {}
 for sample in samples["sample"].unique():
     row = samples[samples["sample"] == sample]
