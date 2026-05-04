@@ -28,7 +28,7 @@ rule cyrius:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyrius/logs/{sample}.{alnr}.{ddup}.cyrius.log",
     threads: config["go_left"]["threads"]
     conda:
-        "envs/cyrius_v0.1.yaml"
+        "../envs/cyrius_v0.1.yaml"
     shell:
         """
         set -euo pipefail
