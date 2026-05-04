@@ -69,12 +69,32 @@ def test_cyrius_rule_uses_documented_interface_and_outputs() -> None:
         "--outDir {params.out_dir}",
         "--threads {threads}",
         "realpath {input.cram}",
+        "resources/cyrius/v0.0.0.6-jem/data",
+        "star_table.txt",
+        "runtime_dir",
+        '"$CONDA_PREFIX/bin/python" {params.runtime_dir}/star_caller.py',
         '"../envs/cyrius_v0.1.yaml"',
     ):
         assert expected in cyrius
     assert "rule produce_cyp2d6" not in cyrius
     assert "htd/cyp2d6" not in cyrius
     assert '"logs/cyrius.done"' in cyrius
+
+
+def test_cyrius_vendored_resources_present() -> None:
+    data_dir = REPO_ROOT / "resources/cyrius/v0.0.0.6-jem/data"
+
+    for name in (
+        "star_table.txt",
+        "CYP2D6_region_38.bed",
+        "CYP2D6_SNP_38.txt",
+        "CYP2D6_target_variant_38.txt",
+        "CYP2D6_target_variant_homology_region_38.txt",
+        "CYP2D6_haplotype_38.txt",
+        "CYP2D6_gmm.txt",
+    ):
+        assert (data_dir / name).is_file()
+        assert (data_dir / name).stat().st_size > 0
 
 
 def test_htd_selector_maps_supported_callers_to_outputs() -> None:

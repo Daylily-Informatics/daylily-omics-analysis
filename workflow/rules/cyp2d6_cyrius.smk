@@ -17,6 +17,8 @@ rule cyrius:
         genome="37" if "b37" == config["genome_build"] else "38",
         prefix=lambda wildcards: f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cyrius",
         out_dir=MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyrius",
+        resource_data="resources/cyrius/v0.0.0.6-jem/data",
+        runtime_dir=MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyrius/runtime",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.cyrius.benchmark.tsv"
     resources:
@@ -35,7 +37,19 @@ rule cyrius:
         mkdir -p {params.out_dir} $(dirname {log})
         rm -f {output.tsv} {output.json} {output.done}
         realpath {input.cram} > {output.manifest}
-        star_caller.py \
+
+        if [ ! -s {params.resource_data}/star_table.txt ]; then
+            echo "Cyrius resource data missing at {params.resource_data}" > {log}
+            exit 66
+        fi
+
+        cyrius_script=$(command -v star_caller.py)
+        rm -rf {params.runtime_dir}
+        mkdir -p {params.runtime_dir}
+        ln -s "$cyrius_script" {params.runtime_dir}/star_caller.py
+        ln -s "$PWD/{params.resource_data}" {params.runtime_dir}/data
+
+        "$CONDA_PREFIX/bin/python" {params.runtime_dir}/star_caller.py \
             --manifest {output.manifest} \
             --genome {params.genome} \
             --reference {params.huref} \
