@@ -28,6 +28,36 @@ MULTIQC_QC_LONG_RUNNING_TOOLS = {
     "snpeff",
 }
 
+SUPPORTED_HTD_CALLERS = (
+    "gauchian",
+    "cyrius",
+    "smn12",
+    "parascopy",
+    "smaca",
+    "genetocn",
+)
+
+
+def htd_callers_selected(*, require_non_empty=False):
+    callers = _as_config_list(config.get("htd_callers", []))
+    invalid = sorted(set(callers) - set(SUPPORTED_HTD_CALLERS))
+    if invalid:
+        raise WorkflowError(
+            "Unsupported htd_callers value(s): "
+            + ", ".join(invalid)
+            + ". Supported values: "
+            + ", ".join(SUPPORTED_HTD_CALLERS)
+        )
+    if require_non_empty and not callers:
+        raise WorkflowError(
+            "produce_htd_calls requires a non-empty --config htd_callers=[...]. "
+            "Supported values: " + ", ".join(SUPPORTED_HTD_CALLERS)
+        )
+    return callers
+
+
+HTD_CALLERS = htd_callers_selected()
+
 
 def qc_tool_enabled(tool, *, long_running=False, default=True):
     """Return whether a QC integration belongs in routine staged MultiQC targets."""

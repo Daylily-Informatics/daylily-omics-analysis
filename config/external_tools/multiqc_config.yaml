@@ -55,6 +55,7 @@ module_order:
   - peddy_sample_qc
   - vep_annotation
   - snpeff_annotation
+  - htd_calls
   - giab_concordance
   - norm_cov_evenness_combo
   - rules_benchmark_data
@@ -261,6 +262,14 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'snpeff_annotation'
+  htd_calls:
+    id: 'htd_calls'
+    section_name: 'HTD Caller Outputs'
+    description: 'Selected hard-to-detect-region caller outputs'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'htd_calls'
   alignstats_gs:
     id: 'alignstats_gs'
     section_name: 'alignstats_gs'
@@ -318,6 +327,8 @@ sp:
     fn: "other_reports/vep_annotation_mqc.tsv"
   snpeff_annotation:
     fn: "other_reports/snpeff_annotation_mqc.tsv"
+  htd_calls:
+    fn: "other_reports/htd_calls_mqc.tsv"
   alignstats_gs:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 

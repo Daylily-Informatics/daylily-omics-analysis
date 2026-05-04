@@ -326,6 +326,8 @@ multiqc_qc:
     include_no_dedup_alignment_qc: true
     runtime_gate_minutes: 45
 
+htd_callers: []
+
 expansionhunter:
     version: "5.0.0"
     threads: 16

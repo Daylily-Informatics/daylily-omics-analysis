@@ -68,24 +68,13 @@ localrules: produce_gauchian
 rule produce_gauchian:  # TARGET : Produce Gauchian results
     """Aggregate completion for all Gauchian runs."""
     input:
-        expand(MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
+        expand(
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done",
+            sample=SSAMPS,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=DDUP,
+        )
     output:
         "./logs/gauchian.done"
-    shell:
-        "touch {output}"
-
-
-localrules: produce_all_htd
-
-rule produce_all_htd:  # TARGET : Produce all HTD results (Gauchian, SMN, CYP2D6, Parascopy)
-    input:
-        "./logs/gauchian.done",
-        "./logs/smn12.done",
-        "./logs/cyp2d6.done",
-        "./logs/parascopy.done"
-        "./logs/smaca.done"
-        "./logs/genetocn.done"
-    output:
-        "./logs/all_htd_cmp_readsy"
     shell:
         "touch {output}"

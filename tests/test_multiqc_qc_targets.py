@@ -213,6 +213,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "peddy_sample_qc",
         "vep_annotation",
         "snpeff_annotation",
+        "htd_calls",
         "expansionhunter",
     ):
         assert key in config["custom_data"]

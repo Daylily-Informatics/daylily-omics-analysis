@@ -116,9 +116,9 @@ rule produce_parascopy:  # TARGET : Produce Parascopy results
     """Aggregate completion of all Parascopy runs."""
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/htd/parascopy/{sample}.{alnr}.parascopy.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done",
             sample=SSAMPS,
-            alnr=ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         )
     output:

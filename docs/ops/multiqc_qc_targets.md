@@ -56,6 +56,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | RTG vcfstats | Variant QC | `other_reports/rtg_vcfstats_mqc.tsv` |
 | Peddy | Sample/variant QC | `other_reports/peddy_sample_qc_mqc.tsv` |
 | ExpansionHunter | STR QC | `other_reports/expansionhunter_mqc.tsv` when STR-capable aligners are selected |
+| Selected HTD callers | HTD QC | `other_reports/htd_calls_mqc.tsv` when `htd_callers` is non-empty |
 | RTG concordance | Benchmarking | `other_reports/giab_concordance_mqc.tsv` when truth metadata is configured |
 | Daylily benchmarks | Runtime/cost QC | `other_reports/rules_benchmark_data_mqc.tsv` |
 

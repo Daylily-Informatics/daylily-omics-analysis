@@ -8,25 +8,33 @@ GENETOCN_THREADS = GENETOCN_CFG.get("threads", config["go_left"]["threads"])
 GENETOCN_MEM_MB = GENETOCN_CFG.get("mem_mb", 32000)
 
 
-def genetocn_inputs(wildcards):
-    """Return the required and optional inputs for GeneToCN."""
-    cram = MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
-    crai = f"{cram}.crai"
-    inputs = {"cram": cram, "crai": crai}
+def genetocn_cram(wildcards):
+    """Return the CRAM input for GeneToCN."""
+    return MDIR + (
+        f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
+        f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
+    )
 
-    panel = GENETOCN_CFG.get("panel") or GENETOCN_CFG.get("targets")
-    if panel:
-        inputs["panel"] = panel
 
-    intervals = GENETOCN_CFG.get("intervals")
-    if intervals:
-        inputs["intervals"] = intervals
+def genetocn_crai(wildcards):
+    """Return the CRAI input for GeneToCN."""
+    return f"{genetocn_cram(wildcards)}.crai"
 
-    annotation = GENETOCN_CFG.get("annotation")
-    if annotation:
-        inputs["annotation"] = annotation
 
-    return inputs
+def _genetocn_config_path(*keys):
+    for key in keys:
+        value = GENETOCN_CFG.get(key)
+        if value:
+            return value
+    return []
+
+
+def _genetocn_input_value(value):
+    if isinstance(value, str):
+        return value
+    if not value:
+        return ""
+    return value[0]
 
 
 def genetocn_command(wildcards, input, output, threads):
@@ -36,9 +44,9 @@ def genetocn_command(wildcards, input, output, threads):
         "reference",
         config["supporting_files"]["files"]["huref"]["fasta"]["name"],
     )
-    panel = getattr(input, "panel", None)
-    intervals = getattr(input, "intervals", None)
-    annotation = getattr(input, "annotation", None)
+    panel = _genetocn_input_value(getattr(input, "panel", ""))
+    intervals = _genetocn_input_value(getattr(input, "intervals", ""))
+    annotation = _genetocn_input_value(getattr(input, "annotation", ""))
     extra_args = cfg.get("extra_args", "").strip()
 
     template = cfg.get("command_template")
@@ -90,7 +98,11 @@ def genetocn_command(wildcards, input, output, threads):
 rule genetocn:
     """Run GeneToCN on an input CRAM/CRAI pair."""
     input:
-        genetocn_inputs
+        cram=genetocn_cram,
+        crai=genetocn_crai,
+        panel=lambda wildcards: _genetocn_config_path("panel", "targets"),
+        intervals=lambda wildcards: _genetocn_config_path("intervals"),
+        annotation=lambda wildcards: _genetocn_config_path("annotation"),
     output:
         results_dir=directory(MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/results/{sample}.{alnr}"),
         done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done",
@@ -125,7 +137,12 @@ localrules: produce_genetocn
 rule produce_genetocn:  # TARGET : Produce GeneToCN copy-number results
     """Aggregate completion for all GeneToCN runs."""
     input:
-        expand(MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
+        expand(
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done",
+            sample=SSAMPS,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=DDUP,
+        )
     output:
         "./logs/genetocn.done"
     shell:
