@@ -69,6 +69,7 @@ def test_cyrius_rule_uses_documented_interface_and_outputs() -> None:
         "--outDir {params.out_dir}",
         "--threads {threads}",
         "realpath {input.cram}",
+        '"envs/cyrius_v0.1.yaml"',
     ):
         assert expected in cyrius
     assert "rule produce_cyp2d6" not in cyrius
