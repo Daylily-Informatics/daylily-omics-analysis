@@ -146,6 +146,7 @@ def test_multiqc_custom_output_inventory_rules_exist() -> None:
 
 
 def test_contamination_and_relatedness_aggregates_are_wired() -> None:
+    multiqc = _read("workflow/rules/multiqc_final_wgs.smk")
     site_mix = _read("workflow/rules/site_mix_contam.smk")
     relatedness = _read("workflow/rules/relatedness_batch.smk")
     report_script = _read("workflow/scripts/relatedness_report.py")
@@ -177,6 +178,9 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         assert expected in relatedness
 
     assert "--genome-build" not in relatedness
+    assert "--out-dir $(dirname {output:q})" in relatedness
+    assert "--sample-prefix {params.cluster_sample:q}" in relatedness
+    assert 'qc_tool_enabled("relatedness", default=False)' in multiqc
     assert "PAIR_COLUMNS" in report_script
     assert "relationship\": \"no_pairs\"" in report_script
 

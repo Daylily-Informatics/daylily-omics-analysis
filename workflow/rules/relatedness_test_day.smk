@@ -110,13 +110,15 @@ rule somalier_extract:
             somalier extract \
               --sites {params.sites} \
               --fasta {params.ref} \
-              -o {params.prefix} \
+              --out-dir {SOMALIER_DIR}/extract \
+              --sample-prefix {wildcards.sample} \
               {params.input_path}
         elif [[ "{params.input_type}" == "vcf" ]]; then
             somalier extract \
               --sites {params.sites} \
               --unknown \
-              -o {params.prefix} \
+              --out-dir {SOMALIER_DIR}/extract \
+              --sample-prefix {wildcards.sample} \
               {params.input_path}
         else
             echo "unsupported path_type: {params.input_type}" >&2

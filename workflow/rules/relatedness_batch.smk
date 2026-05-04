@@ -99,8 +99,6 @@ rule relatedness_batch_somalier_extract:
     params:
         sites=RELATEDNESS_CFG["somalier_sites_vcf"],
         ref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        prefix=RELATEDNESS_REPORT_ROOT
-        + "/{alnr}/{ddup}/somalier/extract/{sample}",
         cluster_sample=ret_sample,
     log:
         RELATEDNESS_REPORT_ROOT
@@ -114,7 +112,8 @@ rule relatedness_batch_somalier_extract:
         somalier extract \
           --sites {params.sites:q} \
           --fasta {params.ref:q} \
-          -o {params.prefix:q} \
+          --out-dir $(dirname {output:q}) \
+          --sample-prefix {params.cluster_sample:q} \
           {input.cram:q} \
           > {log:q} 2>&1
         test -s {output:q}

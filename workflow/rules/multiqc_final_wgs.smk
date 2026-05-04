@@ -59,7 +59,7 @@ def _alignment_component_inputs(wildcards):
                 MDIR + "other_reports/site_mix_donor_mqc.tsv",
             ]
         )
-    if qc_tool_enabled("relatedness"):
+    if qc_tool_enabled("relatedness", default=False):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
     return paths
 
