@@ -51,7 +51,6 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | GATK contamination | Contamination QC | per-sample `.gatk.tsv` |
 | bcftools stats | Variant QC | `other_reports/bcftools_variant_stats_mqc.tsv` |
 | RTG vcfstats | Variant QC | `other_reports/rtg_vcfstats_mqc.tsv` |
-| Peddy | Sample/variant QC | `other_reports/peddy_sample_qc_mqc.tsv` |
 | ExpansionHunter | STR QC | `other_reports/expansionhunter_mqc.tsv` when STR-capable aligners are selected |
 | RTG concordance | Benchmarking | `other_reports/giab_concordance_mqc.tsv` when truth metadata is configured |
 | Daylily benchmarks | Runtime/cost QC | `other_reports/rules_benchmark_data_mqc.tsv` |
@@ -70,6 +69,7 @@ MultiQC by default:
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
 | goleft | Indexcov sex-chromosome inference can fail on sparse or non-standard alignments; keep it explicit until validated for the cohort and assay. | `enable_tools=["goleft"]` |
 | KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
+| Peddy | Pedigree, sex, and heterozygosity checks need VCFs with enough usable sites and are not valid for every sparse or long-read assay output. | `enable_tools=["peddy"]` |
 | site_mix | Genotype-free contamination estimation needs enough usable sites after depth filters and is not valid for every assay depth profile. | `enable_tools=["site_mix"]` |
 | Somalier relatedness | Relatedness depends on configured Somalier sites resources and is a cohort-level QC add-on. | `enable_tools=["relatedness"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |

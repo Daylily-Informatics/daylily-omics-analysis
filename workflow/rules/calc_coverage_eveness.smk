@@ -68,12 +68,14 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
     shell:
         """
         mkdir -p $(dirname {output});
-        single_file=$( find results | grep norm_cov_eveness.mqc.tsv | head -n 1);
+        single_file=$(find results -name '*norm_cov_eveness.mqc.tsv' -print -quit);
         if [[ "$single_file" == "" ]]; then
             echo "NO DATA FOUND" > {output.mqc};
         else
             head -n 1 $single_file > {output.mqc};
-            find results | grep .norm_cov_eveness.mqc.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
+            find results -name '*.norm_cov_eveness.mqc.tsv' -print | sort | while IFS= read -r cov_file; do
+                tail -n +2 "$cov_file" >> {output.mqc};
+            done;
         fi;
         ls {input};
         """

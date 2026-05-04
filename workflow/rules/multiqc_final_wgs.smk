@@ -153,7 +153,7 @@ def _variant_component_inputs(wildcards):
     pairs = valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
     paths.append(MDIR + "other_reports/bcftools_variant_stats_mqc.tsv")
     paths.append(MDIR + "other_reports/rtg_vcfstats_mqc.tsv")
-    if qc_tool_enabled("peddy"):
+    if qc_tool_enabled("peddy", default=False):
         paths.extend(["logs/peddy_gathered.done", MDIR + "other_reports/peddy_sample_qc_mqc.tsv"])
     if qc_tool_enabled("expansionhunter") and set(ALIGNERS) & EXPANSIONHUNTER_ALIGNERS:
         paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")

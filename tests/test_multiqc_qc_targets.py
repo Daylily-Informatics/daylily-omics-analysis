@@ -84,6 +84,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
     assert 'qc_tool_enabled("goleft", default=False)' in text
+    assert 'qc_tool_enabled("peddy", default=False)' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
@@ -191,6 +192,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     bcftools = _read("workflow/rules/bcftools_vcfstat.smk")
     rtg = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
+    cov_evenness = _read("workflow/rules/calc_coverage_eveness.smk")
     vep = _read("workflow/rules/vep.smk")
     snpeff = _read("workflow/rules/snpeff.smk")
 
@@ -200,6 +202,8 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "rtg_vcfstats_mqc.tsv" in rtg
     assert "rule peddy_sample_qc_gather:" in peddy
     assert "peddy_sample_qc_mqc.tsv" in peddy
+    assert "find results -name '*norm_cov_eveness.mqc.tsv' -print -quit" in cov_evenness
+    assert "find results | grep norm_cov_eveness.mqc.tsv | head" not in cov_evenness
     assert "--input_file {input.vcfgz}" in vep
     assert "--assembly {params.genome_build}" in vep
     assert "vep_annotation_mqc.tsv" in vep
