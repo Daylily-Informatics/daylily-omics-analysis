@@ -3,7 +3,7 @@ import os
 
 #
 # This pipeline will use the ONT aligned cram directly and call variants
-# using sentieon-cli dnascope-longread --tech ONT
+# using Sentieon DNAscope with the ONT model bundle's diploid model.
 #
 
 ALIGNERS_ONT = ["ont", "sentmm2ont"]
@@ -38,10 +38,10 @@ def get_sentdont_crai(wildcards):
 
 
 # ---------------------------------------------------------------------------
-# sent_snv_ont: Sentieon DNAscope LongRead pipeline (Oxford Nanopore)
-# Uses sentieon-cli dnascope-longread which implements the full two-pass
-# phased variant calling pipeline (DNAscope → VariantPhaser → RepeatModel →
-# DNAscopeHP per-haplotype → merge).  Outputs SNV/indel VCF + SV VCF.
+# sent_snv_ont: Sentieon DNAscope SNV/indel caller (Oxford Nanopore)
+# Runs the DNAscope driver directly for SNV/indels. The long-read wrapper's
+# phased/SV stages are intentionally not used here; ONT SV calling is handled by
+# the explicit TIDDIT target.
 # ---------------------------------------------------------------------------
 
 rule sent_snv_ont:
@@ -82,8 +82,7 @@ rule sent_snv_ont:
         model=config["sentdont"]["dna_scope_snv_model"],
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         cluster_sample=ret_sample,
-        haploid_bed=get_haploid_bed_arg,
-        diploid_bed=get_diploid_bed_arg,
+        diploid_bed=get_diploid_bed_interval_arg,
     shell:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
@@ -135,30 +134,29 @@ rule sent_snv_ont:
             echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
 
-        # --- sentieon-cli dnascope-longread (ONT) ---
-        # The CLI runs the full two-pass phased pipeline internally.
-        # Output: <basename>.vcf.gz (SNV/indel). SV is handled by TIDDIT.
+        # --- Sentieon DNAscope (ONT SNV/indel only) ---
+        # SV is handled by TIDDIT.
         cli_out="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sentdont";
 
-        echo "sentieon-cli dnascope-longread starting: model={params.model} tech=ONT" >> {log} 2>&1;
+        echo "sentieon driver DNAscope starting: model={params.model}/diploid_model" >> {log} 2>&1;
         set +e;
-        sentieon-cli dnascope-longread \
-            -r {params.huref} \
-            -i {input.cram} \
-            -m "{params.model}" \
-            -d "{params.pop_vcf}" \
-            -t {threads} \
-            --tech ONT \
-            --skip_svs \
-            {params.diploid_bed} {params.haploid_bed} \
+        sentieon driver \
+            --input {input.cram} \
+            --reference {params.huref} \
+            --thread_count {threads} \
+            {params.diploid_bed} \
+            --interval_padding 0 \
+            --algo DNAscope \
+            --dbsnp "{params.pop_vcf}" \
+            --model "{params.model}/diploid_model" \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
 
-        cli_rc=$?;
+        driver_rc=$?;
         set -e;
-        echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
-        if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: sentieon-cli dnascope-longread failed with exit code $cli_rc" >> {log} 2>&1;
-            exit $cli_rc;
+        echo "sentieon driver exit code: $driver_rc" >> {log} 2>&1;
+        if [ $driver_rc -ne 0 ]; then
+            echo "ERROR: sentieon driver DNAscope failed with exit code $driver_rc" >> {log} 2>&1;
+            exit $driver_rc;
         fi
 
         # --- Reheader SNV VCF: rename sample to cluster_sample ---
@@ -168,7 +166,7 @@ rule sent_snv_ont:
             bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
             bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
         else
-            echo "ERROR: SNV VCF not produced by sentieon-cli" >> {log} 2>&1;
+            echo "ERROR: SNV VCF not produced by sentieon driver" >> {log} 2>&1;
             exit 20;
         fi
 

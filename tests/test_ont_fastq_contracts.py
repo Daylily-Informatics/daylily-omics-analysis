@@ -54,9 +54,12 @@ def test_sentdont_outputs_snv_and_uses_tiddit_for_sv() -> None:
     rule = _read("workflow/rules/sent_snv_ont.smk")
 
     assert 'ALIGNERS_ONT = ["ont", "sentmm2ont"]' in rule
-    assert "sentieon-cli dnascope-longread" in rule
-    assert "--tech ONT" in rule
-    assert "--skip_svs" in rule
+    assert "sentieon-cli dnascope-longread" not in rule
+    assert "sentieon driver" in rule
+    assert "--algo DNAscope" in rule
+    assert "--model \"{params.model}/diploid_model\"" in rule
+    assert "diploid_bed=get_diploid_bed_interval_arg" in rule
+    assert "--interval_padding 0" in rule
     assert "svvcfgz=MDIR" in rule
     assert ".sentdont.sv.vcf.gz" in rule
     assert "TIDDIT is the ONT SV target" in rule
