@@ -6,7 +6,7 @@ that matches the run scope:
 | Target | Scope |
 | --- | --- |
 | `produce_multiqc_seq_data` | Input sequence-data QC. |
-| `produce_multiqc_alignment` | Sequence-data QC plus raw/no-dedup and deduped alignment QC, contamination, and relatedness. |
+| `produce_multiqc_alignment` | Sequence-data QC plus raw/no-dedup and deduped alignment QC, with optional contamination and relatedness add-ons. |
 | `produce_multiqc_variants` | Sequence, alignment, variant QC, annotation summaries, ExpansionHunter, and concordance where truth metadata exists. |
 | `produce_multiqc_final` | Alias for the routine final WGS MultiQC report. |
 | `produce_multiqc_final_wgs` | Routine final WGS MultiQC report. |
@@ -46,12 +46,9 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | Qualimap | Alignment QC | per-sample Qualimap outputs |
 | mosdepth | Alignment QC | per-sample mosdepth summaries |
 | coverage evenness | Alignment QC | `other_reports/normcovevenness_combo_mqc.tsv` and per-sample markdown |
-| goleft | Alignment QC | per-sample goleft outputs |
 | Alignment QC output inventory | Alignment QC | `other_reports/alignment_qc_outputs_mqc.tsv` |
 | VerifyBamID2 | Contamination QC | per-sample `.vb2.tsv` |
 | GATK contamination | Contamination QC | per-sample `.gatk.tsv` |
-| site_mix | Contamination QC | `other_reports/contamination_mqc.tsv`, `site_mix_contam_mqc.tsv`, `site_mix_donor_mqc.tsv` |
-| Somalier relatedness | Relatedness QC | `other_reports/relatedness_mqc.tsv` |
 | bcftools stats | Variant QC | `other_reports/bcftools_variant_stats_mqc.tsv` |
 | RTG vcfstats | Variant QC | `other_reports/rtg_vcfstats_mqc.tsv` |
 | Peddy | Sample/variant QC | `other_reports/peddy_sample_qc_mqc.tsv` |
@@ -71,7 +68,10 @@ MultiQC by default:
 | Tool / integration | Reason | Enable with |
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
+| goleft | Indexcov sex-chromosome inference can fail on sparse or non-standard alignments; keep it explicit until validated for the cohort and assay. | `enable_tools=["goleft"]` |
 | KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
+| site_mix | Genotype-free contamination estimation needs enough usable sites after depth filters and is not valid for every assay depth profile. | `enable_tools=["site_mix"]` |
+| Somalier relatedness | Relatedness depends on configured Somalier sites resources and is a cohort-level QC add-on. | `enable_tools=["relatedness"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
 | SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
 

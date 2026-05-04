@@ -51,7 +51,7 @@ def _alignment_component_inputs(wildcards):
     paths = list(_seq_data_component_inputs(wildcards))
     paths.extend(_alignment_qc_native_inputs(wildcards))
     paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
-    if qc_tool_enabled("site_mix"):
+    if qc_tool_enabled("site_mix", default=False):
         paths.extend(
             [
                 MDIR + "other_reports/contamination_mqc.tsv",
@@ -107,14 +107,15 @@ def _alignment_qc_native_inputs(wildcards):
             ddup=qddups,
         )
     )
-    paths.extend(
-        expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
+    if qc_tool_enabled("goleft", default=False):
+        paths.extend(
+            expand(
+                MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
+                sample=SSAMPS,
+                alnr=alnrs,
+                ddup=qddups,
+            )
         )
-    )
     paths.extend(
         expand(
             MDIR

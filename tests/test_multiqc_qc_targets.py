@@ -83,6 +83,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "sample=PAIRED_FASTQ_SAMPS" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
+    assert 'qc_tool_enabled("goleft", default=False)' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
@@ -180,6 +181,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert "--genome-build" not in relatedness
     assert "--out-dir $(dirname {output:q})" in relatedness
     assert "--sample-prefix {params.cluster_sample:q}" in relatedness
+    assert 'qc_tool_enabled("site_mix", default=False)' in multiqc
     assert 'qc_tool_enabled("relatedness", default=False)' in multiqc
     assert "PAIR_COLUMNS" in report_script
     assert "relationship\": \"no_pairs\"" in report_script
