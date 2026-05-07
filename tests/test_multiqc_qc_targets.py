@@ -53,8 +53,9 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "kat", "site_mix", "vep", "snpeff"):
+    for tool in ("fastv", "kat", "vep", "snpeff"):
         assert f'"{tool}"' in common
+    assert '"site_mix"' not in common[common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")]
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
@@ -80,7 +81,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
     assert "qc_tool_enabled(\"kat\", long_running=True)" in text
-    assert '"site_mix"' in _read("workflow/rules/common.smk")
+    assert "qc_tool_enabled(\"site_mix\")" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
@@ -280,7 +281,7 @@ def test_multiqc_runtime_policy_documented() -> None:
         "produce_multiqc_final",
         "runtime_gate_minutes: 45",
         'enable_tools=["fastv"]',
-        'enable_tools=["site_mix"]',
+        "site_mix genotype-free contamination",
         "QC gap:",
     ):
         assert expected in doc

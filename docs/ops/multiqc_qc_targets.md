@@ -49,6 +49,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | Alignment QC output inventory | Alignment QC | `other_reports/alignment_qc_outputs_mqc.tsv` |
 | VerifyBamID2 | Contamination QC | per-sample `.vb2.tsv` |
 | GATK contamination | Contamination QC | per-sample `.gatk.tsv` |
+| site_mix genotype-free contamination | Contamination QC | `other_reports/site_mix_contam_mqc.tsv` and `other_reports/site_mix_donor_mqc.tsv` |
 | Contamination output inventory | Contamination QC | `other_reports/contamination_mqc.tsv` |
 | Somalier relatedness | Relatedness QC | `other_reports/relatedness_mqc.tsv` |
 | bcftools stats | Variant QC | `other_reports/bcftools_variant_stats_mqc.tsv` |
@@ -75,13 +76,13 @@ MultiQC by default:
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
 | KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
-| site_mix | The estimator now consumes GATK pileup tables, but remains opt-in until the GATK-pileup plus estimator path is validated under the 30-minute service threshold. | `enable_long_running=true` or `enable_tools=["site_mix"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
 | SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
 
-Cluster benchmark validation is still required before promoting any optional
-tool to the routine default set. If an optional tool is enabled and cannot
-complete, classify the gap in a GitHub issue rather than weakening the DAG.
+site_mix was promoted to routine default after at-sanity validation showed the
+GATK pileup plus estimator path completed under the 30-minute service
+threshold. If an optional tool is enabled and cannot complete, classify the gap
+in a GitHub issue rather than weakening the DAG.
 
 ## Gap Tracking
 
