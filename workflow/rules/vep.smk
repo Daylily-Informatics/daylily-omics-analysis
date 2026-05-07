@@ -235,8 +235,6 @@ rule vep_concat_index_chunks:
     output:
         ovcfgz=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.vcf.gz",
-        ovcfgztemp=temp(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.temp.vcf.gz"),
         ovcftbi=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.vcf.gz.tbi",
         done=touch(MDIR
@@ -254,6 +252,8 @@ rule vep_concat_index_chunks:
         mem_mb=config["vep"].get("concat_mem_mb", 16000),
     params:
         cluster_sample=ret_sample,
+        ovcfgztemp=MDIR
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.temp.vcf.gz",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep_concat.bench.tsv"
     shell:
@@ -266,8 +266,8 @@ rule vep_concat_index_chunks:
             echo "ERROR: VEP annotated variant count ($ann_count) does not match input chunk count ($input_count)" >&2
             exit 2
         fi
-        bcftools concat -a -d all --threads {threads} -f {input.fofn} -O z -o {output.ovcfgztemp} >> {log} 2>&1
-        mv {output.ovcfgztemp} {output.ovcfgz}
+        bcftools concat -a -d all --threads {threads} -f {input.fofn} -O z -o {params.ovcfgztemp} >> {log} 2>&1
+        mv {params.ovcfgztemp} {output.ovcfgz}
         tabix -f -p vcf {output.ovcfgz} >> {log} 2>&1
         final_count=$(bcftools view -H {output.ovcfgz} | wc -l | awk '{{print $1}}')
         if [ "$final_count" -ne "$input_count" ]; then
