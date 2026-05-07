@@ -243,6 +243,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "--fork {threads}" in vep
     assert "threads: config[\"vep\"][\"threads\"]" in vep
     assert 'mem_mb=config["vep"].get("mem_mb", 3000)' in vep
+    assert vep.count("cluster_sample=ret_sample") >= 3
     assert "vep.input_contigs.ok" in vep
     assert "bcftools concat -a -d all" in vep
     assert "does not match input chunk count" in vep

@@ -77,6 +77,7 @@ rule vep_chromosome_input:
         partition=config["vep"].get("concat_partition", config["vep"]["partition"]),
         mem_mb=4000,
     params:
+        cluster_sample=ret_sample,
         contig=get_vepchrm,
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.{vepchrm}.vep_input.bench.tsv"
@@ -250,6 +251,8 @@ rule vep_concat_index_chunks:
         partition=config["vep"].get("concat_partition", config["vep"]["partition"]),
         threads=config["vep"].get("concat_threads", 4),
         mem_mb=config["vep"].get("concat_mem_mb", 16000),
+    params:
+        cluster_sample=ret_sample,
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep_concat.bench.tsv"
     shell:
