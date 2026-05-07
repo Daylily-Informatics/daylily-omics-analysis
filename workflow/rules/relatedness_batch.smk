@@ -99,7 +99,6 @@ rule relatedness_batch_somalier_extract:
     params:
         sites=RELATEDNESS_CFG["somalier_sites_vcf"],
         ref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        build="GRCh38" if config["genome_build"] in ["hg38", "hg38_broad"] else "GRCh37",
         prefix=RELATEDNESS_REPORT_ROOT
         + "/{alnr}/{ddup}/somalier/extract/{sample}",
         cluster_sample=ret_sample,
@@ -115,7 +114,6 @@ rule relatedness_batch_somalier_extract:
         somalier extract \
           --sites {params.sites:q} \
           --fasta {params.ref:q} \
-          --genome-build {params.build:q} \
           -o {params.prefix:q} \
           {input.cram:q} \
           > {log:q} 2>&1

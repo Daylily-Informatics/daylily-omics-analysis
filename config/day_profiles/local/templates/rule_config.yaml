@@ -319,6 +319,9 @@ dysgu_sort_index:
     threads: 7
     partition: "i8"
 
+no_dedup:
+    env_yaml: "../envs/samtools_v0.1.yaml"
+
 multiqc_qc:
     enable_long_running: false
     enable_tools: []

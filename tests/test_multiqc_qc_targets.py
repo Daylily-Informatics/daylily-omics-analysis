@@ -42,6 +42,7 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert gate["disable_tools"] == []
         assert gate["include_no_dedup_alignment_qc"] is True
         assert gate["runtime_gate_minutes"] == 45
+        assert config["no_dedup"]["env_yaml"] == "../envs/samtools_v0.1.yaml"
         assert "relatedness" in config
         assert config["relatedness"]["somalier_sites_vcf"].endswith("sites.GRCh38.vcf.gz")
 
@@ -185,6 +186,16 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
 
     assert "PAIR_COLUMNS" in report_script
     assert "relationship\": \"no_pairs\"" in report_script
+    assert "--genome-build" not in relatedness
+
+
+def test_no_dedup_uses_samtools_conda_env() -> None:
+    rule_text = _read("workflow/rules/no_dedup.smk")
+    samtools_env = _read("workflow/envs/samtools_v0.1.yaml")
+
+    assert 'conda:\n        config["no_dedup"]["env_yaml"]' in rule_text
+    assert "samtools view" in rule_text
+    assert "samtools" in samtools_env
 
 
 def test_variant_qc_and_annotation_summaries_are_wired() -> None:
