@@ -1311,6 +1311,12 @@ vep:
     threads: 7
     mem_mb: 16000
     partition: "i8"
+    concat_threads: 4
+    concat_mem_mb: 8000
+    concat_partition: "i8"
+    hg38_vep_chrms: "1-25"
+    hg38_broad_vep_chrms: "1-25"
+    b37_vep_chrms: "1-25"
 
 snpeff:
     threads: 7

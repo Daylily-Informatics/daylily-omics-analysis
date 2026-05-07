@@ -372,6 +372,7 @@ def _expand_chrm_ranges(chrm_list):
     return expanded
 
 SENTDHIO_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIO_CHRMS)
+VEP_CHRMS = _expand_chrm_ranges(config["vep"][f"{config['genome_build']}_vep_chrms"].split(","))
 
 SENTDPB_CHRMS = config["sentdpb"][f"{config['genome_build']}_sentdpb_chrms"].split(",")
 
@@ -1654,6 +1655,23 @@ def print_wildcards_etc(wildcards):
 
 def get_alnr(wildcards):
     return wildcards.alnr
+
+
+def _day_chrm_token_to_contig(raw):
+    pchr = GENOME_CHR_PREFIX
+    mito_code = "MT" if "b37" == config['genome_build'] else "M"
+    chrm_map = {'23': 'X', '24': 'Y', '25': mito_code}
+    token = str(raw).replace('chr', '')
+    return pchr + chrm_map.get(token, token)
+
+
+def get_vepchrm(wildcards):
+    return _day_chrm_token_to_contig(wildcards.vepchrm)
+
+
+def get_vep_allowed_contigs(wildcards):
+    return ",".join(_day_chrm_token_to_contig(chrm) for chrm in VEP_CHRMS)
+
 
 def get_dchrm_day(wildcards):
     pchr = GENOME_CHR_PREFIX

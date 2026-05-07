@@ -59,6 +59,9 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
+    assert "VEP_CHRMS = _expand_chrm_ranges" in common
+    assert "def get_vepchrm" in common
+    assert "def get_vep_allowed_contigs" in common
 
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
@@ -225,15 +228,34 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "rtg_vcfstats_mqc.tsv" in rtg
     assert "rule peddy_sample_qc_gather:" in peddy
     assert "peddy_sample_qc_mqc.tsv" in peddy
-    assert "--input_file {input.vcfgz}" in vep
+    assert "rule vep:" not in vep
+    assert "rule vep_chromosome_input:" in vep
+    assert "rule vep_chromosome:" in vep
+    assert "rule vep_concat_fofn:" in vep
+    assert "rule vep_concat_index_chunks:" in vep
+    assert "--input_file {input.vcfgz}" not in vep
+    assert "--input_file {input.chunk_vcfgz}" in vep
+    assert "--chr {params.contig}" in vep
     assert "--assembly {params.genome_build}" in vep
     assert "--dir_cache {params.vep_cache}" in vep
     assert "--cache_version {params.cache_version}" in vep
     assert "--cache {params.vep_cache}" not in vep
     assert "--fork {threads}" in vep
+    assert "threads: config[\"vep\"][\"threads\"]" in vep
     assert 'mem_mb=config["vep"].get("mem_mb", 3000)' in vep
-    assert slurm_config["vep"]["threads"] == 192
-    assert slurm_config["vep"]["mem_mb"] == 384000
+    assert "vep.input_contigs.ok" in vep
+    assert "bcftools concat -a -d all" in vep
+    assert "does not match input chunk count" in vep
+    assert "does not match input count" in vep
+    assert slurm_config["vep"]["threads"] == 16
+    assert slurm_config["vep"]["mem_mb"] == 64000
+    assert slurm_config["vep"]["partition"] == "i192,i128"
+    assert slurm_config["vep"]["concat_threads"] == 16
+    assert slurm_config["vep"]["concat_mem_mb"] == 32000
+    assert slurm_config["vep"]["concat_partition"] == "i192,i128"
+    assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
+    assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
+    assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"
     assert "vep_annotation_mqc.tsv" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
     assert "bgzip -c > {output.annovcf}" in snpeff
