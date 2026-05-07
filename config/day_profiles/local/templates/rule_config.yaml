@@ -1216,7 +1216,7 @@ gatk_contam:
 
 site_mix_contam:
     env_yaml: "../envs/site_mix_contam_v0.1.yaml"
-    threads: 4
+    threads: 1
     partition: "i8"
     sites_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
     candidate_manifest: ""
@@ -1228,6 +1228,7 @@ site_mix_contam:
     max_sites: 0
     min_base_quality: 20
     min_mapping_quality: 20
+    pileup_region_size: 25000000
     donor_min_depth: 8
     max_contamination: 0.5
     grid_step: 0.001
@@ -1308,6 +1309,7 @@ seqfu:
 
 vep:
     threads: 7
+    mem_mb: 16000
     partition: "i8"
 
 snpeff:

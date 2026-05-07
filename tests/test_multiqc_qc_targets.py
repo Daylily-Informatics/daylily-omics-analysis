@@ -53,7 +53,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "kat", "vep", "snpeff"):
+    for tool in ("fastv", "kat", "site_mix", "vep", "snpeff"):
         assert f'"{tool}"' in common
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
@@ -80,6 +80,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
     assert "qc_tool_enabled(\"kat\", long_running=True)" in text
+    assert '"site_mix"' in _read("workflow/rules/common.smk")
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
@@ -215,6 +216,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
     snpeff = _read("workflow/rules/snpeff.smk")
+    slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
 
     assert "rule bcftools_variant_stats_gather:" in bcftools
     assert "bcftools_variant_stats_mqc.tsv" in bcftools
@@ -227,6 +229,10 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "--dir_cache {params.vep_cache}" in vep
     assert "--cache_version {params.cache_version}" in vep
     assert "--cache {params.vep_cache}" not in vep
+    assert "--fork {threads}" in vep
+    assert 'mem_mb=config["vep"].get("mem_mb", 3000)' in vep
+    assert slurm_config["vep"]["threads"] == 64
+    assert slurm_config["vep"]["mem_mb"] == 128000
     assert "vep_annotation_mqc.tsv" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
     assert "bgzip -c > {output.annovcf}" in snpeff
@@ -274,6 +280,7 @@ def test_multiqc_runtime_policy_documented() -> None:
         "produce_multiqc_final",
         "runtime_gate_minutes: 45",
         'enable_tools=["fastv"]',
+        'enable_tools=["site_mix"]',
         "QC gap:",
     ):
         assert expected in doc

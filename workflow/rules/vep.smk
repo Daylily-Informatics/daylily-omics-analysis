@@ -26,6 +26,7 @@ rule vep:
         vcpu=config["vep"]["threads"],
         partition=config["vep"]["partition"],
         threads=config["vep"]["threads"],
+        mem_mb=config["vep"].get("mem_mb", 3000),
     params:
         cluster_sample=ret_sample,
         genome_build="GRCh37" if 'b37' in config['genome_build'] else "GRCh38",

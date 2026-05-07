@@ -265,8 +265,12 @@ def test_site_mix_contam_rule_is_target_genotype_free() -> None:
     )
 
     assert "genotype_free_contam_estimator.py" in rule_text
-    assert "--bam {input.cram}" in rule_text
-    assert "--sites-vcf {input.sites_vcf}" in rule_text
+    assert "alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table" in rule_text
+    assert "--counts-tsv {input.pileups}" in rule_text
+    assert "--bam {input.cram}" not in rule_text
+    assert "--sites-vcf {input.sites_vcf}" not in rule_text
+    assert "samtools mpileup" not in rule_text
+    assert "does not support candidate_manifest donor attribution" in rule_text
     assert "truth" not in rule_text.lower()
     assert "expected" not in rule_text.lower()
     assert "candidate_manifest" in rule_text
@@ -279,6 +283,7 @@ def test_site_mix_contam_rule_is_target_genotype_free() -> None:
         section = config_text[config_text.index("site_mix_contam:") :]
         assert 'candidate_manifest: ""' in section[:800]
         assert "sites_vcf:" in section[:800]
+        assert "pileup_region_size: 25000000" in section[:800]
 
 
 def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path: Path) -> None:

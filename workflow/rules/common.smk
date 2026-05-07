@@ -24,6 +24,7 @@ def _as_config_list(value):
 MULTIQC_QC_LONG_RUNNING_TOOLS = {
     "fastv",
     "kat",
+    "site_mix",
     "vep",
     "snpeff",
 }

@@ -19,6 +19,12 @@ def _contam_qc_paths(tool, suffix):
     )
 
 
+def _enabled_contam_qc_paths(enabled_tool, tool, suffix):
+    if qc_tool_enabled(enabled_tool):
+        return _contam_qc_paths(tool, suffix)
+    return []
+
+
 def _parse_contam_path(path):
     parts = str(path).split("/")
     sample = parts[-1].split(".")[0]
@@ -38,12 +44,7 @@ def _safe_pct(value):
 
 rule site_mix_contam:
     input:
-        cram = MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-        crai = MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
-        sites_vcf = config["site_mix_contam"]["sites_vcf"],
-        sites_vcf_tbi = lambda wildcards: config["site_mix_contam"]["sites_vcf"] + ".tbi",
-        ref_fa = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        ref_fai = lambda wildcards: config["supporting_files"]["files"]["huref"]["fasta"]["name"] + ".fai",
+        pileups = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table",
     output:
         tsv = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix.tsv",
         donors = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix_donors.tsv",
@@ -64,15 +65,8 @@ rule site_mix_contam:
         min_depth = config["site_mix_contam"]["min_depth"],
         max_depth = config["site_mix_contam"]["max_depth"],
         min_sites = config["site_mix_contam"]["min_sites"],
-        min_af = config["site_mix_contam"]["min_af"],
-        max_af = config["site_mix_contam"]["max_af"],
-        max_sites = config["site_mix_contam"]["max_sites"],
-        min_base_quality = config["site_mix_contam"]["min_base_quality"],
-        min_mapping_quality = config["site_mix_contam"]["min_mapping_quality"],
-        donor_min_depth = config["site_mix_contam"]["donor_min_depth"],
         max_contamination = config["site_mix_contam"]["max_contamination"],
         grid_step = config["site_mix_contam"]["grid_step"],
-        max_candidate_sources = config["site_mix_contam"]["max_candidate_sources"],
     shell:
         r"""
         set -euo pipefail
@@ -80,31 +74,21 @@ rule site_mix_contam:
         outdir="$(dirname {output.tsv})"
         mkdir -p "${{outdir}}" "${{outdir}}/logs"
 
-        candidate_args=()
         if [[ -n "{params.candidate_manifest}" ]]; then
-            candidate_args=(--candidate-manifest "{params.candidate_manifest}")
+            echo "ERROR: site_mix_contam production rule uses GATK pileup tables and does not support candidate_manifest donor attribution. Use the estimator CLI BAM/CRAM mode for donor attribution." >&2
+            exit 2
         fi
 
         bin/util/genotype_free_contam_estimator.py \
           --sample-id "{params.cluster_sample}" \
-          --bam {input.cram} \
-          --reference {input.ref_fa} \
-          --sites-vcf {input.sites_vcf} \
+          --counts-tsv {input.pileups} \
           --output {output.tsv} \
           --donor-output {output.donors} \
           --min-depth {params.min_depth} \
           --max-depth {params.max_depth} \
           --min-sites {params.min_sites} \
-          --min-af {params.min_af} \
-          --max-af {params.max_af} \
-          --max-sites {params.max_sites} \
-          --min-base-quality {params.min_base_quality} \
-          --min-mapping-quality {params.min_mapping_quality} \
-          --donor-min-depth {params.donor_min_depth} \
           --max-contamination {params.max_contamination} \
           --grid-step {params.grid_step} \
-          --max-candidate-sources {params.max_candidate_sources} \
-          "${{candidate_args[@]}}" \
           > {log} 2>&1
 
         test -s {output.tsv}
@@ -120,10 +104,14 @@ localrules:
 
 rule contamination_mqc_gather:
     input:
-        vb2=_contam_qc_paths("vb2", "vb2.tsv"),
-        gatk=_contam_qc_paths("gatk", "gatk.tsv"),
-        site_mix=_contam_qc_paths("site_mix", "site_mix.tsv"),
-        site_mix_donors=_contam_qc_paths("site_mix", "site_mix_donors.tsv"),
+        vb2=lambda wildcards: _enabled_contam_qc_paths("verifybamid2", "vb2", "vb2.tsv"),
+        gatk=lambda wildcards: _enabled_contam_qc_paths("gatk_contam", "gatk", "gatk.tsv"),
+        site_mix=lambda wildcards: _enabled_contam_qc_paths(
+            "site_mix", "site_mix", "site_mix.tsv"
+        ),
+        site_mix_donors=lambda wildcards: _enabled_contam_qc_paths(
+            "site_mix", "site_mix", "site_mix_donors.tsv"
+        ),
     output:
         contamination=MDIR + "other_reports/contamination_mqc.tsv",
         site_mix=MDIR + "other_reports/site_mix_contam_mqc.tsv",

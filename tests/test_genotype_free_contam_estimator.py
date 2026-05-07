@@ -204,3 +204,50 @@ def test_counts_parser_accepts_gatk_pileup_summary_columns(tmp_path: Path) -> No
     assert records[0].site.af == 0.42
     assert records[0].ref_count == 17
     assert records[0].alt_count == 3
+
+
+def test_pileup_chunks_are_region_bounded_and_ordered() -> None:
+    module = _load_estimator()
+    sites = [
+        module.Site(chrom="chr1", pos=100, ref="A", alt="G", af=0.5),
+        module.Site(chrom="chr1", pos=25_000_001, ref="C", alt="T", af=0.4),
+        module.Site(chrom="chr2", pos=500, ref="G", alt="A", af=0.3),
+    ]
+
+    chunks = module.build_pileup_chunks(sites, region_size=25_000_000)
+
+    assert [chunk.region for chunk in chunks] == [
+        "chr1:100-100",
+        "chr1:25000001-25000001",
+        "chr2:500-500",
+    ]
+    assert [[site.pos for site in chunk.sites] for chunk in chunks] == [
+        [100],
+        [25_000_001],
+        [500],
+    ]
+
+
+def test_cli_exposes_parallel_pileup_controls() -> None:
+    module = _load_estimator()
+    args = module.build_parser().parse_args(
+        [
+            "--sample-id",
+            "sample_a",
+            "--bam",
+            "sample.cram",
+            "--reference",
+            "ref.fa",
+            "--sites-vcf",
+            "sites.vcf.gz",
+            "--output",
+            "site_mix.tsv",
+            "--threads",
+            "8",
+            "--pileup-region-size",
+            "10000000",
+        ]
+    )
+
+    assert args.threads == 8
+    assert args.pileup_region_size == 10_000_000

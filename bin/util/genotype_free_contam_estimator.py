@@ -19,6 +19,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -52,6 +53,12 @@ class CountRecord:
     @property
     def depth(self) -> int:
         return self.ref_count + self.alt_count
+
+
+@dataclass(frozen=True)
+class PileupChunk:
+    region: str
+    sites: list[Site]
 
 
 @dataclass(frozen=True)
@@ -205,18 +212,76 @@ def records_from_counts_tsv(path: str | os.PathLike[str]) -> list[CountRecord]:
     return records
 
 
-def pileup_counts(
+def build_pileup_chunks(sites: list[Site], *, region_size: int) -> list[PileupChunk]:
+    if region_size < 0:
+        raise ValueError("pileup region size must be >= 0")
+
+    chunks_by_key: dict[tuple[str, int], list[Site]] = {}
+    key_order: list[tuple[str, int]] = []
+    for site in sites:
+        bin_index = 0 if region_size == 0 else (site.pos - 1) // region_size
+        key = (site.chrom, bin_index)
+        if key not in chunks_by_key:
+            chunks_by_key[key] = []
+            key_order.append(key)
+        chunks_by_key[key].append(site)
+
+    chunks: list[PileupChunk] = []
+    for chrom, bin_index in key_order:
+        chunk_sites = sorted(chunks_by_key[(chrom, bin_index)], key=lambda site: site.pos)
+        if region_size == 0:
+            region = chrom
+        else:
+            start = min(site.pos for site in chunk_sites)
+            end = max(site.pos for site in chunk_sites)
+            region = f"{chrom}:{start}-{end}"
+        chunks.append(PileupChunk(region=region, sites=chunk_sites))
+    return chunks
+
+
+def parse_mpileup_lines(
+    lines: Iterable[str],
+    *,
+    sites_by_key: dict[tuple[str, int], Site],
+) -> list[CountRecord]:
+    records: list[CountRecord] = []
+    for line in lines:
+        fields = line.rstrip("\n").split("\t")
+        if len(fields) < 5:
+            continue
+        chrom, pos_raw = fields[0], fields[1]
+        key = (chrom, int(pos_raw))
+        site = sites_by_key.get(key)
+        if site is None:
+            continue
+        ref_count, alt_count, other_count = parse_pileup_bases(
+            fields[4],
+            site.ref,
+            site.alt,
+        )
+        records.append(
+            CountRecord(
+                site=site,
+                ref_count=ref_count,
+                alt_count=alt_count,
+                other_count=other_count,
+            )
+        )
+    return records
+
+
+def run_mpileup_chunk(
     *,
     bam: str | os.PathLike[str],
     reference: str | os.PathLike[str],
-    sites: list[Site],
+    chunk: PileupChunk,
     min_mapping_quality: int,
     min_base_quality: int,
+    sites_by_key: dict[tuple[str, int], Site],
 ) -> list[CountRecord]:
-    sites_by_key = {site.key: site for site in sites}
     with tempfile.NamedTemporaryFile("w", suffix=".bed", delete=False, encoding="utf-8") as bed:
         bed_path = bed.name
-        for site in sites:
+        for site in chunk.sites:
             bed.write(f"{site.chrom}\t{site.pos - 1}\t{site.pos}\n")
     try:
         command = [
@@ -224,6 +289,8 @@ def pileup_counts(
             "mpileup",
             "-f",
             str(reference),
+            "-r",
+            chunk.region,
             "-l",
             bed_path,
             "-q",
@@ -233,34 +300,23 @@ def pileup_counts(
             "-aa",
             str(bam),
         ]
-        proc = subprocess.run(command, check=False, text=True, capture_output=True)
-        if proc.returncode != 0:
+        with tempfile.NamedTemporaryFile("w+", encoding="utf-8") as stderr_handle:
+            proc = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=stderr_handle,
+                text=True,
+            )
+            if proc.stdout is None:
+                raise RuntimeError("samtools mpileup did not provide stdout")
+            records = parse_mpileup_lines(proc.stdout, sites_by_key=sites_by_key)
+            return_code = proc.wait()
+            stderr_handle.seek(0)
+            stderr = stderr_handle.read()
+        if return_code != 0:
             raise RuntimeError(
                 "samtools mpileup failed with exit "
-                f"{proc.returncode}: {proc.stderr.strip()}"
-            )
-        records: list[CountRecord] = []
-        for line in proc.stdout.splitlines():
-            fields = line.split("\t")
-            if len(fields) < 5:
-                continue
-            chrom, pos_raw = fields[0], fields[1]
-            key = (chrom, int(pos_raw))
-            site = sites_by_key.get(key)
-            if site is None:
-                continue
-            ref_count, alt_count, other_count = parse_pileup_bases(
-                fields[4],
-                site.ref,
-                site.alt,
-            )
-            records.append(
-                CountRecord(
-                    site=site,
-                    ref_count=ref_count,
-                    alt_count=alt_count,
-                    other_count=other_count,
-                )
+                f"{return_code} for {chunk.region}: {stderr.strip()}"
             )
         return records
     finally:
@@ -268,6 +324,58 @@ def pileup_counts(
             os.unlink(bed_path)
         except FileNotFoundError:
             pass
+
+
+def pileup_counts(
+    *,
+    bam: str | os.PathLike[str],
+    reference: str | os.PathLike[str],
+    sites: list[Site],
+    min_mapping_quality: int,
+    min_base_quality: int,
+    threads: int = 1,
+    pileup_region_size: int = 25_000_000,
+) -> list[CountRecord]:
+    if threads < 1:
+        raise ValueError("threads must be >= 1")
+    sites_by_key = {site.key: site for site in sites}
+    chunks = build_pileup_chunks(sites, region_size=pileup_region_size)
+    if not chunks:
+        return []
+
+    worker_count = min(threads, len(chunks))
+    if worker_count == 1:
+        records: list[CountRecord] = []
+        for chunk in chunks:
+            records.extend(
+                run_mpileup_chunk(
+                    bam=bam,
+                    reference=reference,
+                    chunk=chunk,
+                    min_mapping_quality=min_mapping_quality,
+                    min_base_quality=min_base_quality,
+                    sites_by_key=sites_by_key,
+                )
+            )
+        return records
+
+    records = []
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        futures = [
+            executor.submit(
+                run_mpileup_chunk,
+                bam=bam,
+                reference=reference,
+                chunk=chunk,
+                min_mapping_quality=min_mapping_quality,
+                min_base_quality=min_base_quality,
+                sites_by_key=sites_by_key,
+            )
+            for chunk in chunks
+        ]
+        for future in futures:
+            records.extend(future.result())
+    return records
 
 
 def filtered_records(
@@ -497,6 +605,8 @@ def load_bam_candidate_genotypes(
     min_mapping_quality: int,
     min_base_quality: int,
     min_depth: int,
+    threads: int = 1,
+    pileup_region_size: int = 25_000_000,
 ) -> CandidateProfile:
     genotypes: dict[tuple[str, int], float] = {}
     for record in pileup_counts(
@@ -505,6 +615,8 @@ def load_bam_candidate_genotypes(
         sites=sites,
         min_mapping_quality=min_mapping_quality,
         min_base_quality=min_base_quality,
+        threads=threads,
+        pileup_region_size=pileup_region_size,
     ):
         alt_fraction = infer_genotype_alt_fraction(record, min_depth=min_depth)
         if alt_fraction is not None:
@@ -522,6 +634,8 @@ def load_candidate_manifest(
     min_mapping_quality: int,
     min_base_quality: int,
     donor_min_depth: int,
+    threads: int = 1,
+    pileup_region_size: int = 25_000_000,
 ) -> list[CandidateProfile]:
     profiles: list[CandidateProfile] = []
     site_keys = {site.key for site in sites}
@@ -553,6 +667,8 @@ def load_candidate_manifest(
                         min_mapping_quality=min_mapping_quality,
                         min_base_quality=min_base_quality,
                         min_depth=donor_min_depth,
+                        threads=threads,
+                        pileup_region_size=pileup_region_size,
                     )
                 )
             else:
@@ -854,6 +970,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--donor-min-depth", type=int, default=8)
     parser.add_argument("--min-base-quality", type=int, default=20)
     parser.add_argument("--min-mapping-quality", type=int, default=20)
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=1,
+        help="Parallel samtools mpileup region workers for BAM/CRAM inputs.",
+    )
+    parser.add_argument(
+        "--pileup-region-size",
+        type=int,
+        default=25_000_000,
+        help=(
+            "Genomic span in bases per mpileup region chunk; use 0 to chunk "
+            "by whole contig."
+        ),
+    )
     parser.add_argument("--max-contamination", type=float, default=0.5)
     parser.add_argument("--grid-step", type=float, default=0.001)
     parser.add_argument("--base-error", type=float, default=DEFAULT_BASE_ERROR)
@@ -876,12 +1007,26 @@ def run(args: argparse.Namespace) -> int:
             max_af=args.max_af,
             max_sites=args.max_sites,
         )
+        print(
+            "site_mix: loaded "
+            f"{len(sites)} marker sites; using {args.threads} mpileup worker(s) "
+            f"and {args.pileup_region_size} bp region chunks",
+            file=sys.stderr,
+            flush=True,
+        )
         records = pileup_counts(
             bam=args.bam,
             reference=args.reference,
             sites=sites,
             min_mapping_quality=args.min_mapping_quality,
             min_base_quality=args.min_base_quality,
+            threads=args.threads,
+            pileup_region_size=args.pileup_region_size,
+        )
+        print(
+            f"site_mix: collected pileup counts for {len(records)} sites",
+            file=sys.stderr,
+            flush=True,
         )
 
     estimate = estimate_scalar_contamination(
@@ -905,6 +1050,8 @@ def run(args: argparse.Namespace) -> int:
             min_mapping_quality=args.min_mapping_quality,
             min_base_quality=args.min_base_quality,
             donor_min_depth=args.donor_min_depth,
+            threads=args.threads,
+            pileup_region_size=args.pileup_region_size,
         )
         attribution = fit_donor_attribution(
             records,

@@ -40,10 +40,15 @@ def _alignment_component_inputs(wildcards):
     paths = list(_seq_data_component_inputs(wildcards))
     paths.extend(_alignment_qc_native_inputs(wildcards))
     paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
+    if (
+        qc_tool_enabled("verifybamid2")
+        or qc_tool_enabled("gatk_contam")
+        or qc_tool_enabled("site_mix")
+    ):
+        paths.append(MDIR + "other_reports/contamination_mqc.tsv")
     if qc_tool_enabled("site_mix"):
         paths.extend(
             [
-                MDIR + "other_reports/contamination_mqc.tsv",
                 MDIR + "other_reports/site_mix_contam_mqc.tsv",
                 MDIR + "other_reports/site_mix_donor_mqc.tsv",
             ]
