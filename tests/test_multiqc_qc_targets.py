@@ -233,6 +233,12 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "rule vep_chromosome:" in vep
     assert "rule vep_concat_fofn:" in vep
     assert "rule vep_concat_index_chunks:" in vep
+    concat_fofn_rule = vep[
+        vep.index("rule vep_concat_fofn:") : vep.index("rule vep_concat_index_chunks:")
+    ]
+    assert "tmp_fofn=MDIR" in concat_fofn_rule
+    assert "{params.tmp_fofn}" in concat_fofn_rule
+    assert "{output.tmp_fofn}" not in concat_fofn_rule
     assert "--input_file {input.vcfgz}" not in vep
     assert "--input_file {input.chunk_vcfgz}" in vep
     assert "--chr {params.contig}" in vep

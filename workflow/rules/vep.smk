@@ -193,27 +193,28 @@ rule vep_concat_fofn:
     output:
         fofn=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.concat.vcf.gz.fofn",
-        tmp_fofn=MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.concat.vcf.gz.fofn.tmp",
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/log/{sample}.{alnr}.{ddup}.{snv}.vep.concat_fofn.log",
+    params:
+        tmp_fofn=MDIR
+        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.concat.vcf.gz.fofn.tmp",
     shell:
         """
         set -euo pipefail
         mkdir -p $(dirname {output.fofn}) $(dirname {log})
-        : > {output.tmp_fofn}
+        : > {params.tmp_fofn}
         for count_path in {input.ann_counts}; do
             count=$(cat "$count_path")
             if [ "$count" -gt 0 ]; then
-                echo "${{count_path%.record_count}}" >> {output.tmp_fofn}
+                echo "${{count_path%.record_count}}" >> {params.tmp_fofn}
             fi
         done
-        if [ ! -s {output.tmp_fofn} ]; then
+        if [ ! -s {params.tmp_fofn} ]; then
             echo "ERROR: no non-empty VEP chromosome chunks to concatenate" >&2
             exit 2
         fi
-        mv {output.tmp_fofn} {output.fofn}
+        mv {params.tmp_fofn} {output.fofn}
         """
 
 
