@@ -1283,10 +1283,10 @@ seqfu:
 vep:
     threads: 16
     mem_mb: 64000
-    partition: "i192,i128"
+    partition: "i192,i192mem,i128"
     concat_threads: 16
     concat_mem_mb: 32000
-    concat_partition: "i192,i128"
+    concat_partition: "i192,i192mem,i128"
     hg38_vep_chrms: "1-25"
     hg38_broad_vep_chrms: "1-25"
     b37_vep_chrms: "1-25"

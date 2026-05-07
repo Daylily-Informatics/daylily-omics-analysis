@@ -250,10 +250,10 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "does not match input count" in vep
     assert slurm_config["vep"]["threads"] == 16
     assert slurm_config["vep"]["mem_mb"] == 64000
-    assert slurm_config["vep"]["partition"] == "i192,i128"
+    assert slurm_config["vep"]["partition"] == "i192,i192mem,i128"
     assert slurm_config["vep"]["concat_threads"] == 16
     assert slurm_config["vep"]["concat_mem_mb"] == 32000
-    assert slurm_config["vep"]["concat_partition"] == "i192,i128"
+    assert slurm_config["vep"]["concat_partition"] == "i192,i192mem,i128"
     assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"
