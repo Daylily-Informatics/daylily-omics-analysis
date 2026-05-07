@@ -31,6 +31,7 @@ rule vep:
         genome_build="GRCh37" if 'b37' in config['genome_build'] else "GRCh38",
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         vep_cache=config["supporting_files"]["files"]["vep"]["vep_cache"]['name'],
+        cache_version=config["supporting_files"]["files"]["vep"]["vep_genome_build"].split("_", 1)[0],
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep.bench.tsv"
     container:
@@ -39,11 +40,16 @@ rule vep:
         """
         set -euo pipefail
         mkdir -p $(dirname {output.ovcfgz}) $(dirname {log})
+        test -d {params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build} || (
+            echo "ERROR: VEP cache not found: {params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build}" >&2
+            exit 2
+        )
         vep \
-        --dir {params.vep_cache} \
+        --dir_cache {params.vep_cache} \
         --offline \
         --vcf \
-        --cache {params.vep_cache} \
+        --cache \
+        --cache_version {params.cache_version} \
         --input_file {input.vcfgz} \
         --fork {threads} \
         --fasta {params.huref} \

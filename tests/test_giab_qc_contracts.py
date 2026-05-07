@@ -526,6 +526,11 @@ def test_relatedness_classification_interface_and_manifest_validation(tmp_path: 
     assert by_pair[("HG004", "NA12878")].status == "FAIL"
     assert "expected unrelated; observed ambiguous" in by_pair[("HG004", "NA12878")].note
 
+    hash_prefixed_pairs = pd.DataFrame(
+        [{"#sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"}]
+    )
+    assert module.classify_pairs(hash_prefixed_pairs, manifest)[0].relationship == "parent_child"
+
 
 def test_relatedness_rule_is_somalier_manifest_driven() -> None:
     text = (REPO_ROOT / "workflow" / "rules" / "relatedness_test_day.smk").read_text(
@@ -540,6 +545,6 @@ def test_relatedness_rule_is_somalier_manifest_driven() -> None:
     assert "--unknown" not in text
     assert "-o {params.prefix}" not in text
     assert "--out-dir {params.out_dir}" in text
-    assert "--sample-prefix {params.sample_prefix}" in text
+    assert "--sample-prefix" not in text
     assert "picard" not in text.lower()
     assert "conpair" not in text.lower()

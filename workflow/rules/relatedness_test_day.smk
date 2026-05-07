@@ -98,7 +98,6 @@ rule somalier_extract:
         sites=SOM_SITES,
         ref=REF,
         out_dir=f"{SOMALIER_DIR}/extract",
-        sample_prefix=lambda wildcards: wildcards.sample,
     threads: 4
     conda:
         "../envs/somalier.yaml"
@@ -111,13 +110,11 @@ rule somalier_extract:
               --sites {params.sites} \
               --fasta {params.ref} \
               --out-dir {params.out_dir} \
-              --sample-prefix {params.sample_prefix} \
               {params.input_path}
         elif [[ "{params.input_type}" == "vcf" ]]; then
             somalier extract \
               --sites {params.sites} \
               --out-dir {params.out_dir} \
-              --sample-prefix {params.sample_prefix} \
               {params.input_path}
         else
             echo "unsupported path_type: {params.input_type}" >&2

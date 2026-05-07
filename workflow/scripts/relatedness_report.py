@@ -86,7 +86,7 @@ def classify_relationship(
 
 def _lower_columns(frame: pd.DataFrame) -> pd.DataFrame:
     frame = frame.copy()
-    frame.columns = [str(column).lower() for column in frame.columns]
+    frame.columns = [str(column).strip().lower().lstrip("#") for column in frame.columns]
     return frame
 
 

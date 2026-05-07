@@ -196,7 +196,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert "--genome-build" not in extract_rule
     assert "-o {params.prefix:q}" not in extract_rule
     assert "--out-dir {params.out_dir:q}" in extract_rule
-    assert "--sample-prefix {params.sample_prefix:q}" in extract_rule
+    assert "--sample-prefix" not in extract_rule
     assert "setuptools" in report_env["dependencies"]
 
 
@@ -224,6 +224,9 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "peddy_sample_qc_mqc.tsv" in peddy
     assert "--input_file {input.vcfgz}" in vep
     assert "--assembly {params.genome_build}" in vep
+    assert "--dir_cache {params.vep_cache}" in vep
+    assert "--cache_version {params.cache_version}" in vep
+    assert "--cache {params.vep_cache}" not in vep
     assert "vep_annotation_mqc.tsv" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
     assert "bgzip -c > {output.annovcf}" in snpeff
