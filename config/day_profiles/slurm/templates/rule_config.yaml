@@ -1281,8 +1281,8 @@ seqfu:
     partition: "i192,i192mem"
 
 vep:
-    threads: 64
-    mem_mb: 128000
+    threads: 192
+    mem_mb: 384000
     partition: "i192,i192mem,i128"
 
 snpeff:

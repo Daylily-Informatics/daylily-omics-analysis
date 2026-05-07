@@ -232,8 +232,8 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "--cache {params.vep_cache}" not in vep
     assert "--fork {threads}" in vep
     assert 'mem_mb=config["vep"].get("mem_mb", 3000)' in vep
-    assert slurm_config["vep"]["threads"] == 64
-    assert slurm_config["vep"]["mem_mb"] == 128000
+    assert slurm_config["vep"]["threads"] == 192
+    assert slurm_config["vep"]["mem_mb"] == 384000
     assert "vep_annotation_mqc.tsv" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
     assert "bgzip -c > {output.annovcf}" in snpeff
