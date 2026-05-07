@@ -5,7 +5,7 @@
 #     --configfile config/relatedness.yaml produce_relatedness
 
 ref_fasta: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta
-somalier_sites_vcf: /fsx/data/tool_specific_resources/H_sapiens/hg38/somalier/sites.GRCh38.vcf.gz
+somalier_sites_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
 genome_build: GRCh38
 
 # TSV columns:

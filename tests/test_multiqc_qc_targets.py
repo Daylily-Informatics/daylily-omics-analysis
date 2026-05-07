@@ -44,7 +44,9 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert gate["runtime_gate_minutes"] == 45
         assert config["no_dedup"]["env_yaml"] == "../envs/samtools_v0.1.yaml"
         assert "relatedness" in config
-        assert config["relatedness"]["somalier_sites_vcf"].endswith("sites.GRCh38.vcf.gz")
+        assert config["relatedness"]["somalier_sites_vcf"].endswith(
+            "merged.500perchr.nosamp.sort.vcf.gz"
+        )
 
 
 def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
@@ -186,7 +188,14 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
 
     assert "PAIR_COLUMNS" in report_script
     assert "relationship\": \"no_pairs\"" in report_script
-    assert "--genome-build" not in relatedness
+    extract_rule = relatedness[
+        relatedness.index("rule relatedness_batch_somalier_extract:") :
+        relatedness.index("rule relatedness_batch_somalier_relate:")
+    ]
+    assert "--genome-build" not in extract_rule
+    assert "-o {params.prefix:q}" not in extract_rule
+    assert "--out-dir {params.out_dir:q}" in extract_rule
+    assert "--sample-prefix {params.sample_prefix:q}" in extract_rule
 
 
 def test_no_dedup_uses_samtools_conda_env() -> None:

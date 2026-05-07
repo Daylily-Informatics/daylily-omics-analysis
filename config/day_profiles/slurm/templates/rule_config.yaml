@@ -1211,7 +1211,7 @@ relatedness:
     report_env_yaml: "../envs/report.yaml"
     threads: 4
     partition: "i192,i192mem,i128"
-    somalier_sites_vcf: /fsx/data/tool_specific_resources/H_sapiens/hg38/somalier/sites.GRCh38.vcf.gz
+    somalier_sites_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
     expected_relationships: ""
     relationship_thresholds:
         duplicate_min_relatedness: 0.95

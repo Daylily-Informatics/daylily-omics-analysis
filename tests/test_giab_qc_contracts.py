@@ -536,5 +536,10 @@ def test_relatedness_rule_is_somalier_manifest_driven() -> None:
     assert "samples_manifest" in text
     assert 'REPORT_DIR + "/relatedness_pairs_classified.tsv"' in text
     assert 'script:\n        "../scripts/relatedness_report.py"' in text
+    assert "--genome-build" not in text
+    assert "--unknown" not in text
+    assert "-o {params.prefix}" not in text
+    assert "--out-dir {params.out_dir}" in text
+    assert "--sample-prefix {params.sample_prefix}" in text
     assert "picard" not in text.lower()
     assert "conpair" not in text.lower()
