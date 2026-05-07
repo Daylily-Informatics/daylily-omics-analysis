@@ -19,17 +19,6 @@ def _sequence_qc_native_inputs(wildcards):
         paths.extend(
             expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SAMPS)
         )
-    if qc_tool_enabled("fastp"):
-        paths.extend(
-            expand(
-                [
-                    MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done",
-                    MDIR + "{sample}/seqqc/fastp/{sample}.fastp.json",
-                    MDIR + "{sample}/seqqc/fastp/{sample}.fastp.html",
-                ],
-                sample=SAMPS,
-            )
-        )
     if qc_tool_enabled("seqfu"):
         paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
     if qc_tool_enabled("kat", long_running=True):

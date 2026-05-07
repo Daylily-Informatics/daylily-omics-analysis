@@ -21,8 +21,8 @@ def _yaml(path: str) -> dict:
 def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
 
+    assert 'include: "rules/fastp.smk"' not in snakefile
     for include in (
-        'include: "rules/fastp.smk"',
         'include: "rules/fastv.smk"',
         'include: "rules/seqfu.smk"',
         'include: "rules/relatedness_batch.smk"',
@@ -73,6 +73,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "def _seq_data_component_inputs" in text
     assert "def _alignment_component_inputs" in text
     assert "def _variant_component_inputs" in text
+    assert 'qc_tool_enabled("fastp")' not in text
+    assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
     assert "qc_tool_enabled(\"kat\", long_running=True)" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
@@ -112,6 +114,15 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     assert "parallel" not in seqfu
     assert "other_reports/seqfu_mqc.tsv" in seqfu
     assert "\n  - fastp\n" not in multiqc
+
+
+def test_fastp_is_not_pulled_by_staged_multiqc_targets() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    assert "rule produce_fastp:" not in text
+    assert ".fastp.done" not in text
+    assert ".fastp.json" not in text
+    assert ".fastp.html" not in text
 
 
 def test_multiqc_custom_output_inventory_rules_exist() -> None:

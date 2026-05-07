@@ -37,7 +37,6 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | Tool / integration | Stage | MultiQC input |
 | --- | --- | --- |
 | FastQC | Sequence QC | per-sample FastQC outputs and completion markers |
-| fastp | Sequence QC | per-sample fastp HTML/JSON/log outputs |
 | SeqFu | Sequence QC | `other_reports/seqfu_mqc.tsv` |
 | Sequence QC output inventory | Sequence QC | `other_reports/sequence_qc_outputs_mqc.tsv` |
 | alignstats | Alignment QC | `other_reports/alignstats_combo_mqc.tsv` |
@@ -59,6 +58,9 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | Selected HTD callers | HTD QC | `other_reports/htd_calls_mqc.tsv` when `htd_callers` is non-empty |
 | RTG concordance | Benchmarking | `other_reports/giab_concordance_mqc.tsv` when truth metadata is configured |
 | Daylily benchmarks | Runtime/cost QC | `other_reports/rules_benchmark_data_mqc.tsv` |
+
+`fastp` is intentionally not imported by `workflow/Snakefile` and is not pulled
+into any staged/final `produce_multiqc_*` target.
 
 `include_no_dedup_alignment_qc: true` adds the `na` no-dedup passthrough to
 alignment QC beside configured real dedupers. Set it to `false` when a dry-run
