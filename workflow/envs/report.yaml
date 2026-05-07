@@ -8,3 +8,4 @@ dependencies:
   - numpy
   - jinja2
   - pyyaml
+  - setuptools

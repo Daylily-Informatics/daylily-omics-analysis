@@ -159,6 +159,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     site_mix = _read("workflow/rules/site_mix_contam.smk")
     relatedness = _read("workflow/rules/relatedness_batch.smk")
     report_script = _read("workflow/scripts/relatedness_report.py")
+    report_env = _yaml("workflow/envs/report.yaml")
 
     assert "rule contamination_mqc_gather:" in site_mix
     for expected in (
@@ -196,6 +197,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert "-o {params.prefix:q}" not in extract_rule
     assert "--out-dir {params.out_dir:q}" in extract_rule
     assert "--sample-prefix {params.sample_prefix:q}" in extract_rule
+    assert "setuptools" in report_env["dependencies"]
 
 
 def test_no_dedup_uses_samtools_conda_env() -> None:
