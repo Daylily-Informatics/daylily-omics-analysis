@@ -126,8 +126,8 @@ rule relatedness_batch_somalier_relate:
     input:
         _relatedness_extract_paths
     output:
-        pairs=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort_pairs.tsv",
-        groups=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort_groups.tsv",
+        pairs=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.pairs.tsv",
+        groups=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.groups.tsv",
         html=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.html",
     params:
         prefix=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort",
@@ -160,8 +160,8 @@ rule relatedness_batch_somalier_relate:
 
 rule relatedness_batch_report:
     input:
-        pairs=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort_pairs.tsv",
-        groups=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort_groups.tsv",
+        pairs=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.pairs.tsv",
+        groups=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.groups.tsv",
         manifest=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_manifest.tsv",
     output:
         pairs_classified=RELATEDNESS_REPORT_ROOT

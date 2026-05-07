@@ -131,8 +131,8 @@ rule somalier_relate:
     input:
         SomExtract
     output:
-        pairs=SOMALIER_DIR + "/cohort_pairs.tsv",
-        groups=SOMALIER_DIR + "/cohort_groups.tsv",
+        pairs=SOMALIER_DIR + "/cohort.pairs.tsv",
+        groups=SOMALIER_DIR + "/cohort.groups.tsv",
         html=SOMALIER_DIR + "/cohort.html",
     conda:
         "../envs/somalier.yaml"
@@ -149,8 +149,8 @@ rule somalier_relate:
 
 rule relatedness_report:
     input:
-        pairs=SOMALIER_DIR + "/cohort_pairs.tsv",
-        groups=SOMALIER_DIR + "/cohort_groups.tsv",
+        pairs=SOMALIER_DIR + "/cohort.pairs.tsv",
+        groups=SOMALIER_DIR + "/cohort.groups.tsv",
         manifest=SAMPLES_MANIFEST,
     output:
         pairs_classified=REPORT_DIR + "/relatedness_pairs_classified.tsv",
