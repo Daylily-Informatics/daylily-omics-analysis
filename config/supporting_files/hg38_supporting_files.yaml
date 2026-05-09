@@ -161,7 +161,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         100k:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/data/tool_specific_resources/verifybam2/1000g.phase3.100k.b38.vcf.gz.dat
+            name: /fsx/data/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
         1m:
           svd_prefix:
             class: file_no_suffix_star

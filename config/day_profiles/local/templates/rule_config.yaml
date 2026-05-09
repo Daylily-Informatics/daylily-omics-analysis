@@ -1223,7 +1223,7 @@ verifybamid2_contam:
             label: "1000g_phase3_100k"
             snp_count: 100000
             svd_prefix:
-                name: /fsx/data/tool_specific_resources/verifybam2/1000g.phase3.100k.b38.vcf.gz.dat
+                name: /fsx/data/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
             threads: 8
             mem_mb: 16000
             partition: "i8"

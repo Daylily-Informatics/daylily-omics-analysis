@@ -11,6 +11,10 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+VERIFYBAMID2_HG38_100K_SVD_PREFIX = (
+    "/fsx/data/tool_specific_resources/verifybamid/hg38/100k/"
+    "1000g.phase3.100k.b38.vcf.gz.dat"
+)
 GIAB7_IDS = ["HG001", "HG002", "HG003", "HG004", "HG005", "HG006", "HG007"]
 GIAB_30X_FASTQ_ROOT = (
     "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/"
@@ -263,7 +267,12 @@ def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
     ):
         config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
         assert "chr20_verbam/chr20.random1000.vcf.gz" in config_text
-        assert "1000g.phase3.100k.b38.vcf.gz.dat" in config_text
+        assert VERIFYBAMID2_HG38_100K_SVD_PREFIX in config_text
+        assert (
+            "/fsx/data/tool_specific_resources/verifybam2/"
+            "1000g.phase3.100k.b38.vcf.gz.dat"
+            not in config_text
+        )
         assert "daylily.snp_subset_1M.b38.vcf.gz.dat" in config_text
         assert "snp_subset_1M/1M_snps.sorted.vcf.gz" in config_text
 
@@ -277,10 +286,20 @@ def test_verifybamid2_panel_config_and_resources_are_declared() -> None:
     assert "verifybamid2_panels" in common
     assert "verifybamid2_panel_svd_prefixes" in common
 
-    for profile_path in (
-        "config/day_profiles/local/templates/rule_config.yaml",
-        "config/day_profiles/slurm/templates/rule_config.yaml",
-    ):
+    profile_expectations = {
+        "config/day_profiles/local/templates/rule_config.yaml": {
+            "100k_threads": 8,
+            "100k_mem_mb": 16000,
+            "100k_svd_prefix": VERIFYBAMID2_HG38_100K_SVD_PREFIX,
+        },
+        "config/day_profiles/slurm/templates/rule_config.yaml": {
+            "100k_threads": 64,
+            "100k_mem_mb": 64000,
+            "100k_svd_prefix": VERIFYBAMID2_HG38_100K_SVD_PREFIX,
+        },
+    }
+
+    for profile_path, expected in profile_expectations.items():
         profile = yaml.safe_load((REPO_ROOT / profile_path).read_text(encoding="utf-8"))
         vb2 = profile["verifybamid2_contam"]
         assert profile["verifybamid2_panels"] == []
@@ -289,8 +308,12 @@ def test_verifybamid2_panel_config_and_resources_are_declared() -> None:
         assert vb2["active_panels"] == ["100k"]
         assert set(vb2["panels"]) == {"1k", "100k", "1m"}
         assert vb2["panels"]["1k"]["snp_count"] == 1000
-        assert vb2["panels"]["100k"]["threads"] > vb2["panels"]["1k"]["threads"]
-        assert vb2["panels"]["1m"]["threads"] > vb2["panels"]["100k"]["threads"]
+        assert vb2["panels"]["100k"]["threads"] == expected["100k_threads"]
+        assert vb2["panels"]["100k"]["mem_mb"] == expected["100k_mem_mb"]
+        assert (
+            vb2["panels"]["100k"]["svd_prefix"]["name"]
+            == expected["100k_svd_prefix"]
+        )
 
 
 def test_site_mix_contam_rule_is_target_genotype_free() -> None:

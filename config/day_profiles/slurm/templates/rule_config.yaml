@@ -1196,9 +1196,9 @@ verifybamid2_contam:
             label: "1000g_phase3_100k"
             snp_count: 100000
             svd_prefix:
-                name: /fsx/data/tool_specific_resources/verifybam2/1000g.phase3.100k.b38.vcf.gz.dat
-            threads: 32
-            mem_mb: 32000
+                name: /fsx/data/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
+            threads: 64
+            mem_mb: 64000
             partition: "i192,i192mem,i128"
         1m:
             label: "daylily_snp_subset_1M"
