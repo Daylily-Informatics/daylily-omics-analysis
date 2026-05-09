@@ -30,9 +30,8 @@ echo "=== Cloning test-2-main ==="
 day-clone -w ssh -t main -d single-unit-runs/test-2-main
 T2="$BASE/test-2-main/daylily-omics-analysis"
 if [ ! -d "$T2" ]; then
-    echo "day-clone path failed; falling back to git clone"
-    mkdir -p "$BASE/test-2-main"
-    git clone --branch main git@github.com:Daylily-Informatics/daylily-omics-analysis.git "$T2"
+    echo "day-clone failed to create $T2" >&2
+    exit 1
 fi
 stage_config "$T2" .test_data/data/hybrid/ilmn_ont_full_cov.samples.tsv .test_data/data/hybrid/ilmn_ont_full_cov.units.tsv
 echo "test-2-main ready at $T2"
@@ -43,9 +42,8 @@ echo "=== Cloning test-4-main ==="
 day-clone -w ssh -t main -d single-unit-runs/test-4-main
 T4="$BASE/test-4-main/daylily-omics-analysis"
 if [ ! -d "$T4" ]; then
-    echo "day-clone path failed; falling back to git clone"
-    mkdir -p "$BASE/test-4-main"
-    git clone --branch main git@github.com:Daylily-Informatics/daylily-omics-analysis.git "$T4"
+    echo "day-clone failed to create $T4" >&2
+    exit 1
 fi
 stage_config "$T4" .test_data/data/ilmn/ilmn_full_cov.samples.tsv .test_data/data/ilmn/ilmn_full_cov.units.tsv
 echo "test-4-main ready at $T4"
@@ -56,9 +54,8 @@ echo "=== Cloning test-1-main ==="
 day-clone -w ssh -t main -d single-unit-runs/test-1-main
 T1="$BASE/test-1-main/daylily-omics-analysis"
 if [ ! -d "$T1" ]; then
-    echo "day-clone path failed; falling back to git clone"
-    mkdir -p "$BASE/test-1-main"
-    git clone --branch main git@github.com:Daylily-Informatics/daylily-omics-analysis.git "$T1"
+    echo "day-clone failed to create $T1" >&2
+    exit 1
 fi
 stage_config "$T1" .test_data/data/hybrid/ultima_ont_full_cov.samples.tsv .test_data/data/hybrid/ultima_ont_full_cov.units.tsv
 echo "test-1-main ready at $T1"
