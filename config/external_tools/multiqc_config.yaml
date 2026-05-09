@@ -8,8 +8,16 @@ max_table_rows: 2200
 decimalPoint_format: "."
 thousandsSep_format: ","
 
+sample_names_replace_regex: true
+sample_names_replace:
+  "\\.md\\.(chr[0-9XYM]+)$": ".\\1"
 
 extra_fn_clean_trim:
+  - ".snv.sort.vcf.gz.tbi"
+  - ".snv.sort.vcf.gz"
+  - ".mosdepth.summary.sort.bed"
+  - ".idxstat.tsv"
+  - ".bcfstats.tsv"
   - ".R1.fastq.gz"
   - ".R2.fastq.gz"
   - ".R1.fastq"
@@ -21,10 +29,13 @@ extra_fn_clean_trim:
   - ".cram"
   - ".crai"
   - ".vcf.gz.tbi"
+  - ".snv.sort"
+  - ".idxstat"
+  - ".mosdepth.summary.sort"
+  - ".bcfstats"
 
 
 module_order:
-  - verifyBAMID  
   - peddy
   - fastqc
   - fastq_screen
@@ -36,17 +47,15 @@ module_order:
   - mosdepth
   - goleft_indexcov
   - sentieon
-  - fastqc
-  - fastq_screen
   - somalier
   - vcftools
-  - bcftools
   - kat
   - custom_content 
   - sequence_qc_outputs
   - alignment_qc_outputs
   - expansionhunter
   - contamination
+  - verifybamid2_panel_comparison
   - site_mix_contam
   - site_mix_donor
   - relatedness
@@ -198,6 +207,14 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'contamination'
+  verifybamid2_panel_comparison:
+    id: 'verifybamid2_panel_comparison'
+    section_name: 'VerifyBamID2 SNP Panel Comparison'
+    description: 'Panel-aware VerifyBamID2 contamination estimates and runtime fields'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'verifybamid2_panel_comparison'
   site_mix_contam:
     id: 'site_mix_contam'
     section_name: 'Genotype-Free Site-Mix Contamination'
@@ -311,6 +328,8 @@ sp:
     fn: "other_reports/alignment_qc_outputs_mqc.tsv"
   contamination:
     fn: "other_reports/contamination_mqc.tsv"
+  verifybamid2_panel_comparison:
+    fn: "other_reports/verifybamid2_panel_comparison_mqc.tsv"
   site_mix_contam:
     fn: "other_reports/site_mix_contam_mqc.tsv"
   site_mix_donor:
@@ -415,6 +434,7 @@ exclude_modules:
   - bismark
   - tophat
   - sexdetermine
+  - verifyBAMID
   - q3c3
   - bclconvert/runino
   - bustools

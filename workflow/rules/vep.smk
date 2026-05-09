@@ -310,9 +310,10 @@ rule vep_annotation_gather:
             writer.writeheader()
             for path in input:
                 sample, aligner, deduper, caller = _variant_qc_parts(path)
+                sample_id = day_stage_sample_id(sample, aligner, deduper, caller)
                 writer.writerow(
                     {
-                        "sample_id": sample,
+                        "sample_id": sample_id,
                         "aligner": aligner,
                         "deduper": deduper,
                         "snv_caller": caller,

@@ -38,6 +38,118 @@ SUPPORTED_HTD_CALLERS = (
 )
 
 
+def _supporting_file_name(entry):
+    if isinstance(entry, dict):
+        return str(entry.get("name", ""))
+    return str(entry)
+
+
+def _config_int(value, default):
+    if value in [None, "", "None"]:
+        return int(default)
+    return int(value)
+
+
+def _verifybamid2_panel_config(panel_id):
+    panels = config.get("verifybamid2_contam", {}).get("panels", {})
+    if panel_id not in panels:
+        raise WorkflowError(
+            f"Unsupported VerifyBamID2 panel: {panel_id}. "
+            f"Configured panels: {', '.join(sorted(panels))}"
+        )
+    merged = dict(panels[panel_id])
+    supporting_panels = (
+        config.get("supporting_files", {})
+        .get("files", {})
+        .get("verifybam2", {})
+        .get("panels", {})
+    )
+    if panel_id in supporting_panels:
+        merged.update(supporting_panels[panel_id])
+    svd_prefix_overrides = config.get("verifybamid2_panel_svd_prefixes", {})
+    if panel_id in svd_prefix_overrides:
+        merged["svd_prefix"] = {"name": str(svd_prefix_overrides[panel_id])}
+    return merged
+
+
+def verifybamid2_selected_panels(*, require_non_empty=False):
+    vb2_cfg = config.get("verifybamid2_contam", {})
+    selected = _as_config_list(
+        config.get("verifybamid2_panels", vb2_cfg.get("active_panels", []))
+    )
+    if not selected and vb2_cfg.get("default_panel", "") not in ["", None, "None"]:
+        selected = [str(vb2_cfg["default_panel"])]
+
+    configured = set(vb2_cfg.get("panels", {}).keys())
+    invalid = sorted(set(selected) - configured)
+    if invalid:
+        raise WorkflowError(
+            "Unsupported verifybamid2_panels value(s): "
+            + ", ".join(invalid)
+            + ". Supported values: "
+            + ", ".join(sorted(configured))
+        )
+    if require_non_empty and not selected:
+        raise WorkflowError(
+            "The requested VerifyBamID2 target requires --config "
+            "verifybamid2_panels=[...] or verifybamid2_contam.active_panels."
+        )
+    return selected
+
+
+VERIFYBAMID2_PANELS = verifybamid2_selected_panels()
+VERIFYBAMID2_PANEL_IDS = tuple(
+    sorted(config.get("verifybamid2_contam", {}).get("panels", {}).keys())
+)
+
+
+def verifybamid2_panel_svd_prefix(wildcards):
+    panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
+    return _supporting_file_name(panel_cfg["svd_prefix"])
+
+
+def day_stage_sample_id(sample, *components):
+    return ".".join(
+        [str(sample)] + [str(component) for component in components if str(component)]
+    )
+
+
+def verifybamid2_panel_label(wildcards):
+    panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
+    return str(panel_cfg.get("label", wildcards.vb2panel))
+
+
+def verifybamid2_panel_snp_count(wildcards):
+    panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
+    return str(panel_cfg.get("snp_count", ""))
+
+
+def verifybamid2_panel_threads(wildcards):
+    panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
+    return _config_int(
+        panel_cfg.get("threads", None),
+        config["verifybamid2_contam"]["threads"],
+    )
+
+
+def verifybamid2_panel_mem_mb(wildcards):
+    panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
+    return _config_int(
+        panel_cfg.get("mem_mb", None),
+        config["verifybamid2_contam"].get("mem_mb", 16000),
+    )
+
+
+def verifybamid2_panel_partition(wildcards):
+    panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
+    return str(
+        panel_cfg.get(
+            "partition",
+            config["verifybamid2_contam"]["partition"],
+        )
+    )
+
+
 def htd_callers_selected(*, require_non_empty=False):
     callers = _as_config_list(config.get("htd_callers", []))
     invalid = sorted(set(callers) - set(SUPPORTED_HTD_CALLERS))
@@ -328,6 +440,14 @@ else:
         err_msg
     )
 
+
+def _day_chrm_token_to_contig(raw):
+    pchr = GENOME_CHR_PREFIX
+    mito_code = "MT" if "b37" == config['genome_build'] else "M"
+    chrm_map = {'23': 'X', '24': 'Y', '25': mito_code}
+    token = str(raw).replace('chr', '')
+    return pchr + chrm_map.get(token, token)
+
 # SNV caller chunk arrays
 SENTD_CHRMS = config["sentD"][f"{config['genome_build']}_sentD_chrms"].split(",")
 CGT7P_CHRMS = config["cgt7p"][f"{config['genome_build']}_cgt7p_chrms"].split(",")
@@ -372,7 +492,12 @@ def _expand_chrm_ranges(chrm_list):
     return expanded
 
 SENTDHIO_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHIO_CHRMS)
-VEP_CHRMS = _expand_chrm_ranges(config["vep"][f"{config['genome_build']}_vep_chrms"].split(","))
+VEP_CHRMS = [
+    _day_chrm_token_to_contig(chrm)
+    for chrm in _expand_chrm_ranges(
+        config["vep"][f"{config['genome_build']}_vep_chrms"].split(",")
+    )
+]
 
 SENTDPB_CHRMS = config["sentdpb"][f"{config['genome_build']}_sentdpb_chrms"].split(",")
 
@@ -1657,20 +1782,12 @@ def get_alnr(wildcards):
     return wildcards.alnr
 
 
-def _day_chrm_token_to_contig(raw):
-    pchr = GENOME_CHR_PREFIX
-    mito_code = "MT" if "b37" == config['genome_build'] else "M"
-    chrm_map = {'23': 'X', '24': 'Y', '25': mito_code}
-    token = str(raw).replace('chr', '')
-    return pchr + chrm_map.get(token, token)
-
-
 def get_vepchrm(wildcards):
     return _day_chrm_token_to_contig(wildcards.vepchrm)
 
 
 def get_vep_allowed_contigs(wildcards):
-    return ",".join(_day_chrm_token_to_contig(chrm) for chrm in VEP_CHRMS)
+    return ",".join(VEP_CHRMS)
 
 
 def get_dchrm_day(wildcards):

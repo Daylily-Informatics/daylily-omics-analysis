@@ -12,8 +12,13 @@ import os
 
 def _variant_qc_parts(path):
     name = os.path.basename(str(path))
-    parts = name.split(".")
-    return parts[0], parts[1], parts[2], parts[3]
+    for alnr in ALL_ALIGNERS:
+        for ddup in DDUP:
+            for caller in snv_CALLERS:
+                marker = f".{alnr}.{ddup}.{caller}."
+                if marker in name:
+                    return name.split(marker, 1)[0], alnr, ddup, caller
+    raise ValueError(f"Could not parse variant QC sample identity from path: {path}")
 
 
 rule bcftools_vcfstat:
@@ -79,6 +84,7 @@ rule bcftools_variant_stats_gather:
             writer.writeheader()
             for path in input:
                 sample, aligner, deduper, caller = _variant_qc_parts(path)
+                sample_id = day_stage_sample_id(sample, aligner, deduper, caller)
                 metrics = {}
                 with open(path) as in_handle:
                     for line in in_handle:
@@ -87,7 +93,7 @@ rule bcftools_variant_stats_gather:
                             metrics[fields[2].rstrip(":").lower()] = fields[3]
                 writer.writerow(
                     {
-                        "sample_id": sample,
+                        "sample_id": sample_id,
                         "aligner": aligner,
                         "deduper": deduper,
                         "snv_caller": caller,

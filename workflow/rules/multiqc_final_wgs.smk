@@ -46,6 +46,8 @@ def _alignment_component_inputs(wildcards):
         or qc_tool_enabled("site_mix")
     ):
         paths.append(MDIR + "other_reports/contamination_mqc.tsv")
+    if qc_tool_enabled("verifybamid2"):
+        paths.append(MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv")
     if qc_tool_enabled("site_mix"):
         paths.extend(
             [
@@ -122,10 +124,11 @@ def _alignment_qc_native_inputs(wildcards):
         paths.extend(
             expand(
                 MDIR
-                + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
+                + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
                 ddup=qddups,
+                vb2panel=VERIFYBAMID2_PANELS,
             )
         )
     if qc_tool_enabled("gatk_contam"):
