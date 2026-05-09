@@ -1,5 +1,10 @@
 # TMPDIR Pattern Audit Report
 
+> Historical audit note: this report captures the state observed on
+> 2026-02-13. Treat it as a dated debugging record, not canonical current
+> operator guidance. Re-check the referenced rules before using any status or
+> command snippet here as current truth.
+
 **Date:** 2026-02-13  
 **Auditor:** Forge (Augment Agent)  
 **Scope:** Resource-intensive Snakemake rules (alignment, deduplication, variant calling)
@@ -272,4 +277,3 @@ export SENTIEON_TMPDIR=$TMPDIR;
 5. `workflow/rules/sent_snv_ontr.smk` - Add `export SENTIEON_TMPDIR` (after line 53)
 6. `workflow/rules/sent_hybrid_ilmn_ont.smk` - Fix prefix + add SENTIEON_TMPDIR (line 55)
 7. `workflow/rules/sent_hybrid_ug_ont.smk` - Fix prefix + add SENTIEON_TMPDIR (line 55)
-

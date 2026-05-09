@@ -1,7 +1,10 @@
+Historical operator note only. This transcript predates the current
+daylily-ephemeral-cluster access contract; do not reuse the direct SSH example.
+Use daylily-ec / SSM access and current canonical docs instead.
 
 I then would like you to move to a feature branch to doo the following
 
-I have a daylily-ephemeral-cluster cluster running and headnode accessible from   ssh -i ~/.ssh/lsmc-omics-us-west-2.pem ubuntu@35.85.81.27
+I had a daylily-ephemeral-cluster cluster running and described a legacy direct-SSH headnode access path here. That access pattern is obsolete; use daylily-ec / SSM for current runs.
 
 in tmux session tmux  a -t t2
 

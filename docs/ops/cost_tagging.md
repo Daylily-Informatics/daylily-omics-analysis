@@ -1,6 +1,6 @@
 # Cost Tags 
 - The default project cost tags are `daylily-dev`, and `daylily-prd` may be set as well.
-- To change the tag, change the `DAY_PROJECT` environment variable after running `dyiniy` and prior to running `dy-r` :
+- To change the tag, change the `DAY_PROJECT` environment variable after running `dyoainit` and before running `dy-r`:
 ```bash
 export DAY_PROJECT="daylily-dev"
 ```

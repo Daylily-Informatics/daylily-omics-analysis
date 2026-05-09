@@ -1,6 +1,8 @@
 # Daylily CLI
 
-The Daylily CLI is a set of shell entrypoints around Snakemake. Run commands from an analysis clone, usually under `/fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis` on a headnode.
+The Daylily CLI is a set of shell entrypoints around Snakemake. Run commands from an analysis clone, usually under `/fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis` on a headnode created by `daylily-ephemeral-cluster`.
+
+Use `daylily-ec` for supported headnode access, sample staging, and manifest creation or delivery. The workflow assumes Daylily omics/reference data are mounted at `/fsx/data`; many supporting-file paths are intentionally absolute to that mount.
 
 ## Basic Pattern
 

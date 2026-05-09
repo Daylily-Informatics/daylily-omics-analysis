@@ -4,9 +4,11 @@ This guide describes the supported pattern for running Daylily workflow tests on
 
 ## Access
 
-If using brokered access through `daylily-ephemeral-cluster`:
+Use brokered access through `daylily-ephemeral-cluster` and `daylily-ec`. Direct SSH, PEM files, and `pcluster ssh` are not supported access paths for these headnodes.
 
 ```bash
+eval "$(conda shell.zsh hook)"
+conda activate DAY-EC
 AWS_PROFILE=<profile> daylily-ec headnode connect \
   --profile <profile> \
   --region <region> \
@@ -23,11 +25,7 @@ command -v tmux
 command -v squeue
 ```
 
-If using direct SSH, wrap remote commands in a login shell:
-
-```bash
-ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'squeue -u ubuntu'"
-```
+If the shell is not login `bash`, run `exec bash -l` before `day-clone`, `tmux`, `source dyoainit`, `dy-a`, or `dy-r`.
 
 ## Persistent Tmux Launch
 
@@ -47,11 +45,14 @@ tmux new-session -d -s <session_name>
 tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu' Enter
 tmux send-keys -t <session_name> 'day-clone -t <git_ref> -d <workset_code>' Enter
 tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu/<workset_code>/daylily-omics-analysis' Enter
+tmux send-keys -t <session_name> 'mkdir -p config' Enter
 tmux send-keys -t <session_name> 'source dyoainit' Enter
 tmux send-keys -t <session_name> 'dy-a slurm hg38' Enter
 tmux send-keys -t <session_name> 'dy-r <targets> -p -j 20 -k -T 1 -n' Enter
 tmux send-keys -t <session_name> 'dy-r <targets> -p -j 20 -k -T 1 &' Enter
 ```
+
+Use `daylily-ec` to stage reads and create or deliver `samples.tsv` and `units.tsv` for the workset before running production commands. Copying manifests from another completed run is a debugging operation and should use verified paths only.
 
 Do not combine `source dyoainit`, `dy-a`, and `dy-r` into one parsed shell line in tmux. The activation commands define shell functions and completion in the current shell.
 
@@ -66,7 +67,7 @@ Use this order:
 5. newest relevant `logs/slurm/<rule>/*.{out,err}`
 6. stable rule log under `results/day/<build>/<sample>/.../logs/`
 
-For active compute nodes:
+From an already connected SSM headnode shell, active compute nodes can be inspected by node name when Slurm shows a job there:
 
 ```bash
 ssh <node-name> "bash -l -c 'df -h /dev/shm; free -g; uptime; ps -fu ubuntu | grep -E \"sentieon|samtools|mbuffer|day_run|snakemake\" | grep -v grep'"

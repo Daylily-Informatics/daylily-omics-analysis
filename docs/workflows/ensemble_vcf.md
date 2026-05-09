@@ -13,7 +13,7 @@ First, generate VCFs from your short-read and long-read data using standard dayl
 ```bash
 # Example: ILMN short-read + DeepVariant
 dy-r produce_snv_concordances -p -k -j 10 \
-  --config aligners=['bwa2a'] dedupers=['dppl'] snv_callers=['deep19']
+  --config aligners=['bwa2a'] dedupers=['dmd'] snv_callers=['deep19']
 
 # Example: ONT long-read + Sentieon
 dy-r produce_sentdont_vcf -p -k -j 10
@@ -25,7 +25,7 @@ Add two columns to your `config/units.tsv`:
 
 | Column | Description | Example |
 |--------|-------------|---------|
-| `SR_VCF_PATH` | Path to short-read VCF | `results/day/hg38/{sample}/align/bwa2a/dppl/snv/deep19/{sample}.bwa2a.dppl.deep19.snv.sort.vcf.gz` |
+| `SR_VCF_PATH` | Path to short-read VCF | `results/day/hg38/{sample}/align/bwa2a/dmd/snv/deep19/{sample}.bwa2a.dmd.deep19.snv.sort.vcf.gz` |
 | `LR_VCF_PATH` | Path to long-read VCF | `results/day/hg38/{sample}/align/ont/snv/sentdont/{sample}.ont.sentdont.snv.sort.vcf.gz` |
 
 **Note:** Use `{sample}` as a placeholder for the sample name.
@@ -35,11 +35,11 @@ Add two columns to your `config/units.tsv`:
 ```bash
 # Generate ensemble VCFs only
 dy-r produce_ensemble_vcf -p -k -j 10 \
-  --config aligners=['ont'] dedupers=['dppl'] snv_callers=['ensemble']
+  --config aligners=['ont'] dedupers=['dmd'] snv_callers=['ensemble']
 
 # Generate ensemble VCFs + concordance
 dy-r produce_ensemble_concordances -p -k -j 10 \
-  --config aligners=['ont'] dedupers=['dppl'] snv_callers=['ensemble']
+  --config aligners=['ont'] dedupers=['dmd'] snv_callers=['ensemble']
 ```
 
 ## Ensemble Modes
@@ -96,8 +96,8 @@ results/day/{genome_build}/{sample}/align/{alnr}/{ddup}/snv/ensemble/
 Where:
 - `{genome_build}`: hg38, hg38_broad, or b37
 - `{sample}`: Sample name
-- `{alnr}`: Long-read aligner (ont, pb, or sentmm2)
-- `{ddup}`: Deduplication method (dppl, dppl_sent, etc.)
+- `{alnr}`: Long-read ensemble route (`ont` or `pb`)
+- `{ddup}`: Deduplication method such as `dmd`, `smd`, or `na`
 
 ## Concordance Integration
 
@@ -105,7 +105,7 @@ The ensemble VCF is fully compatible with the standard concordance workflow:
 
 ```bash
 dy-r produce_snv_concordances -p -k -j 10 \
-  --config aligners=['ont'] dedupers=['dppl'] snv_callers=['ensemble']
+  --config aligners=['ont'] dedupers=['dmd'] snv_callers=['ensemble']
 ```
 
 Concordance reports will be generated at:
@@ -118,11 +118,11 @@ results/day/{genome_build}/{sample}/align/{alnr}/{ddup}/snv/ensemble/concordance
 | Short-Read Platform | Long-Read Platform | Aligner Value |
 |---------------------|-------------------|---------------|
 | Illumina | ONT | `ont` |
-| Illumina | PacBio | `pb` or `sentmm2` |
+| Illumina | PacBio | `pb` |
 | Ultima | ONT | `ont` |
-| Ultima | PacBio | `pb` or `sentmm2` |
+| Ultima | PacBio | `pb` |
 | Roche | ONT | `ont` |
-| Roche | PacBio | `pb` or `sentmm2` |
+| Roche | PacBio | `pb` |
 
 ## Example Configuration
 
@@ -146,7 +146,7 @@ Ensure the paths in `SR_VCF_PATH` and `LR_VCF_PATH` are correct and use `{sample
 ### No Ensemble Output
 Check that:
 - Input VCFs exist at the specified paths
-- `aligners` config includes the long-read aligner (ont, pb, or sentmm2)
+- `aligners` config includes the long-read ensemble route (`ont` or `pb`)
 - `snv_callers` config includes 'ensemble'
 
 ### Concordance Not Running
