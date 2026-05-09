@@ -38,6 +38,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--results-root", required=True)
     parser.add_argument("--aligner", default="sent")
     parser.add_argument("--deduper", default="dmd")
+    parser.add_argument("--verifybamid2-panel", default="100k")
     parser.add_argument(
         "--output",
         default=None,
@@ -66,11 +67,24 @@ def first_existing(paths: list[Path]) -> Path | None:
     return None
 
 
-def find_contam_file(results_root: Path, sample_id: str, aligner: str, deduper: str, tool: str) -> Path | None:
-    pattern = (
-        f"*{sample_id}*/align/{aligner}/{deduper}/alignqc/contam/{tool}/"
-        f"*.{aligner}.{deduper}.{tool if tool != 'gatk' else 'gatk'}.tsv"
-    )
+def find_contam_file(
+    results_root: Path,
+    sample_id: str,
+    aligner: str,
+    deduper: str,
+    tool: str,
+    verifybamid2_panel: str,
+) -> Path | None:
+    if tool == "vb2":
+        pattern = (
+            f"*{sample_id}*/align/{aligner}/{deduper}/alignqc/contam/vb2/"
+            f"{verifybamid2_panel}/*.{aligner}.{deduper}.{verifybamid2_panel}.vb2.tsv"
+        )
+    else:
+        pattern = (
+            f"*{sample_id}*/align/{aligner}/{deduper}/alignqc/contam/{tool}/"
+            f"*.{aligner}.{deduper}.{tool}.tsv"
+        )
     return first_existing(sorted(results_root.glob(pattern)))
 
 
@@ -105,13 +119,18 @@ def build_summary(
     results_root: Path,
     aligner: str,
     deduper: str,
+    verifybamid2_panel: str,
 ) -> list[dict[str, str]]:
     summary = []
     for plan_row in plan_rows:
         sample_id = plan_row["sample_id"]
         expected_pct = plan_row["contamination_percent"]
-        gatk_path = find_contam_file(results_root, sample_id, aligner, deduper, "gatk")
-        vb2_path = find_contam_file(results_root, sample_id, aligner, deduper, "vb2")
+        gatk_path = find_contam_file(
+            results_root, sample_id, aligner, deduper, "gatk", verifybamid2_panel
+        )
+        vb2_path = find_contam_file(
+            results_root, sample_id, aligner, deduper, "vb2", verifybamid2_panel
+        )
         gatk_freemix = read_freemix(gatk_path)
         vb2_freemix = read_freemix(vb2_path)
         gatk_pct = freemix_to_pct(gatk_freemix)
@@ -147,7 +166,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: missing results root: {results_root}", file=sys.stderr)
         return 2
 
-    summary = build_summary(read_tsv(plan_path), results_root, args.aligner, args.deduper)
+    summary = build_summary(
+        read_tsv(plan_path),
+        results_root,
+        args.aligner,
+        args.deduper,
+        args.verifybamid2_panel,
+    )
     write_tsv(output_path, summary)
     print(f"Wrote {output_path}")
     return 0

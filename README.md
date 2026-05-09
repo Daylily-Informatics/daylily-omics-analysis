@@ -95,6 +95,7 @@ Common flags passed through `dy-r`:
 | `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
 | `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant callers. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
+| `produce_verifybamid2_panel_comparison` | Runs selected VerifyBamID2 SNP panels from `--config verifybamid2_panels=[...]` and writes a comparison TSV. |
 | `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
 | `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
 | `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |

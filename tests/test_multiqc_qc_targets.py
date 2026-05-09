@@ -59,7 +59,8 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
-    assert "VEP_CHRMS = _expand_chrm_ranges" in common
+    assert "VEP_CHRMS = [" in common
+    assert "_day_chrm_token_to_contig(chrm)" in common
     assert "def get_vepchrm" in common
     assert "def get_vep_allowed_contigs" in common
 
@@ -93,6 +94,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
         "contamination_mqc.tsv",
+        "verifybamid2_panel_comparison_mqc.tsv",
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
         "relatedness_mqc.tsv",
@@ -281,6 +283,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "sequence_qc_outputs",
         "alignment_qc_outputs",
         "contamination",
+        "verifybamid2_panel_comparison",
         "site_mix_contam",
         "site_mix_donor",
         "relatedness",
@@ -299,7 +302,43 @@ def test_multiqc_config_custom_content_entries() -> None:
     assert "fastp" not in excludes
     assert "vep" not in excludes
     assert "snpeff" not in excludes
+    assert "verifyBAMID" in excludes
     assert "sexdetermine" in excludes
+
+
+def test_multiqc_sample_name_cleanup_contract() -> None:
+    config = _yaml("config/external_tools/multiqc_config.yaml")
+    trim = set(config["extra_fn_clean_trim"])
+    assert ".snv.sort.vcf.gz" in trim
+    assert ".snv.sort.vcf.gz.tbi" in trim
+    assert ".snv.sort" in trim
+    assert ".idxstat.tsv" in trim
+    assert ".idxstat" in trim
+    assert ".mosdepth.summary.sort.bed" in trim
+    assert ".mosdepth.summary.sort" in trim
+    assert ".bcfstats.tsv" in trim
+    assert config["sample_names_replace_regex"] is True
+    assert config["sample_names_replace"][r"\.md\.(chr[0-9XYM]+)$"] == r".\1"
+
+    module_order = config["module_order"]
+    assert len(module_order) == len(set(module_order))
+    assert "verifyBAMID" not in module_order
+    assert "verifybamid2_panel_comparison" in module_order
+
+
+def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
+    common = _read("workflow/rules/common.smk")
+    contamination = _read("workflow/rules/site_mix_contam.smk")
+    bcftools = _read("workflow/rules/bcftools_vcfstat.smk")
+    vep = _read("workflow/rules/vep.smk")
+
+    assert "def day_stage_sample_id(sample, *components)" in common
+    assert "day_stage_sample_id(sample, aligner, deduper)" in contamination
+    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in bcftools
+    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in vep
+    assert "marker = f\".{alnr}.{ddup}.{caller}.\"" in bcftools
+    assert "VEP_CHRMS = [" in common
+    assert "_day_chrm_token_to_contig(chrm)" in common
 
 
 def test_multiqc_runtime_policy_documented() -> None:

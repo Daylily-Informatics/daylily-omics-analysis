@@ -190,6 +190,7 @@ If given an AWS_PROFILE, region, cluster name, optional path to analysis, and po
 1. Use SSM/daylily-ec as the only supported access model for headnode commands and shells.
 2. Always use login shells for remote commands that need the configured headnode environment. Use `bash -l -c 'your command here'` inside the SSM session or command invocation to ensure the full shell environment (including PATH and conda) is available.
 3. **`squeue` must be on PATH** — if it is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
+4. **Always use an interactive bash shell as the `ubuntu` user for headnode workflow work.** `dy-a`, `dy-r`, `dy-m`, and related `dy-*` commands are aliases from `dyoainit`, not standalone executables. Bash does not expand aliases in non-interactive scripts by default, and `bin/day_activate` also expects an initialized interactive shell/conda context. For workflow launches, use an interactive ubuntu tmux/login pane and send separate commands: `source dyoainit`, then `dy-a slurm <genome_build>`, then `dy-r ...`. Do not assume `dy-a` or `dy-r` will work inside an SSM `send-command` script.
 
 ## Terminal Heredoc Corruption
 **CRITICAL RULE - DO NOT USE HEREDOC**:

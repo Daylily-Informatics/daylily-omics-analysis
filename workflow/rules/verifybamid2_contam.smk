@@ -12,26 +12,33 @@ rule verifybamid2_contam:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        svd_ud=lambda wildcards: verifybamid2_panel_svd_prefix(wildcards) + ".UD",
+        svd_v=lambda wildcards: verifybamid2_panel_svd_prefix(wildcards) + ".V",
+        svd_mu=lambda wildcards: verifybamid2_panel_svd_prefix(wildcards) + ".mu",
+        svd_bed=lambda wildcards: verifybamid2_panel_svd_prefix(wildcards) + ".bed",
     output:
-        vb_prefix=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2",
-        vb_tsv=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
-        contam=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.contam.tsv",
-        selfSM=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.selfSM",
-        mqc=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2_mqc.tsv",
+        vb_prefix=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2",
+        vb_tsv=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
+        contam=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.contam.tsv",
+        selfSM=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.selfSM",
+        mqc=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2_mqc.tsv",
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/logs/{sample}.{alnr}.{ddup}.vb2.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/logs/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.log",
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.vb2.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.bench.tsv"
     conda:
         config["verifybamid2_contam"]["env_yaml"]
-    threads: config["verifybamid2_contam"]["threads"]
+    threads: verifybamid2_panel_threads
     resources:
-        vcpu=config["verifybamid2_contam"]["threads"],
-        partition=config["verifybamid2_contam"]["partition"],
+        vcpu=verifybamid2_panel_threads,
+        mem_mb=verifybamid2_panel_mem_mb,
+        partition=verifybamid2_panel_partition,
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        db_prefix=config["supporting_files"]["files"]["verifybam2"]["dat_files"]["name"],
-	cluster_sample=ret_sample,
+        db_prefix=verifybamid2_panel_svd_prefix,
+        panel_label=verifybamid2_panel_label,
+        snp_count=verifybamid2_panel_snp_count,
+        cluster_sample=ret_sample,
     shell:
         r"""
         set -euo pipefail
@@ -42,6 +49,8 @@ rule verifybamid2_contam:
         rm -f {output.vb_prefix}.selfSM {output.vb_prefix}.selfRG {output.vb_prefix}.depthSM \
             {output.vb_tsv} {output.selfSM} {output.mqc} {output.contam}
 
+        printf 'VerifyBamID2 panel\t%s\t%s SNPs\n' "{params.panel_label}" "{params.snp_count}" > {log}
+
         verifybamid2 \
             --BamFile {input.cram} \
             --Output {output.vb_prefix} \
@@ -50,7 +59,7 @@ rule verifybamid2_contam:
             --NumThread {threads} \
             --Reference {params.huref} \
             --min-BQ 20 --min-MQ 20 --adjust-MQ 50 --max-depth 500 \
-            > {log} 2>&1
+            >> {log} 2>&1
 
         cp {output.selfSM} {output.vb_tsv}
         cp {output.selfSM} {output.mqc}
@@ -61,12 +70,26 @@ rule verifybamid2_contam:
 
 localrules:
     produce_contam_estimate,
+    produce_verifybamid2_panel_comparison,
 
 rule produce_contam_estimate:  # TARGET:  jusg gen contam
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
             ddup=qc_alignment_dedupers(),
+            vb2panel=VERIFYBAMID2_PANELS,
         ),
+
+
+rule produce_verifybamid2_panel_comparison:  # TARGET: compare selected VerifyBamID2 SNP panels
+    input:
+        expand(
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
+            sample=SSAMPS,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
+            vb2panel=VERIFYBAMID2_PANELS,
+        ),
+        MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv",

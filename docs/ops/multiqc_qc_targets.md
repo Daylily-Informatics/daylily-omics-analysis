@@ -47,7 +47,8 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | coverage evenness | Alignment QC | `other_reports/normcovevenness_combo_mqc.tsv` and per-sample markdown |
 | goleft | Alignment QC | per-sample goleft outputs |
 | Alignment QC output inventory | Alignment QC | `other_reports/alignment_qc_outputs_mqc.tsv` |
-| VerifyBamID2 | Contamination QC | per-sample `.vb2.tsv` |
+| VerifyBamID2 | Contamination QC | panel-scoped per-sample `.vb2.tsv` files |
+| VerifyBamID2 panel comparison | Contamination QC | `other_reports/verifybamid2_panel_comparison_mqc.tsv` |
 | GATK contamination | Contamination QC | per-sample `.gatk.tsv` |
 | site_mix genotype-free contamination | Contamination QC | `other_reports/site_mix_contam_mqc.tsv` and `other_reports/site_mix_donor_mqc.tsv` |
 | Contamination output inventory | Contamination QC | `other_reports/contamination_mqc.tsv` |
@@ -66,6 +67,22 @@ into any staged/final `produce_multiqc_*` target.
 `include_no_dedup_alignment_qc: true` adds the `na` no-dedup passthrough to
 alignment QC beside configured real dedupers. Set it to `false` when a dry-run
 or smoke fixture cannot produce raw/no-dedup alignment QC.
+
+VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
+without clobbering each other. The default routine panel is `100k`; run
+`produce_verifybamid2_panel_comparison --config verifybamid2_panels=["1k","100k","1m"]`
+to compare the historical 1K panel, the 100K 1000G panel, and the staged 1M
+panel.
+For development or newly generated reference bundles, explicitly override a
+panel prefix with `verifybamid2_panel_svd_prefixes={"1m":"/path/to/prefix"}`;
+the value must be a real VerifyBamID2 SVD prefix with `.UD`, `.V`, `.mu`, and
+`.bed` files.
+
+MultiQC sample names are kept at the deepest meaningful analysis identity:
+raw sequence data uses the sample or read-pair ID, alignment QC uses
+`sample.aligner`, dedup-level QC uses `sample.aligner.deduper`, variant QC uses
+`sample.aligner.deduper.caller`, and chromosome-scattered data keeps the
+chromosome explicitly, such as `sample.sent.dmd.sentd.chr1`.
 
 ## Optional Or Deep QC
 

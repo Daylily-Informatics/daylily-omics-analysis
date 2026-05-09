@@ -331,6 +331,9 @@ multiqc_qc:
 
 htd_callers: []
 
+verifybamid2_panels: []
+verifybamid2_panel_svd_prefixes: {}
+
 expansionhunter:
     version: "5.0.0"
     threads: 16
@@ -1202,8 +1205,36 @@ vanilla:
 verifybamid2_contam:
     env_yaml: "../envs/verifybamid2_v0.1.yaml"
     threads: 4
+    mem_mb: 8000
     ld_preload: "  "
     partition: "i8"
+    default_panel: "100k"
+    active_panels: ["100k"]
+    panels:
+        1k:
+            label: "chr20_random1000"
+            snp_count: 1000
+            svd_prefix:
+                name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
+            threads: 4
+            mem_mb: 8000
+            partition: "i8"
+        100k:
+            label: "1000g_phase3_100k"
+            snp_count: 100000
+            svd_prefix:
+                name: /fsx/data/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
+            threads: 8
+            mem_mb: 16000
+            partition: "i8"
+        1m:
+            label: "daylily_snp_subset_1M"
+            snp_count: 1000000
+            svd_prefix:
+                name: /fsx/data/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
+            threads: 16
+            mem_mb: 64000
+            partition: "i8"
 
 gatk_contam:
     env_yaml: "../envs/gatkcontam_v0.1.yaml"

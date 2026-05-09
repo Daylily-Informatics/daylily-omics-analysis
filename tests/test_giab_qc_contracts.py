@@ -7,9 +7,14 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
 import pytest
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+VERIFYBAMID2_HG38_100K_SVD_PREFIX = (
+    "/fsx/data/tool_specific_resources/verifybamid/hg38/100k/"
+    "1000g.phase3.100k.b38.vcf.gz.dat"
+)
 GIAB7_IDS = ["HG001", "HG002", "HG003", "HG004", "HG005", "HG006", "HG007"]
 GIAB_30X_FASTQ_ROOT = (
     "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/"
@@ -155,7 +160,7 @@ def test_peddy_env_pins_numpy_and_python_for_peddy_048(env_path: str) -> None:
             "workflow/rules/verifybamid2_contam.smk",
             "produce_contam_estimate",
             "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/"
-            "{sample}.{alnr}.{ddup}.vb2.tsv",
+            "{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
         ),
         (
             "workflow/rules/site_mix_contam.smk",
@@ -250,6 +255,11 @@ def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
 
     assert "--SVDPrefix {params.db_prefix}" in rule_text
     assert "--RefVCF {params.site_vcf}" not in rule_text
+    assert "verifybamid2_panel_svd_prefix(wildcards) + \".UD\"" in rule_text
+    assert "verifybamid2_panel_svd_prefix(wildcards) + \".V\"" in rule_text
+    assert "{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv" in rule_text
+    assert "rule produce_verifybamid2_panel_comparison:" in rule_text
+    assert "verifybamid2_panel_comparison_mqc.tsv" in rule_text
 
     for config_path in (
         "config/supporting_files/hg38_supporting_files.yaml",
@@ -257,6 +267,53 @@ def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
     ):
         config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
         assert "chr20_verbam/chr20.random1000.vcf.gz" in config_text
+        assert VERIFYBAMID2_HG38_100K_SVD_PREFIX in config_text
+        assert (
+            "/fsx/data/tool_specific_resources/verifybam2/"
+            "1000g.phase3.100k.b38.vcf.gz.dat"
+            not in config_text
+        )
+        assert "daylily.snp_subset_1M.b38.vcf.gz.dat" in config_text
+        assert "snp_subset_1M/1M_snps.sorted.vcf.gz" in config_text
+
+
+def test_verifybamid2_panel_config_and_resources_are_declared() -> None:
+    common = (REPO_ROOT / "workflow" / "rules" / "common.smk").read_text(
+        encoding="utf-8"
+    )
+    assert "def verifybamid2_selected_panels" in common
+    assert "VERIFYBAMID2_PANELS = verifybamid2_selected_panels()" in common
+    assert "verifybamid2_panels" in common
+    assert "verifybamid2_panel_svd_prefixes" in common
+
+    profile_expectations = {
+        "config/day_profiles/local/templates/rule_config.yaml": {
+            "100k_threads": 8,
+            "100k_mem_mb": 16000,
+            "100k_svd_prefix": VERIFYBAMID2_HG38_100K_SVD_PREFIX,
+        },
+        "config/day_profiles/slurm/templates/rule_config.yaml": {
+            "100k_threads": 64,
+            "100k_mem_mb": 64000,
+            "100k_svd_prefix": VERIFYBAMID2_HG38_100K_SVD_PREFIX,
+        },
+    }
+
+    for profile_path, expected in profile_expectations.items():
+        profile = yaml.safe_load((REPO_ROOT / profile_path).read_text(encoding="utf-8"))
+        vb2 = profile["verifybamid2_contam"]
+        assert profile["verifybamid2_panels"] == []
+        assert profile["verifybamid2_panel_svd_prefixes"] == {}
+        assert vb2["default_panel"] == "100k"
+        assert vb2["active_panels"] == ["100k"]
+        assert set(vb2["panels"]) == {"1k", "100k", "1m"}
+        assert vb2["panels"]["1k"]["snp_count"] == 1000
+        assert vb2["panels"]["100k"]["threads"] == expected["100k_threads"]
+        assert vb2["panels"]["100k"]["mem_mb"] == expected["100k_mem_mb"]
+        assert (
+            vb2["panels"]["100k"]["svd_prefix"]["name"]
+            == expected["100k_svd_prefix"]
+        )
 
 
 def test_site_mix_contam_rule_is_target_genotype_free() -> None:
@@ -265,6 +322,7 @@ def test_site_mix_contam_rule_is_target_genotype_free() -> None:
     )
 
     assert "genotype_free_contam_estimator.py" in rule_text
+    assert "day_stage_sample_id(sample, aligner, deduper)" in rule_text
     assert "alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table" in rule_text
     assert "--counts-tsv {input.pileups}" in rule_text
     assert "--bam {input.cram}" not in rule_text
@@ -453,7 +511,7 @@ def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:
         / "contam"
     )
     gatk_path = result_sample / "gatk" / f"{sample_id}.sent.dmd.gatk.tsv"
-    vb2_path = result_sample / "vb2" / f"{sample_id}.sent.dmd.vb2.tsv"
+    vb2_path = result_sample / "vb2" / "100k" / f"{sample_id}.sent.dmd.100k.vb2.tsv"
     synthetic_root.mkdir(parents=True)
     gatk_path.parent.mkdir(parents=True)
     vb2_path.parent.mkdir(parents=True)
