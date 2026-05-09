@@ -1,5 +1,8 @@
-0#### snpeff
+#### snpeff
 # -------------------------------------
+
+import csv
+import os
 
 
 rule snpeff:
@@ -29,17 +32,63 @@ rule snpeff:
     conda:
         "../envs/snpeff_v0.1.yaml"
     shell:
-        """=
-        ( java -Xmx{params.snpeff_xmx} -jar  \
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output.annovcf}) $(dirname {log})
+        java -Xmx{params.snpeff_xmx} -jar  \
         $(find $CONDA_PREFIX -name snpEff.jar) \
         -v {params.snpeff_genome_build} \
         {input.vcfgz} \
-        ) > {log} 2>&1;
+        2> {log} | bgzip -c > {output.annovcf}
+        tabix -f -p vcf {output.annovcf} >> {log} 2>&1
+        test -s {output.annovcf}
+        test -s {output.annovcftbi}
         """
 
 
 localrules:
+    snpeff_annotation_gather,
     produce_snpeff,
+
+
+rule snpeff_annotation_gather:
+    input:
+        [
+            MDIR
+            + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/snpeff/{sample}.{alnr}.{ddup}.{snv}.snpeff.vcf.gz.tbi"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
+    output:
+        MDIR + "other_reports/snpeff_annotation_mqc.tsv",
+    run:
+        os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
+        fieldnames = [
+            "sample_id",
+            "aligner",
+            "deduper",
+            "snv_caller",
+            "annotation_tool",
+            "vcf_gz",
+            "status",
+        ]
+        with open(output[0], "w", newline="") as out_handle:
+            writer = csv.DictWriter(out_handle, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            for path in input:
+                sample, aligner, deduper, caller = _variant_qc_parts(path)
+                writer.writerow(
+                    {
+                        "sample_id": sample,
+                        "aligner": aligner,
+                        "deduper": deduper,
+                        "snv_caller": caller,
+                        "annotation_tool": "snpeff",
+                        "vcf_gz": str(path).removesuffix(".tbi"),
+                        "status": "ok",
+                    }
+                )
 
 
 rule produce_snpeff:  # TARGET: just produce snpeff results
@@ -51,6 +100,7 @@ rule produce_snpeff:  # TARGET: just produce snpeff results
             for ddup in DDUP
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
         ],
+        MDIR + "other_reports/snpeff_annotation_mqc.tsv",
     output:
         "logs/snpeff_gathered.done",
     shell:

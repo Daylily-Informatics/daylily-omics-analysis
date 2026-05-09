@@ -132,9 +132,9 @@ localrules: produce_smaca
 rule produce_smaca:  # TARGET : Produce SMAca results
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/htd/smaca/{sample}.{alnr}.smaca.done",
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",
             sample=SSAMPS,
-            alnr=ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         )
     output:

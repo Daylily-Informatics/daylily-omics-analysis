@@ -319,6 +319,29 @@ dysgu_sort_index:
     threads: 8
     partition: "i192,i192mem"
 
+no_dedup:
+    env_yaml: "../envs/samtools_v0.1.yaml"
+
+multiqc_qc:
+    enable_long_running: false
+    enable_tools: []
+    disable_tools: []
+    include_no_dedup_alignment_qc: true
+    runtime_gate_minutes: 45
+
+htd_callers: []
+
+expansionhunter:
+    version: "5.0.0"
+    threads: 16
+    mem_mb: 32000
+    partition: "i192,i192mem,i128"
+    env_yaml: "../envs/expansionhunter_v0.1.yaml"
+    variant_catalog: "resources/strchive/STRchive-disease-loci.hg38.stranger.json"
+    analysis_mode: "seeking"
+    region_extension_length: 1000
+    extra_args: ""
+
 fastp:
     threads: 16
     env_yaml: "../envs/fastp_v0.1.yaml"
@@ -1158,8 +1181,44 @@ verifybamid2_contam:
 gatk_contam:
     env_yaml: "../envs/gatkcontam_v0.1.yaml"
     threads: 24
+    mem_mb: 80000
+    java_heap_mb: 64000
+    exclusive: "--exclusive"
     ld_preload: " "
     partition: "i192,i192mem,i128"
+
+site_mix_contam:
+    env_yaml: "../envs/site_mix_contam_v0.1.yaml"
+    threads: 1
+    partition: "i192,i192mem,i128"
+    sites_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
+    candidate_manifest: ""
+    min_depth: 4
+    max_depth: 250
+    min_sites: 20
+    min_af: 0.01
+    max_af: 0.99
+    max_sites: 0
+    min_base_quality: 20
+    min_mapping_quality: 20
+    pileup_region_size: 25000000
+    donor_min_depth: 8
+    max_contamination: 0.5
+    grid_step: 0.001
+    max_candidate_sources: 8
+
+relatedness:
+    env_yaml: "../envs/somalier.yaml"
+    report_env_yaml: "../envs/report.yaml"
+    threads: 4
+    partition: "i192,i192mem,i128"
+    somalier_sites_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
+    expected_relationships: ""
+    relationship_thresholds:
+        duplicate_min_relatedness: 0.95
+        first_degree_min_relatedness: 0.40
+        parent_child_max_ibs0: 2.0
+        unrelated_max_relatedness: 0.20
 
 gen_samstats:
     threads: 16
@@ -1223,7 +1282,14 @@ seqfu:
 
 vep:
     threads: 16
+    mem_mb: 64000
     partition: "i192,i192mem,i128"
+    concat_threads: 16
+    concat_mem_mb: 32000
+    concat_partition: "i192,i192mem,i128"
+    hg38_vep_chrms: "1-25"
+    hg38_broad_vep_chrms: "1-25"
+    b37_vep_chrms: "1-25"
 
 snpeff:
     threads: 16

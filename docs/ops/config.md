@@ -1,6 +1,6 @@
 # Configuring Daylily
 
-Daylily keeps most run behavior in Snakemake profiles and manifest tables rather than hard-coding values inside rules.
+Daylily keeps most run behavior in Snakemake profiles and manifest tables rather than hard-coding values inside rules. Production profiles are tuned for `daylily-ephemeral-cluster` headnodes and the Daylily omics/reference data mount at `/fsx/data`.
 
 ## Required Run Tables
 
@@ -8,6 +8,8 @@ Current runs use:
 
 - `config/samples.tsv`
 - `config/units.tsv`
+
+For production worksets, create or deliver these tables through `daylily-ec` staging. The tables should point at staged read data and supporting resources visible from the headnode and compute nodes, especially `/fsx/data` reference paths.
 
 `config/analysis_manifest.csv` is legacy. See [`analysis_manifest.md`](analysis_manifest.md) only when converting older run notes.
 
@@ -68,6 +70,12 @@ Activate a profile with:
 ```bash
 source dyoainit
 dy-a local hg38
+```
+
+or, on a prepared headnode:
+
+```bash
+source dyoainit
 dy-a slurm hg38
 dy-a slurm hg38_broad
 ```
@@ -89,7 +97,7 @@ Common code selectors:
 | Selector | Examples |
 | --- | --- |
 | `aligners` | `sent`, `sentcg`, `bwa2a`, `strobe` |
-| `dedupers` | `smd`, `dppl`, `na` |
+| `dedupers` | `smd`, `dmd`, `spmd`, `na` |
 | `snv_callers` | `sentd`, `cgt7p`, `deep19`, `oct`, `clair3`, `lfq2` |
 
 Use target-specific docs before mixing selectors; not every caller is valid for every aligner.

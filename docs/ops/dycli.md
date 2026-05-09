@@ -1,6 +1,8 @@
 # Daylily CLI
 
-The Daylily CLI is a set of shell entrypoints around Snakemake. Run commands from an analysis clone, usually under `/fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis` on a headnode.
+The Daylily CLI is a set of shell entrypoints around Snakemake. Run commands from an analysis clone, usually under `/fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis` on a headnode created by `daylily-ephemeral-cluster`.
+
+Use `daylily-ec` for supported headnode access, sample staging, and manifest creation or delivery. The workflow assumes Daylily omics/reference data are mounted at `/fsx/data`; many supporting-file paths are intentionally absolute to that mount.
 
 ## Basic Pattern
 
@@ -83,6 +85,10 @@ For manual debugging, use this order:
 | `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid workflow. |
 | `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid workflow. |
 | `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant workflows. |
-| `produce_multiqc_final_wgs` | Final MultiQC aggregation. |
+| `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
+| `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
+| `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
+| `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
+| `produce_multiqc_final`, `produce_multiqc_final_wgs` | Final routine MultiQC aggregation. |
 
 Use `dy-r help` and tab completion for the full target list.

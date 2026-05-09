@@ -1,0 +1,10 @@
+name: STRchive disease-loci Stranger catalog
+source_repository: https://github.com/dashnowlab/STRchive
+source_ref: v2.16.0
+source_url: https://raw.githubusercontent.com/dashnowlab/STRchive/v2.16.0/data/catalogs/STRchive-disease-loci.hg38.stranger.json
+vendored_file: STRchive-disease-loci.hg38.stranger.json
+genome_build: hg38
+license: MIT
+copyright: Copyright (c) 2023 Harriet Dashnow
+sha256: d09e38bd47ad9645f9ea4611e9b790c0c65706d56aab03ce1946ca9c06f40d9d
+locus_count: 74

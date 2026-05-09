@@ -205,10 +205,11 @@ test_agents_md_monitor_docs() {
   test_result "AGENTS.md documents SLURM log locations" $?
 }
 
-# Test 21: AGENTS.md documents SSH login shells
-test_agents_md_ssh_docs() {
-  grep -q "Always use login shells when running SSH commands" AGENTS.md
-  test_result "AGENTS.md documents SSH login shell requirement" $?
+# Test 21: AGENTS.md documents SSM-only headnode access
+test_agents_md_ssm_docs() {
+  grep -q "SSM is the only supported access model" AGENTS.md &&
+    grep -q "Do not use direct SSH" AGENTS.md
+  test_result "AGENTS.md documents SSM-only headnode access" $?
 }
 
 # Test 22: dycli.md documents monitor command
@@ -245,7 +246,7 @@ main() {
   test_day_activate_bash_syntax
   test_day_run_bash_syntax
   test_agents_md_monitor_docs
-  test_agents_md_ssh_docs
+  test_agents_md_ssm_docs
   test_dycli_md_monitor_docs
   
   echo ""
@@ -265,4 +266,3 @@ main() {
 }
 
 main "$@"
-

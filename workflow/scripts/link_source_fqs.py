@@ -1,6 +1,8 @@
 import os
 import sys
 
+snakemake = snakemake  # noqa: F821
+
 ##  TESTING
 
 # The script function only accepts a path to a file, no log redirects or whatnot.

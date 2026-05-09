@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Generate manifest files for downsample_series test data."""
 
-import os
-
 BASE_DIR = ".test_data/data/agbt_2026/downsample_series"
 
 HEADER = "RUNID\tSAMPLEID\tEXPERIMENTID\tLANEID\tBARCODEID\tLIBPREP\tSEQ_VENDOR\tSEQ_PLATFORM\tILMN_R1_PATH\tILMN_R2_PATH\tPACBIO_R1_PATH\tPACBIO_R2_PATH\tONT_R1_PATH\tONT_R2_PATH\tUG_R1_PATH\tUG_R2_PATH\tSUBSAMPLE_PCT\tILMN_TRIM_READ_LENGTH\tSAMPLEUSE\tBWA_KMER\tDEEP_MODEL\tULTIMA_CRAM\tULTIMA_CRAM_ALIGNER\tULTIMA_CRAM_SNV_CALLER\tONT_CRAM\tONT_CRAM_ALIGNER\tONT_CRAM_SNV_CALLER\tPB_BAM\tPB_BAM_ALIGNER\tPB_BAM_SNV_CALLER"
@@ -85,4 +83,3 @@ if __name__ == "__main__":
     write_pb_solo()
     write_sentdhio()
     print("\nDone! All manifest files created.")
-

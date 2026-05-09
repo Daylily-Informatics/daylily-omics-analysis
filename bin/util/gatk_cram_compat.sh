@@ -18,7 +18,9 @@ Modes:
 Notes:
   - For CRAM operations, REF.fa (and .fai) must match the CRAM's reference.
   - Prints the path to the GATK-compatible file on stdout.
-  - Does NOT overwrite existing OUT unless --out explicitly points to a non-existent file.
+  - Reuses an existing default derived OUT when it passes samtools quickcheck.
+  - Removes and regenerates a corrupt default derived OUT.
+  - Does NOT overwrite an explicit --out target.
 EOF
 }
 
@@ -27,6 +29,7 @@ REF=""
 MODE="bam"
 THREADS="${THREADS:-8}"
 OUT=""
+OUT_EXPLICIT=0
 
 # --- args ---
 while (( "$#" )); do
@@ -35,7 +38,7 @@ while (( "$#" )); do
     --ref) REF="$2"; shift 2;;
     --mode) MODE="$2"; shift 2;;
     --threads) THREADS="$2"; shift 2;;
-    --out) OUT="$2"; shift 2;;
+    --out) OUT="$2"; OUT_EXPLICIT=1; shift 2;;
     -h|--help) usage; exit 0;;
     *) echo "Unknown arg: $1" >&2; usage; exit 2;;
   esac
@@ -51,11 +54,40 @@ HTS_LINE="$(htsfile "$IN" 2>/dev/null || true)"
 # Examples:
 #   "reads.bam: BAM version 1 compressed sequence data"
 #   "reads.cram: CRAM version 3.1 compressed sequence data"
-FMT="$(printf "%s\n" "$HTS_LINE" | awk -F': ' '{print $2}' | awk '{print $1}')"
-VER="$(printf "%s\n" "$HTS_LINE" | awk -F'version ' '{print $2}' | awk '{print $1}')"
+HTS_DESC="$(printf "%s\n" "$HTS_LINE" | sed -E 's/^[^:]*:[[:space:]]*//')"
+FMT="$(printf "%s\n" "$HTS_DESC" | awk '{print $1}')"
+VER="$(printf "%s\n" "$HTS_DESC" | sed -nE 's/.*version[[:space:]]+([0-9.]+).*/\1/p')"
 
 # Helper: print and exit with original file if already compatible
 emit_original_and_exit() { printf "%s\n" "$IN"; exit 0; }
+
+emit_existing_out_if_safe() {
+  if [[ ! -e "$OUT" ]]; then
+    return 0
+  fi
+  if (( OUT_EXPLICIT )); then
+    echo "❌ OUT exists: $OUT" >&2
+    exit 3
+  fi
+  if [[ ! -s "$OUT" ]]; then
+    echo "⚠️  Removing empty default OUT before regeneration: $OUT" >&2
+    rm -f "$OUT" "${OUT}.bai" "${OUT%.*}.bai" "${OUT}.csi" "${OUT}.crai" "${OUT%.*}.crai"
+    return 0
+  fi
+  samtools quickcheck "$OUT" || {
+    echo "⚠️  Removing corrupt default OUT before regeneration: $OUT" >&2
+    rm -f "$OUT" "${OUT}.bai" "${OUT%.*}.bai" "${OUT}.csi" "${OUT}.crai" "${OUT%.*}.crai"
+    return 0
+  }
+  if [[ "$MODE" == "bam" && ! -r "${OUT}.bai" && ! -r "${OUT%.*}.bai" && ! -r "${OUT}.csi" ]]; then
+    samtools index -@ "$THREADS" "$OUT"
+  elif [[ "$MODE" == "cram30" && ! -r "${OUT}.crai" && ! -r "${OUT%.*}.crai" && ! -r "${OUT}.csi" ]]; then
+    samtools index -@ "$THREADS" "$OUT"
+  fi
+  echo "♻️  Reusing existing default OUT: $OUT" >&2
+  printf "%s\n" "$OUT"
+  exit 0
+}
 
 case "$FMT" in
   BAM)
@@ -79,14 +111,14 @@ case "$FMT" in
       case "$MODE" in
         bam)
           if [[ -z "$OUT" ]]; then OUT="${IN%.*}.for_gatk.bam"; fi
-          [[ ! -e "$OUT" ]] || { echo "❌ OUT exists: $OUT" >&2; exit 3; }
+          emit_existing_out_if_safe
           samtools view -@ "$THREADS" -b -T "$REF" -o "$OUT" "$IN"
           samtools index -@ "$THREADS" "$OUT"
           printf "%s\n" "$OUT"
           ;;
         cram30)
           if [[ -z "$OUT" ]]; then OUT="${IN%.cram}.v3.0.cram"; fi
-          [[ ! -e "$OUT" ]] || { echo "❌ OUT exists: $OUT" >&2; exit 3; }
+          emit_existing_out_if_safe
           samtools view -@ "$THREADS" -C -T "$REF" --output-fmt-option version=3.0 \
             -o "$OUT" "$IN"
           samtools index -@ "$THREADS" "$OUT"

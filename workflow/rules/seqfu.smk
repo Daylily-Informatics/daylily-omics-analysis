@@ -34,11 +34,12 @@ rule seqfu:
     log:
         f"{MDIR}" + "{sample}/seqqc/seqfu/{sample}.seqfu.log",
     conda:
-        config["fastqc"]["env_yaml"]
+        config["seqfu"]["env_yaml"]
     shell:
         """
-        ( cat  <(zcat {input.f1} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r1} - &
-        cat <(zcat {input.f2} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r2} - &
+        mkdir -p $(dirname {output.mqc_r1});
+        ( cat  <(gzip -dc -- {input.f1} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r1} - &
+        cat <(gzip -dc -- {input.f2} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r2} - &
         wait;
         touch {output.sent};) > {log}
         ls {output};
@@ -57,24 +58,30 @@ rule compile_seqfu:
     output:
         mqc1=MDIR + "other_reports/seqfu1.mqc.tsv",
         mqc2=MDIR + "other_reports/seqfu2.mqc.tsv",
+        mqc=MDIR + "other_reports/seqfu_mqc.tsv",
         d=MDIR + "logs/seqfu.done",
+    params:
+        mdir=MDIR,
     shell:
-        """mkdir -p {MDIR}other_reports;
-        single_file=$( find results | grep seqfuR1.mqc.tsv | head -n 1);
+        """mkdir -p {MDIR}other_reports $(dirname {output.d});
+        single_file=$( find {params.mdir} -name '*seqfuR1.mqc.tsv' | head -n 1);
         if [[ "$single_file" == "" ]]; then
             echo "NO DATA FOUND" > {output.mqc1};
         else
             head -n 35 $single_file > {output.mqc1};
-            find results | grep seqfuR1.mqc.tsv | parallel 'tail -n 1 {{}} >> {output.mqc1}';
+            find {params.mdir} -name '*seqfuR1.mqc.tsv' -exec sh -c 'tail -n 1 "$1" >> "$2"' sh {{}} {output.mqc1} \\;;
         fi;
 
-        single_file2=$( find results | grep seqfuR2.mqc.tsv  | head -n 1);
+        single_file2=$( find {params.mdir} -name '*seqfuR2.mqc.tsv'  | head -n 1);
         if [[ "$single_file2" == "" ]]; then
             echo "NO DATA FOUND" > {output.mqc2};
         else
             head -n 35 $single_file2 > {output.mqc2};
-            find results | grep seqfuR2.mqc.tsv  | parallel 'tail -n 1 {{}} >> {output.mqc2}';
+            find {params.mdir} -name '*seqfuR2.mqc.tsv' -exec sh -c 'tail -n 1 "$1" >> "$2"' sh {{}} {output.mqc2} \\;;
         fi;
+        printf "read\\tsource_path\\n" > {output.mqc};
+        find {params.mdir} -name '*seqfuR1.mqc.tsv' -exec sh -c 'printf "R1\\t%s\\n" "$1" >> "$2"' sh {{}} {output.mqc} \\;;
+        find {params.mdir} -name '*seqfuR2.mqc.tsv' -exec sh -c 'printf "R2\\t%s\\n" "$1" >> "$2"' sh {{}} {output.mqc} \\;;
         touch {output.d};
 
         """

@@ -35,7 +35,12 @@ localrules: produce_smn12
 
 rule produce_smn12:  # TARGET : Produce SMN1/SMN2 copy-number results
     input:
-        expand(MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
+        expand(
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
+            sample=SSAMPS,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=DDUP,
+        )
     output:
         "./logs/smn12.done"
     shell:

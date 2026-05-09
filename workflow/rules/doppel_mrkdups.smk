@@ -9,6 +9,12 @@
 # Selection is via target rules expanding over ddup=DDUP.
 
 
+def _doppelmark_optical_distance(wildcards):
+    if wildcards.alnr == "sentcg":
+        return -1
+    return config["doppelmark"].get("optical_distance", 2500)
+
+
 rule doppelmark_dups:
     """Runs duplicate marking on the merged BAM using doppelmark → CRAM."""
     input:
@@ -38,6 +44,7 @@ rule doppelmark_dups:
         cram_compression=config["doppelmark"]["cram_compression"],
         shard_size=config['doppelmark']['shard_size'],
         clip_padding=config['doppelmark']['clip_padding'],
+        optical_distance=_doppelmark_optical_distance,
         min_bases=config['doppelmark']['min_bases'],
         queue_length=config['doppelmark']['queue_length'],
         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -72,6 +79,7 @@ rule doppelmark_dups:
          -parallelism {params.doppelmark_threads} \
          -bam {input.bam} \
          -clip-padding {params.clip_padding} \
+         -optical-distance {params.optical_distance} \
          -logtostderr \
          -disk-mate-shards 0 \
          -scratch-dir $tdir \

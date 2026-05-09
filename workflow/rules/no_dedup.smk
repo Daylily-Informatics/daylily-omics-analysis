@@ -32,6 +32,8 @@ rule no_dedup:
         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cram_compression=config.get("no_dedup", {}).get("cram_compression", "7"),
         view_threads=config.get("no_dedup", {}).get("view_threads", "4"),
+    conda:
+        config["no_dedup"]["env_yaml"]
     log:
         MDIR + "{sample}/align/{alnr}/na/logs/dedupe.na.{sample}.{alnr}.log",
     shell:

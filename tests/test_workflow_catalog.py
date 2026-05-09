@@ -4,6 +4,15 @@ from daylily_omics_analysis import WorkflowCatalogError
 from daylily_omics_analysis.workflow_catalog import load_workflow_catalog, render_workflow_command
 
 
+def test_augment_wrapper_does_not_pass_workflow_args_to_dyoainit() -> None:
+    wrapper = open("bin/augment_setup_and_run_dayoa.bash", encoding="utf-8").read()
+
+    assert '_DYOA_WRAPPER_POSITIONAL_ARGS=("$@")' in wrapper
+    assert "set --\nsource dyoainit" in wrapper
+    assert 'set -- "${_DYOA_WRAPPER_POSITIONAL_ARGS[@]}"' in wrapper
+    assert 'source bin/day_activate "$LOCAL_OR_SLURM" "$GENOME_CODE"' in wrapper
+
+
 def test_catalog_exposes_expected_workflows() -> None:
     catalog = load_workflow_catalog()
 

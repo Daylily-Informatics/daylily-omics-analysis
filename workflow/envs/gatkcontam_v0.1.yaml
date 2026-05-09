@@ -7,3 +7,5 @@ channels:
 dependencies:
   - parallel
   - gatk4~=4.6.2.0
+  - htslib
+  - samtools

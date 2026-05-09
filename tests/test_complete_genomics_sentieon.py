@@ -40,3 +40,14 @@ def test_complete_genomics_cli_and_rule_maps_point_cgt7p_to_sentcg() -> None:
 
     assert 'produce_sentieon_cgt7p_bwa_sort_bam) _aligner_codes+=("sentcg")' in day_run
     assert 'produce_cgt7p_vcf)              _aligner_codes+=("sentcg")' in day_run
+
+
+def test_doppelmark_disables_optical_duplicate_parsing_for_sentcg() -> None:
+    rule_text = (REPO_ROOT / "workflow" / "rules" / "doppel_mrkdups.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert "def _doppelmark_optical_distance(wildcards):" in rule_text
+    assert 'wildcards.alnr == "sentcg"' in rule_text
+    assert "return -1" in rule_text
+    assert "-optical-distance {params.optical_distance}" in rule_text

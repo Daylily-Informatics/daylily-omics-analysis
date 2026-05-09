@@ -1,4 +1,5 @@
 import os
+import csv
 
 # ##### PEDDY - Pedigree Tools
 # ----------------------------
@@ -55,21 +56,100 @@ rule peddy:
         config["peddy"]["env_yaml"]
     shell:
         """
-        mkdir -p $(dirname {log}) > {log} ;
-        echo 'runnning peddy' >> {log} ;
-        set +euo pipefail;
-        ( ({params.ld_preload} peddy  -p {threads}  --plot --prefix {output.prefix} --loglevel DEBUG {input.vcfgz} {input.ped_f}) || (ls . && sleep 1 && echo 'peddy exited with an error.  If this is a small depth of coverate vs. the genome sample, then this may be a pca failure which can be ignored, run the command by hand to see the detailed error') ) || (sleep 1 && echo 'masking error' ) >> {log};
         set -euo pipefail;
-        echo "DONE" >> {log} ;
-        echo reallydone > {output.done} ;
-        echo reallydone > {output.prefix} ;
-        touch {output.done} ;
-        touch {output.prefix} ;
+
+        mkdir -p "$(dirname "{log}")" "$(dirname "{output.done}")"
+        : > "{log}"
+        rm -f "{output.done}" "{output.prefix}"
+
+        printf 'running peddy\n' >> "{log}"
+        {params.ld_preload} peddy -p {threads} --plot --prefix "{output.prefix}" --loglevel DEBUG "{input.vcfgz}" "{input.ped_f}" >> "{log}" 2>&1 || {{
+            peddy_status=$?
+            printf 'ERROR: peddy exited with status %s\n' "$peddy_status" | tee -a "{log}" >&2
+            exit "$peddy_status"
+        }}
+
+        for expected_output in \
+            "{output.prefix}peddy.ped" \
+            "{output.prefix}ped_check.csv" \
+            "{output.prefix}sex_check.csv" \
+            "{output.prefix}het_check.csv" \
+            "{output.prefix}background_pca.json" \
+            "{output.prefix}html" \
+            "{output.prefix}vs.html" \
+            "{output.prefix}ped_check.png" \
+            "{output.prefix}het_check.png" \
+            "{output.prefix}sex_check.png"
+        do
+            if [[ ! -s "$expected_output" ]]; then
+                printf 'ERROR: peddy completed but expected output is missing or empty: %s\n' "$expected_output" | tee -a "{log}" >&2
+                exit 1
+            fi
+        done
+
+        printf 'reallydone\n' > "{output.done}"
+        printf 'reallydone\n' > "{output.prefix}"
+        printf 'DONE\n' >> "{log}"
         """
 
 
 localrules:
+    peddy_sample_qc_gather,
     produce_peddy,
+
+
+rule peddy_sample_qc_gather:
+    input:
+        [
+            MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
+            for sample in SSAMPS
+            for ddup in DDUP
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+        ],
+    output:
+        MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
+    run:
+        os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
+        fieldnames = [
+            "sample_id",
+            "aligner",
+            "deduper",
+            "snv_caller",
+            "reported_sex",
+            "predicted_sex",
+            "sex_check_status",
+            "het_check_status",
+            "ped_check_status",
+            "peddy_prefix",
+        ]
+        with open(output[0], "w", newline="") as out_handle:
+            writer = csv.DictWriter(out_handle, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            for done_path in input:
+                name = os.path.basename(str(done_path)).replace(".peddy.done", "")
+                parts = name.split(".")
+                sample, aligner, deduper, caller = parts[0], parts[1], parts[2], parts[3]
+                prefix = str(done_path).replace(".peddy.done", ".peddy.")
+                sex_file = prefix + "sex_check.csv"
+                sex_row = {}
+                if os.path.exists(sex_file):
+                    with open(sex_file, newline="") as handle:
+                        rows = list(csv.DictReader(handle))
+                    sex_row = rows[0] if rows else {}
+                writer.writerow(
+                    {
+                        "sample_id": sample,
+                        "aligner": aligner,
+                        "deduper": deduper,
+                        "snv_caller": caller,
+                        "reported_sex": sex_row.get("ped_sex", ""),
+                        "predicted_sex": sex_row.get("predicted_sex", ""),
+                        "sex_check_status": sex_row.get("error", ""),
+                        "het_check_status": "generated",
+                        "ped_check_status": "generated",
+                        "peddy_prefix": prefix,
+                    }
+                )
 
 rule produce_peddy:  # TARGET: just produce peddy results
     input:
@@ -79,6 +159,7 @@ rule produce_peddy:  # TARGET: just produce peddy results
             for ddup in DDUP
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
         ],
+        MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
     output:
         "logs/peddy_gathered.done",
     shell:

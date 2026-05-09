@@ -43,6 +43,19 @@ module_order:
   - bcftools
   - kat
   - custom_content 
+  - sequence_qc_outputs
+  - alignment_qc_outputs
+  - expansionhunter
+  - contamination
+  - site_mix_contam
+  - site_mix_donor
+  - relatedness
+  - bcftools_variant_stats
+  - rtg_vcfstats
+  - peddy_sample_qc
+  - vep_annotation
+  - snpeff_annotation
+  - htd_calls
   - giab_concordance
   - norm_cov_evenness_combo
   - rules_benchmark_data
@@ -145,6 +158,118 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'alignstats_combo'
+  expansionhunter:
+    id: 'expansionhunter'
+    section_name: 'ExpansionHunter STR Report'
+    description: 'Disease-locus short tandem repeat calls from ExpansionHunter and STRchive annotations'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'expansionhunter'
+  seqfu:
+    id: 'seqfu'
+    section_name: 'SeqFu FASTQ Inputs'
+    description: 'SeqFu FASTQ statistics files included in this batch'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'seqfu'
+  sequence_qc_outputs:
+    id: 'sequence_qc_outputs'
+    section_name: 'Sequence QC Output Inventory'
+    description: 'Custom-data inventory for sequence QC outputs that may otherwise rely on native MultiQC discovery'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'sequence_qc_outputs'
+  alignment_qc_outputs:
+    id: 'alignment_qc_outputs'
+    section_name: 'Alignment QC Output Inventory'
+    description: 'Custom-data inventory for alignment QC outputs that may otherwise rely on native MultiQC discovery'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'alignment_qc_outputs'
+  contamination:
+    id: 'contamination'
+    section_name: 'Contamination Estimates'
+    description: 'VerifyBamID2, GATK, and genotype-free site-mix contamination estimates'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'contamination'
+  site_mix_contam:
+    id: 'site_mix_contam'
+    section_name: 'Genotype-Free Site-Mix Contamination'
+    description: 'Target-genotype-free same-species contamination estimates'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'site_mix_contam'
+  site_mix_donor:
+    id: 'site_mix_donor'
+    section_name: 'Site-Mix Donor Attribution'
+    description: 'Optional source attribution from the genotype-free contamination estimator'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'site_mix_donor'
+  relatedness:
+    id: 'relatedness'
+    section_name: 'Batch Relatedness'
+    description: 'Somalier relatedness classification summary'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'relatedness'
+  bcftools_variant_stats:
+    id: 'bcftools_variant_stats'
+    section_name: 'bcftools Variant Stats'
+    description: 'Small variant count summaries from bcftools stats'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bcftools_variant_stats'
+  rtg_vcfstats:
+    id: 'rtg_vcfstats'
+    section_name: 'RTG VCF Stats'
+    description: 'RTG vcfstats outputs included in this batch'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'rtg_vcfstats'
+  peddy_sample_qc:
+    id: 'peddy_sample_qc'
+    section_name: 'Peddy Sample QC'
+    description: 'Peddy sex, heterozygosity, and pedigree output summary'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'peddy_sample_qc'
+  vep_annotation:
+    id: 'vep_annotation'
+    section_name: 'VEP Annotation Outputs'
+    description: 'VEP annotation outputs when optional annotation QC is enabled'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'vep_annotation'
+  snpeff_annotation:
+    id: 'snpeff_annotation'
+    section_name: 'SnpEff Annotation Outputs'
+    description: 'SnpEff annotation outputs when optional annotation QC is enabled'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'snpeff_annotation'
+  htd_calls:
+    id: 'htd_calls'
+    section_name: 'HTD Caller Outputs'
+    description: 'Selected hard-to-detect-region caller outputs'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'htd_calls'
   alignstats_gs:
     id: 'alignstats_gs'
     section_name: 'alignstats_gs'
@@ -176,6 +301,34 @@ sp:
     fn: "other_reports/rules_benchmark_data_mqc.tsv"
   alignstats_combo:
     fn: "other_reports/alignstats_combo_mqc.tsv"
+  expansionhunter:
+    fn: "other_reports/expansionhunter_mqc.tsv"
+  seqfu:
+    fn: "other_reports/seqfu_mqc.tsv"
+  sequence_qc_outputs:
+    fn: "other_reports/sequence_qc_outputs_mqc.tsv"
+  alignment_qc_outputs:
+    fn: "other_reports/alignment_qc_outputs_mqc.tsv"
+  contamination:
+    fn: "other_reports/contamination_mqc.tsv"
+  site_mix_contam:
+    fn: "other_reports/site_mix_contam_mqc.tsv"
+  site_mix_donor:
+    fn: "other_reports/site_mix_donor_mqc.tsv"
+  relatedness:
+    fn: "other_reports/relatedness_mqc.tsv"
+  bcftools_variant_stats:
+    fn: "other_reports/bcftools_variant_stats_mqc.tsv"
+  rtg_vcfstats:
+    fn: "other_reports/rtg_vcfstats_mqc.tsv"
+  peddy_sample_qc:
+    fn: "other_reports/peddy_sample_qc_mqc.tsv"
+  vep_annotation:
+    fn: "other_reports/vep_annotation_mqc.tsv"
+  snpeff_annotation:
+    fn: "other_reports/snpeff_annotation_mqc.tsv"
+  htd_calls:
+    fn: "other_reports/htd_calls_mqc.tsv"
   alignstats_gs:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 
@@ -185,6 +338,8 @@ peddy/het_check:
   fn: "*.peddy.het_check.csv"
 peddy/ped_check:
   fn: "*.peddy.ped_check.*csv"
+peddy/sex_check:
+  fn: "*.peddy.sex_check.csv"
 peddy/summary_table:
   fn: "*.peddy.peddy.ped"
 
@@ -196,11 +351,9 @@ exclude_modules:
   - preseq
   - htseq
   - bbmap
-  - fastp
   - varscan2
   - flexbar
   - hicexplorer
-  - snpeff
   - biscuit
   - deeptools
   - afterqc
@@ -259,7 +412,6 @@ exclude_modules:
   - supernova
   - trimmomatic
   - varscan2
-  - vep
   - bismark
   - tophat
   - sexdetermine

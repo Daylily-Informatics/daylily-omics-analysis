@@ -1,10 +1,13 @@
-# CRITICAL - SSH LOGIN SHELLS (READ FIRST)
-**EVERY SSH command to remote hosts MUST use `bash -l -c`**
-- **PATTERN (MANDATORY)**: `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"`
-- **WHY**: Login shells initialize PATH, conda, aliases, functions
-- **WITHOUT login shell**: Commands fail silently (squeue not found, conda unavailable, etc.)
+# CRITICAL - HEADNODE ACCESS (READ FIRST)
+**SSM is the only supported access model for AWS ParallelCluster headnodes.**
+- Use the supported `daylily-ec headnode connect` / AWS Systems Manager path for headnode access.
+- Do not use direct SSH, PEM files, or `pcluster ssh` for this repo's headnodes.
+- Commands run through SSM must still use a login bash shell when they depend on PATH, conda, aliases, functions, Slurm, or Daylily shell setup.
+- **PATTERN (MANDATORY)**: run `bash -l -c 'your command here'` inside the SSM session or SSM command invocation.
+- **WHY**: Login shells initialize PATH, conda, aliases, functions.
+- **WITHOUT login shell**: Commands fail silently or mislead status checks (squeue not found, conda unavailable, etc.).
 - **NEVER deviate** from this pattern. No exceptions.
-- See "SSH Commands" section below for details and examples.
+- See "SSM Commands" section below for details and examples.
 
 # AWS CREDENTIALS
 Ask user for profile name to set AWS_PROFILE to, never use default as profile name.
@@ -43,19 +46,13 @@ From a Mac terminal, activate `DAY-EC` first:
 eval "$(conda shell.zsh hook)" && conda activate DAY-EC
 ```
 
-If the user explicitly asks for SSM/daylily-ec brokered access, connect with the requested profile:
+Connect with the requested profile through SSM/daylily-ec:
 
 ```bash
 AWS_PROFILE=<profile> daylily-ec headnode connect --profile <profile> --region <region> --cluster <cluster>
 ```
 
 The resulting SSM shell must be the `ubuntu` user running a bash login shell. Verify with `id -un` and `echo "$0"`; if the shell is not a login bash shell, run `exec bash -l` before `day-clone`, `tmux`, `source dyoainit`, `dy-a`, or `dy-r`.
-
-If using direct SSH, every remote command must use the login-shell pattern documented below:
-
-```bash
-ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c '<command>'"
-```
 
 After connecting, verify you are `ubuntu` and that required commands are present. Fail loudly if any are missing:
 
@@ -186,13 +183,13 @@ source bin/augment_setup_and_run_dayoa.bash slurm hg38 \
 **Important**: This script must be `source`d (not executed) because `dyoainit` uses `return`. Use `bash bin/day_run` internally (not `source bin/day_run`) so that `exit` in day_run stays in a subprocess.
 
 # Debugging From MAC
-If given an AWS_PROFILE, region, cluster name, pem file, and optionally the : path to analysis, and potentially a tmux session analysis is running in. With the `DAY-EC` env actice, you can use `pcluster describe-cluster -n <name> --region <region>` to get the cluster headnode ip, and can then ssh into it using ssh -i <pemfile> ubuntu@<headnode-ip>.
+If given an AWS_PROFILE, region, cluster name, optional path to analysis, and potentially a tmux session analysis is running in, activate `DAY-EC` first. Use `pcluster describe-cluster -n <name> --region <region>` only for read-only cluster metadata such as instance ID, private IP, and public IP. Use SSM/daylily-ec for all headnode access.
 
-## SSH Commands
+## SSM Commands
 **CRITICAL REQUIREMENTS**:
-1. Always use login shells when running SSH commands. Use `ssh -i <pemfile> ubuntu@<headnode-ip> "bash -l -c 'your command here'"` to ensure the full shell environment (including PATH and conda) is available.
-2. **Never use SSM (Systems Manager)** unless the user explicitly asks for SSM or `daylily-ec headnode connect` in the current thread. When SSM is explicitly requested, use the brokered `daylily-ec headnode connect` pattern in "Headnode Persistent tmux Pipeline Launch Spec".
-3. **`squeue` must be on PATH** — if `squeue` is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
+1. Use SSM/daylily-ec as the only supported access model for headnode commands and shells.
+2. Always use login shells for remote commands that need the configured headnode environment. Use `bash -l -c 'your command here'` inside the SSM session or command invocation to ensure the full shell environment (including PATH and conda) is available.
+3. **`squeue` must be on PATH** — if it is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
 
 ## Terminal Heredoc Corruption
 **CRITICAL RULE - DO NOT USE HEREDOC**:

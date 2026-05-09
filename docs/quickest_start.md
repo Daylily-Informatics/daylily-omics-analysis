@@ -1,6 +1,6 @@
 # Quickest Start
 
-Use this to verify the local workflow wiring without launching a Slurm fleet.
+Use this to verify local workflow wiring without launching a Slurm fleet. This is a fixture smoke test, not the production run path. Production work should be staged and launched through `daylily-ephemeral-cluster` / `daylily-ec` on a prepared headnode with Daylily reference data mounted under `/fsx/data`.
 
 ## Prerequisites
 
@@ -12,12 +12,16 @@ eval "$(conda shell.zsh hook)"
 conda activate DAY-EC
 ```
 
+- For real samples, use `daylily-ec` to stage data and create or deliver `samples.tsv` and `units.tsv`; do not use the tiny fixture manifests below as a production template.
+- The fixture copy commands below write `config/samples.tsv` and `config/units.tsv`; run them in a scratch checkout or preserve existing manifests first.
+
 ## Smoke Test
 
 ```bash
 source dyoainit
 dy-a local hg38
 
+mkdir -p config
 cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
 cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 

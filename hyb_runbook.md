@@ -1,4 +1,4 @@
-> **Historical run note.** This file records a specific hybrid/Ultima rerun plan and verified S3 paths. For current target and launch patterns, use [`COMMANDS_MUST_RUN.md`](COMMANDS_MUST_RUN.md) and [`docs/remote_test_execution.md`](docs/remote_test_execution.md).
+> **Historical run note.** This file records a specific hybrid/Ultima rerun plan and verified S3 paths. For current target and launch patterns, use [`COMMANDS_MUST_RUN.md`](COMMANDS_MUST_RUN.md) and [`docs/remote_test_execution.md`](docs/remote_test_execution.md). Do not reuse embedded command blocks verbatim when they conflict with current `daylily-ec`/SSM access or `dyoainit` activation guidance.
 
 # Hybrid And Ultima Rerun Runbook
 

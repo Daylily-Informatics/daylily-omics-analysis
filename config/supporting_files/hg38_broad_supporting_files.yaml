@@ -26,14 +26,14 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
       rtg_tools_genome:
         name:  /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.sdf
     vep:
-      vep_genome_build: 113_GRCh38
+      vep_genome_build: 114_GRCh38
       vep_cache:
-        name: /fsx/data/tool_specific_data/vep/
+        name: /fsx/data/tool_specific_resources/vep/
     gatk:
       onekg_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_phase1.snps.high_confidence.hg38.vcf.gz
       mills_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
       dbsnp_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz
-      af_sites: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/af-only-gnomad.hg38.vcf.gz
+      af_sites: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
       hapmap_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/hapmap_3.3.hg38.vcf.gz
       omni_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_omni2.5.hg38.vcf.gz
       known_indels_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.known_indels.vcf.gz
@@ -61,7 +61,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: createme
     verifybam2:
       dat_files:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz 
+        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
       oneM_snps_vcf:
         name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
       oneM_snps_bed:
@@ -107,7 +107,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
     popvcf:
         class: file_only
         name: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
-
-
-
-
+    strchive:
+      disease_loci_hg38_stranger_json:
+        class: file_only
+        name: resources/strchive/STRchive-disease-loci.hg38.stranger.json

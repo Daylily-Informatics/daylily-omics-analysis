@@ -1,265 +1,305 @@
+import csv
 import os
-import yaml
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
 import pandas as pd
-import numpy as np
 from jinja2 import Template
 
-som_pairs = snakemake.input.som_pairs
-som_groups = snakemake.input.som_groups
-picard_metrics = snakemake.input.picard_metrics
-picard_matrix = snakemake.input.picard_matrix
-conpair_files = snakemake.input.get("conpair", [])
-out_tsv = snakemake.output.tsv
-out_html = snakemake.output.html
-cfg_path = snakemake.params.cfg
 
-with open(cfg_path, encoding="utf-8") as handle:
-    CFG = yaml.safe_load(handle)
-
-
-sp = pd.read_csv(som_pairs, sep="\t")
-sp_cols = {column.lower(): column for column in sp.columns}
-
-
-def sp_col(name):
-    return sp_cols.get(name, name)
-
-
-def pair_key(sample_a, sample_b):
-    return tuple(sorted([sample_a, sample_b]))
-
-
-sp["pair_key"] = [
-    pair_key(a, b)
-    for a, b in zip(sp[sp_col("sample_a")], sp[sp_col("sample_b")])
-]
-sp_pairs = {key: row for key, row in sp.set_index("pair_key").iterrows()}
-
-
-pm = pd.read_csv(picard_metrics, sep="\t", comment="#")
-
-path2sample = {}
-for sample, entry in CFG["samples"].items():
-    path = entry.get("bam") or entry.get("vcf")
-    if path:
-        path2sample[os.path.abspath(path)] = sample
-
-
-def file_to_sample(path):
-    absolute = os.path.abspath(path)
-    if absolute in path2sample:
-        return path2sample[absolute]
-    basename = os.path.basename(absolute)
-    for candidate, sample in path2sample.items():
-        if os.path.basename(candidate) == basename:
-            return sample
-    return basename
-
-
-pm["left_samp"] = pm["LEFT_FILE"].map(file_to_sample)
-pm["right_samp"] = pm["RIGHT_FILE"].map(file_to_sample)
-pm["pair_key"] = [
-    pair_key(a, b) for a, b in zip(pm["left_samp"], pm["right_samp"])
-]
-pm_best = pm.loc[pm.groupby("pair_key")["LOD_SCORE"].apply(lambda series: series.abs().idxmax())]
-picard_pairs = {key: row for key, row in pm_best.set_index("pair_key").iterrows()}
-
-
-conpair_frames = []
-for file_path in conpair_files:
-    if not os.path.exists(file_path):
-        continue
-    try:
-        frame = pd.read_csv(file_path, sep="\t")
-    except Exception:
-        frame = pd.read_csv(file_path)
-    frame.columns = [column.lower() for column in frame.columns]
-    pair = os.path.basename(os.path.dirname(file_path)).split("__")
-    if len(pair) == 2:
-        frame["sample_a"], frame["sample_b"] = pair
-    conpair_frames.append(frame)
-
-if conpair_frames:
-    con_df = pd.concat(conpair_frames, ignore_index=True)
-else:
-    con_df = pd.DataFrame()
-
-
-THRESH = {
-    "identical_relatedness": 0.95,
-    "tn_relatedness": 0.70,
-    "first_degree_relatedness": 0.45,
-    "ibs0_parent_child": 0,
-    "picard_mismatch_lod": -5.0,
-    "picard_match_lod": 5.0,
+DEFAULT_THRESHOLDS = {
+    "duplicate_min_relatedness": 0.95,
+    "first_degree_min_relatedness": 0.40,
+    "parent_child_max_ibs0": 2.0,
+    "unrelated_max_relatedness": 0.20,
 }
 
+PAIR_COLUMNS = [
+    "sample_a",
+    "sample_b",
+    "sex_a",
+    "sex_b",
+    "family_id_a",
+    "family_id_b",
+    "relatedness",
+    "ibs0",
+    "relationship",
+    "expected_relationship",
+    "status",
+    "note",
+]
 
-def get_somalier(sample_a, sample_b, field):
-    row = sp_pairs.get(pair_key(sample_a, sample_b))
-    if row is None:
+
+@dataclass(frozen=True)
+class ClassifiedPair:
+    sample_a: str
+    sample_b: str
+    sex_a: str
+    sex_b: str
+    family_id_a: str
+    family_id_b: str
+    relatedness: float | None
+    ibs0: float | None
+    relationship: str
+    expected_relationship: str
+    status: str
+    note: str
+
+
+def _as_float(value: Any) -> float | None:
+    if value in ["", None, "None", "nan"]:
         return None
-    return row.get(field, row.get(field.upper()))
-
-
-def get_picard(sample_a, sample_b):
-    row = picard_pairs.get(pair_key(sample_a, sample_b))
-    if row is None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
         return None
-    return {
-        "result": row.get("RESULT", ""),
-        "lod": float(row.get("LOD_SCORE", np.nan)),
-    }
 
 
-rows = []
-for expectation in CFG.get("expected", []):
-    relationship = expectation["relationship"]
-    sample_a, sample_b = expectation["samples"]
-    note = expectation.get("note", "")
+def _thresholds(overrides: dict[str, Any] | None = None) -> dict[str, float]:
+    merged = dict(DEFAULT_THRESHOLDS)
+    for key, value in (overrides or {}).items():
+        if key not in merged:
+            raise ValueError(f"Unknown relationship threshold: {key}")
+        merged[key] = float(value)
+    return merged
 
-    som_rel = get_somalier(sample_a, sample_b, "relatedness")
-    ibs0 = get_somalier(sample_a, sample_b, "ibs0")
-    picard_info = get_picard(sample_a, sample_b)
 
-    status = "PASS"
-    reasons = []
+def classify_relationship(
+    relatedness: float | None,
+    ibs0: float | None,
+    thresholds: dict[str, float] | None = None,
+) -> str:
+    thresh = _thresholds(thresholds)
+    if relatedness is None:
+        return "ambiguous"
+    if relatedness >= thresh["duplicate_min_relatedness"]:
+        return "duplicate_or_identical"
+    if relatedness >= thresh["first_degree_min_relatedness"]:
+        if ibs0 is not None and ibs0 <= thresh["parent_child_max_ibs0"]:
+            return "parent_child"
+        return "sibling_or_first_degree"
+    if relatedness <= thresh["unrelated_max_relatedness"]:
+        return "unrelated"
+    return "ambiguous"
 
-    if relationship in ("identical", "duplicate"):
-        if som_rel is not None and som_rel < THRESH["identical_relatedness"]:
-            status = "FAIL"
-            reasons.append(
-                f"Somalier.relatedness={som_rel:.3f} < {THRESH['identical_relatedness']}"
-            )
-        if picard_info is not None and picard_info["lod"] < THRESH["picard_match_lod"]:
-            status = "FAIL"
-            reasons.append(
-                f"Picard.LOD={picard_info['lod']:.1f} < {THRESH['picard_match_lod']}"
-            )
-    elif relationship == "tumor_normal":
-        if som_rel is not None and som_rel < THRESH["tn_relatedness"]:
-            status = "FAIL"
-            reasons.append(
-                f"Somalier.relatedness={som_rel:.3f} < {THRESH['tn_relatedness']}"
-            )
-        if picard_info is not None and picard_info["lod"] <= THRESH["picard_mismatch_lod"]:
-            status = "FAIL"
-            reasons.append(
-                f"Picard.LOD strongly negative ({picard_info['lod']:.1f})"
-            )
-    elif relationship in ("parent_child", "parent-offspring"):
-        if som_rel is not None and som_rel < THRESH["first_degree_relatedness"]:
-            status = "FAIL"
-            reasons.append(
-                f"Somalier.relatedness={som_rel:.3f} < {THRESH['first_degree_relatedness']}"
-            )
-        if ibs0 is not None and ibs0 > 2:
-            status = "FAIL"
-            reasons.append(f"Somalier.IBS0={ibs0} > 2 (expected ~0)")
-    elif relationship == "siblings":
-        if som_rel is not None and som_rel < THRESH["first_degree_relatedness"]:
-            status = "FAIL"
-            reasons.append(
-                f"Somalier.relatedness={som_rel:.3f} < {THRESH['first_degree_relatedness']}"
-            )
-        if ibs0 is not None and ibs0 <= 0:
-            status = "FAIL"
-            reasons.append(
-                f"Somalier.IBS0={ibs0} <= 0 (siblings typically >0)"
-            )
-    elif relationship == "unrelated":
-        if som_rel is not None and som_rel >= 0.2:
-            status = "FAIL"
-            reasons.append(
-                f"Somalier.relatedness={som_rel:.3f} unexpectedly high for unrelated"
-            )
-        if picard_info is not None and picard_info["lod"] >= THRESH["picard_match_lod"]:
-            status = "FAIL"
-            reasons.append(
-                f"Picard.LOD={picard_info['lod']:.1f} unexpectedly high for unrelated"
-            )
+
+def _lower_columns(frame: pd.DataFrame) -> pd.DataFrame:
+    frame = frame.copy()
+    frame.columns = [str(column).strip().lower().lstrip("#") for column in frame.columns]
+    return frame
+
+
+def load_manifest(path: str | os.PathLike[str]) -> pd.DataFrame:
+    frame = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False, na_values=[])
+    required = {"sample_id", "path", "path_type"}
+    missing = required - set(frame.columns)
+    if missing:
+        raise ValueError(f"Relatedness manifest missing required columns: {sorted(missing)}")
+    if frame["sample_id"].duplicated().any():
+        duplicated = sorted(frame.loc[frame["sample_id"].duplicated(), "sample_id"].unique())
+        raise ValueError(f"Duplicate sample_id values in relatedness manifest: {duplicated}")
+    return frame
+
+
+def load_expected(expected: Any) -> dict[tuple[str, str], str]:
+    if expected in ["", None, "None"]:
+        return {}
+    if isinstance(expected, list):
+        entries = expected
     else:
-        reasons.append(f"Unknown relationship: {relationship}")
+        expected_path = Path(str(expected))
+        if not expected_path.exists():
+            raise ValueError(f"Expected relationship file not found: {expected_path}")
+        with expected_path.open(newline="", encoding="utf-8") as handle:
+            entries = list(csv.DictReader(handle, delimiter="\t"))
 
-    rows.append(
-        {
-            "sample_a": sample_a,
-            "sample_b": sample_b,
-            "relationship": relationship,
-            "note": note,
-            "somalier_relatedness": som_rel,
-            "somalier_ibs0": ibs0,
-            "picard_result": None if picard_info is None else picard_info["result"],
-            "picard_lod": None if picard_info is None else picard_info["lod"],
-            "status": status,
-            "reason": "; ".join(reasons) if reasons else "",
-        }
+    result: dict[tuple[str, str], str] = {}
+    for entry in entries:
+        relationship = str(entry.get("relationship", "")).strip()
+        samples = entry.get("samples")
+        if isinstance(samples, str):
+            sample_a, sample_b = [item.strip() for item in samples.split(",", 1)]
+        else:
+            sample_a, sample_b = samples
+        if not relationship or not sample_a or not sample_b:
+            raise ValueError(f"Invalid expected relationship entry: {entry}")
+        result[tuple(sorted([sample_a, sample_b]))] = relationship
+    return result
+
+
+def expected_status(observed: str, expected: str) -> tuple[str, str]:
+    if not expected:
+        return "NA", ""
+    normalized = {
+        "identical": "duplicate_or_identical",
+        "duplicate": "duplicate_or_identical",
+        "parent-offspring": "parent_child",
+        "parent_child": "parent_child",
+        "mother_child": "parent_child",
+        "father_child": "parent_child",
+        "siblings": "sibling_or_first_degree",
+        "sibling": "sibling_or_first_degree",
+        "first_degree": "sibling_or_first_degree",
+        "unrelated": "unrelated",
+    }.get(expected, expected)
+    if observed == normalized:
+        return "PASS", ""
+    return "FAIL", f"expected {expected}; observed {observed}"
+
+
+def classify_pairs(
+    somalier_pairs: pd.DataFrame,
+    manifest: pd.DataFrame,
+    expected: dict[tuple[str, str], str] | None = None,
+    thresholds: dict[str, float] | None = None,
+) -> list[ClassifiedPair]:
+    pairs = _lower_columns(somalier_pairs)
+    sample_ids = set(manifest["sample_id"])
+    manifest_by_sample = manifest.set_index("sample_id", drop=False)
+    expected = expected or {}
+
+    sample_a_col = "sample_a" if "sample_a" in pairs.columns else "sample1"
+    sample_b_col = "sample_b" if "sample_b" in pairs.columns else "sample2"
+    if sample_a_col not in pairs.columns or sample_b_col not in pairs.columns:
+        raise ValueError("Somalier pairs table must contain sample_a/sample_b columns.")
+
+    rows: list[ClassifiedPair] = []
+    for row in pairs.itertuples(index=False):
+        values = row._asdict()
+        sample_a = str(values[sample_a_col])
+        sample_b = str(values[sample_b_col])
+        if sample_a not in sample_ids or sample_b not in sample_ids:
+            raise ValueError(
+                f"Somalier pair references sample absent from manifest: {sample_a}, {sample_b}"
+            )
+        relatedness = _as_float(values.get("relatedness"))
+        ibs0 = _as_float(values.get("ibs0"))
+        observed = classify_relationship(relatedness, ibs0, thresholds)
+        exp = expected.get(tuple(sorted([sample_a, sample_b])), "")
+        status, note = expected_status(observed, exp)
+        rows.append(
+            ClassifiedPair(
+                sample_a=sample_a,
+                sample_b=sample_b,
+                sex_a=str(manifest_by_sample.loc[sample_a].get("sex", "")),
+                sex_b=str(manifest_by_sample.loc[sample_b].get("sex", "")),
+                family_id_a=str(manifest_by_sample.loc[sample_a].get("family_id", "")),
+                family_id_b=str(manifest_by_sample.loc[sample_b].get("family_id", "")),
+                relatedness=relatedness,
+                ibs0=ibs0,
+                relationship=observed,
+                expected_relationship=exp,
+                status=status,
+                note=note,
+            )
+        )
+    return rows
+
+
+def rows_to_frame(rows: list[ClassifiedPair]) -> pd.DataFrame:
+    if not rows:
+        return pd.DataFrame(columns=PAIR_COLUMNS)
+    return pd.DataFrame([row.__dict__ for row in rows], columns=PAIR_COLUMNS)
+
+
+def write_report(
+    pairs_frame: pd.DataFrame,
+    manifest: pd.DataFrame,
+    output_pairs: str,
+    output_summary: str,
+    output_html: str,
+) -> None:
+    Path(output_pairs).parent.mkdir(parents=True, exist_ok=True)
+    pairs_frame.to_csv(output_pairs, sep="\t", index=False)
+
+    if pairs_frame.empty:
+        summary = pd.DataFrame(
+            [{"relationship": "no_pairs", "status": "NA", "pair_count": 0}]
+        )
+    else:
+        summary = (
+            pairs_frame.groupby(["relationship", "status"], dropna=False)
+            .size()
+            .reset_index(name="pair_count")
+            .sort_values(["relationship", "status"])
+        )
+    summary.to_csv(output_summary, sep="\t", index=False)
+
+    template = Template(
+        """
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Relatedness QC</title>
+  <style>
+    body{font-family:system-ui,Arial,sans-serif;margin:24px}
+    table{border-collapse:collapse}
+    td,th{border:1px solid #ccc;padding:6px 8px}
+    .FAIL{background:#ffe3e3}
+    .PASS{background:#e6ffed}
+    .NA{background:#f7f7f7}
+  </style>
+</head>
+<body>
+  <h1>Relatedness QC</h1>
+  <p><b>Samples:</b> {{ sample_count }} | <b>Pairs:</b> {{ pair_count }}</p>
+  <h2>Pair Classifications</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th><th>Sample A</th><th>Sample B</th><th>Relationship</th>
+        <th>Sex A</th><th>Sex B</th><th>Family A</th><th>Family B</th>
+        <th>Expected</th><th>Relatedness</th><th>IBS0</th><th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+      <tr class="{{ row.status }}">
+        <td>{{ row.status }}</td>
+        <td>{{ row.sample_a }}</td>
+        <td>{{ row.sample_b }}</td>
+        <td>{{ row.relationship }}</td>
+        <td>{{ row.sex_a }}</td>
+        <td>{{ row.sex_b }}</td>
+        <td>{{ row.family_id_a }}</td>
+        <td>{{ row.family_id_b }}</td>
+        <td>{{ row.expected_relationship }}</td>
+        <td>{{ "%.4f"|format(row.relatedness) if row.relatedness is not none else "" }}</td>
+        <td>{{ "%.4f"|format(row.ibs0) if row.ibs0 is not none else "" }}</td>
+        <td>{{ row.note }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
+"""
+    )
+    html = template.render(
+        sample_count=len(manifest),
+        pair_count=len(pairs_frame),
+        rows=pairs_frame.to_dict(orient="records"),
+    )
+    with open(output_html, "w", encoding="utf-8") as handle:
+        handle.write(html)
+
+
+def run_from_snakemake(smk: Any) -> None:
+    manifest = load_manifest(smk.input.manifest)
+    pairs = pd.read_csv(smk.input.pairs, sep="\t", dtype=str, keep_default_na=False)
+    expected = load_expected(smk.params.expected)
+    thresholds = _thresholds(dict(smk.params.thresholds or {}))
+    classified = classify_pairs(pairs, manifest, expected=expected, thresholds=thresholds)
+    write_report(
+        rows_to_frame(classified),
+        manifest,
+        smk.output.pairs_classified,
+        smk.output.summary,
+        smk.output.html,
     )
 
-summary = pd.DataFrame(rows).sort_values(
-    ["status", "relationship", "sample_a", "sample_b"]
-)
-os.makedirs(os.path.dirname(out_tsv), exist_ok=True)
-summary.to_csv(out_tsv, sep="\t", index=False)
 
-
-template = Template(
-    """
-<!doctype html><html><head>
-<meta charset="utf-8"><title>Relatedness QC</title>
-<style>body{font-family:system-ui,Arial} table{border-collapse:collapse} td,th{border:1px solid #ccc;padding:6px 8px} .FAIL{background:#ffe3e3} .PASS{background:#e6ffed}</style>
-</head><body>
-<h1>Relatedness QC</h1>
-<p><b>Samples:</b> {{ sample_count }} | <b>Somalier pairs:</b> {{ somalier_pairs }} | <b>Picard pairs:</b> {{ picard_pairs }}</p>
-<h2>Expectations</h2>
-<table>
-  <thead><tr>
-    <th>Status</th><th>Relationship</th><th>Sample A</th><th>Sample B</th>
-    <th>Somalier.relatedness</th><th>Somalier.IBS0</th><th>Picard.LOD</th><th>Notes / Reasons</th>
-  </tr></thead>
-  <tbody>
-  {% for row in rows %}
-  <tr class="{{ row.status }}">
-    <td>{{ row.status }}</td>
-    <td>{{ row.relationship }}</td>
-    <td>{{ row.sample_a }}</td>
-    <td>{{ row.sample_b }}</td>
-    <td>{{ "%.3f"|format(row.somalier_relatedness) if row.somalier_relatedness is not none else "" }}</td>
-    <td>{{ row.somalier_ibs0 if row.somalier_ibs0 is not none else "" }}</td>
-    <td>{{ "%.1f"|format(row.picard_lod) if row.picard_lod is not none else "" }}</td>
-    <td>{{ row.reason or row.note }}</td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-
-<h2>Files</h2>
-<ul>
-  <li>Somalier: <code>results/somalier/cohort_pairs.tsv</code>, <code>cohort_groups.tsv</code>, <code>cohort.html</code></li>
-  <li>Picard: <code>results/picard/crosscheck/metrics.txt</code>, <code>matrix.txt</code></li>
-  {% if has_conpair %}<li>Conpair per tumor/normal pair: <code>results/conpair/&lt;T&gt;__&lt;N&gt;/</code></li>{% endif %}
-  {% if peddy_enabled %}<li>Peddy: <code>results/peddy/peddy.html</code></li>{% endif %}
-</ul>
-
-<p style="margin-top:24px;font-size:90%"><b>Thresholds (heuristic defaults):</b>
-identical ≥ {{ thresholds.identical_relatedness }}, tumor-normal ≥ {{ thresholds.tn_relatedness }},
-first-degree ≥ {{ thresholds.first_degree_relatedness }},
-Picard match LOD ≥ {{ thresholds.picard_match_lod }}, strong mismatch LOD ≤ {{ thresholds.picard_mismatch_lod }}.
-</p>
-</body></html>
-"""
-)
-
-html = template.render(
-    rows=rows,
-    sample_count=len(CFG["samples"]),
-    somalier_pairs=len(sp),
-    picard_pairs=len(pm),
-    has_conpair=bool(conpair_files),
-    peddy_enabled=CFG.get("peddy", {}).get("enabled", False),
-    thresholds=THRESH,
-)
-
-os.makedirs(os.path.dirname(out_html), exist_ok=True)
-with open(out_html, "w", encoding="utf-8") as handle:
-    handle.write(html)
+if "snakemake" in globals():
+    run_from_snakemake(globals()["snakemake"])

@@ -31,7 +31,6 @@ rule verifybamid2_contam:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         db_prefix=config["supporting_files"]["files"]["verifybam2"]["dat_files"]["name"],
-        site_vcf=config["supporting_files"]["files"]["verifybam2"]["oneM_snps_vcf"]["name"],
 	cluster_sample=ret_sample,
     shell:
         r"""
@@ -47,7 +46,7 @@ rule verifybamid2_contam:
             --BamFile {input.cram} \
             --Output {output.vb_prefix} \
             --DisableSanityCheck \
-            --RefVCF {params.site_vcf} \
+            --SVDPrefix {params.db_prefix} \
             --NumThread {threads} \
             --Reference {params.huref} \
             --min-BQ 20 --min-MQ 20 --adjust-MQ 50 --max-depth 500 \
@@ -66,8 +65,8 @@ localrules:
 rule produce_contam_estimate:  # TARGET:  jusg gen contam
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{sample}.{alnr}.{ddup}.vb2.tsv",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
-            ddup=DDUP,
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
         ),

@@ -1,49 +1,24 @@
-# Example configuration for relatedness QC workflow
-ref_fasta: /path/to/GRCh38.fa
+# Example configuration for the standalone relatedness workflow.
+#
+# Run with:
+#   snakemake -s workflow/rules/relatedness_test_day.smk \
+#     --configfile config/relatedness.yaml produce_relatedness
 
-somalier:
-  sites_vcf: /path/to/somalier-sites-hg38.vcf.bgz
-  genome_build: GRCh38
+ref_fasta: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta
+somalier_sites_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
+genome_build: GRCh38
 
-picard:
-  haplotype_map: /path/to/haplotype_map_hg38.vcf.gz
+# TSV columns:
+# sample_id, path, path_type, optional sex, batch_id, family_id
+samples_manifest: config/relatedness_samples.tsv
 
-conpair:
-  snp_positions_bed: /path/to/Conpair/snp_positions_hg38.bed
-  common_sites_vcf: /path/to/Conpair/common_snps_hg38.vcf.gz
-  min_baseq: 20
-  min_mapq: 10
+# Optional TSV with columns:
+# samples, relationship
+# The samples field is "sample_a,sample_b".
+expected_relationships: ""
 
-samples:
-  HG001_N1:
-    bam: /data/HG001/normal1.bam
-  HG001_N2:
-    bam: /data/HG001/normal2.bam
-  PT1_T:
-    bam: /data/PT1/tumor.bam
-  PT1_N:
-    bam: /data/PT1/normal.bam
-  FATHER:
-    vcf: /data/family/joint.vcf.gz
-  MOTHER:
-    vcf: /data/family/joint.vcf.gz
-  CHILD:
-    vcf: /data/family/joint.vcf.gz
-
-expected:
-  - relationship: identical
-    samples: [HG001_N1, HG001_N2]
-  - relationship: tumor_normal
-    samples: [PT1_T, PT1_N]
-  - relationship: parent_child
-    samples: [FATHER, CHILD]
-  - relationship: parent_child
-    samples: [MOTHER, CHILD]
-  - relationship: siblings
-    samples: [FATHER, MOTHER]
-    note: "should NOT be siblings -> expect fail"
-
-peddy:
-  enabled: false
-  joint_vcf: /data/family/joint.vcf.gz
-  ped: /data/family/family.ped
+relationship_thresholds:
+  duplicate_min_relatedness: 0.95
+  first_degree_min_relatedness: 0.40
+  parent_child_max_ibs0: 2.0
+  unrelated_max_relatedness: 0.20

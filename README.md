@@ -2,7 +2,9 @@
 
 [![Latest release](https://img.shields.io/github/v/release/Daylily-Informatics/daylily-omics-analysis?label=latest%20release&color=teal&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/releases) [![Latest tag](https://img.shields.io/github/v/tag/Daylily-Informatics/daylily-omics-analysis?label=latest%20tag&color=pink&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/tags)
 
-Daylily Omics Analysis contains the Snakemake workflows, shell entrypoints, profile configuration, and run documentation used for Daylily whole-genome sequencing analysis. It does not create or destroy AWS infrastructure. Cluster lifecycle is owned by [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster); this repo is what each analysis workset runs after a headnode and FSx filesystem exist.
+Daylily Omics Analysis contains the Snakemake workflows, shell entrypoints, profile configuration, and run documentation used for Daylily whole-genome sequencing analysis. It is specifically tuned to run inside infrastructure created by [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster), with Daylily omics/reference data mounted on the headnode and compute nodes under `/fsx/data`.
+
+This repository does not create, update, or destroy AWS infrastructure. Cluster lifecycle, FSx mounts, and production sample staging belong to `daylily-ephemeral-cluster` and its `daylily-ec` CLI. Use `daylily-ec` to stage reads and create or deliver the `samples.tsv` and `units.tsv` manifests for production worksets; this repo consumes those manifests from each analysis clone.
 
 ## Current Inputs
 
@@ -17,14 +19,19 @@ The legacy `config/analysis_manifest.csv` path is historical. Keep it only for o
 
 `SUBSAMPLE_PCT` in `units.tsv` is supported for inline FASTQ downsampling. Values must be floats in `(0.0, 1.0]`; use `na` or an empty value when no downsampling is intended.
 
+For production analyses, prefer manifests generated or staged by `daylily-ec` from the operator side. Hand-written copies are acceptable for focused debugging only when the paths, genome build, and `/fsx/data` reference resources have been verified.
+
 ## Quick Start
 
-For a local smoke test from a fresh checkout:
+For a local smoke test from a fresh checkout, use the existing `DAY-EC` environment. This verifies wiring and small fixtures; routine full workflows are expected to run on a prepared headnode. The fixture copy commands below write `config/samples.tsv` and `config/units.tsv`, so run them in a scratch checkout or preserve existing manifests first:
 
 ```bash
+eval "$(conda shell.zsh hook)"
+conda activate DAY-EC
 source dyoainit
 dy-a local hg38
 
+mkdir -p config
 cp .test_data/data/0.01xwgs_HG002_hg38.samples.tsv config/samples.tsv
 cp .test_data/data/0.01xwgs_HG002_hg38.units.tsv config/units.tsv
 
@@ -32,7 +39,7 @@ dy-r produce_alignstats -p -j 1 -n
 dy-r produce_alignstats -p -j 1
 ```
 
-For a Slurm-backed headnode run, prefer a persistent workset clone:
+For a Slurm-backed headnode run, connect through `daylily-ec`/SSM, then use a persistent workset clone. Stage production reads and manifests with `daylily-ec` before running workflow targets:
 
 ```bash
 cd /fsx/analysis_results/ubuntu
@@ -87,7 +94,11 @@ Common flags passed through `dy-r`:
 | `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid Sentieon workflow. |
 | `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
 | `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant callers. |
-| `produce_multiqc_final_wgs` | Final MultiQC aggregation. |
+| `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
+| `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
+| `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
+| `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
+| `produce_multiqc_final`, `produce_multiqc_final_wgs` | Final routine MultiQC aggregation. |
 
 ## Complete Genomics / MGI WGS
 
@@ -123,12 +134,15 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 
 | Document | Purpose |
 | --- | --- |
+| [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) | Cluster lifecycle, headnode access, sample staging, and manifest generation. |
 | [`docs/README.md`](docs/README.md) | Documentation index and current/historical doc policy. |
 | [`docs/quickest_start.md`](docs/quickest_start.md) | Minimal smoke-test checklist. |
 | [`docs/first_ephemeral_cluster_analysis.md`](docs/first_ephemeral_cluster_analysis.md) | First headnode workset run. |
 | [`docs/ops/dycli.md`](docs/ops/dycli.md) | CLI command behavior and monitoring. |
 | [`docs/ops/config.md`](docs/ops/config.md) | Profiles, config precedence, sample/unit schema notes. |
 | [`docs/ops/tests.md`](docs/ops/tests.md) | Local validation commands. |
+| [`docs/ops/multiqc_qc_targets.md`](docs/ops/multiqc_qc_targets.md) | Staged MultiQC targets, runtime gating, and routine vs optional QC policy. |
+| [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md) | Code-sourced catalog of Daylily tool integrations, evidence, outputs, and tests. |
 | [`docs/ops/dir_and_file_scheme.md`](docs/ops/dir_and_file_scheme.md) | Current result layout and naming conventions. |
 | [`docs/ops/workflow_catalog.md`](docs/ops/workflow_catalog.md) | Packaged workflow catalog API and current contents. |
 | [`docs/workflows/complete_genomics_sentieon.md`](docs/workflows/complete_genomics_sentieon.md) | Complete Genomics/MGI `sentcg/smd/cgt7p` workflow. |

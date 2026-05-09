@@ -32,13 +32,15 @@ rule fastv:
         jsf1="resources/fastv/js/coverage.js",
         jsf2="resources/fastv/js/plotly-1.2.0.min.js",
         odir=MDIR + "{sample}/seqqc/fastv/",
+        reads_to_process=config["fastv"].get("reads_to_process", 100000000),
         cluster_sample=ret_sample,
     conda:
         config["fastv"]["env_yaml"]
     shell:
-        "mkdir -p  {params.odir}  >> {log} 2>&1; "
+        "mkdir -p  {params.odir} $(dirname {log}); "
+        ": > {log}; "
         " cp {params.jsf1} {params.odir}; cp {params.jsf2} {params.odir} >> {log} 2>&1; "
-        "fastv -i <(zcat {input.fpq1} ) -I <(zcat {input.fpq2} ) -o {output.fv1} -O {output.fv2} --reads_to_process 100000000 --detect_adapter_for_pe --low_complexity_filter -h {output.html} -j {output.json} -w {threads} -y -k {params.covid_kmer} -g {params.covid_genome} -c {params.microbial_kmers} >> {log} 2>&1;"
+        "fastv -i <(gzip -dc -- {input.fpqr1s} ) -I <(gzip -dc -- {input.fpqr2s} ) -o {output.fv1} -O {output.fv2} --reads_to_process {params.reads_to_process} --detect_adapter_for_pe --low_complexity_filter -h {output.html} -j {output.json} -w {threads} -y -k {params.covid_kmer} -g {params.covid_genome} -c {params.microbial_kmers} >> {log} 2>&1;"
         " perl -pe 's/http\:\/\/opengene\.org\/plotly/plotly/g;' {output.html} >> {log} 2>&1; "
         " perl -pe 's/http\:\/\/opengene\.org\/fastv\///g;' {output.html} >> {log} 2>&1; "
         "ls {output};"
@@ -50,4 +52,5 @@ rule produce_fastv:  # TARGET: fastv output
     output:
         MDIR + "logs/multiqc/fastv.done",
     shell:
-        "touch {output}"
+        "mkdir -p $(dirname {output});"
+        "touch {output};"

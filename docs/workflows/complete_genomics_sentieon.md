@@ -65,7 +65,7 @@ When monitoring a running Complete Genomics workset:
 4. tail the latest `.snakemake/log/*.snakemake.log`
 5. tail newest relevant `logs/slurm/<rule>/*.{out,err}`
 6. tail the stable active rule log under `results/day/<build>/<sample>/.../logs/`
-7. SSH to active compute nodes with `bash -l -c` and inspect `/dev/shm`, memory, load, and relevant `sentieon`, `samtools`, `mbuffer`, `day_run`, and `snakemake` processes
+7. from the already connected SSM headnode shell, inspect active compute nodes by Slurm node name with `bash -l -c` and check `/dev/shm`, memory, load, and relevant `sentieon`, `samtools`, `mbuffer`, `day_run`, and `snakemake` processes
 
 Do not make AWS infrastructure changes or touch unrelated Slurm jobs while debugging this workflow.
 
