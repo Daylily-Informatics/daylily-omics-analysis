@@ -301,7 +301,7 @@ rule expansionhunter_multiqc:
           --filename $(basename {output.html:q}) \
           -o $(dirname {output.html:q}) \
           -i 'ExpansionHunter MultiQC Report' \
-          -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
           $(dirname {input.aggregate:q})/.. >> {log:q} 2>&1
         """
 

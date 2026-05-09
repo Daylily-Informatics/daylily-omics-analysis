@@ -1,8 +1,8 @@
 # Daylily Omics Analysis
 
-[![Latest release](https://img.shields.io/github/v/release/Daylily-Informatics/daylily-omics-analysis?label=latest%20release&color=teal&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/releases) [![Latest tag](https://img.shields.io/github/v/tag/Daylily-Informatics/daylily-omics-analysis?label=latest%20tag&color=pink&cacheSeconds=300)](https://github.com/Daylily-Informatics/daylily-omics-analysis/tags)
+[![Latest release](https://img.shields.io/github/v/release/lsmc-bio/daylily-omics-analysis?label=latest%20release&color=teal&cacheSeconds=300)](https://github.com/lsmc-bio/daylily-omics-analysis/releases) [![Latest tag](https://img.shields.io/github/v/tag/lsmc-bio/daylily-omics-analysis?label=latest%20tag&color=pink&cacheSeconds=300)](https://github.com/lsmc-bio/daylily-omics-analysis/tags)
 
-Daylily Omics Analysis contains the Snakemake workflows, shell entrypoints, profile configuration, and run documentation used for Daylily whole-genome sequencing analysis. It is specifically tuned to run inside infrastructure created by [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster), with Daylily omics/reference data mounted on the headnode and compute nodes under `/fsx/data`.
+Daylily Omics Analysis contains the Snakemake workflows, shell entrypoints, profile configuration, and run documentation used for Daylily whole-genome sequencing analysis. It is specifically tuned to run inside infrastructure created by [`daylily-ephemeral-cluster`](https://github.com/lsmc-bio/daylily-ephemeral-cluster), with Daylily omics/reference data mounted on the headnode and compute nodes under `/fsx/data`.
 
 This repository does not create, update, or destroy AWS infrastructure. Cluster lifecycle, FSx mounts, and production sample staging belong to `daylily-ephemeral-cluster` and its `daylily-ec` CLI. Use `daylily-ec` to stage reads and create or deliver the `samples.tsv` and `units.tsv` manifests for production worksets; this repo consumes those manifests from each analysis clone.
 
@@ -135,7 +135,7 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 
 | Document | Purpose |
 | --- | --- |
-| [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) | Cluster lifecycle, headnode access, sample staging, and manifest generation. |
+| [`daylily-ephemeral-cluster`](https://github.com/lsmc-bio/daylily-ephemeral-cluster) | Cluster lifecycle, headnode access, sample staging, and manifest generation. |
 | [`docs/README.md`](docs/README.md) | Documentation index and current/historical doc policy. |
 | [`docs/quickest_start.md`](docs/quickest_start.md) | Minimal smoke-test checklist. |
 | [`docs/first_ephemeral_cluster_analysis.md`](docs/first_ephemeral_cluster_analysis.md) | First headnode workset run. |
