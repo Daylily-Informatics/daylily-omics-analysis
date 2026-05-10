@@ -15,7 +15,7 @@ def _contam_qc_paths(tool, suffix):
         + suffix,
         sample=SSAMPS,
         alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_alignment_dedupers(),
+        ddup=qc_contamination_dedupers(),
     )
 
 
@@ -33,7 +33,7 @@ def _verifybamid2_qc_paths(suffix):
         + suffix,
         sample=SSAMPS,
         alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_alignment_dedupers(),
+        ddup=qc_contamination_dedupers(),
         vb2panel=VERIFYBAMID2_PANELS,
     )
 
@@ -43,7 +43,7 @@ def _verifybamid2_benchmark_paths():
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.bench.tsv",
         sample=SSAMPS,
         alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_alignment_dedupers(),
+        ddup=qc_contamination_dedupers(),
         vb2panel=VERIFYBAMID2_PANELS,
     )
 
@@ -64,7 +64,7 @@ def _parse_contam_path(path):
     name = os.path.basename(str(path))
     sample = aligner = deduper = None
     for alnr in QC_CRAM_ALIGNERS:
-        for ddup in qc_alignment_dedupers():
+        for ddup in qc_contamination_dedupers():
             marker = f".{alnr}.{ddup}."
             if marker in name:
                 sample = name.split(marker, 1)[0]
@@ -113,7 +113,7 @@ def _benchmark_by_vb2_key(paths):
     for path in paths:
         name = os.path.basename(str(path))
         for alnr in QC_CRAM_ALIGNERS:
-            for ddup in qc_alignment_dedupers():
+            for ddup in qc_contamination_dedupers():
                 marker = f".{alnr}.{ddup}."
                 if marker not in name:
                     continue
@@ -464,6 +464,6 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
         ),
         MDIR + "other_reports/site_mix_contam_mqc.tsv",

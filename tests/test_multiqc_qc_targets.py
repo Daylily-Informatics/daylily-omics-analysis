@@ -41,6 +41,7 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert gate["enable_tools"] == []
         assert gate["disable_tools"] == []
         assert gate["include_no_dedup_alignment_qc"] is True
+        assert gate["include_no_dedup_contamination_qc"] is False
         assert gate["runtime_gate_minutes"] == 45
         assert config["no_dedup"]["env_yaml"] == "../envs/samtools_v0.1.yaml"
         assert "relatedness" in config
@@ -58,6 +59,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert '"site_mix"' not in common[common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")]
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
+    assert "def qc_contamination_dedupers" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
@@ -235,7 +237,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
         "QC_CRAM_ALIGNERS",
-        "qc_alignment_dedupers()",
+        "qc_contamination_dedupers()",
     ):
         assert expected in site_mix
     assert "mqc         =" not in gatk_contam

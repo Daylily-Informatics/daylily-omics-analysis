@@ -77,7 +77,7 @@ rule produce_contam_estimate:  # TARGET:  jusg gen contam
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
             vb2panel=VERIFYBAMID2_PANELS,
         ),
 
@@ -88,7 +88,7 @@ rule produce_verifybamid2_panel_comparison:  # TARGET: compare selected VerifyBa
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
             vb2panel=VERIFYBAMID2_PANELS,
         ),
         MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv",

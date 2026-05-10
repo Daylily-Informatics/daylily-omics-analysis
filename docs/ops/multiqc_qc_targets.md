@@ -20,6 +20,7 @@ multiqc_qc:
     enable_tools: []
     disable_tools: []
     include_no_dedup_alignment_qc: true
+    include_no_dedup_contamination_qc: false
     runtime_gate_minutes: 45
 ```
 
@@ -67,6 +68,10 @@ into any staged/final `produce_multiqc_*` target.
 `include_no_dedup_alignment_qc: true` adds the `na` no-dedup passthrough to
 alignment QC beside configured real dedupers. Set it to `false` when a dry-run
 or smoke fixture cannot produce raw/no-dedup alignment QC.
+
+Contamination QC uses configured real dedupers by default. Set
+`include_no_dedup_contamination_qc: true` only when the `na` no-dedup
+contamination estimates are intentionally needed as a diagnostic comparison.
 
 VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
 without clobbering each other. The default routine panel is `100k`; run

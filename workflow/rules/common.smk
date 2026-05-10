@@ -194,6 +194,14 @@ def qc_alignment_dedupers():
     return sorted(ddups)
 
 
+def qc_contamination_dedupers():
+    cfg = config.get("multiqc_qc", {})
+    ddups = set(DDUP)
+    if _as_boolish(cfg.get("include_no_dedup_contamination_qc", False)):
+        ddups.add("na")
+    return sorted(ddups)
+
+
 BOOTSTRAP_UNIT_COLUMNS = [
     "RUNID",
     "SAMPLEID",
