@@ -90,6 +90,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
+    assert '--ignore "*/alignqc/contam/gatk/*_mqc.tsv"' in text
+    assert '--ignore "*/alignqc/contam/vb2/*/*_mqc.tsv"' in text
     assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
@@ -214,6 +216,8 @@ def test_norm_cov_evenness_gather_uses_declared_inputs() -> None:
 
 def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     site_mix = _read("workflow/rules/site_mix_contam.smk")
+    gatk_contam = _read("workflow/rules/gatk_contam.smk")
+    verifybamid2_contam = _read("workflow/rules/verifybamid2_contam.smk")
     relatedness = _read("workflow/rules/relatedness_batch.smk")
     report_script = _read("workflow/scripts/relatedness_report.py")
     report_env = _yaml("workflow/envs/report.yaml")
@@ -233,6 +237,10 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "qc_alignment_dedupers()",
     ):
         assert expected in site_mix
+    assert "mqc         =" not in gatk_contam
+    assert "output.mqc" not in gatk_contam
+    assert "mqc=MDIR" not in verifybamid2_contam
+    assert "output.mqc" not in verifybamid2_contam
 
     for expected in (
         "rule relatedness_batch_manifest:",

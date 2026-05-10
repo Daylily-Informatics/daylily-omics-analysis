@@ -1,7 +1,7 @@
 ######### GATK CONTAMINATION SCREEN
 # - Uses GATK GetPileupSummaries + CalculateContamination
 # - Simplified to a single GetPileupSummaries invocation
-# - Emits GATK-specific custom TSV output for MultiQC custom content
+# - Emits GATK-specific TSV output consumed by the aggregate MultiQC custom table
 
 rule gatk_contam:
     input:
@@ -18,7 +18,6 @@ rule gatk_contam:
         pile_merged = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table",
         contam      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.contam.tsv",
         tsv         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
-        mqc         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk_mqc.tsv",
         stamp       = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.done",
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/logs/{sample}.{alnr}.{ddup}.gatk_contam.log",
@@ -41,6 +40,7 @@ rule gatk_contam:
         set -euo pipefail;
 
         mkdir -p "$(dirname {output.pile_merged})"/logs;
+        rm -f "$(dirname {output.tsv})/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.gatk_mqc.tsv";
 
         SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {input.ref_fa} --mode bam --threads {threads} 2>> {log})";
         echo "gatk_contam SAFE_IN=${{SAFE_IN}}" >> {log};
@@ -74,7 +74,6 @@ rule gatk_contam:
 
         printf "sample_id\texternal_sample_id\taligner\tdeduper\ttool\tmethod\tcontamination_fraction\tcontamination_pct\tgatk_sample_id\tgatk_error_fraction\tsource_path\tstatus\n" > {output.tsv};
         printf "{params.cluster_sample}.{params.alnr}.{wildcards.ddup}\t{params.cluster_sample}\t{params.alnr}\t{wildcards.ddup}\tgatk\tcalculate_contamination\t%s\t%s\t%s\t%s\t{output.contam}\t%s\n" "${{contam_val}}" "${{contam_pct}}" "${{gatk_sample:-}}" "${{gatk_error:-}}" "${{status}}" >> {output.tsv};
-        cp {output.tsv} {output.mqc};
         touch {output.stamp};
         """
 

@@ -21,7 +21,6 @@ rule verifybamid2_contam:
         vb_tsv=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
         contam=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.contam.tsv",
         selfSM=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.selfSM",
-        mqc=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2_mqc.tsv",
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/logs/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.log",
     benchmark:
@@ -47,7 +46,8 @@ rule verifybamid2_contam:
         mkdir -p "${{outdir}}" "${{outdir}}/logs"
 
         rm -f {output.vb_prefix}.selfSM {output.vb_prefix}.selfRG {output.vb_prefix}.depthSM \
-            {output.vb_tsv} {output.selfSM} {output.mqc} {output.contam}
+            {output.vb_tsv} {output.selfSM} {output.contam} \
+            "$(dirname {output.vb_tsv})/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.vb2panel}.vb2_mqc.tsv"
 
         printf 'VerifyBamID2 panel\t%s\t%s SNPs\n' "{params.panel_label}" "{params.snp_count}" > {log}
 
@@ -62,7 +62,6 @@ rule verifybamid2_contam:
             >> {log} 2>&1
 
         cp {output.selfSM} {output.vb_tsv}
-        cp {output.selfSM} {output.mqc}
         touch {output.vb_prefix}
 
         awk 'NR<=2 {{print}}' {output.selfSM} > {output.contam}
