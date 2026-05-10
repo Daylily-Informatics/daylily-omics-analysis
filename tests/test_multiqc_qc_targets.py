@@ -92,6 +92,19 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
+    assert "contamination_ddups = qc_contamination_dedupers()" in text
+    assert (
+        "alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv"
+        in text
+    )
+    assert (
+        "alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv"
+        in text
+    )
+    vb2_start = text.index("alignqc/contam/vb2/{vb2panel}")
+    gatk_start = text.index("alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv")
+    assert "ddup=contamination_ddups" in text[vb2_start : vb2_start + 260]
+    assert "ddup=contamination_ddups" in text[gatk_start : gatk_start + 220]
     assert '--ignore "*gatk_mqc.tsv"' in text
     assert '--ignore "*vb2_mqc.tsv"' in text
     assert "find {MDIR} -type f \\( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \\) -delete" in text

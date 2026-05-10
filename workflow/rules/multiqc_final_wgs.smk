@@ -65,6 +65,7 @@ def _alignment_component_inputs(wildcards):
 def _alignment_qc_native_inputs(wildcards):
     paths = []
     qddups = qc_alignment_dedupers()
+    contamination_ddups = qc_contamination_dedupers()
     alnrs = QC_CRAM_ALIGNERS
     paths.append(MDIR + "other_reports/alignstats_combo_mqc.tsv")
     paths.append(MDIR + "other_reports/normcovevenness_combo_mqc.tsv")
@@ -129,7 +130,7 @@ def _alignment_qc_native_inputs(wildcards):
                 + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
-                ddup=qddups,
+                ddup=contamination_ddups,
                 vb2panel=VERIFYBAMID2_PANELS,
             )
         )
@@ -140,7 +141,7 @@ def _alignment_qc_native_inputs(wildcards):
                 + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
-                ddup=qddups,
+                ddup=contamination_ddups,
             )
         )
     return paths
