@@ -66,7 +66,7 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
     output:
         mqc=MDIR+"other_reports/normcovevenness_combo_mqc.tsv",
     log:
-        MDIR+"other_reports/logs/normcovevenness_combo_mqc.log",
+        MDIR+"other_reports/logs/normcovevenness_combo.log",
     shell:
         """
         set -euo pipefail

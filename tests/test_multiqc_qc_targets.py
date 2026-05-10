@@ -205,7 +205,7 @@ def test_norm_cov_evenness_gather_uses_declared_inputs() -> None:
     text = _read("workflow/rules/calc_coverage_eveness.smk")
     rule_text = text[text.index("rule produce_cov_uniformity:") :]
 
-    assert "other_reports/logs/normcovevenness_combo_mqc.log" in rule_text
+    assert "other_reports/logs/normcovevenness_combo.log" in rule_text
     assert "input_files=({input:q})" in rule_text
     assert "test -s \"$mqc\"" in rule_text
     assert "find results | grep norm_cov_eveness.mqc.tsv | head -n 1" not in rule_text
@@ -258,6 +258,20 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert "--out-dir {params.out_dir:q}" in extract_rule
     assert "--sample-prefix" not in extract_rule
     assert "setuptools" in report_env["dependencies"]
+
+
+def test_other_reports_logs_are_not_multiqc_custom_content_candidates() -> None:
+    for path in (
+        "workflow/rules/multiqc_final_wgs.smk",
+        "workflow/rules/calc_coverage_eveness.smk",
+        "workflow/rules/htd_calls.smk",
+    ):
+        text = _read(path)
+        assert "other_reports/logs/" in text
+        assert "other_reports/logs/sequence_qc_outputs_mqc.log" not in text
+        assert "other_reports/logs/alignment_qc_outputs_mqc.log" not in text
+        assert "other_reports/logs/normcovevenness_combo_mqc.log" not in text
+        assert "other_reports/logs/htd_calls_mqc.log" not in text
 
 
 def test_no_dedup_uses_samtools_conda_env() -> None:

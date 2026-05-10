@@ -223,7 +223,7 @@ rule sequence_qc_outputs_custom_data:
     output:
         MDIR + "other_reports/sequence_qc_outputs_mqc.tsv"
     log:
-        MDIR + "other_reports/logs/sequence_qc_outputs_mqc.log"
+        MDIR + "other_reports/logs/sequence_qc_outputs.log"
     container: None
     shell:
         """
@@ -242,7 +242,7 @@ rule alignment_qc_outputs_custom_data:
     output:
         MDIR + "other_reports/alignment_qc_outputs_mqc.tsv"
     log:
-        MDIR + "other_reports/logs/alignment_qc_outputs_mqc.log"
+        MDIR + "other_reports/logs/alignment_qc_outputs.log"
     container: None
     shell:
         """

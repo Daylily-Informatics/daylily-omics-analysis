@@ -90,7 +90,7 @@ rule htd_calls_mqc:
     output:
         MDIR + "other_reports/htd_calls_mqc.tsv"
     log:
-        MDIR + "other_reports/logs/htd_calls_mqc.log"
+        MDIR + "other_reports/logs/htd_calls.log"
     container: None
     shell:
         """
