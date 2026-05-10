@@ -195,7 +195,7 @@ rule contamination_mqc_gather:
     input:
         vb2=lambda wildcards: _enabled_verifybamid2_qc_paths("vb2.tsv"),
         vb2_bench=lambda wildcards: _enabled_verifybamid2_benchmarks(),
-        gatk=lambda wildcards: _enabled_contam_qc_paths("gatk_contam", "gatk", "gatk.tsv"),
+        gatk=lambda wildcards: _enabled_contam_qc_paths("gatk_contam", "gatk", "contam.tsv"),
         site_mix=lambda wildcards: _enabled_contam_qc_paths(
             "site_mix", "site_mix", "site_mix.tsv"
         ),
@@ -204,6 +204,7 @@ rule contamination_mqc_gather:
         ),
     output:
         contamination=MDIR + "other_reports/contamination_mqc.tsv",
+        gatk=MDIR + "other_reports/gatk_contam_mqc.tsv",
         vb2_comparison=MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv",
         site_mix=MDIR + "other_reports/site_mix_contam_mqc.tsv",
         donors=MDIR + "other_reports/site_mix_donor_mqc.tsv",
@@ -265,9 +266,15 @@ rule contamination_mqc_gather:
             "single_source_delta_log_likelihood",
             "source_path",
         ]
+        gatk_fields = contamination_fields + [
+            "gatk_sample_id",
+            "gatk_error_fraction",
+        ]
         with open(output.contamination, "w", newline="") as contam_handle, open(
             output.site_mix, "w", newline=""
-        ) as site_handle, open(output.vb2_comparison, "w", newline="") as vb2_handle:
+        ) as site_handle, open(output.vb2_comparison, "w", newline="") as vb2_handle, open(
+            output.gatk, "w", newline=""
+        ) as gatk_handle:
             contam_writer = csv.DictWriter(
                 contam_handle, fieldnames=contamination_fields, delimiter="\t"
             )
@@ -277,9 +284,13 @@ rule contamination_mqc_gather:
             vb2_writer = csv.DictWriter(
                 vb2_handle, fieldnames=vb2_fields, delimiter="\t"
             )
+            gatk_writer = csv.DictWriter(
+                gatk_handle, fieldnames=gatk_fields, delimiter="\t"
+            )
             contam_writer.writeheader()
             site_writer.writeheader()
             vb2_writer.writeheader()
+            gatk_writer.writeheader()
             vb2_benchmarks = _benchmark_by_vb2_key(input.vb2_bench)
             for path in input.vb2:
                 sample, external, aligner, deduper, panel_id = _parse_vb2_panel_path(path)
@@ -347,29 +358,39 @@ rule contamination_mqc_gather:
                 with open(path, newline="") as handle:
                     rows = list(csv.DictReader(handle, delimiter="\t"))
                 row = rows[0] if rows else {}
-                freemix = row.get("FREEMIX", "")
-                contam_writer.writerow(
+                if "contamination" not in row:
+                    raise ValueError(
+                        f"GATK contamination table missing contamination column: {path}"
+                    )
+                contamination = row.get("contamination", "")
+                out_row = {
+                    "sample_id": sample_id,
+                    "external_sample_id": external,
+                    "aligner": aligner,
+                    "deduper": deduper,
+                    "panel_id": "",
+                    "panel_label": "",
+                    "tool": "gatk",
+                    "method": "calculate_contamination",
+                    "contamination_fraction": contamination,
+                    "contamination_pct": _safe_pct(contamination),
+                    "ci_low_fraction": "",
+                    "ci_high_fraction": "",
+                    "unknown_contamination_fraction": "",
+                    "unknown_contamination_pct": "",
+                    "site_count": "",
+                    "read_count": "",
+                    "mean_depth": "",
+                    "svd_prefix": "",
+                    "source_path": path,
+                    "status": "ok" if contamination not in ["", "NA"] else "no_call",
+                }
+                contam_writer.writerow(out_row)
+                gatk_writer.writerow(
                     {
-                        "sample_id": sample_id,
-                        "external_sample_id": external,
-                        "aligner": aligner,
-                        "deduper": deduper,
-                        "panel_id": "",
-                        "panel_label": "",
-                        "tool": "gatk",
-                        "method": "freemix",
-                        "contamination_fraction": freemix,
-                        "contamination_pct": _safe_pct(freemix),
-                        "ci_low_fraction": "",
-                        "ci_high_fraction": "",
-                        "unknown_contamination_fraction": "",
-                        "unknown_contamination_pct": "",
-                        "site_count": row.get("#SNPS", ""),
-                        "read_count": row.get("#READS", ""),
-                        "mean_depth": row.get("AVG_DP", ""),
-                        "svd_prefix": "",
-                        "source_path": path,
-                        "status": "ok" if freemix not in ["", "NA"] else "no_call",
+                        **out_row,
+                        "gatk_sample_id": row.get("sample", ""),
+                        "gatk_error_fraction": row.get("error", ""),
                     }
                 )
             for path in input.site_mix:

@@ -204,6 +204,9 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
     assert '--java-options "-Xmx{params.java_heap_mb}m' in text
     assert "--interval-merging-rule OVERLAPPING_ONLY" in text
     assert "--disable-bam-index-caching" in text
+    assert "gatk.selfSM" not in text
+    assert "FREEMIX" not in text
+    assert "calculate_contamination" in text
 
     expected_exclusive = {
         "config/day_profiles/slurm/templates/rule_config.yaml": 'exclusive: "--exclusive"',
@@ -520,7 +523,10 @@ def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:
         f"{sample_id}\t5\n",
         encoding="utf-8",
     )
-    gatk_path.write_text("SEQ_ID\tFREEMIX\nsample\t0.047\n", encoding="utf-8")
+    gatk_path.write_text(
+        "sample_id\tcontamination_fraction\nsample\t0.047\n",
+        encoding="utf-8",
+    )
     vb2_path.write_text("SEQ_ID\tFREEMIX\nsample\t0.052\n", encoding="utf-8")
 
     rc = module.main(

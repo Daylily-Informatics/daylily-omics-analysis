@@ -90,10 +90,12 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
+    assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
         "contamination_mqc.tsv",
+        "gatk_contam_mqc.tsv",
         "verifybamid2_panel_comparison_mqc.tsv",
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
@@ -107,6 +109,43 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "rules_benchmark_data_mqc.tsv",
     ):
         assert expected in text
+
+
+def test_final_multiqc_custom_data_paths_match_outputs() -> None:
+    config = _yaml("config/external_tools/multiqc_config.yaml")
+    sp = config["sp"]
+
+    assert "verifybamid" in config["exclude_modules"]
+    assert sp["norm_cov_evenness_combo"]["fn"] == (
+        "other_reports/normcovevenness_combo_mqc.tsv"
+    )
+
+    expected_custom_paths = {
+        "alignment_qc_outputs": "other_reports/alignment_qc_outputs_mqc.tsv",
+        "alignstats_combo": "other_reports/alignstats_combo_mqc.tsv",
+        "alignstats_gs": "other_reports/alignstats_gs_mqc.tsv",
+        "bcftools_variant_stats": "other_reports/bcftools_variant_stats_mqc.tsv",
+        "contamination": "other_reports/contamination_mqc.tsv",
+        "gatk_contam": "other_reports/gatk_contam_mqc.tsv",
+        "expansionhunter": "other_reports/expansionhunter_mqc.tsv",
+        "giab_concordance": "other_reports/giab_concordance_mqc.tsv",
+        "norm_cov_evenness_combo": "other_reports/normcovevenness_combo_mqc.tsv",
+        "peddy_sample_qc": "other_reports/peddy_sample_qc_mqc.tsv",
+        "relatedness": "other_reports/relatedness_mqc.tsv",
+        "rtg_vcfstats": "other_reports/rtg_vcfstats_mqc.tsv",
+        "rules_benchmark_data": "other_reports/rules_benchmark_data_mqc.tsv",
+        "seqfu": "other_reports/seqfu_mqc.tsv",
+        "sequence_qc_outputs": "other_reports/sequence_qc_outputs_mqc.tsv",
+        "site_mix_contam": "other_reports/site_mix_contam_mqc.tsv",
+        "site_mix_donor": "other_reports/site_mix_donor_mqc.tsv",
+        "vep_annotation": "other_reports/vep_annotation_mqc.tsv",
+        "verifybamid2_panel_comparison": (
+            "other_reports/verifybamid2_panel_comparison_mqc.tsv"
+        ),
+    }
+    for custom_id, path in expected_custom_paths.items():
+        assert custom_id in config["custom_data"]
+        assert sp[custom_id]["fn"] == path
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
@@ -180,11 +219,14 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     report_env = _yaml("workflow/envs/report.yaml")
 
     assert "rule contamination_mqc_gather:" in site_mix
+    assert '_enabled_contam_qc_paths("gatk_contam", "gatk", "contam.tsv")' in site_mix
+    assert '"method": "calculate_contamination"' in site_mix
     for expected in (
         "verifybamid2",
         "gatk",
         "site_mix",
         "contamination_mqc.tsv",
+        "gatk_contam_mqc.tsv",
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
         "QC_CRAM_ALIGNERS",
@@ -294,6 +336,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "sequence_qc_outputs",
         "alignment_qc_outputs",
         "contamination",
+        "gatk_contam",
         "verifybamid2_panel_comparison",
         "site_mix_contam",
         "site_mix_donor",
@@ -313,6 +356,7 @@ def test_multiqc_config_custom_content_entries() -> None:
     assert "fastp" not in excludes
     assert "vep" not in excludes
     assert "snpeff" not in excludes
+    assert "verifybamid" in excludes
     assert "verifyBAMID" in excludes
     assert "sexdetermine" in excludes
 
@@ -334,6 +378,7 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     module_order = config["module_order"]
     assert len(module_order) == len(set(module_order))
     assert "verifyBAMID" not in module_order
+    assert "gatk_contam" in module_order
     assert "verifybamid2_panel_comparison" in module_order
 
 

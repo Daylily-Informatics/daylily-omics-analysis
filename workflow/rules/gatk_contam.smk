@@ -1,7 +1,7 @@
 ######### GATK CONTAMINATION SCREEN
 # - Uses GATK GetPileupSummaries + CalculateContamination
 # - Simplified to a single GetPileupSummaries invocation
-# - Emits a VerifyBamID2-like selfSM/tsv for compatibility
+# - Emits GATK-specific custom TSV output for MultiQC custom content
 
 rule gatk_contam:
     input:
@@ -17,7 +17,6 @@ rule gatk_contam:
         # per-tool prefix directory
         pile_merged = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table",
         contam      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.contam.tsv",
-        selfSM      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.selfSM",
         tsv         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
         mqc         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk_mqc.tsv",
         stamp       = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.done",
@@ -61,13 +60,21 @@ rule gatk_contam:
           -O {output.contam} \
           >> {log} 2>&1;
 
-        contam_val="$(awk 'NR==2 {{print $2}}' {output.contam})";
+        gatk_sample="$(awk -F'\t' 'NR==1 {{for (i=1; i<=NF; i++) if ($i=="sample") s=i}} NR==2 {{if (s) print $s}}' {output.contam})";
+        contam_val="$(awk -F'\t' 'NR==1 {{for (i=1; i<=NF; i++) if ($i=="contamination") c=i; if (!c) exit 2}} NR==2 {{print $c}}' {output.contam})";
+        gatk_error="$(awk -F'\t' 'NR==1 {{for (i=1; i<=NF; i++) if ($i=="error") e=i}} NR==2 {{if (e) print $e}}' {output.contam})";
+        if [[ -n "${{contam_val:-}}" && "${{contam_val}}" != "NA" ]]; then
+            status="ok";
+            contam_pct="$(awk -v c="${{contam_val}}" 'BEGIN {{printf "%.12g", c * 100.0}}')";
+        else
+            status="no_call";
+            contam_val="NA";
+            contam_pct="NA";
+        fi;
 
-        printf "SEQ_ID\tRG\tCHIP_ID\t#SNPS\t#READS\tAVG_DP\tFREEMIX\tFREELK1\tFREELK0\tFREE_RH\tFREE_RA\tCHIPMIX\tCHIPLK1\tCHIPLK0\tCHIP_RH\tCHIP_RA\tDPREF\tRDPHET\tRDPALT\n" > {output.selfSM};
-        printf "{params.cluster_sample}.{params.alnr}\tNA\tNA\tNA\tNA\tNA\t%s\t-1\t-1\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\n" "${{contam_val:-NA}}" >> {output.selfSM};
-
-        cp {output.selfSM} {output.tsv};
-        cp {output.selfSM} {output.mqc};
+        printf "sample_id\texternal_sample_id\taligner\tdeduper\ttool\tmethod\tcontamination_fraction\tcontamination_pct\tgatk_sample_id\tgatk_error_fraction\tsource_path\tstatus\n" > {output.tsv};
+        printf "{params.cluster_sample}.{params.alnr}.{wildcards.ddup}\t{params.cluster_sample}\t{params.alnr}\t{wildcards.ddup}\tgatk\tcalculate_contamination\t%s\t%s\t%s\t%s\t{output.contam}\t%s\n" "${{contam_val}}" "${{contam_pct}}" "${{gatk_sample:-}}" "${{gatk_error:-}}" "${{status}}" >> {output.tsv};
+        cp {output.tsv} {output.mqc};
         touch {output.stamp};
         """
 

@@ -48,6 +48,8 @@ def _alignment_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/contamination_mqc.tsv")
     if qc_tool_enabled("verifybamid2"):
         paths.append(MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv")
+    if qc_tool_enabled("gatk_contam"):
+        paths.append(MDIR + "other_reports/gatk_contam_mqc.tsv")
     if qc_tool_enabled("site_mix"):
         paths.extend(
             [
@@ -430,6 +432,7 @@ report_header_info:
         --config ./config/external_tools/multiqc_config.yaml  \
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*/norm_cov_eveness/*" \
+        --ignore "*/other_reports/logs/*" \
         --ignore "*sort_metrics/*" \
         --template default \
         --filename {output.html:q} \

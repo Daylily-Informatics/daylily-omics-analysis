@@ -95,7 +95,14 @@ def read_freemix(path: Path | None) -> str:
     if not rows:
         return ""
     row = rows[0]
-    for key in ("FREEMIX", "freemix", "contamination", "CONTAMINATION"):
+    for key in (
+        "contamination_fraction",
+        "freemix_fraction",
+        "FREEMIX",
+        "freemix",
+        "contamination",
+        "CONTAMINATION",
+    ):
         value = row.get(key)
         if value not in (None, ""):
             return value

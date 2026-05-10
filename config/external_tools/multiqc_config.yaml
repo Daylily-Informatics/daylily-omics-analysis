@@ -55,6 +55,7 @@ module_order:
   - alignment_qc_outputs
   - expansionhunter
   - contamination
+  - gatk_contam
   - verifybamid2_panel_comparison
   - site_mix_contam
   - site_mix_donor
@@ -71,7 +72,6 @@ module_order:
   - alignstats_combo
   
 table_columns_visible:
-  verifybamid-FREEMIX: True
   peddy-family_id: False
   peddy-ancestry_prediction: True
   peddy-ancestry_prob_het_check: True
@@ -207,6 +207,14 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'contamination'
+  gatk_contam:
+    id: 'gatk_contam'
+    section_name: 'GATK Contamination'
+    description: 'GATK CalculateContamination output loaded as MultiQC custom content'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'gatk_contam'
   verifybamid2_panel_comparison:
     id: 'verifybamid2_panel_comparison'
     section_name: 'VerifyBamID2 SNP Panel Comparison'
@@ -313,7 +321,7 @@ sp:
   giab_concordance:
     fn: "other_reports/giab_concordance_mqc.tsv"
   norm_cov_evenness_combo:
-    fn: "other_reports/norm_cov_evenness_combo_mqc.tsv"
+    fn: "other_reports/normcovevenness_combo_mqc.tsv"
   rules_benchmark_data:
     fn: "other_reports/rules_benchmark_data_mqc.tsv"
   alignstats_combo:
@@ -328,6 +336,8 @@ sp:
     fn: "other_reports/alignment_qc_outputs_mqc.tsv"
   contamination:
     fn: "other_reports/contamination_mqc.tsv"
+  gatk_contam:
+    fn: "other_reports/gatk_contam_mqc.tsv"
   verifybamid2_panel_comparison:
     fn: "other_reports/verifybamid2_panel_comparison_mqc.tsv"
   site_mix_contam:
@@ -434,6 +444,7 @@ exclude_modules:
   - bismark
   - tophat
   - sexdetermine
+  - verifybamid
   - verifyBAMID
   - q3c3
   - bclconvert/runino
