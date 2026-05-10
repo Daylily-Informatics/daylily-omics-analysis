@@ -162,6 +162,17 @@ def test_multiqc_custom_output_inventory_rules_exist() -> None:
         assert expected in script
 
 
+def test_norm_cov_evenness_gather_uses_declared_inputs() -> None:
+    text = _read("workflow/rules/calc_coverage_eveness.smk")
+    rule_text = text[text.index("rule produce_cov_uniformity:") :]
+
+    assert "other_reports/logs/normcovevenness_combo_mqc.log" in rule_text
+    assert "input_files=({input:q})" in rule_text
+    assert "test -s \"$mqc\"" in rule_text
+    assert "find results | grep norm_cov_eveness.mqc.tsv | head -n 1" not in rule_text
+    assert "grep .norm_cov_eveness.mqc.tsv | parallel" not in rule_text
+
+
 def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     site_mix = _read("workflow/rules/site_mix_contam.smk")
     relatedness = _read("workflow/rules/relatedness_batch.smk")

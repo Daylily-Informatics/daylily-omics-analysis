@@ -65,15 +65,25 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
     threads: 8
     output:
         mqc=MDIR+"other_reports/normcovevenness_combo_mqc.tsv",
+    log:
+        MDIR+"other_reports/logs/normcovevenness_combo_mqc.log",
     shell:
         """
-        mkdir -p $(dirname {output});
-        single_file=$( find results | grep norm_cov_eveness.mqc.tsv | head -n 1);
-        if [[ "$single_file" == "" ]]; then
-            echo "NO DATA FOUND" > {output.mqc};
-        else
-            head -n 1 $single_file > {output.mqc};
-            find results | grep .norm_cov_eveness.mqc.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
-        fi;
-        ls {input};
+        set -euo pipefail
+        mkdir -p "$(dirname {output.mqc:q})" "$(dirname {log:q})"
+
+        input_files=({input:q})
+        single_file="${{input_files[0]}}.norm_cov_eveness.mqc.tsv"
+        test -s "$single_file"
+
+        {{
+            echo "Combining ${{#input_files[@]}} norm coverage evenness files"
+            head -n 1 "$single_file" > {output.mqc:q}
+            for marker in "${{input_files[@]}}"; do
+                mqc="${{marker}}.norm_cov_eveness.mqc.tsv"
+                test -s "$mqc"
+                tail -n +2 "$mqc" >> {output.mqc:q}
+            done
+            ls {input:q}
+        }} > {log:q} 2>&1
         """
