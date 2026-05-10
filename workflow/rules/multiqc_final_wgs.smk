@@ -292,8 +292,8 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
-          --ignore "*/alignqc/contam/gatk/*_mqc.tsv" \
-          --ignore "*/alignqc/contam/vb2/*/*_mqc.tsv" \
+          --ignore "*gatk_mqc.tsv" \
+          --ignore "*vb2_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
@@ -329,8 +329,8 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
-          --ignore "*/alignqc/contam/gatk/*_mqc.tsv" \
-          --ignore "*/alignqc/contam/vb2/*/*_mqc.tsv" \
+          --ignore "*gatk_mqc.tsv" \
+          --ignore "*vb2_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
@@ -366,8 +366,8 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
-          --ignore "*/alignqc/contam/gatk/*_mqc.tsv" \
-          --ignore "*/alignqc/contam/vb2/*/*_mqc.tsv" \
+          --ignore "*gatk_mqc.tsv" \
+          --ignore "*vb2_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
@@ -437,8 +437,8 @@ report_header_info:
         --config {output.header:q} \
         --config ./config/external_tools/multiqc_config.yaml  \
         --custom-css-file ./config/external_tools/multiqc.css \
-        --ignore "*/alignqc/contam/gatk/*_mqc.tsv" \
-        --ignore "*/alignqc/contam/vb2/*/*_mqc.tsv" \
+        --ignore "*gatk_mqc.tsv" \
+        --ignore "*vb2_mqc.tsv" \
         --ignore "*/norm_cov_eveness/*" \
         --ignore "*/other_reports/logs/*" \
         --ignore "*sort_metrics/*" \

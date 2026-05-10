@@ -90,8 +90,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
-    assert '--ignore "*/alignqc/contam/gatk/*_mqc.tsv"' in text
-    assert '--ignore "*/alignqc/contam/vb2/*/*_mqc.tsv"' in text
+    assert '--ignore "*gatk_mqc.tsv"' in text
+    assert '--ignore "*vb2_mqc.tsv"' in text
     assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
