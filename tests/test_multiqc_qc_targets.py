@@ -440,6 +440,63 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert "gatk_contam" in module_order
     assert "verifybamid2_panel_comparison" in module_order
 
+    assert config["custom_content"]["order"] == [
+        "peddy_sample_qc",
+        "relatedness",
+        "seqfu",
+        "sequence_qc_outputs",
+        "alignstats_combo",
+        "alignment_qc_outputs",
+        "normcovevenness_combo",
+        "contamination",
+        "verifybamid2_panel_comparison",
+        "gatk_contam",
+        "site_mix_contam",
+        "site_mix_donor",
+        "bcftools_variant_stats",
+        "rtg_vcfstats",
+        "giab_concordance",
+        "vep_annotation",
+        "expansionhunter",
+        "rules_benchmark_data",
+    ]
+
+    expected_section_order = [
+        "general_stats",
+        "peddy",
+        "peddy_sample_qc",
+        "relatedness",
+        "somalier",
+        "seqfu",
+        "fastqc",
+        "sequence_qc_outputs",
+        "samtools",
+        "mosdepth",
+        "alignstats_combo",
+        "alignment_qc_outputs",
+        "normcovevenness_combo",
+        "contamination",
+        "verifybamid2_panel_comparison",
+        "gatk_contam",
+        "site_mix_contam",
+        "site_mix_donor",
+        "bcftools",
+        "bcftools_variant_stats",
+        "rtg_vcfstats",
+        "giab_concordance",
+        "vep",
+        "vep_annotation",
+        "expansionhunter",
+        "goleft_indexcov",
+        "rules_benchmark_data",
+        "multiqc_software_versions",
+    ]
+    section_order = config["report_section_order"]
+    assert list(section_order) == expected_section_order
+    assert [
+        section_order[section_id]["order"] for section_id in expected_section_order
+    ] == list(range(10000, 7200, -100))
+
 
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     common = _read("workflow/rules/common.smk")

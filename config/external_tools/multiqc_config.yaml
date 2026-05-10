@@ -80,6 +80,85 @@ module_order:
   # Other workflow metrics and uncategorized custom content
   - rules_benchmark_data
   - custom_content
+
+custom_content:
+  order:
+    - peddy_sample_qc
+    - relatedness
+    - seqfu
+    - sequence_qc_outputs
+    - alignstats_combo
+    - alignment_qc_outputs
+    - normcovevenness_combo
+    - contamination
+    - verifybamid2_panel_comparison
+    - gatk_contam
+    - site_mix_contam
+    - site_mix_donor
+    - bcftools_variant_stats
+    - rtg_vcfstats
+    - giab_concordance
+    - vep_annotation
+    - expansionhunter
+    - rules_benchmark_data
+
+report_section_order:
+  general_stats:
+    order: 10000
+  peddy:
+    order: 9900
+  peddy_sample_qc:
+    order: 9800
+  relatedness:
+    order: 9700
+  somalier:
+    order: 9600
+  seqfu:
+    order: 9500
+  fastqc:
+    order: 9400
+  sequence_qc_outputs:
+    order: 9300
+  samtools:
+    order: 9200
+  mosdepth:
+    order: 9100
+  alignstats_combo:
+    order: 9000
+  alignment_qc_outputs:
+    order: 8900
+  normcovevenness_combo:
+    order: 8800
+  contamination:
+    order: 8700
+  verifybamid2_panel_comparison:
+    order: 8600
+  gatk_contam:
+    order: 8500
+  site_mix_contam:
+    order: 8400
+  site_mix_donor:
+    order: 8300
+  bcftools:
+    order: 8200
+  bcftools_variant_stats:
+    order: 8100
+  rtg_vcfstats:
+    order: 8000
+  giab_concordance:
+    order: 7900
+  vep:
+    order: 7800
+  vep_annotation:
+    order: 7700
+  expansionhunter:
+    order: 7600
+  goleft_indexcov:
+    order: 7500
+  rules_benchmark_data:
+    order: 7400
+  multiqc_software_versions:
+    order: 7300
   
 table_columns_visible:
   peddy-family_id: False
