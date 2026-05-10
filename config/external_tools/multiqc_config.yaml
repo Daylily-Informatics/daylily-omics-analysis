@@ -36,40 +36,50 @@ extra_fn_clean_trim:
 
 
 module_order:
+  # General / cohort context
   - peddy
+  - peddy_sample_qc
+  - relatedness
+  - somalier
+  # Raw data / sequence inputs
+  - seqfu
   - fastqc
   - fastq_screen
+  - sequence_qc_outputs
+  - kat
+  # Mapping / alignment QC
   - bamtools
-  - bcftools
   - samtools
-  - picard
   - qualimap
   - mosdepth
-  - goleft_indexcov
   - sentieon
-  - somalier
-  - vcftools
-  - kat
-  - custom_content 
-  - sequence_qc_outputs
+  - alignstats_combo
   - alignment_qc_outputs
-  - expansionhunter
+  # Deduplication / coverage QC
+  - picard
+  - norm_cov_evenness_combo
+  # Contamination / sample mix
   - contamination
-  - gatk_contam
   - verifybamid2_panel_comparison
+  - gatk_contam
   - site_mix_contam
   - site_mix_donor
-  - relatedness
+  # SNV / small variant QC
+  - bcftools
   - bcftools_variant_stats
   - rtg_vcfstats
-  - peddy_sample_qc
+  - vcftools
+  - giab_concordance
   - vep_annotation
   - snpeff_annotation
+  # SV / repeat-expansion QC
+  - expansionhunter
   - htd_calls
-  - giab_concordance
-  - norm_cov_evenness_combo
+  # CNV / coverage-shape QC
+  - goleft_indexcov
+  # Other workflow metrics and uncategorized custom content
   - rules_benchmark_data
-  - alignstats_combo
+  - custom_content
   
 table_columns_visible:
   peddy-family_id: False

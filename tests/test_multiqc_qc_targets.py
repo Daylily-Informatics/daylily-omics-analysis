@@ -399,7 +399,43 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert config["sample_names_replace"][r"\.md\.(chr[0-9XYM]+)$"] == r".\1"
 
     module_order = config["module_order"]
-    assert len(module_order) == len(set(module_order))
+    assert module_order == [
+        "peddy",
+        "peddy_sample_qc",
+        "relatedness",
+        "somalier",
+        "seqfu",
+        "fastqc",
+        "fastq_screen",
+        "sequence_qc_outputs",
+        "kat",
+        "bamtools",
+        "samtools",
+        "qualimap",
+        "mosdepth",
+        "sentieon",
+        "alignstats_combo",
+        "alignment_qc_outputs",
+        "picard",
+        "norm_cov_evenness_combo",
+        "contamination",
+        "verifybamid2_panel_comparison",
+        "gatk_contam",
+        "site_mix_contam",
+        "site_mix_donor",
+        "bcftools",
+        "bcftools_variant_stats",
+        "rtg_vcfstats",
+        "vcftools",
+        "giab_concordance",
+        "vep_annotation",
+        "snpeff_annotation",
+        "expansionhunter",
+        "htd_calls",
+        "goleft_indexcov",
+        "rules_benchmark_data",
+        "custom_content",
+    ]
     assert "verifyBAMID" not in module_order
     assert "gatk_contam" in module_order
     assert "verifybamid2_panel_comparison" in module_order
