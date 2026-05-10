@@ -289,6 +289,7 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         """
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
@@ -326,6 +327,7 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         """
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
@@ -363,6 +365,7 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         """
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
@@ -432,6 +435,8 @@ report_header_info:
 
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
         perl -pi -e "s/REGSUB_MRKDUPCOST/$MRKDUP_AVG_MINUTES min, costing \\\$dbill$MRKDUP_AVG_COST/g;" {output.header:q} >> {log:q} 2>&1;
+
+        find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete >> {log:q} 2>&1;
 
         multiqc -f  \
         --config {output.header:q} \

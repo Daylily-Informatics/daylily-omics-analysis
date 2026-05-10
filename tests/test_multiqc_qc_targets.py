@@ -92,6 +92,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_alignment_dedupers()" in text
     assert '--ignore "*gatk_mqc.tsv"' in text
     assert '--ignore "*vb2_mqc.tsv"' in text
+    assert "find {MDIR} -type f \\( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \\) -delete" in text
     assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
