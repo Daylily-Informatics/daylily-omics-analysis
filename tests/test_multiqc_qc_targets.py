@@ -156,6 +156,11 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert '--ignore "*seqfu*"' in text
     assert '--ignore "*relatedness*"' in text
     assert '--ignore "*rtg*vcfstats*"' in text
+    assert "DAY_FINAL_MULTIQC_EXCLUDE_DIR" in text
+    assert "restore_final_multiqc_excludes" in text
+    assert "-name 'seqfu*mqc.tsv'" in text
+    assert "-name 'relatedness*mqc.tsv'" in text
+    assert "-name 'rtg*vcfstats*'" in text
     assert "find {MDIR} -type f \\( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \\) -delete" in text
     assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (

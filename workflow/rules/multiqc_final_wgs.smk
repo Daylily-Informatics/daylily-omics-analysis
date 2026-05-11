@@ -403,6 +403,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         "docker://daylilyinformatics/daylily_multiqc:0.2"
     shell:
         """
+        set -euo pipefail
         mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
         size=$(du -hs results | cut -f1) >> {log:q} 2>&1;
 
@@ -425,6 +426,21 @@ rule multiqc_final_wgs:  # TARGET: the big report
           --output {output.header:q} >> {log:q} 2>&1;
 
         find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete >> {log:q} 2>&1;
+        DAY_FINAL_MULTIQC_EXCLUDE_DIR="$(mktemp -d -p /fsx/scratch dayoa-final-multiqc-excluded.XXXXXX)"
+        restore_final_multiqc_excludes() {{
+          if [[ -d "$DAY_FINAL_MULTIQC_EXCLUDE_DIR" ]]; then
+            find "$DAY_FINAL_MULTIQC_EXCLUDE_DIR" -maxdepth 1 -type f -print0 | while IFS= read -r -d '' excluded_file; do
+              mv -f "$excluded_file" {MDIR}other_reports/
+            done
+            rmdir "$DAY_FINAL_MULTIQC_EXCLUDE_DIR" 2>/dev/null || true
+          fi
+        }}
+        trap restore_final_multiqc_excludes EXIT
+        find {MDIR}other_reports -maxdepth 1 -type f \
+          \( -name 'seqfu*mqc.tsv' -o -name 'relatedness*mqc.tsv' -o -name 'rtg*vcfstats*' \) \
+          -print0 | while IFS= read -r -d '' excluded_file; do
+            mv -f "$excluded_file" "$DAY_FINAL_MULTIQC_EXCLUDE_DIR/"
+          done
 
         multiqc -f  \
         --config {output.header:q} \
