@@ -397,49 +397,32 @@ rule multiqc_final_wgs:  # TARGET: the big report
         cluster_sample="multiqc_final",
         cemail=config["day_contact_email"],
         rtitle=RPT_TITLE,
-        intro=f"{MDIR}reports/multiqc_intro.yaml",
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a.log",
     container:
         "docker://daylilyinformatics/daylily_multiqc:0.2"
     shell:
         """
-        dbill='$';
         mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
-        echo '''
-report_header_info:
-  - Project/Budget: "REGSUB_PROJECT"
-  - Budget @ Runtime: "REGSUB_BUDGET"
-  - Spot Instances: "REGSUB_SPOTINSTANCES"
-  - Spot Costs per hr: "REGSUB_SPOTCOST"
-  - FQ->BAM.sort avg Costs: "REGSUB_TOTALCOST"
-  - BAM mrkdup avg Cost: "REGSUB_MRKDUPCOST"
-  - Results Dir (GB): "REGSUB_TOTALSIZE"
-  ''' > {output.header:q} 2>> {log:q};
-
-        perl -pi -e "s/REGSUB_PROJECT/$DAY_PROJECT/g;"  {output.header:q} >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_BUDGET/\\\$dbill$USED_BUDGET of \\\$dbill$TOTAL_BUDGET spent ( $PERCENT_USED\%)/g;" {output.header:q} >> {log:q} 2>&1;
-
         size=$(du -hs results | cut -f1) >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_TOTALSIZE/$size/g;" {output.header:q} >> {log:q} 2>&1;
 
         source bin/proc_spot_price_logs.sh >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_SPOTCOST/median: \\\$dbill$MEDIAN_SPOT_PRICE  mean: \\\$dbill$AVERAGE_SPOT_PRICE ( avg cost per vcpu,per min: \\\$dbill$VCPU_COST_PER_MIN ) /g;"  {output.header:q} >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_SPOTINSTANCES/ $INSTANCE_TYPES_LINE /g;" {output.header:q} >> {log:q} 2>&1;
-
         source bin/proc_aligner_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_TOTALCOST/$ALNR_SUMMARY_COST/g;" {output.header:q} >> {log:q} 2>&1;
-
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_MRKDUPCOST/$MRKDUP_AVG_MINUTES min, costing \\\$dbill$MRKDUP_AVG_COST/g;" {output.header:q} >> {log:q} 2>&1;
 
         multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
-        python workflow/scripts/build_multiqc_intro.py \
+        python workflow/scripts/build_multiqc_header.py \
           --benchmark-tsv {input.benchmark:q} \
           --samples-tsv config/samples.tsv \
           --multiqc-command "$multiqc_command" \
-          --output {params.intro:q} >> {log:q} 2>&1;
-        cat {params.intro:q} >> {output.header:q};
+          --project-budget "$DAY_PROJECT" \
+          --budget-runtime "\$$USED_BUDGET of \$$TOTAL_BUDGET spent ( $PERCENT_USED% )" \
+          --spot-instances "$INSTANCE_TYPES_LINE" \
+          --spot-costs "median: \$$MEDIAN_SPOT_PRICE  mean: \$$AVERAGE_SPOT_PRICE ( avg cost per vcpu,per min: \$$VCPU_COST_PER_MIN )" \
+          --aligner-costs "$ALNR_SUMMARY_COST" \
+          --mrkdup-cost "$MRKDUP_AVG_MINUTES min, costing \$$MRKDUP_AVG_COST" \
+          --results-size "$size" \
+          --output {output.header:q} >> {log:q} 2>&1;
 
         find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete >> {log:q} 2>&1;
 

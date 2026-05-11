@@ -123,7 +123,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "vep_annotation_mqc.tsv",
         "snpeff_annotation_mqc.tsv",
         "rules_benchmark_data_mqc.tsv",
-        "workflow/scripts/build_multiqc_intro.py",
+        "workflow/scripts/build_multiqc_header.py",
     ):
         assert expected in text
 
