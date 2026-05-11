@@ -36,68 +36,63 @@ extra_fn_clean_trim:
 
 
 module_order:
-  # General / cohort context
-  - peddy
-  - peddy_sample_qc
-  - relatedness
-  - somalier
   # Raw data / sequence inputs
-  - seqfu
   - fastqc
   - fastq_screen
   - sequence_qc_outputs
   - kat
   # Mapping / alignment QC
-  - bamtools
   - samtools
+  - bamtools
   - qualimap
-  - mosdepth
   - sentieon
   - alignstats_combo
   - alignment_qc_outputs
+  - mosdepth
+  - goleft_indexcov
   # Deduplication / coverage QC
   - picard
   - norm_cov_evenness_combo
+  # Sample identity / relatedness QC
+  - peddy
+  - peddy_sample_qc
+  - somalier
+  # SNV / small variant QC
+  - bcftools
+  - bcftools_variant_stats
+  - vcftools
   # Contamination / sample mix
   - contamination
   - verifybamid2_panel_comparison
   - gatk_contam
+  - giab_concordance
   - site_mix_contam
   - site_mix_donor
-  # SNV / small variant QC
-  - bcftools
-  - bcftools_variant_stats
-  - rtg_vcfstats
-  - vcftools
-  - giab_concordance
+  # Annotation QC
+  - vep
   - vep_annotation
   - snpeff_annotation
   # SV / repeat-expansion QC
   - expansionhunter
   - htd_calls
-  # CNV / coverage-shape QC
-  - goleft_indexcov
   # Other workflow metrics and uncategorized custom content
   - rules_benchmark_data
   - custom_content
 
 custom_content:
   order:
-    - peddy_sample_qc
-    - relatedness
-    - seqfu
     - sequence_qc_outputs
     - alignstats_combo
     - alignment_qc_outputs
     - normcovevenness_combo
+    - peddy_sample_qc
+    - bcftools_variant_stats
     - contamination
     - verifybamid2_panel_comparison
     - gatk_contam
+    - giab_concordance
     - site_mix_contam
     - site_mix_donor
-    - bcftools_variant_stats
-    - rtg_vcfstats
-    - giab_concordance
     - vep_annotation
     - expansionhunter
     - rules_benchmark_data
@@ -105,60 +100,54 @@ custom_content:
 report_section_order:
   general_stats:
     order: 10000
-  peddy:
-    order: 9900
-  peddy_sample_qc:
-    order: 9800
-  relatedness:
-    order: 9700
-  somalier:
-    order: 9600
-  seqfu:
-    order: 9500
   fastqc:
-    order: 9400
+    order: 9900
   sequence_qc_outputs:
-    order: 9300
+    order: 9800
   samtools:
-    order: 9200
-  mosdepth:
-    order: 9100
+    order: 9700
   alignstats_combo:
-    order: 9000
+    order: 9600
   alignment_qc_outputs:
-    order: 8900
-  normcovevenness_combo:
-    order: 8800
-  contamination:
-    order: 8700
-  verifybamid2_panel_comparison:
-    order: 8600
-  gatk_contam:
-    order: 8500
-  site_mix_contam:
-    order: 8400
-  site_mix_donor:
-    order: 8300
-  bcftools:
-    order: 8200
-  bcftools_variant_stats:
-    order: 8100
-  rtg_vcfstats:
-    order: 8000
-  giab_concordance:
-    order: 7900
-  vep:
-    order: 7800
-  vep_annotation:
-    order: 7700
-  expansionhunter:
-    order: 7600
+    order: 9500
+  mosdepth:
+    order: 9400
   goleft_indexcov:
-    order: 7500
+    order: 9300
+  normcovevenness_combo:
+    order: 9200
+  peddy:
+    order: 9100
+  peddy_sample_qc:
+    order: 9000
+  somalier:
+    order: 8900
+  bcftools:
+    order: 8800
+  bcftools_variant_stats:
+    order: 8700
+  contamination:
+    order: 8600
+  verifybamid2_panel_comparison:
+    order: 8500
+  gatk_contam:
+    order: 8400
+  giab_concordance:
+    order: 8300
+  site_mix_contam:
+    order: 8200
+  site_mix_donor:
+    order: 8100
+  vep:
+    order: 8000
+  vep_annotation:
+    order: 7900
+  expansionhunter:
+    order: 7800
   rules_benchmark_data:
-    order: 7400
+    order: 7700
   multiqc_software_versions:
-    order: 7300
+    order: 7600
   
 table_columns_visible:
   peddy-family_id: False
@@ -263,14 +252,6 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'expansionhunter'
-  seqfu:
-    id: 'seqfu'
-    section_name: 'SeqFu FASTQ Inputs'
-    description: 'SeqFu FASTQ statistics files included in this batch'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'seqfu'
   sequence_qc_outputs:
     id: 'sequence_qc_outputs'
     section_name: 'Sequence QC Output Inventory'
@@ -327,14 +308,6 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'site_mix_donor'
-  relatedness:
-    id: 'relatedness'
-    section_name: 'Batch Relatedness'
-    description: 'Somalier relatedness classification summary'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'relatedness'
   bcftools_variant_stats:
     id: 'bcftools_variant_stats'
     section_name: 'bcftools Variant Stats'
@@ -343,14 +316,6 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'bcftools_variant_stats'
-  rtg_vcfstats:
-    id: 'rtg_vcfstats'
-    section_name: 'RTG VCF Stats'
-    description: 'RTG vcfstats outputs included in this batch'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'rtg_vcfstats'
   peddy_sample_qc:
     id: 'peddy_sample_qc'
     section_name: 'Peddy Sample QC'
@@ -416,8 +381,6 @@ sp:
     fn: "other_reports/alignstats_combo_mqc.tsv"
   expansionhunter:
     fn: "other_reports/expansionhunter_mqc.tsv"
-  seqfu:
-    fn: "other_reports/seqfu_mqc.tsv"
   sequence_qc_outputs:
     fn: "other_reports/sequence_qc_outputs_mqc.tsv"
   alignment_qc_outputs:
@@ -432,12 +395,8 @@ sp:
     fn: "other_reports/site_mix_contam_mqc.tsv"
   site_mix_donor:
     fn: "other_reports/site_mix_donor_mqc.tsv"
-  relatedness:
-    fn: "other_reports/relatedness_mqc.tsv"
   bcftools_variant_stats:
     fn: "other_reports/bcftools_variant_stats_mqc.tsv"
-  rtg_vcfstats:
-    fn: "other_reports/rtg_vcfstats_mqc.tsv"
   peddy_sample_qc:
     fn: "other_reports/peddy_sample_qc_mqc.tsv"
   vep_annotation:
