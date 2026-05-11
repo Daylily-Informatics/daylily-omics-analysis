@@ -153,6 +153,9 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "ddup=contamination_ddups" in text[gatk_start : gatk_start + 220]
     assert '--ignore "*gatk_mqc.tsv"' in text
     assert '--ignore "*vb2_mqc.tsv"' in text
+    assert '--ignore "*seqfu_mqc.tsv"' in text
+    assert '--ignore "*relatedness_mqc.tsv"' in text
+    assert '--ignore "*rtg_vcfstats_mqc.tsv"' in text
     assert "find {MDIR} -type f \\( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \\) -delete" in text
     assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (
