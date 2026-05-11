@@ -189,9 +189,13 @@ def test_final_multiqc_custom_data_paths_match_outputs() -> None:
     sp = config["sp"]
 
     assert "verifybamid" in config["exclude_modules"]
-    assert sp["custom_content"]["fn"] == (
-        "__dayoa_disable_generic_custom_content_auto_discovery__"
-    )
+    assert "custom_content" not in sp
+    assert config["custom_content"]["path_filters"] == ["other_reports/*_mqc.tsv"]
+    assert config["custom_content"]["path_filters_exclude"] == [
+        "other_reports/seqfu_mqc.tsv",
+        "other_reports/relatedness_mqc.tsv",
+        "other_reports/rtg_vcfstats_mqc.tsv",
+    ]
     assert sp["norm_cov_evenness_combo"]["fn"] == (
         "other_reports/normcovevenness_combo_mqc.tsv"
     )
