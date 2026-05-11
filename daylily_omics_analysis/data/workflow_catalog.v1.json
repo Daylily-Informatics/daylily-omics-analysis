@@ -132,13 +132,13 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dppl"
+            "dmd"
           ],
           "required": true,
           "render_as": "config_list",
           "choices": [
             {
-              "value": "dppl",
+              "value": "dmd",
               "label": "Doppelmark"
             }
           ]
@@ -204,7 +204,7 @@
         "produce_snv_concordances",
         "produce_manta",
         "produce_tiddit",
-        "produce_dysgu",
+        "produce_duphold",
         "produce_multiqc_final_wgs"
       ],
       "options": [
@@ -269,13 +269,13 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dppl"
+            "dmd"
           ],
           "required": true,
           "render_as": "config_list",
           "choices": [
             {
-              "value": "dppl",
+              "value": "dmd",
               "label": "Doppelmark"
             }
           ]
@@ -311,6 +311,34 @@
             {
               "value": "lfq2",
               "label": "LoFreq2"
+            }
+          ]
+        },
+        {
+          "option_id": "sv_callers",
+          "label": "SV callers",
+          "description": "Structural variant calling methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "manta",
+            "tiddit"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "manta",
+              "label": "Manta"
+            },
+            {
+              "value": "tiddit",
+              "label": "TIDDIT"
+            }
+          ],
+          "retired_values": [
+            {
+              "value": "dysgu",
+              "message": "Dysgu is retired from active workflow rules. Supported SV callers: manta, tiddit."
             }
           ]
         }
@@ -404,7 +432,7 @@
         "produce_snv_concordances",
         "produce_manta",
         "produce_tiddit",
-        "produce_dysgu",
+        "produce_duphold",
         "produce_kat",
         "produce_multiqc_final_wgs"
       ],
@@ -471,13 +499,13 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dppl"
+            "dmd"
           ],
           "required": true,
           "render_as": "config_list",
           "choices": [
             {
-              "value": "dppl",
+              "value": "dmd",
               "label": "Doppelmark"
             }
           ]
@@ -516,6 +544,34 @@
             {
               "value": "lfq2",
               "label": "LoFreq2"
+            }
+          ]
+        },
+        {
+          "option_id": "sv_callers",
+          "label": "SV callers",
+          "description": "Structural variant calling methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "manta",
+            "tiddit"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "manta",
+              "label": "Manta"
+            },
+            {
+              "value": "tiddit",
+              "label": "TIDDIT"
+            }
+          ],
+          "retired_values": [
+            {
+              "value": "dysgu",
+              "message": "Dysgu is retired from active workflow rules. Supported SV callers: manta, tiddit."
             }
           ]
         }

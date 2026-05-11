@@ -37,6 +37,15 @@ SUPPORTED_HTD_CALLERS = (
     "genetocn",
 )
 
+SUPPORTED_SV_CALLERS = (
+    "manta",
+    "tiddit",
+)
+
+RETIRED_SV_CALLERS = {
+    "dysgu",
+}
+
 
 def _supporting_file_name(entry):
     if isinstance(entry, dict):
@@ -171,6 +180,33 @@ def htd_callers_selected(*, require_non_empty=False):
 HTD_CALLERS = htd_callers_selected()
 
 
+def sv_callers_selected(*, require_non_empty=False):
+    callers = sorted(set(_as_config_list(config.get("sv_callers", []))))
+    retired = sorted(set(callers) & RETIRED_SV_CALLERS)
+    if retired:
+        raise WorkflowError(
+            "Retired sv_callers value(s): "
+            + ", ".join(retired)
+            + ". Dysgu is retired from active workflow rules. "
+            + "Supported sv_callers values: "
+            + ", ".join(SUPPORTED_SV_CALLERS)
+        )
+    invalid = sorted(set(callers) - set(SUPPORTED_SV_CALLERS))
+    if invalid:
+        raise WorkflowError(
+            "Unsupported sv_callers value(s): "
+            + ", ".join(invalid)
+            + ". Supported values: "
+            + ", ".join(SUPPORTED_SV_CALLERS)
+        )
+    if require_non_empty and not callers:
+        raise WorkflowError(
+            "The requested SV target requires a non-empty --config sv_callers=[...]. "
+            "Supported values: " + ", ".join(SUPPORTED_SV_CALLERS)
+        )
+    return callers
+
+
 def qc_tool_enabled(tool, *, long_running=False, default=True):
     """Return whether a QC integration belongs in routine staged MultiQC targets."""
     cfg = config.get("multiqc_qc", {})
@@ -187,19 +223,11 @@ def qc_tool_enabled(tool, *, long_running=False, default=True):
 
 
 def qc_alignment_dedupers():
-    cfg = config.get("multiqc_qc", {})
-    ddups = set(DDUP)
-    if _as_boolish(cfg.get("include_no_dedup_alignment_qc", True)):
-        ddups.add("na")
-    return sorted(ddups)
+    return sorted(DDUP)
 
 
 def qc_contamination_dedupers():
-    cfg = config.get("multiqc_qc", {})
-    ddups = set(DDUP)
-    if _as_boolish(cfg.get("include_no_dedup_contamination_qc", False)):
-        ddups.add("na")
-    return sorted(ddups)
+    return sorted(DDUP)
 
 
 BOOTSTRAP_UNIT_COLUMNS = [
@@ -594,15 +622,14 @@ os.system(
 # Handle dedupers
 # Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), na (no dedup / skip)
 # Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
-# If no dedupers specified, defaults to ['na'] (no dedup).
+# No-dedup is explicit-only: request dedupers=['na'] or target dedup_none.
 DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
 DDUP_VALID_CODES = {"dmd", "smd", "spmd", "na"}
 
 DDUP = []
 if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
-    DDUP = ["na"]
     os.system(
-        f'''colr "...INFO: No dedupers set in config. Defaulting to na (no dedup)." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        f'''colr "...INFO: No dedupers set in config. DDUP remains empty; use dedupers=['na'] or dedup_none for no-dedup." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
     )
 else:
     _raw_ddup = sorted(set(config["dedupers"]))
@@ -634,12 +661,12 @@ if not _auto_dedup_codes:
             _auto_dedup_codes.add(_DEDUP_TARGET_MAP[_arg])
 
 if _auto_dedup_codes:
-    _had_only_default = (set(DDUP) == {"na"}) and (
+    _had_no_configured_deduper = (set(DDUP) == set()) and (
         'dedupers' not in config
         or config.get('dedupers') is None
         or len(config.get('dedupers', [])) == 0
     )
-    if _had_only_default:
+    if _had_no_configured_deduper:
         DDUP = sorted(_auto_dedup_codes)
     else:
         DDUP = sorted(set(DDUP) | _auto_dedup_codes)
@@ -740,13 +767,20 @@ else:
     )
 
 sv_CALLERS = []
+_SV_TARGETS_REQUIRING_CALLERS = {"produce_duphold", "produce_all_svs"}
+_sv_target_requires_callers = bool(_requested_targets() & _SV_TARGETS_REQUIRING_CALLERS)
 if 'sv_callers' not in config:
+    if _sv_target_requires_callers:
+        raise WorkflowError(
+            "The requested SV annotation target requires --config sv_callers=[...]. "
+            "Supported values: " + ", ".join(SUPPORTED_SV_CALLERS)
+        )
 
-     os.system(
+    os.system(
         f'''colr "... WARNING: No sv_callers set in the config." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
-     )
+    )
 else:
-    sv_CALLERS = sorted(set([] if 'sv_callers' not in config or config['sv_callers'] == None else config["sv_callers"]))
+    sv_CALLERS = sv_callers_selected(require_non_empty=_sv_target_requires_callers)
     ## PRINT INFO
     os.system(
         f"""colr 'SV Callers:{sv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""

@@ -93,7 +93,7 @@ Common flags passed through `dy-r`:
 | `produce_cgt7p_vcf` | Complete Genomics/MGI Sentieon DNAscope path using `sentcg` and `cgt7p`. |
 | `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid Sentieon workflow. |
 | `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
-| `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant callers. |
+| `produce_manta`, `produce_tiddit`, `produce_duphold` | Structural variant callers and SV annotation. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
 | `produce_verifybamid2_panel_comparison` | Runs selected VerifyBamID2 SNP panels from `--config verifybamid2_panels=[...]` and writes a comparison TSV. |
 | `produce_altair_validation_artifacts` | Builds the Altair audit package from controlled RR/BAR manifests, GIAB concordance, full-RR coverage/callability, and boundary checks. |

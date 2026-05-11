@@ -17,7 +17,7 @@ valid_biome: AWSPC
 
 # ###### Tool Selection CONFIG ----------------------------------------
 
-# these may be set on the command line as --config genome_build=hg38 aligners=['bwa2a','sent','strobe']  dedupers=['dppl']  snv_callers=['oct','clair3','deep','sentd','lfq2','strelka2'] sv_callers=['manta','tiddit','dysgu']
+# these may be set on the command line as --config genome_build=hg38 aligners=['bwa2a','sent','strobe']  dedupers=['dmd']  snv_callers=['oct','clair3','deep','sentd','lfq2','strelka2'] sv_callers=['manta','tiddit']
 # and will override these defaults
 
 # Or you can set them here
@@ -27,7 +27,7 @@ valid_biome: AWSPC
 #    - strobe
 
 #dedupers:
-#    - dppl
+#    - dmd
 
 #snv_callers:
 #    - deep
@@ -42,7 +42,6 @@ valid_biome: AWSPC
 #sv_callers:
 #    - tiddit
 #    - manta
-#    - dysgu
 #    - svaba # EXPERIMENTAL
 
 
@@ -325,17 +324,6 @@ sent_dedup:
     optical_distance: 2500
     constraint: " "
 
-dysgu:
-    threads: 7
-    env_yaml: "../envs/dysgu_sv_v0.2.yaml"
-    min_sv_size: 30
-    ld_preload: "  "
-    partition: "i8"
-
-dysgu_sort_index:
-    threads: 7
-    partition: "i8"
-
 no_dedup:
     env_yaml: "../envs/samtools_v0.1.yaml"
 
@@ -343,8 +331,6 @@ multiqc_qc:
     enable_long_running: false
     enable_tools: []
     disable_tools: []
-    include_no_dedup_alignment_qc: true
-    include_no_dedup_contamination_qc: false
     runtime_gate_minutes: 45
 
 htd_callers: []

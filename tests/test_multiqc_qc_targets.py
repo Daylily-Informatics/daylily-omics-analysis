@@ -40,8 +40,8 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert gate["enable_long_running"] is False
         assert gate["enable_tools"] == []
         assert gate["disable_tools"] == []
-        assert gate["include_no_dedup_alignment_qc"] is True
-        assert gate["include_no_dedup_contamination_qc"] is False
+        assert "include_no_dedup_alignment_qc" not in gate
+        assert "include_no_dedup_contamination_qc" not in gate
         assert gate["runtime_gate_minutes"] == 45
         assert config["no_dedup"]["env_yaml"] == "../envs/samtools_v0.1.yaml"
         assert "relatedness" in config
@@ -60,11 +60,57 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "def qc_contamination_dedupers" in common
+    assert "include_no_dedup_alignment_qc" not in common
+    assert "include_no_dedup_contamination_qc" not in common
+    assert "def qc_alignment_dedupers():\n    return sorted(DDUP)" in common
+    assert "def qc_contamination_dedupers():\n    return sorted(DDUP)" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
     assert "def get_vepchrm" in common
     assert "def get_vep_allowed_contigs" in common
+
+
+def _resolved_ddup(config: dict, *, argv: list[str] | None = None, auto: str = "") -> list[str]:
+    common = _read("workflow/rules/common.smk")
+    block = common[
+        common.index("# Handle dedupers") : common.index("snv_CALLERS = []")
+    ]
+    fake_environ = {"_DY_AUTO_DEDUPERS": auto} if auto else {}
+    fake_argv = ["snakemake", *(argv or [])]
+
+    class FakeOS:
+        environ = fake_environ
+
+        @staticmethod
+        def system(_cmd: str) -> int:
+            return 0
+
+    class FakeSys:
+        argv = fake_argv
+
+    namespace = {"config": config, "os": FakeOS, "sys": FakeSys}
+    exec(block, namespace)
+    return namespace["DDUP"]
+
+
+def test_na_deduper_is_explicit_only() -> None:
+    common = _read("workflow/rules/common.smk")
+
+    assert 'DDUP = ["na"]' not in common
+    assert "Defaulting to na" not in common
+    assert 'DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}' in common
+    assert 'DDUP_VALID_CODES = {"dmd", "smd", "spmd", "na"}' in common
+    assert '"dedup_none": "na"' in common
+
+    assert _resolved_ddup({"dedupers": ["dmd"]}) == ["dmd"]
+    assert _resolved_ddup({}) == []
+    assert _resolved_ddup({"dedupers": []}) == []
+    assert _resolved_ddup({"dedupers": ["na"]}) == ["na"]
+    assert _resolved_ddup({}, argv=["dedup_none"]) == ["na"]
+    assert _resolved_ddup({}, auto="na") == ["na"]
+    assert _resolved_ddup({"dedupers": ["dppl"]}) == ["dmd"]
+    assert _resolved_ddup({"dedupers": ["dppl_sent"]}) == ["smd"]
 
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:

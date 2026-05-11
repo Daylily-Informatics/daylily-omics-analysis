@@ -10,8 +10,8 @@ rule duphold:
     """https://github.com/brentp/duphold"""
     """     Static binary release https://github.com/brentp/duphold/releases/tag/v0.2.3"""
     input:
-        bam=(MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam"),
-        bai=(MDIR + "{sample}/align/{alnr}/{sample}.{alnr}.mrkdup.sort.bam.bai"),
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
         snv_vcf=(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/{sample}.{alnr}.{ddup}.{snv_caller}.snv.sort.vcf.gz"
@@ -43,13 +43,12 @@ rule duphold:
     params:
         duphold_bin="resources/duphold/duphold",
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        ld_p=config['dysgu']['ld_preload'] if 'ld_preload' not in config['dysgu'] else config['dysgu']['ld_preload'],
         cluster_sample=ret_sample_sv,
     shell:
         """
         ( (rm -rf {output}) || echo rmFailedDUPHOLD;
         mkdir -p $( dirname {output.vcf} ) ;
-        {params.duphold_bin} -s {input.snv_vcf} -t {threads} -v {input.sv_vcf}  -b {input.bam} -f {params.huref} -o {output.vcf} ;
+        {params.duphold_bin} -s {input.snv_vcf} -t {threads} -v {input.sv_vcf}  -b {input.cram} -f {params.huref} -o {output.vcf} ;
         ls {output}; ) > {log};
         """
 
@@ -95,10 +94,11 @@ rule duphold_sort_index:
 
 
 localrules:
+    produce_duphold,
     produce_all_svs,
 
 
-rule produce_all_svs:   # TARGET: gather cnvs calls and duphold
+rule produce_duphold:   # TARGET: gather cnvs calls and duphold
     input:
         [
             MDIR + f"{sample}/align/{alnr}/{ddup}/sv/{s_v_caller}/{sample}.{alnr}.{snv_caller}.{s_v_caller}-d.sort.vcf.gz.tbi"
@@ -108,10 +108,22 @@ rule produce_all_svs:   # TARGET: gather cnvs calls and duphold
             for alnr, snv_caller in valid_snv_alnr_pairs(ALIGNERS, snv_CALLERS)
         ],
     output:
-        MDIR + "logs/all_svVCF_dupheld.done",
+        MDIR + "logs/duphold.done",
     threads: 1
     conda:
         config["vanilla"]["env_yaml"]
     shell:
         "echo {input}; "
+        "touch {output};  "
+
+
+rule produce_all_svs:   # TARGET: compatibility alias for produce_duphold
+    input:
+        MDIR + "logs/duphold.done",
+    output:
+        MDIR + "logs/all_svVCF_dupheld.done",
+    threads: 1
+    conda:
+        config["vanilla"]["env_yaml"]
+    shell:
         "touch {output};  "

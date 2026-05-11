@@ -97,7 +97,7 @@ Common code selectors:
 | Selector | Examples |
 | --- | --- |
 | `aligners` | `sent`, `sentcg`, `bwa2a`, `strobe` |
-| `dedupers` | `smd`, `dmd`, `spmd`, `na` |
+| `dedupers` | `smd`, `dmd`, `spmd`, `na`; `na` is explicit-only no-dedup |
 | `snv_callers` | `sentd`, `cgt7p`, `deep19`, `oct`, `clair3`, `lfq2` |
 
 Use target-specific docs before mixing selectors; not every caller is valid for every aligner.
