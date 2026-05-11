@@ -212,6 +212,16 @@ def test_final_multiqc_custom_data_paths_match_outputs() -> None:
         assert sp[custom_id]["fn"] == path
 
 
+def test_alignstats_compile_uses_configured_deduper_inputs_only() -> None:
+    text = _read("workflow/rules/alignstats_compile.smk")
+    compile_rule = text[text.index("rule alignstats_compile:") :]
+
+    assert "ddup=qc_alignment_dedupers()" in compile_rule
+    assert "alignstats=expand(" in compile_rule
+    assert "{input.alignstats:q}" in compile_rule
+    assert "find {MDIR}*/align/*/*/alignqc/alignstats" not in compile_rule
+
+
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     fastp = _read("workflow/rules/fastp.smk")
     fastv = _read("workflow/rules/fastv.smk")
