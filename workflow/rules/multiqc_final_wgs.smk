@@ -410,7 +410,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         source bin/proc_aligner_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN >> {log:q} 2>&1;
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
 
-        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*seqfu_mqc.tsv' --ignore '*relatedness_mqc.tsv' --ignore '*rtg_vcfstats_mqc.tsv' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
+        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*seqfu*' --ignore '*relatedness*' --ignore '*rtg*vcfstats*' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
         python workflow/scripts/build_multiqc_header.py \
           --benchmark-tsv {input.benchmark:q} \
           --samples-tsv config/samples.tsv \
@@ -432,9 +432,9 @@ rule multiqc_final_wgs:  # TARGET: the big report
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*gatk_mqc.tsv" \
         --ignore "*vb2_mqc.tsv" \
-        --ignore "*seqfu_mqc.tsv" \
-        --ignore "*relatedness_mqc.tsv" \
-        --ignore "*rtg_vcfstats_mqc.tsv" \
+        --ignore "*seqfu*" \
+        --ignore "*relatedness*" \
+        --ignore "*rtg*vcfstats*" \
         --ignore "*/norm_cov_eveness/*" \
         --ignore "*/other_reports/logs/*" \
         --ignore "*sort_metrics/*" \
