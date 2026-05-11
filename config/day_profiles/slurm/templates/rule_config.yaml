@@ -125,6 +125,23 @@ bclconvert:
     threads: 16
     partition: "i192,i192mem"
 
+altair_validation:
+    rr_manifest: ""
+    bar_manifest: ""
+    giab_concordance: ""
+    boundary_verification: ""
+    report_template_docx: ""
+    report_docx: ""
+    coverage:
+        full_rr_bed: ""
+        min_depth: 20
+        min_mapq: 20
+        depth_bins: "0,10,20"
+        callable_definition: "mosdepth DP>=20x over full Altair_RR_v1"
+    boundary:
+        released_vcfs: []
+    output_dir: "validation_artifacts"
+
 bcl2fq_by_lane:
     threads: 16
     partition: "i192,i192mem"

@@ -1,0 +1,3 @@
+variant_class	tp	fp	fn	sensitivity	ppv	sample_count	source_concordance_rows	status	reason
+SNV						0	0	HOLD	missing_giab_bar_metrics:HG001,HG002,HG003,HG004,HG005,HG006,HG007
+small_indel_le50						0	0	HOLD	missing_giab_bar_metrics:HG001,HG002,HG003,HG004,HG005,HG006,HG007

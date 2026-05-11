@@ -96,6 +96,7 @@ Common flags passed through `dy-r`:
 | `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant callers. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
 | `produce_verifybamid2_panel_comparison` | Runs selected VerifyBamID2 SNP panels from `--config verifybamid2_panels=[...]` and writes a comparison TSV. |
+| `produce_altair_validation_artifacts` | Builds the Altair audit package from controlled RR/BAR manifests, GIAB concordance, full-RR coverage/callability, and boundary checks. |
 | `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
 | `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
 | `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
@@ -142,6 +143,7 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 | [`docs/ops/dycli.md`](docs/ops/dycli.md) | CLI command behavior and monitoring. |
 | [`docs/ops/config.md`](docs/ops/config.md) | Profiles, config precedence, sample/unit schema notes. |
 | [`docs/ops/tests.md`](docs/ops/tests.md) | Local validation commands. |
+| [`docs/ops/altair_validation.md`](docs/ops/altair_validation.md) | Altair RR/BAR semantics, chrX policy, artifact manifests, status gates, and reproduction commands. |
 | [`docs/ops/multiqc_qc_targets.md`](docs/ops/multiqc_qc_targets.md) | Staged MultiQC targets, runtime gating, and routine vs optional QC policy. |
 | [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md) | Code-sourced catalog of Daylily tool integrations, evidence, outputs, and tests. |
 | [`docs/ops/dir_and_file_scheme.md`](docs/ops/dir_and_file_scheme.md) | Current result layout and naming conventions. |

@@ -317,6 +317,68 @@
       ]
     },
     {
+      "workflow_id": "altair_validation_package",
+      "display_name": "Altair Validation Package",
+      "description": "Build audit-ready Altair validation artifacts from controlled RR/BAR manifests, GIAB concordance, full-RR coverage/callability, and released VCF boundary evidence.",
+      "supported_genome_builds": [
+        "hg38"
+      ],
+      "default_genome_build": "hg38",
+      "supported_execution_profiles": [
+        "slurm",
+        "local"
+      ],
+      "default_execution_profile": "slurm",
+      "required_inputs": [
+        {
+          "input_id": "workset_manifest",
+          "label": "Workset manifest",
+          "description": "GIAB validation workset manifest staged into samples.tsv and units.tsv before launch.",
+          "required": true
+        },
+        {
+          "input_id": "altair_validation_config",
+          "label": "Altair validation config",
+          "description": "Profile or --config values for rr_manifest, bar_manifest, giab_concordance, coverage.full_rr_bed, and boundary evidence.",
+          "required": true
+        }
+      ],
+      "targets": [
+        "produce_altair_validation_artifacts"
+      ],
+      "options": [
+        {
+          "option_id": "print_commands",
+          "label": "Print shell commands",
+          "description": "Include -p so Snakemake prints the composed shell commands.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-p"
+        },
+        {
+          "option_id": "keep_going",
+          "label": "Keep going on failure",
+          "description": "Include -k so independent jobs continue when a rule fails.",
+          "type": "boolean",
+          "default": true,
+          "render_as": "flag",
+          "flag": "-k"
+        },
+        {
+          "option_id": "jobs",
+          "label": "Parallel jobs",
+          "description": "Maximum active jobs passed to dy-r.",
+          "type": "integer",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 500,
+          "render_as": "arg",
+          "flag": "-j"
+        }
+      ]
+    },
+    {
       "workflow_id": "germline_wgs_kitchensink",
       "display_name": "Germline WGS Kitchensink",
       "description": "Broad germline WGS run with multiple aligners, SNV callers, SV callers, KAT, MultiQC, and alignment statistics.",
