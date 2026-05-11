@@ -186,8 +186,8 @@ def _validate_benchmark_columns(path: Path, fieldnames: Sequence[str] | None) ->
 
 def _parse_task_cost(value: str, path: Path, line_number: int) -> Decimal:
     raw = value.strip()
-    if not raw:
-        raise ValueError(f"Benchmark row {line_number} has empty task_cost: {path}")
+    if not raw or raw.upper() in {"NA", "N/A", "NONE"}:
+        return Decimal("0")
     try:
         cost = Decimal(raw)
     except InvalidOperation as exc:

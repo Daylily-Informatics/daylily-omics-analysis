@@ -19,6 +19,8 @@ def _sequence_qc_native_inputs(wildcards):
         paths.extend(
             expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SAMPS)
         )
+    if qc_tool_enabled("seqfu"):
+        paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
     if qc_tool_enabled("kat", long_running=True):
         paths.extend(expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SAMPS))
     if qc_tool_enabled("fastv", long_running=True):
@@ -55,6 +57,8 @@ def _alignment_component_inputs(wildcards):
                 MDIR + "other_reports/site_mix_donor_mqc.tsv",
             ]
         )
+    if qc_tool_enabled("relatedness"):
+        paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
     return paths
 
 
@@ -411,7 +415,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         source bin/proc_aligner_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN >> {log:q} 2>&1;
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
 
-        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*seqfu*' --ignore '*relatedness*' --ignore '*rtg*vcfstats*' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
+        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*rtg*vcfstats*' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
         python workflow/scripts/build_multiqc_header.py \
           --benchmark-tsv {input.benchmark:q} \
           --samples-tsv config/samples.tsv \
@@ -437,7 +441,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         }}
         trap restore_final_multiqc_excludes EXIT
         find {MDIR}other_reports -maxdepth 1 -type f \
-          \( -name 'seqfu*mqc.tsv' -o -name 'relatedness*mqc.tsv' -o -name 'rtg*vcfstats*' \) \
+          \( -name 'rtg*vcfstats*' \) \
           -print0 | while IFS= read -r -d '' excluded_file; do
             mv -f "$excluded_file" "$DAY_FINAL_MULTIQC_EXCLUDE_DIR/"
           done
@@ -448,8 +452,6 @@ rule multiqc_final_wgs:  # TARGET: the big report
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*gatk_mqc.tsv" \
         --ignore "*vb2_mqc.tsv" \
-        --ignore "*seqfu*" \
-        --ignore "*relatedness*" \
         --ignore "*rtg*vcfstats*" \
         --ignore "*/norm_cov_eveness/*" \
         --ignore "*/other_reports/logs/*" \
