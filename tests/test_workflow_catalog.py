@@ -22,8 +22,17 @@ def test_catalog_exposes_expected_workflows() -> None:
         "test_help",
         "germline_wgs_snv",
         "germline_wgs_snv_sv",
+        "altair_validation_package",
         "germline_wgs_kitchensink",
     ]
+    targets_by_workflow = {
+        workflow["workflow_id"]: workflow["targets"] for workflow in catalog["workflows"]
+    }
+    assert "produce_dysgu" not in {
+        target for targets in targets_by_workflow.values() for target in targets
+    }
+    assert "produce_duphold" in targets_by_workflow["germline_wgs_snv_sv"]
+    assert "produce_duphold" in targets_by_workflow["germline_wgs_kitchensink"]
 
 
 def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
@@ -34,8 +43,9 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
         options={
             "jobs": 24,
             "aligners": ["strobe", "bwa2a", "sent"],
-            "dedupers": ["dppl"],
+            "dedupers": ["dmd"],
             "snv_callers": ["oct", "sentd", "deep19"],
+            "sv_callers": ["manta", "tiddit"],
             "print_commands": True,
             "keep_going": True,
         },
@@ -49,14 +59,17 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
         "produce_snv_concordances",
         "produce_manta",
         "produce_tiddit",
-        "produce_dysgu",
+        "produce_duphold",
         "produce_kat",
         "produce_multiqc_final_wgs",
     ]
+    assert "produce_dysgu" not in preview["summary"]["targets"]
     assert preview["argv"][:3] == ["dy-r", "produce_alignstats", "produce_snv_concordances"]
     assert "-j" in preview["argv"]
     assert "genome_build=hg38" in preview["argv"]
     assert "aligners=['strobe','bwa2a','sent']" in preview["argv"]
+    assert "dedupers=['dmd']" in preview["argv"]
+    assert "sv_callers=['manta','tiddit']" in preview["argv"]
     assert preview["shell_preview"].startswith("source dyoainit && dy-a slurm hg38 && dy-r ")
 
 
@@ -71,6 +84,23 @@ def test_render_workflow_command_rejects_missing_required_input() -> None:
 
     assert preview["valid"] is False
     assert "Workset manifest is required" in preview["validation_errors"][0]
+    assert preview["argv"] == []
+
+
+def test_render_workflow_command_rejects_retired_dysgu() -> None:
+    preview = render_workflow_command(
+        workflow_id="germline_wgs_snv_sv",
+        genome_build="hg38",
+        execution_profile="slurm",
+        options={"sv_callers": ["dysgu"]},
+        input_context={"provided_inputs": ["workset_manifest"], "sample_count": 1},
+    )
+
+    assert preview["valid"] is False
+    assert (
+        "Dysgu is retired from active workflow rules. Supported SV callers: manta, tiddit."
+        in preview["validation_errors"]
+    )
     assert preview["argv"] == []
 
 

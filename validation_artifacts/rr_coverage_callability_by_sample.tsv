@@ -1,0 +1,1 @@
+sample_id	run_id	library_id	rr_bed_name	rr_bed_sha256	rr_total_bases	median_rr_depth	mean_rr_depth	pct_rr_bases_ge_10x	pct_rr_bases_ge_20x	callable_fraction	callable_definition	coverage_tool	coverage_tool_version	status	reason

@@ -226,10 +226,16 @@ def _normalize_option_value(option: dict[str, Any], raw_value: Any) -> Any:
             raise WorkflowCatalogError(f"{label} must be a list of values.")
         normalized_values: list[str] = []
         allowed = {str(choice["value"]) for choice in list(option.get("choices") or [])}
+        retired = {
+            str(choice["value"]): str(choice.get("message") or f"{label} value is retired.")
+            for choice in list(option.get("retired_values") or [])
+        }
         for item in values:
             normalized = str(item or "").strip()
             if not normalized:
                 continue
+            if normalized in retired:
+                raise WorkflowCatalogError(retired[normalized])
             if normalized not in allowed:
                 raise WorkflowCatalogError(f"{label} contains unsupported value '{normalized}'.")
             if normalized not in normalized_values:

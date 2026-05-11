@@ -1,0 +1,15 @@
+sample_id	variant_class	tp	fp	fn	sensitivity	ppv	denominator_bed_name	denominator_bed_sha256	source_concordance_rows	status	reason
+HG001	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG001	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG002	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG002	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG003	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG003	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG004	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG004	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG005	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG005	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG006	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG006	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG007	SNV						NA	NA	0	HOLD	missing_giab_bar_metrics
+HG007	small_indel_le50						NA	NA	0	HOLD	missing_giab_bar_metrics

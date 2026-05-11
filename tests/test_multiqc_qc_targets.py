@@ -40,8 +40,8 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert gate["enable_long_running"] is False
         assert gate["enable_tools"] == []
         assert gate["disable_tools"] == []
-        assert gate["include_no_dedup_alignment_qc"] is True
-        assert gate["include_no_dedup_contamination_qc"] is False
+        assert "include_no_dedup_alignment_qc" not in gate
+        assert "include_no_dedup_contamination_qc" not in gate
         assert gate["runtime_gate_minutes"] == 45
         assert config["no_dedup"]["env_yaml"] == "../envs/samtools_v0.1.yaml"
         assert "relatedness" in config
@@ -60,11 +60,57 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "def qc_contamination_dedupers" in common
+    assert "include_no_dedup_alignment_qc" not in common
+    assert "include_no_dedup_contamination_qc" not in common
+    assert "def qc_alignment_dedupers():\n    return sorted(DDUP)" in common
+    assert "def qc_contamination_dedupers():\n    return sorted(DDUP)" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
     assert "def get_vepchrm" in common
     assert "def get_vep_allowed_contigs" in common
+
+
+def _resolved_ddup(config: dict, *, argv: list[str] | None = None, auto: str = "") -> list[str]:
+    common = _read("workflow/rules/common.smk")
+    block = common[
+        common.index("# Handle dedupers") : common.index("snv_CALLERS = []")
+    ]
+    fake_environ = {"_DY_AUTO_DEDUPERS": auto} if auto else {}
+    fake_argv = ["snakemake", *(argv or [])]
+
+    class FakeOS:
+        environ = fake_environ
+
+        @staticmethod
+        def system(_cmd: str) -> int:
+            return 0
+
+    class FakeSys:
+        argv = fake_argv
+
+    namespace = {"config": config, "os": FakeOS, "sys": FakeSys}
+    exec(block, namespace)
+    return namespace["DDUP"]
+
+
+def test_na_deduper_is_explicit_only() -> None:
+    common = _read("workflow/rules/common.smk")
+
+    assert 'DDUP = ["na"]' not in common
+    assert "Defaulting to na" not in common
+    assert 'DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}' in common
+    assert 'DDUP_VALID_CODES = {"dmd", "smd", "spmd", "na"}' in common
+    assert '"dedup_none": "na"' in common
+
+    assert _resolved_ddup({"dedupers": ["dmd"]}) == ["dmd"]
+    assert _resolved_ddup({}) == []
+    assert _resolved_ddup({"dedupers": []}) == []
+    assert _resolved_ddup({"dedupers": ["na"]}) == ["na"]
+    assert _resolved_ddup({}, argv=["dedup_none"]) == ["na"]
+    assert _resolved_ddup({}, auto="na") == ["na"]
+    assert _resolved_ddup({"dedupers": ["dppl"]}) == ["dmd"]
+    assert _resolved_ddup({"dedupers": ["dppl_sent"]}) == ["smd"]
 
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
@@ -107,6 +153,9 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "ddup=contamination_ddups" in text[gatk_start : gatk_start + 220]
     assert '--ignore "*gatk_mqc.tsv"' in text
     assert '--ignore "*vb2_mqc.tsv"' in text
+    assert '--ignore "*seqfu*"' in text
+    assert '--ignore "*relatedness*"' in text
+    assert '--ignore "*rtg*vcfstats*"' in text
     assert "find {MDIR} -type f \\( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \\) -delete" in text
     assert '--ignore "*/other_reports/logs/*"' in text
     for expected in (
@@ -117,16 +166,22 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "verifybamid2_panel_comparison_mqc.tsv",
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
-        "relatedness_mqc.tsv",
         "bcftools_variant_stats_mqc.tsv",
-        "rtg_vcfstats_mqc.tsv",
         "peddy_sample_qc_mqc.tsv",
         "expansionhunter_mqc.tsv",
         "vep_annotation_mqc.tsv",
         "snpeff_annotation_mqc.tsv",
         "rules_benchmark_data_mqc.tsv",
+        "workflow/scripts/build_multiqc_header.py",
     ):
         assert expected in text
+
+    for removed in (
+        'paths.append(MDIR + "other_reports/seqfu_mqc.tsv")',
+        'paths.append(MDIR + "other_reports/relatedness_mqc.tsv")',
+        'paths.append(MDIR + "other_reports/rtg_vcfstats_mqc.tsv")',
+    ):
+        assert removed not in text
 
 
 def test_final_multiqc_custom_data_paths_match_outputs() -> None:
@@ -134,6 +189,13 @@ def test_final_multiqc_custom_data_paths_match_outputs() -> None:
     sp = config["sp"]
 
     assert "verifybamid" in config["exclude_modules"]
+    assert "custom_content" not in sp
+    assert config["custom_content"]["path_filters"] == ["other_reports/*_mqc.tsv"]
+    assert config["custom_content"]["path_filters_exclude"] == [
+        "other_reports/seqfu_mqc.tsv",
+        "other_reports/relatedness_mqc.tsv",
+        "other_reports/rtg_vcfstats_mqc.tsv",
+    ]
     assert sp["norm_cov_evenness_combo"]["fn"] == (
         "other_reports/normcovevenness_combo_mqc.tsv"
     )
@@ -149,10 +211,7 @@ def test_final_multiqc_custom_data_paths_match_outputs() -> None:
         "giab_concordance": "other_reports/giab_concordance_mqc.tsv",
         "norm_cov_evenness_combo": "other_reports/normcovevenness_combo_mqc.tsv",
         "peddy_sample_qc": "other_reports/peddy_sample_qc_mqc.tsv",
-        "relatedness": "other_reports/relatedness_mqc.tsv",
-        "rtg_vcfstats": "other_reports/rtg_vcfstats_mqc.tsv",
         "rules_benchmark_data": "other_reports/rules_benchmark_data_mqc.tsv",
-        "seqfu": "other_reports/seqfu_mqc.tsv",
         "sequence_qc_outputs": "other_reports/sequence_qc_outputs_mqc.tsv",
         "site_mix_contam": "other_reports/site_mix_contam_mqc.tsv",
         "site_mix_donor": "other_reports/site_mix_donor_mqc.tsv",
@@ -164,6 +223,16 @@ def test_final_multiqc_custom_data_paths_match_outputs() -> None:
     for custom_id, path in expected_custom_paths.items():
         assert custom_id in config["custom_data"]
         assert sp[custom_id]["fn"] == path
+
+
+def test_alignstats_compile_uses_configured_deduper_inputs_only() -> None:
+    text = _read("workflow/rules/alignstats_compile.smk")
+    compile_rule = text[text.index("rule alignstats_compile:") :]
+
+    assert "ddup=qc_alignment_dedupers()" in compile_rule
+    assert "alignstats=expand(" in compile_rule
+    assert "{input.alignstats:q}" in compile_rule
+    assert "find {MDIR}*/align/*/*/alignqc/alignstats" not in compile_rule
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
@@ -370,7 +439,6 @@ def test_multiqc_config_custom_content_entries() -> None:
     config = _yaml("config/external_tools/multiqc_config.yaml")
 
     for key in (
-        "seqfu",
         "sequence_qc_outputs",
         "alignment_qc_outputs",
         "contamination",
@@ -378,9 +446,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "verifybamid2_panel_comparison",
         "site_mix_contam",
         "site_mix_donor",
-        "relatedness",
         "bcftools_variant_stats",
-        "rtg_vcfstats",
         "peddy_sample_qc",
         "vep_annotation",
         "snpeff_annotation",
@@ -415,39 +481,37 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
 
     module_order = config["module_order"]
     assert module_order == [
-        "peddy",
-        "peddy_sample_qc",
-        "relatedness",
-        "somalier",
-        "seqfu",
         "fastqc",
         "fastq_screen",
         "sequence_qc_outputs",
         "kat",
-        "bamtools",
         "samtools",
+        "bamtools",
         "qualimap",
-        "mosdepth",
         "sentieon",
         "alignstats_combo",
         "alignment_qc_outputs",
+        "mosdepth",
+        "goleft_indexcov",
         "picard",
         "norm_cov_evenness_combo",
+        "peddy",
+        "peddy_sample_qc",
+        "somalier",
+        "bcftools",
+        "bcftools_variant_stats",
+        "vcftools",
         "contamination",
         "verifybamid2_panel_comparison",
         "gatk_contam",
+        "giab_concordance",
         "site_mix_contam",
         "site_mix_donor",
-        "bcftools",
-        "bcftools_variant_stats",
-        "rtg_vcfstats",
-        "vcftools",
-        "giab_concordance",
+        "vep",
         "vep_annotation",
         "snpeff_annotation",
         "expansionhunter",
         "htd_calls",
-        "goleft_indexcov",
         "rules_benchmark_data",
         "custom_content",
     ]
@@ -456,21 +520,18 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert "verifybamid2_panel_comparison" in module_order
 
     assert config["custom_content"]["order"] == [
-        "peddy_sample_qc",
-        "relatedness",
-        "seqfu",
         "sequence_qc_outputs",
         "alignstats_combo",
         "alignment_qc_outputs",
         "normcovevenness_combo",
+        "peddy_sample_qc",
+        "bcftools_variant_stats",
         "contamination",
         "verifybamid2_panel_comparison",
         "gatk_contam",
+        "giab_concordance",
         "site_mix_contam",
         "site_mix_donor",
-        "bcftools_variant_stats",
-        "rtg_vcfstats",
-        "giab_concordance",
         "vep_annotation",
         "expansionhunter",
         "rules_benchmark_data",
@@ -478,31 +539,28 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
 
     expected_section_order = [
         "general_stats",
-        "peddy",
-        "peddy_sample_qc",
-        "relatedness",
-        "somalier",
-        "seqfu",
         "fastqc",
         "sequence_qc_outputs",
         "samtools",
-        "mosdepth",
         "alignstats_combo",
         "alignment_qc_outputs",
+        "mosdepth",
+        "goleft_indexcov",
         "normcovevenness_combo",
+        "peddy",
+        "peddy_sample_qc",
+        "somalier",
+        "bcftools",
+        "bcftools_variant_stats",
         "contamination",
         "verifybamid2_panel_comparison",
         "gatk_contam",
+        "giab_concordance",
         "site_mix_contam",
         "site_mix_donor",
-        "bcftools",
-        "bcftools_variant_stats",
-        "rtg_vcfstats",
-        "giab_concordance",
         "vep",
         "vep_annotation",
         "expansionhunter",
-        "goleft_indexcov",
         "rules_benchmark_data",
         "multiqc_software_versions",
     ]
@@ -510,7 +568,7 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert list(section_order) == expected_section_order
     assert [
         section_order[section_id]["order"] for section_id in expected_section_order
-    ] == list(range(10000, 7200, -100))
+    ] == list(range(10000, 7500, -100))
 
 
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:

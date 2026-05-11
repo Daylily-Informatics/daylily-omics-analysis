@@ -29,6 +29,8 @@ bash tests/test_bclconvert_bootstrap.sh
 | `tests/test_bclconvert_bootstrap.sh` | BCL Convert bootstrap scripts, rules, fixtures, and report expectations. |
 | `tests/test_complete_genomics_sentieon.py` | Complete Genomics/MGI model paths and `sentcg/cgt7p` routing. |
 | `tests/test_tool_catalog_docs.py` | README/catalog link, tool-catalog schema, and required code-sourced rows. |
+| `tests/test_altair_validation_contracts.py` | Altair RR/BAR denominator guards, seven-sample accuracy aggregation, coverage and boundary status gates. |
+| `tests/test_altair_validation_workflow.py` | Altair Snakemake target, full-RR mosdepth wiring, boundary verification, and profile defaults. |
 | `tests/test_multiqc_qc_targets.py` | Staged MultiQC targets, runtime-gated QC tools, VEP chunking, and final report contracts. |
 | `tests/test_expansionhunter_contracts.py` | ExpansionHunter resources, parser, outputs, and MultiQC integration. |
 | `tests/test_giab_qc_contracts.py` | GIAB/QC contracts for contamination, relatedness, manifests, and supporting resources. |

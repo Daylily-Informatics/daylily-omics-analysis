@@ -19,8 +19,6 @@ def _sequence_qc_native_inputs(wildcards):
         paths.extend(
             expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SAMPS)
         )
-    if qc_tool_enabled("seqfu"):
-        paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
     if qc_tool_enabled("kat", long_running=True):
         paths.extend(expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SAMPS))
     if qc_tool_enabled("fastv", long_running=True):
@@ -57,8 +55,6 @@ def _alignment_component_inputs(wildcards):
                 MDIR + "other_reports/site_mix_donor_mqc.tsv",
             ]
         )
-    if qc_tool_enabled("relatedness"):
-        paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
     return paths
 
 
@@ -151,7 +147,6 @@ def _variant_component_inputs(wildcards):
     paths = list(_alignment_component_inputs(wildcards))
     pairs = valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
     paths.append(MDIR + "other_reports/bcftools_variant_stats_mqc.tsv")
-    paths.append(MDIR + "other_reports/rtg_vcfstats_mqc.tsv")
     if qc_tool_enabled("peddy"):
         paths.extend(["logs/peddy_gathered.done", MDIR + "other_reports/peddy_sample_qc_mqc.tsv"])
     if qc_tool_enabled("expansionhunter") and set(ALIGNERS) & EXPANSIONHUNTER_ALIGNERS:
@@ -408,34 +403,26 @@ rule multiqc_final_wgs:  # TARGET: the big report
         "docker://daylilyinformatics/daylily_multiqc:0.2"
     shell:
         """
-        dbill='$';
         mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
-        echo '''
-report_header_info:
-  - Project/Budget: "REGSUB_PROJECT"
-  - Budget @ Runtime: "REGSUB_BUDGET"
-  - Spot Instances: "REGSUB_SPOTINSTANCES"
-  - Spot Costs per hr: "REGSUB_SPOTCOST"
-  - FQ->BAM.sort avg Costs: "REGSUB_TOTALCOST"
-  - BAM mrkdup avg Cost: "REGSUB_MRKDUPCOST"
-  - Results Dir (GB): "REGSUB_TOTALSIZE"
-  ''' > {output.header:q} 2>> {log:q};
-
-        perl -pi -e "s/REGSUB_PROJECT/$DAY_PROJECT/g;"  {output.header:q} >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_BUDGET/\\\$dbill$USED_BUDGET of \\\$dbill$TOTAL_BUDGET spent ( $PERCENT_USED\%)/g;" {output.header:q} >> {log:q} 2>&1;
-
         size=$(du -hs results | cut -f1) >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_TOTALSIZE/$size/g;" {output.header:q} >> {log:q} 2>&1;
 
         source bin/proc_spot_price_logs.sh >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_SPOTCOST/median: \\\$dbill$MEDIAN_SPOT_PRICE  mean: \\\$dbill$AVERAGE_SPOT_PRICE ( avg cost per vcpu,per min: \\\$dbill$VCPU_COST_PER_MIN ) /g;"  {output.header:q} >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_SPOTINSTANCES/ $INSTANCE_TYPES_LINE /g;" {output.header:q} >> {log:q} 2>&1;
-
         source bin/proc_aligner_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_TOTALCOST/$ALNR_SUMMARY_COST/g;" {output.header:q} >> {log:q} 2>&1;
-
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_MRKDUPCOST/$MRKDUP_AVG_MINUTES min, costing \\\$dbill$MRKDUP_AVG_COST/g;" {output.header:q} >> {log:q} 2>&1;
+
+        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*seqfu*' --ignore '*relatedness*' --ignore '*rtg*vcfstats*' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
+        python workflow/scripts/build_multiqc_header.py \
+          --benchmark-tsv {input.benchmark:q} \
+          --samples-tsv config/samples.tsv \
+          --multiqc-command "$multiqc_command" \
+          --project-budget "$DAY_PROJECT" \
+          --budget-runtime "\$$USED_BUDGET of \$$TOTAL_BUDGET spent ( $PERCENT_USED% )" \
+          --spot-instances "$INSTANCE_TYPES_LINE" \
+          --spot-costs "median: \$$MEDIAN_SPOT_PRICE  mean: \$$AVERAGE_SPOT_PRICE ( avg cost per vcpu,per min: \$$VCPU_COST_PER_MIN )" \
+          --aligner-costs "$ALNR_SUMMARY_COST" \
+          --mrkdup-cost "$MRKDUP_AVG_MINUTES min, costing \$$MRKDUP_AVG_COST" \
+          --results-size "$size" \
+          --output {output.header:q} >> {log:q} 2>&1;
 
         find {MDIR} -type f \( -name '*gatk_mqc.tsv' -o -name '*vb2_mqc.tsv' \) -delete >> {log:q} 2>&1;
 
@@ -445,6 +432,9 @@ report_header_info:
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*gatk_mqc.tsv" \
         --ignore "*vb2_mqc.tsv" \
+        --ignore "*seqfu*" \
+        --ignore "*relatedness*" \
+        --ignore "*rtg*vcfstats*" \
         --ignore "*/norm_cov_eveness/*" \
         --ignore "*/other_reports/logs/*" \
         --ignore "*sort_metrics/*" \

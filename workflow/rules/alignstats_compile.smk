@@ -39,7 +39,14 @@ localrules:
 
 rule alignstats_compile:
     input:
-        f"{MDIR}other_reports/alignstats_summary_gather.done",
+        gather=f"{MDIR}other_reports/alignstats_summary_gather.done",
+        alignstats=expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
+            sample=SSAMPS,
+            alnr=ALL_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
+        ),
     output:
         temp(f"{MDIR}other_reports/alignstats_bsummary.tsv"),
         temp(f"{MDIR}other_reports/alignstats_csummary.tsv"),
@@ -59,8 +66,7 @@ rule alignstats_compile:
     shell:
         "(mkdir -p {MDIR}logs/as;"
         "echo STARTcompileAstats > {log};"
-        "find {MDIR}*/align/*/*/alignqc/alignstats/*alignstats.tsv | head -n 1 | parallel -j 1 'head -n 1 {params.l}{params.r} > {output[0]}; echo a_{params.l}{params.r} >> {log}' >> {log} 2>&1; "
-        "find {MDIR}*/align/*/*/alignqc/alignstats/*alignstats.tsv | parallel -j 1 'tail -n 1 {params.l}{params.r} >> {output[0]}; echo b_{params.l}{params.r}  >> {log} ' >> {log} 2>&1;  "
+        "awk 'FNR == 1 && NR != 1 {{next}} {{print}}' {input.alignstats:q} > {output[0]};"
         "cp {output[0]} {output[1]};"
         "cp {output[0]} {output[2]};" #         "perl -pi -e 's/_DBC0_0//g;' {output};"
         ") || touch logs/ALIGNSTATSCOMPIEFAILEDw_$? ; "
