@@ -166,6 +166,16 @@ def test_header_yaml_escapes_report_header_cost_strings(tmp_path: Path) -> None:
     assert "multiqc results/$DAY" in parsed["intro_text"]
 
 
+def test_base_multiqc_config_does_not_override_generated_intro() -> None:
+    config = yaml.safe_load(
+        (REPO_ROOT / "config" / "external_tools" / "multiqc_config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert "intro_text" not in config
+
+
 def test_missing_required_benchmark_columns_hard_fail(tmp_path: Path) -> None:
     module = _load_module()
     benchmark = _write_tsv(
