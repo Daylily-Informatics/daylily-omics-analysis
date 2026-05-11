@@ -13,6 +13,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_PATH = REPO_ROOT / "workflow" / "scripts" / "build_multiqc_intro.py"
+HEADER_SCRIPT_PATH = REPO_ROOT / "workflow" / "scripts" / "build_multiqc_header.py"
 
 
 def _load_module() -> ModuleType:
@@ -21,6 +22,20 @@ def _load_module() -> ModuleType:
         raise AssertionError(f"Unable to import {SCRIPT_PATH.relative_to(REPO_ROOT)}")
     module = importlib.util.module_from_spec(spec)
     sys.modules["build_multiqc_intro_under_test"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_header_module() -> ModuleType:
+    spec = importlib.util.spec_from_file_location(
+        "build_multiqc_header_under_test", HEADER_SCRIPT_PATH
+    )
+    if spec is None or spec.loader is None:
+        raise AssertionError(
+            f"Unable to import {HEADER_SCRIPT_PATH.relative_to(REPO_ROOT)}"
+        )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["build_multiqc_header_under_test"] = module
     spec.loader.exec_module(module)
     return module
 
@@ -119,6 +134,36 @@ def test_command_is_escaped_and_cli_writes_yaml(tmp_path: Path) -> None:
         "results/$DAY</code>"
     ) in intro
     assert '"<Day & Night>"' not in intro
+
+
+def test_header_yaml_escapes_report_header_cost_strings(tmp_path: Path) -> None:
+    module = _load_header_module()
+    benchmark = _write_benchmark(
+        tmp_path / "rules_benchmark_data_mqc.tsv",
+        [_benchmark_row("sent.alNsort", "1.25")],
+    )
+    samples = _write_samples(tmp_path / "samples.tsv", ["HG002"])
+
+    yaml_text = module.build_header_yaml(
+        benchmark_tsv=benchmark,
+        samples_tsv=samples,
+        multiqc_command="multiqc results/$DAY",
+        project_budget="fk-260509-use",
+        budget_runtime="$0.0 of $300.0 spent ( 0% )",
+        spot_instances="c7i.metal-48xl",
+        spot_costs="median: $2.69 mean: $2.72",
+        aligner_costs=r"sent.alNsort: \$1.08",
+        mrkdup_cost="0 min, costing $0.00",
+        results_size="1.2T",
+    )
+
+    parsed = yaml.safe_load(yaml_text)
+    assert parsed["report_header_info"][4] == {
+        "FQ->BAM.sort avg Costs": r"sent.alNsort: \$1.08"
+    }
+    assert parsed["report_header_info"][5] == {"BAM mrkdup avg Cost": "0 min, costing $0.00"}
+    assert parsed["intro_text"].startswith("<details>")
+    assert "multiqc results/$DAY" in parsed["intro_text"]
 
 
 def test_missing_required_benchmark_columns_hard_fail(tmp_path: Path) -> None:
