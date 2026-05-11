@@ -371,6 +371,8 @@ custom_data:
           hidden: True
 
 sp:
+  custom_content:
+    fn: "__dayoa_disable_generic_custom_content_auto_discovery__"
   giab_concordance:
     fn: "other_reports/giab_concordance_mqc.tsv"
   norm_cov_evenness_combo:
