@@ -245,6 +245,7 @@ onerror:
 include: "rules/alignstats.smk"
 include: "rules/alignstats_compile.smk"
 include: "rules/altair_validation.smk"
+include: "rules/alignment_preservation_audit.smk"
 include: "rules/art.smk"
 include: "rules/bcftools_vcfstat.smk"
 include: "rules/bwa_mem2a_align_sort.smk"

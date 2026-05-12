@@ -175,7 +175,7 @@ sentmm2_align_sort:
     sort_threads: 32
     mem_mb: 200000
     sort_thread_mem: "3G"
-    minimap2_opts: " -ax map-hifi "
+    minimap2_opts: " -ax map-hifi -Y --secondary-seq "
     mbuffer: " | mbuffer -m 32G -q -s 2M "
     constraint: ""
 
@@ -187,7 +187,7 @@ sentmm2ont_align_sort:
     sort_threads: 32
     mem_mb: 200000
     sort_thread_mem: "3G"
-    minimap2_opts: " -ax map-ont "
+    minimap2_opts: " -ax map-ont -Y --secondary-seq "
     mbuffer: " | mbuffer -m 32G -q -s 2M "
     constraint: ""
 
@@ -206,6 +206,12 @@ strobe_align_sort:
     sort_thread_mem: "524M"
     mbuffer: "  | mbuffer -m 128G -q -s 2M "
     constraint: ""  # " --constraint 'm7gb768|r7gb1536' "
+
+alignment_preservation_audit:
+    env_yaml: "../envs/samtools_v0.1.yaml"
+    partition: "i8"
+    threads: 1
+    mem_mb: 1000
 
 
 clair3:

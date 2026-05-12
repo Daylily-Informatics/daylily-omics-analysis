@@ -84,6 +84,7 @@ Common flags passed through `dy-r`:
 | Target | Typical use |
 | --- | --- |
 | `produce_alignstats` | Alignment statistics and aggregate `alignstats_combo_mqc.tsv`. |
+| `produce_alignment_preservation_audit` | Static BAM/CRAM preservation contract report for full-sample alignment, merge, dedup, and staged input paths. |
 | `produce_illumina_run_metrics` | Illumina run-folder inventory, InterOp/BCLConvert raw tables, and `illumina_run_metrics_mqc.tsv` from `illumina_run_metrics.run_dir`. |
 | `produce_read_dispositions` | Read-fate report joining Illumina run metrics to `alignstats_combo_mqc.tsv`. |
 | `produce_snv_concordances` | GIAB/RTG concordance outputs where truth metadata is present. |

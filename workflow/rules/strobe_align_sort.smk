@@ -164,8 +164,14 @@ else:
             ulimit -n 65536 || echo "ulimit mod failed";
             # THIS DOES NOT WORK AT ALL DUE TO ULTIMA FASTQ QUALSCORE PECULIARITIES
 
+            secondary_supp_count=$(samtools view --reference {params.huref} -c -f 0x900 {input.cram});
+            if [ "$secondary_supp_count" -ne 0 ]; then
+                echo "ERROR: {input.cram} contains $secondary_supp_count secondary/supplementary records before samtools fastq extraction." >> {log} 2>&1;
+                exit 8;
+            fi
+
             samtools fastq --reference {params.huref} \
-            -@ {params.threads} -n -f 0 {input.cram}   \
+            -@ {params.tofq_threads} -n -F 0x900 {input.cram}   \
             | {params.strobe_cmd} \
             -t {params.strobe_threads} {params.strobe_opts} \
             --rg-id="{params.cluster_sample}-$epocsec" \
