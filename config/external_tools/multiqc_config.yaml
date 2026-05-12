@@ -248,6 +248,22 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'alignstats_combo'
+  illumina_run_metrics:
+    id: 'illumina_run_metrics'
+    section_name: 'Illumina Run Metrics'
+    description: 'Run folder, InterOp, and BCLConvert read-equivalent metrics'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'illumina_run_metrics'
+  read_dispositions:
+    id: 'read_dispositions'
+    section_name: 'Read Dispositions'
+    description: 'Read fate through demux, human alignment, WGS accounting, dedup, and effective aligned reads'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'read_dispositions'
   expansionhunter:
     id: 'expansionhunter'
     section_name: 'ExpansionHunter STR Report'
@@ -383,6 +399,10 @@ sp:
     fn: "other_reports/rules_benchmark_data_mqc.tsv"
   alignstats_combo:
     fn: "other_reports/alignstats_combo_mqc.tsv"
+  illumina_run_metrics:
+    fn: "other_reports/illumina_run_metrics_mqc.tsv"
+  read_dispositions:
+    fn: "other_reports/read_dispositions_mqc.tsv"
   expansionhunter:
     fn: "other_reports/expansionhunter_mqc.tsv"
   sequence_qc_outputs:

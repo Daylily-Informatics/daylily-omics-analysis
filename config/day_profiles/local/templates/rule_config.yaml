@@ -124,6 +124,11 @@ bclconvert:
     threads: 7
     partition: "i8"
 
+illumina_run_metrics:
+    run_dir: ""
+    aws_profile: ""
+    aws_region: "us-west-2"
+
 altair_validation:
     rr_manifest: ""
     bar_manifest: ""

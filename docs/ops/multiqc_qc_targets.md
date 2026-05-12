@@ -93,8 +93,14 @@ MultiQC by default:
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
 | KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
+| Illumina run metrics | Requires an explicit local or S3 Illumina run folder and may inventory/download run artifacts outside the DayOA workset. | `enable_tools=["illumina_run_metrics"]` |
+| Read dispositions | Requires Illumina run metrics plus alignstats and is run-specific rather than routine for every workset. | `enable_tools=["read_dispositions"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
 | SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
+
+The Illumina run metrics and read disposition reports are explicit-only in final
+MultiQC: `multiqc_qc.enable_long_running=true` alone does not pull them into the
+final DAG. Enable them by name after setting `illumina_run_metrics.run_dir`.
 
 site_mix was promoted to routine default after at-sanity validation showed the
 GATK pileup plus estimator path completed under the 30-minute service

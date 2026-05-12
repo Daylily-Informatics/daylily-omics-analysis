@@ -84,6 +84,8 @@ Common flags passed through `dy-r`:
 | Target | Typical use |
 | --- | --- |
 | `produce_alignstats` | Alignment statistics and aggregate `alignstats_combo_mqc.tsv`. |
+| `produce_illumina_run_metrics` | Illumina run-folder inventory, InterOp/BCLConvert raw tables, and `illumina_run_metrics_mqc.tsv` from `illumina_run_metrics.run_dir`. |
+| `produce_read_dispositions` | Read-fate report joining Illumina run metrics to `alignstats_combo_mqc.tsv`. |
 | `produce_snv_concordances` | GIAB/RTG concordance outputs where truth metadata is present. |
 | `produce_sentD_vcf` | Illumina Sentieon DNAscope SNV calling. |
 | `produce_deep19_vcf` | DeepVariant 1.9 SNV calling. |

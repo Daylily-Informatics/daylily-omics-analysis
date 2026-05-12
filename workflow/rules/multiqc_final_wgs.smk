@@ -7,6 +7,10 @@ import os
 RPT_TITLE = os.environ.get("RPT_TITLE", "Final")
 
 
+def _explicit_multiqc_tool_enabled(tool):
+    return qc_tool_enabled(tool, long_running=True, default=False)
+
+
 def _seq_data_component_inputs(wildcards):
     paths = _sequence_qc_native_inputs(wildcards)
     paths.append(MDIR + "other_reports/sequence_qc_outputs_mqc.tsv")
@@ -59,6 +63,10 @@ def _alignment_component_inputs(wildcards):
         )
     if qc_tool_enabled("relatedness"):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
+    if _explicit_multiqc_tool_enabled("illumina_run_metrics"):
+        paths.append(MDIR + "other_reports/illumina_run_metrics_mqc.tsv")
+    if _explicit_multiqc_tool_enabled("read_dispositions"):
+        paths.append(MDIR + "other_reports/read_dispositions_mqc.tsv")
     return paths
 
 

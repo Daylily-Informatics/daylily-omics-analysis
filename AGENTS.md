@@ -2,9 +2,10 @@
 **SSM is the only supported access model for AWS ParallelCluster headnodes.**
 - Use the supported `daylily-ec headnode connect` / AWS Systems Manager path for headnode access.
 - Do not use direct SSH, PEM files, or `pcluster ssh` for this repo's headnodes.
-- Commands run through SSM must still use a login bash shell when they depend on PATH, conda, aliases, functions, Slurm, or Daylily shell setup.
-- **PATTERN (MANDATORY)**: run `bash -l -c 'your command here'` inside the SSM session or SSM command invocation.
-- **WHY**: Login shells initialize PATH, conda, aliases, functions.
+- Commands run through SSM must still use an interactive login bash shell when they depend on PATH, conda, aliases, functions, Slurm, or Daylily shell setup.
+- **PATTERN (MANDATORY)**: run workflow-control payloads as `ubuntu` in `bash -il` exactly, for example `sudo -iu ubuntu bash -il`, or use a tmux pane that is already a `bash -il` login shell.
+- Do not add other shell flags and do not preface the payload with `set -euo pipefail` before sourcing DayOA setup.
+- **WHY**: Interactive login shells initialize PATH, conda, aliases, functions.
 - **WITHOUT login shell**: Commands fail silently or mislead status checks (squeue not found, conda unavailable, etc.).
 - **NEVER deviate** from this pattern. No exceptions.
 - See "SSM Commands" section below for details and examples.
@@ -24,8 +25,8 @@ Always `conda activate DAY-EC`, little is done in this repo from a mac, but most
 - CLONE REPO USING `day-clone` (which should be in the login bash PATH). See the day-clone --help for more info (and the .md docs).
 - upon moving to reso cloned dir (the analysis dir):
   - INITIALIZE: source the `dyoainit` script to initialize the dy-cli. (note: the output of dyoainit should tell you how to activte slurm or local execution env, set genome build, run example commands.
-  - ACTIVATE: `dy-a local hg38` to activate the local execution env, or  `dy-a slurm hg38` to activate the slurm execution env. Note, the second argument is the genome build, and must be set. In practice, this is almost always `hg38`, but could be `b37` or `hg38_broad`. 
-  - RUN: `dy-r help` to see the available targets, and the init output should tell you how to run the common workflow. Important flags: -n for dry run, -p to print helpful info to stdout, -j for job limit (local should be 1 or 2, slurm can be 300-500), -k to keep going if a job fails... the dy-r cli command actually composes a complex snakemake command given these user command line specified ones. Run `dy-r --help` for all of them.
+  - ACTIVATE: in an interactive login shell, `dy-a local hg38` activates the local execution env and `dy-a slurm hg38` activates the slurm execution env. For SSM command payloads and scripts, prefer `source bin/day_activate slurm hg38` instead of the alias. Note, the second argument is the genome build, and must be set. In practice, this is almost always `hg38`, but could be `b37` or `hg38_broad`. 
+  - RUN: in an interactive login shell, `dy-r help` shows the available targets. For SSM command payloads and scripts, prefer `bin/day_run ...` instead of the alias. Important flags: -n for dry run, -p to print helpful info to stdout, -j for job limit (local should be 1 or 2, slurm can be 300-500), -k to keep going if a job fails... the dy-r cli command actually composes a complex snakemake command given these user command line specified ones. Run `dy-r --help` for all of them.
 
 ## Headnode Persistent tmux Pipeline Launch Spec
 Use this pattern when a user asks an agent to launch Daylily workflow commands on an AWS ParallelCluster headnode and leave the run inspectable after the agent disconnects.
@@ -188,7 +189,7 @@ If given an AWS_PROFILE, region, cluster name, optional path to analysis, and po
 ## SSM Commands
 **CRITICAL REQUIREMENTS**:
 1. Use SSM/daylily-ec as the only supported access model for headnode commands and shells.
-2. Always use login shells for remote commands that need the configured headnode environment. Use `bash -l -c 'your command here'` inside the SSM session or command invocation to ensure the full shell environment (including PATH and conda) is available.
+2. Always use an interactive login bash shell for remote commands that need the configured headnode environment. Use `sudo -iu ubuntu bash -il` or an existing `bash -il` tmux pane; do not use `bash -l -c` for DayOA workflow-control payloads.
 3. **`squeue` must be on PATH** — if it is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
 4. **Always use an interactive bash shell as the `ubuntu` user for headnode workflow work.** `dy-a`, `dy-r`, `dy-m`, and related `dy-*` commands are aliases from `dyoainit`, not standalone executables. Bash does not expand aliases in non-interactive scripts by default, and `bin/day_activate` also expects an initialized interactive shell/conda context. For workflow launches, use an interactive ubuntu tmux/login pane and send separate commands: `source dyoainit`, then `dy-a slurm <genome_build>`, then `dy-r ...`. Do not assume `dy-a` or `dy-r` will work inside an SSM `send-command` script.
 
