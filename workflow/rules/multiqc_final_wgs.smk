@@ -423,7 +423,8 @@ rule multiqc_final_wgs:  # TARGET: the big report
         source bin/proc_aligner_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN >> {log:q} 2>&1;
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
 
-        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*rtg*vcfstats*' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
+        multiqc_float_format_config="{MDIR}reports/multiqc_float_format_config.yaml"
+        multiqc_command="multiqc -f --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --config $multiqc_float_format_config --custom-css-file ./config/external_tools/multiqc.css --ignore '*gatk_mqc.tsv' --ignore '*vb2_mqc.tsv' --ignore '*rtg*vcfstats*' --ignore '*/norm_cov_eveness/*' --ignore '*/other_reports/logs/*' --ignore '*sort_metrics/*' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {MDIR}"
         python workflow/scripts/build_multiqc_header.py \
           --benchmark-tsv {input.benchmark:q} \
           --samples-tsv config/samples.tsv \
@@ -454,9 +455,14 @@ rule multiqc_final_wgs:  # TARGET: the big report
             mv -f "$excluded_file" "$DAY_FINAL_MULTIQC_EXCLUDE_DIR/"
           done
 
+        python workflow/scripts/format_multiqc_float_tables.py \
+          {MDIR}other_reports \
+          --format-config "$multiqc_float_format_config" >> {log:q} 2>&1;
+
         multiqc -f  \
         --config {output.header:q} \
         --config ./config/external_tools/multiqc_config.yaml  \
+        --config "$multiqc_float_format_config" \
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*gatk_mqc.tsv" \
         --ignore "*vb2_mqc.tsv" \

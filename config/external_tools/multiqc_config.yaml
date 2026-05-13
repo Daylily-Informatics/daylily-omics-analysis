@@ -294,6 +294,23 @@ custom_data:
     description: 'VerifyBamID2, GATK, and genotype-free site-mix contamination estimates'
     file_format: 'tsv'
     plot_type: 'table'
+    headers:
+      contamination_fraction:
+        format: "{:.4f}"
+      contamination_pct:
+        format: "{:.4f}"
+      ci_low_fraction:
+        format: "{:.4f}"
+      ci_high_fraction:
+        format: "{:.4f}"
+      unknown_contamination_fraction:
+        format: "{:.4f}"
+      unknown_contamination_pct:
+        format: "{:.4f}"
+      mean_depth:
+        format: "{:.4f}"
+      gatk_error_fraction:
+        format: "{:.4f}"
     pconfig:
       id: 'contamination'
   gatk_contam:
@@ -302,6 +319,23 @@ custom_data:
     description: 'GATK CalculateContamination output loaded as MultiQC custom content'
     file_format: 'tsv'
     plot_type: 'table'
+    headers:
+      contamination_fraction:
+        format: "{:.4f}"
+      contamination_pct:
+        format: "{:.4f}"
+      ci_low_fraction:
+        format: "{:.4f}"
+      ci_high_fraction:
+        format: "{:.4f}"
+      unknown_contamination_fraction:
+        format: "{:.4f}"
+      unknown_contamination_pct:
+        format: "{:.4f}"
+      mean_depth:
+        format: "{:.4f}"
+      gatk_error_fraction:
+        format: "{:.4f}"
     pconfig:
       id: 'gatk_contam'
   verifybamid2_panel_comparison:
@@ -310,6 +344,23 @@ custom_data:
     description: 'Panel-aware VerifyBamID2 contamination estimates and runtime fields'
     file_format: 'tsv'
     plot_type: 'table'
+    headers:
+      contamination_fraction:
+        format: "{:.4f}"
+      contamination_pct:
+        format: "{:.4f}"
+      ci_low_fraction:
+        format: "{:.4f}"
+      ci_high_fraction:
+        format: "{:.4f}"
+      unknown_contamination_fraction:
+        format: "{:.4f}"
+      unknown_contamination_pct:
+        format: "{:.4f}"
+      mean_depth:
+        format: "{:.4f}"
+      gatk_error_fraction:
+        format: "{:.4f}"
     pconfig:
       id: 'verifybamid2_panel_comparison'
   site_mix_contam:
@@ -318,6 +369,23 @@ custom_data:
     description: 'Target-genotype-free same-species contamination estimates'
     file_format: 'tsv'
     plot_type: 'table'
+    headers:
+      contamination_fraction:
+        format: "{:.4f}"
+      contamination_pct:
+        format: "{:.4f}"
+      ci_low_fraction:
+        format: "{:.4f}"
+      ci_high_fraction:
+        format: "{:.4f}"
+      unknown_contamination_fraction:
+        format: "{:.4f}"
+      unknown_contamination_pct:
+        format: "{:.4f}"
+      mean_depth:
+        format: "{:.4f}"
+      gatk_error_fraction:
+        format: "{:.4f}"
     pconfig:
       id: 'site_mix_contam'
   site_mix_donor:
