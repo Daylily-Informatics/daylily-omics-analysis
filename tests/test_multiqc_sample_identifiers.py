@@ -126,7 +126,9 @@ def test_variant_and_concordance_custom_tsvs_include_full_stage_identity() -> No
     assert "Deduper" in concordance_parser
     assert "f\"{stage_sample}.{variant_class}\"" in concordance_parser
     assert "mqc_id" not in concordance_parser
-    assert "perl -pi" not in concordance[concordance.index("rule produce_snv_concordances:") :]
+    aggregate_rule = concordance[concordance.index("rule produce_snv_concordances:") :]
+    assert "perl -pi" not in aggregate_rule
+    assert "\n    conda:" not in aggregate_rule
 
 
 def test_native_multiqc_collision_modules_are_excluded_and_cleaned() -> None:

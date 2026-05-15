@@ -365,8 +365,6 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         ],
         mqcs=all_concordance_mqc_outputs(),
     priority: 48
-    conda:
-        "../envs/vanilla_v0.1.yaml"
     params:
         cluster_sample="aggregate",
         mdir=MDIR,
