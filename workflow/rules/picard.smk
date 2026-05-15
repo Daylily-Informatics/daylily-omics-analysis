@@ -22,6 +22,7 @@ rule picard_cram:
     params:
         cluster_sample=ret_sample,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        prefix=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/{sample}.{alnr}.{ddup}",
         metric_accumulation_level="SAMPLE" if 'metric_accumulation_level' not in config['picard'] else config['picard']['metric_accumulation_level'],
         alnr=get_alnr,
         stop_after="2000000" if 'stop_after' not in config['picard'] else config['picard']['stop_after'],
@@ -30,11 +31,9 @@ rule picard_cram:
         """
         set +euo pipefail;
         (
-        rm -rf $(dirname {output.sent} ) || echo rmPicardFailed;
-        mkdir -p $(dirname {log} );
-        pic_d="$(dirname {output.sent} )/picard/";
-        mkdir -p $pic_d;
-        picard CollectMultipleMetrics VALIDATION_STRINGENCY={params.validation_stringency} METRIC_ACCUMULATION_LEVEL={params.metric_accumulation_level} LEVEL={params.metric_accumulation_level} STOP_AFTER={params.stop_after} I={input.cram} O=$pic_d R={params.huref} EXT=.txt PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics PROGRAM=CollectSequencingArtifactMetrics PROGRAM=CollectQualityYieldMetrics INCLUDE_UNPAIRED=true ;
+        rm -f {params.prefix:q}.* || echo rmPicardPrefixFailed;
+        mkdir -p $(dirname {log:q} ) $(dirname {params.prefix:q}) $(dirname {output.sent:q});
+        picard CollectMultipleMetrics VALIDATION_STRINGENCY={params.validation_stringency} METRIC_ACCUMULATION_LEVEL={params.metric_accumulation_level} LEVEL={params.metric_accumulation_level} STOP_AFTER={params.stop_after} I={input.cram:q} O={params.prefix:q} R={params.huref:q} EXT=.txt PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics PROGRAM=CollectSequencingArtifactMetrics PROGRAM=CollectQualityYieldMetrics INCLUDE_UNPAIRED=true ;
         touch {output.sent}; echo empySentFilesNotBeingSeen >> {output.sent};
         ls {output.sent}; cat {output.sent} ; ) > {log} 2>&1;
         exit 0;

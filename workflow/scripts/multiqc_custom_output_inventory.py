@@ -42,6 +42,12 @@ def _output_type(path: Path) -> str:
     return path.suffix.removeprefix(".") or "file"
 
 
+def _sample_id(sample: str, aligner: str, deduper: str) -> str:
+    if aligner != "NA" and deduper != "NA":
+        return f"{sample}.{aligner}.{deduper}"
+    return sample
+
+
 def _infer_record(stage: str, path_text: str) -> dict[str, str | int]:
     path = Path(path_text)
     sample = "NA"
@@ -71,7 +77,8 @@ def _infer_record(stage: str, path_text: str) -> dict[str, str | int]:
         size_bytes = 0
 
     return {
-        "sample": sample,
+        "Sample": _sample_id(sample, aligner, deduper),
+        "base_sample": sample,
         "stage": stage,
         "tool": tool,
         "aligner": aligner,
@@ -94,7 +101,8 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
 
     fieldnames = [
-        "sample",
+        "Sample",
+        "base_sample",
         "stage",
         "tool",
         "aligner",
@@ -107,7 +115,7 @@ def main() -> int:
     rows = [_infer_record(args.stage, path) for path in args.paths]
     rows.sort(
         key=lambda row: (
-            str(row["sample"]),
+            str(row["Sample"]),
             str(row["tool"]),
             str(row["aligner"]),
             str(row["deduper"]),

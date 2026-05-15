@@ -188,6 +188,7 @@ rule relatedness_batch_gather:
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
+            "Sample",
             "batch_id",
             "aligner",
             "deduper",
@@ -207,6 +208,7 @@ rule relatedness_batch_gather:
                     for row in reader:
                         writer.writerow(
                             {
+                                "Sample": f"{aligner}.{deduper}",
                                 "batch_id": f"{aligner}.{deduper}",
                                 "aligner": aligner,
                                 "deduper": deduper,

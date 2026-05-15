@@ -6,6 +6,12 @@ import pandas as pd
 import re
 import math
 
+if len(sys.argv) < 11:
+    raise SystemExit(
+        "usage: parse-vcfeval-summary.py summary sample truth_bed roi alt_id "
+        "legacy_out allvar_mean_dp aligner deduper snv_caller"
+    )
+
 def _get_int_env(var_name, default):
     try:
         v = os.environ.get(var_name)
@@ -34,7 +40,8 @@ except Exception as e:
 
 print(f"ARGS {sys.argv}", file=sys.stderr)
 alnr=sys.argv[8]
-snv_caller=sys.argv[9]
+ddup=sys.argv[9]
+snv_caller=sys.argv[10]
 
 
 
@@ -276,18 +283,42 @@ for i in df.iterrows():
     except Exception:
         df["Fscore"][i[0]] = None
 
-df["mqc_id"] = f"{sample}-{alnr}-{snv_caller}-{subset}"
-df["Sample"] = sample
+df.index.name = "VariantClass"
+df = df.reset_index()
+stage_sample = f"{sample}.{alnr}.{ddup}.{snv_caller}"
+df["Sample"] = df["VariantClass"].map(
+    lambda variant_class: f"{stage_sample}.{variant_class}"
+)
+df["InputSample"] = sample
 df["AltId"] = alt_id
 df["ROI"] = cmp_footprint
 df["Subset"] = subset
 df["AllVarMeanDP"] = allvar_mean_dp
 df['CovBin'] = cov_bin
 df['Aligner'] = alnr
+df['Deduper'] = ddup
 df['SNVCaller'] = snv_caller
-#print_cols = ['Sample'] + list(set(list(df.columns)) - set(['Sample']))
-
-print_cols = ['mqc_id','Sample','TgtRegionSize','TN','FN','TP','FP','Fscore','Sensitivity-Recall','Specificity', 'FDR', 'PPV', 'Precision','AltId', 'ROI', 'AllVarMeanDP', 'CovBin', 'Aligner','SNVCaller']
-df.to_csv(even_newer_summary, sep="\t", columns=print_cols)
-
-os.system(f"perl -pi -e 's/^\t/VariantClass\t/g;' {even_newer_summary}")
+print_cols = [
+    'Sample',
+    'VariantClass',
+    'InputSample',
+    'TgtRegionSize',
+    'TN',
+    'FN',
+    'TP',
+    'FP',
+    'Fscore',
+    'Sensitivity-Recall',
+    'Specificity',
+    'FDR',
+    'PPV',
+    'Precision',
+    'AltId',
+    'ROI',
+    'AllVarMeanDP',
+    'CovBin',
+    'Aligner',
+    'Deduper',
+    'SNVCaller',
+]
+df.to_csv(even_newer_summary, sep="\t", columns=print_cols, index=False)

@@ -111,7 +111,8 @@ rule peddy_sample_qc_gather:
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
-            "sample_id",
+            "Sample",
+            "base_sample",
             "aligner",
             "deduper",
             "snv_caller",
@@ -127,8 +128,8 @@ rule peddy_sample_qc_gather:
             writer.writeheader()
             for done_path in input:
                 name = os.path.basename(str(done_path)).replace(".peddy.done", "")
-                parts = name.split(".")
-                sample, aligner, deduper, caller = parts[0], parts[1], parts[2], parts[3]
+                sample, aligner, deduper, caller = name.rsplit(".", 3)
+                sample_id = day_stage_sample_id(sample, aligner, deduper, caller)
                 prefix = str(done_path).replace(".peddy.done", ".peddy.")
                 sex_file = prefix + "sex_check.csv"
                 sex_row = {}
@@ -138,7 +139,8 @@ rule peddy_sample_qc_gather:
                     sex_row = rows[0] if rows else {}
                 writer.writerow(
                     {
-                        "sample_id": sample,
+                        "Sample": sample_id,
+                        "base_sample": sample,
                         "aligner": aligner,
                         "deduper": deduper,
                         "snv_caller": caller,

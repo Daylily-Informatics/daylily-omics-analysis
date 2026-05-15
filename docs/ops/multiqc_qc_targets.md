@@ -44,7 +44,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | Picard metrics | Alignment QC | per-sample Picard alignment QC outputs |
 | Qualimap | Alignment QC | per-sample Qualimap outputs |
 | mosdepth | Alignment QC | per-sample mosdepth summaries |
-| coverage evenness | Alignment QC | `other_reports/normcovevenness_combo_mqc.tsv` and per-sample markdown |
+| coverage evenness | Alignment QC | `other_reports/norm_cov_evenness_combo_mqc.tsv` and per-sample markdown |
 | goleft | Alignment QC | per-sample goleft outputs |
 | Alignment QC output inventory | Alignment QC | `other_reports/alignment_qc_outputs_mqc.tsv` |
 | VerifyBamID2 | Contamination QC | panel-scoped per-sample `.vb2.tsv` files |

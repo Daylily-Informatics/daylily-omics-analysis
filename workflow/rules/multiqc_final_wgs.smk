@@ -65,7 +65,7 @@ def _alignment_qc_native_inputs(wildcards):
     qddups = qc_alignment_dedupers()
     alnrs = QC_CRAM_ALIGNERS
     paths.append(MDIR + "other_reports/alignstats_combo_mqc.tsv")
-    paths.append(MDIR + "other_reports/normcovevenness_combo_mqc.tsv")
+    paths.append(MDIR + "other_reports/norm_cov_evenness_combo_mqc.tsv")
     paths.extend(
         expand(
             MDIR

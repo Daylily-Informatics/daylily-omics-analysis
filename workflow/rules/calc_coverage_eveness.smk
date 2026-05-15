@@ -29,6 +29,10 @@ rule calc_coverage_evenness:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/logs/norm_cov_eveness.mqc.log",
     params:
         cluster_sample=ret_sample,
+        base_sample=lambda wildcards: wildcards.sample,
+        stage_sample=lambda wildcards: day_stage_sample_id(
+            wildcards.sample, wildcards.alnr, wildcards.ddup
+        ),
         chrm_regions="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22",
         l="{",
         r="}",
@@ -41,14 +45,13 @@ rule calc_coverage_evenness:
         mkdir -p $( dirname {output.mos_pre} )/logs;
         touch {output.mos_pre};
         touch {log};
-        alnr=$(echo $(dirname {log}) | cut -d '/' -f 6);
-        echo "Sample\tCHRM\tmeanRawCov\tmedianRawCov\tstdevRawCov\tRawCovCoefofvar\tNCmean\tNCmedian\tstdevNC\tNCcoefofvar\tpctEQ0\tpctLT5\tpctLT10\taligner" > {output.mos_pre}.norm_cov_eveness.mqc.tsv;
+        echo "Sample\tbase_sample\tCHRM\tmeanRawCov\tmedianRawCov\tstdevRawCov\tRawCovCoefofvar\tNCmean\tNCmedian\tstdevNC\tNCcoefofvar\tpctEQ0\tpctLT5\tpctLT10\taligner\tdeduper" > {output.mos_pre}.norm_cov_eveness.mqc.tsv;
         for i in {params.l}1..22{params.r};
         do
             echo "Processing {params.cluster_sample} Chrm:{params.chrm}$i";                            
             mosdepth -x  -Q 1 -T 0 -m -f {params.huref}  --by 50 -c {params.chrm}$i --threads 20 {output.mos_pre}.{params.chrm}$i {input.cram};
             touch {output.mos_pre}.{params.chrm}$i.regions.bed.gz;
-            Rscript workflow/scripts/calc_norm_cov_sd.R {output.mos_pre}.{params.chrm}$i.regions.bed.gz  "{params.cluster_sample}" {params.chrm}$i $alnr | sed 's/\\"//g;' >> {output.mos_pre}.norm_cov_eveness.mqc.tsv ;
+            Rscript workflow/scripts/calc_norm_cov_sd.R {output.mos_pre}.{params.chrm}$i.regions.bed.gz "{params.base_sample}" "{params.stage_sample}.{params.chrm}$i" {params.chrm}$i {wildcards.alnr} {wildcards.ddup} | sed 's/\\"//g;' >> {output.mos_pre}.norm_cov_eveness.mqc.tsv ;
         done;
         ls {output};
         rm $(dirname {output.mos_pre})/*per-base* || echo 'rm perbase failed';
@@ -64,7 +67,7 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
     container: None
     threads: 8
     output:
-        mqc=MDIR+"other_reports/normcovevenness_combo_mqc.tsv",
+        mqc=MDIR+"other_reports/norm_cov_evenness_combo_mqc.tsv",
     shell:
         """
         mkdir -p $(dirname {output});

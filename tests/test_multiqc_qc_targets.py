@@ -110,6 +110,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
+    fastqc = _read("workflow/rules/fastqc.smk")
     fastp = _read("workflow/rules/fastp.smk")
     fastv = _read("workflow/rules/fastv.smk")
     seqfu = _read("workflow/rules/seqfu.smk")
@@ -117,12 +118,18 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
 
     assert "bench=MDIR" not in fastp
     assert ": > {log.a};" in fastp
+    assert "{sample}.R1.fastq.gz" in fastqc
+    assert "{sample}.R2.fastq.gz" in fastqc
+    assert "{params.r1_link:q} {params.r2_link:q}" in fastqc
     assert "{input.fpqr1s}" in fastv
     assert "{input.fpqr2s}" in fastv
     assert "mkdir -p $(dirname {output});" in fastv
     assert "find {params.mdir} -name '*seqfuR1.mqc.tsv'" in seqfu
     assert "parallel" not in seqfu
     assert "other_reports/seqfu_mqc.tsv" in seqfu
+    assert 'printf "Sample\\\\tbase_sample\\\\tread\\\\tsource_path\\\\n" > {output.mqc};' in seqfu
+    assert 'printf "%s.R1\\\\t%s\\\\tR1\\\\t%s\\\\n"' in seqfu
+    assert 'printf "%s.R2\\\\t%s\\\\tR2\\\\t%s\\\\n"' in seqfu
     assert "\n  - fastp\n" not in multiqc
 
 
@@ -152,7 +159,8 @@ def test_multiqc_custom_output_inventory_rules_exist() -> None:
 
     for expected in (
         "csv.DictWriter",
-        "sample",
+        "Sample",
+        "base_sample",
         "stage",
         "tool",
         "source_path",
@@ -302,6 +310,8 @@ def test_multiqc_config_custom_content_entries() -> None:
     assert "fastp" not in excludes
     assert "vep" not in excludes
     assert "snpeff" not in excludes
+    assert "peddy" in excludes
+    assert "somalier" in excludes
     assert "verifyBAMID" in excludes
     assert "sexdetermine" in excludes
 
@@ -311,17 +321,42 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     trim = set(config["extra_fn_clean_trim"])
     assert ".snv.sort.vcf.gz" in trim
     assert ".snv.sort.vcf.gz.tbi" in trim
+    assert ".R1.fastq.gz" not in trim
+    assert ".R2.fastq.gz" not in trim
+    assert ".R1.fastq" not in trim
+    assert ".R2.fastq" not in trim
     assert ".snv.sort" in trim
     assert ".idxstat.tsv" in trim
     assert ".idxstat" in trim
     assert ".mosdepth.summary.sort.bed" in trim
     assert ".mosdepth.summary.sort" in trim
     assert ".bcfstats.tsv" in trim
+    for picard_suffix in (
+        ".alignment_summary_metrics.txt",
+        ".insert_size_metrics.txt",
+        ".quality_yield_metrics.txt",
+        ".quality_distribution_metrics.txt",
+        ".gc_bias.summary_metrics.txt",
+        ".gc_bias.detail_metrics.txt",
+    ):
+        assert picard_suffix in trim
     assert config["sample_names_replace_regex"] is True
     assert config["sample_names_replace"][r"\.md\.(chr[0-9XYM]+)$"] == r".\1"
+    assert config["sample_names_replace"][r"\.metrics$"] == ""
+    assert config["sample_names_replace"][r"_FR$"] == ""
+    assert (
+        config["sample_names_replace"][
+            r"^(.*)-([A-Za-z0-9_]+)-(dppl|dmd|smd|spmd|na)-cram$"
+        ]
+        == r"\1.\2.\3"
+    )
 
     module_order = config["module_order"]
     assert len(module_order) == len(set(module_order))
+    assert "peddy" not in module_order
+    assert "somalier" not in module_order
+    assert "peddy_sample_qc" in module_order
+    assert "relatedness" in module_order
     assert "verifyBAMID" not in module_order
     assert "verifybamid2_panel_comparison" in module_order
 
@@ -330,12 +365,18 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     common = _read("workflow/rules/common.smk")
     contamination = _read("workflow/rules/site_mix_contam.smk")
     bcftools = _read("workflow/rules/bcftools_vcfstat.smk")
+    rtg_vcfstats = _read("workflow/rules/rtg_vcfstats.smk")
+    peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
+    snpeff = _read("workflow/rules/snpeff.smk")
 
     assert "def day_stage_sample_id(sample, *components)" in common
     assert "day_stage_sample_id(sample, aligner, deduper)" in contamination
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in bcftools
+    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in rtg_vcfstats
+    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in peddy
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in vep
+    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in snpeff
     assert "marker = f\".{alnr}.{ddup}.{caller}.\"" in bcftools
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common

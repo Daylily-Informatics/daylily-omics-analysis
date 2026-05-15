@@ -136,6 +136,28 @@ def concordance_mqc_outputs(wildcards):
     )
 
 
+def all_concordance_mqc_outputs():
+    """
+    Static ordered list of per-ROI concordance MQC TSVs for the final aggregate.
+    """
+    paths = []
+    for sample in SSAMPS:
+        for ddup in DDUP:
+            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS):
+                wildcards = type(
+                    "ConcordanceWildcards",
+                    (),
+                    {"sample": sample, "alnr": alnr, "ddup": ddup, "snv": snv},
+                )()
+                for cmpfootprint in get_concordance_footprints(wildcards):
+                    paths.append(
+                        MDIR
+                        + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/"
+                        + f"_{cmpfootprint}/snv_{sample}_{cmpfootprint}_concordance.mqc.tsv"
+                    )
+    return sorted(paths)
+
+
 # -----------------------------------------------------------------------------
 # Concordance rules
 # -----------------------------------------------------------------------------
@@ -238,6 +260,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
               "$legacy_parsed" \
               "$allvar_mean_dp" \
               {wildcards.alnr} \
+              {wildcards.ddup} \
               {wildcards.snv} \
               > {log} 2>&1
 
@@ -334,12 +357,13 @@ else:
 localrules: produce_snv_concordances
 rule produce_snv_concordances:  # TARGET:  produce snv concordances
     input:
-        [
+        dones=[
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done"
             for sample in SSAMPS
             for ddup in DDUP
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
-        ]
+        ],
+        mqcs=all_concordance_mqc_outputs(),
     priority: 48
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -349,17 +373,55 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         genome_build=config["genome_build"],
         pc=print_wildcards_etc,
     output:
-        touch(MDIR + "other_reports/giab_concordance_mqc.tsv")
+        mqc=MDIR + "other_reports/giab_concordance_mqc.tsv",
     threads: 1
-    shell:
-        """
-        set +euo pipefail;
-        export wcv=$(find  results/ | grep concord | grep fofn | wc -l);
+    run:
+        import csv
+        from pathlib import Path
 
-        (find results/day/{params.genome_build}/*/align/*/*/snv/*/concordance/ | grep  concordance.mqc  | head -n 1 | parallel 'head -n 1 {{}} > {output}';) || echo 'GetHeaderFAILS' 1>&2;
-        (find {params.mdir}*/align/*/*/snv/*/concordance/ | grep  .mqc | parallel ' tail -n +2 {{}} >> {output}';) || echo "GETCONCORDANCECALLSfails"  1>&2;
+        out_path = Path(str(output.mqc))
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        fieldnames = None
+        rows = []
+        for mqc in [Path(str(path)) for path in input.mqcs]:
+            with mqc.open(newline="", encoding="utf-8") as in_handle:
+                reader = csv.DictReader(in_handle, delimiter="\t")
+                if reader.fieldnames is None:
+                    continue
+                if fieldnames is None:
+                    fieldnames = list(reader.fieldnames)
+                elif fieldnames != list(reader.fieldnames):
+                    raise ValueError(
+                        f"Concordance MQC header mismatch in {mqc}: {reader.fieldnames}"
+                    )
+                rows.extend(reader)
 
-        (perl -pi -e 's/^(.+?)(\\t)(.+?)(\\t)(.+)$/$3\\t$1\\t$5/g;' {output} ) || echo "perl regsub failed"  1>&2;
-        perl -pi -e 's/^([^\\t]+?)-None\\t([^\\t]+)/$1-$2\\t$2/g;' {output}  1>&2;
+        if fieldnames is None:
+            fieldnames = [
+                "Sample",
+                "VariantClass",
+                "InputSample",
+                "TgtRegionSize",
+                "TN",
+                "FN",
+                "TP",
+                "FP",
+                "Fscore",
+                "Sensitivity-Recall",
+                "Specificity",
+                "FDR",
+                "PPV",
+                "Precision",
+                "AltId",
+                "ROI",
+                "AllVarMeanDP",
+                "CovBin",
+                "Aligner",
+                "Deduper",
+                "SNVCaller",
+            ]
 
-        """
+        with out_path.open("w", newline="", encoding="utf-8") as out_handle:
+            writer = csv.DictWriter(out_handle, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            writer.writerows(rows)
