@@ -131,6 +131,13 @@ def test_variant_and_concordance_custom_tsvs_include_full_stage_identity() -> No
     assert "\n    conda:" not in aggregate_rule
 
 
+def test_rtg_vcfeval_requests_explicit_memory() -> None:
+    concordance = _read("workflow/rules/rtg_vcfeval.smk")
+
+    assert 'mem_mb=config["rtg_vcfeval"].get("mem_mb", 64000)' in concordance
+    assert 'mem_mb=config["rtg_vcfeval"].get("parse_mem_mb", 16000)' in concordance
+
+
 def test_native_multiqc_collision_modules_are_excluded_and_cleaned() -> None:
     multiqc = _read("config/external_tools/multiqc_config.yaml")
     picard = _read("workflow/rules/picard.smk")

@@ -277,6 +277,8 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"
+    assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
+    assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
     assert "vep_annotation_mqc.tsv" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
     assert "bgzip -c > {output.annovcf}" in snpeff

@@ -185,6 +185,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         resources:
             vcpu=int(config["rtg_vcfeval"].get("sub_threads", 7)),
             threads=int(config["rtg_vcfeval"].get("sub_threads", 7)),
+            mem_mb=config["rtg_vcfeval"].get("mem_mb", 64000),
             partition=config["rtg_vcfeval"]["partition_other"],
         conda:
             config["rtg_vcfeval"]["env_yaml"]
@@ -230,6 +231,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         resources:
             vcpu=16,
             threads=16,
+            mem_mb=config["rtg_vcfeval"].get("parse_mem_mb", 16000),
             partition=config["rtg_vcfeval"]["partition_other"],
         conda:
             config["rtg_vcfeval"]["env_yaml"]

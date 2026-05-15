@@ -982,6 +982,8 @@ qualimap:
 rtg_vcfeval:
     threads: 16
     sub_threads: 16
+    mem_mb: 64000
+    parse_mem_mb: 16000
     env_yaml: "../envs/rtgtools_v0.1.yaml"
     ld_preload: " "
     partition: "i192mem,i192bigmem"
