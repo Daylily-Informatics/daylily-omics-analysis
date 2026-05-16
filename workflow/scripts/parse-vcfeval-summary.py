@@ -269,9 +269,10 @@ rows.append(
 for row in rows:
     precision = _safe_div(row["TP"], row["TP"] + row["FP"])
     sensitivity = _safe_div(row["TP"], row["TP"] + row["FN"])
+    specificity_den = None if row["TN"] is None else row["TN"] + row["FP"]
     row["Precision"] = precision
     row["Sensitivity-Recall"] = sensitivity
-    row["Specificity"] = _safe_div(row["TN"], row["TN"] + row["FP"])
+    row["Specificity"] = _safe_div(row["TN"], specificity_den)
     row["FDR"] = _safe_div(row["FP"], row["TP"] + row["FP"])
     row["PPV"] = None if row["FDR"] is None else 1.0 - row["FDR"]
     if precision is None or sensitivity is None or (precision + sensitivity) == 0:

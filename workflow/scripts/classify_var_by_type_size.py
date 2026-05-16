@@ -1,8 +1,13 @@
-
-""" 3yr+? OLD OLD SUP CODE PORTED OVER """
+"""Classify vcfeval VCF records by simple variant type and size bins."""
+import gzip
 import os
 import sys
-import vcf
+
+if len(sys.argv) < 7:
+    raise SystemExit(
+        "usage: classify_var_by_type_size.py in_vcf call_class target_region_size "
+        "count_out sample alt_name"
+    )
 
 in_vcf = sys.argv[1]
 call_class = sys.argv[2]
@@ -11,181 +16,115 @@ count_out = sys.argv[4]
 sample_mg = sys.argv[5]
 sample_coriel = sys.argv[6]
 
-in_vcf_sl = in_vcf.split(".")  # must be ./VCF path, not full
-in_vcf_fh = open(in_vcf, "rb")
 
-out_count_fh = open(count_out, "w")
-
-snp_tv_vcf = "{0}.X_tv_snp.vcf".format(in_vcf)
-snp_tv_count = 0
-snp_ts_vcf = "{0}.X_ts_snp.vcf".format(in_vcf)
-snp_ts_count = 0
-del_50_vcf = "{0}.X_del_50.vcf".format(in_vcf)
-del_50_count = 0
-del_gt50_vcf = "{0}.X_del_gt50.vcf".format(in_vcf)
-del_gt50_count = 0
-ins_50_vcf = "{0}.X_ins_50.vcf".format(in_vcf)
-ins_50_count = 0
-ins_gt50_vcf = "{0}.X_ins_gt50.vcf".format(in_vcf)
-ins_gt50_count = 0
-indel_50_vcf = "{0}.X_indel_50.vcf".format(in_vcf)
-indel_count_50 = 0
-indel_gt50_vcf = "{0}.X_indel_gt50.vcf".format(in_vcf)
-
-indel_count_gt50 = 0
+def _open_text(path):
+    if path.endswith(".gz"):
+        return gzip.open(path, "rt")
+    return open(path, "r")
 
 
-vcf_reader = vcf.Reader(in_vcf_fh)
+def _transition(ref, alt):
+    return {ref.upper(), alt.upper()} in ({"A", "G"}, {"C", "T"})
 
-vcf_out_ds = {
-    "classes": {
-        "snp_ts": vcf.Writer(open(snp_ts_vcf, "w"), vcf_reader),
-        "snp_tv": vcf.Writer(open(snp_tv_vcf, "w"), vcf_reader),
-        "del_50": vcf.Writer(open(del_50_vcf, "w"), vcf_reader),
-        "del_gt50": vcf.Writer(open(del_gt50_vcf, "w"), vcf_reader),
-        "ins_50": vcf.Writer(open(ins_50_vcf, "w"), vcf_reader),
-        "ins_gt50": vcf.Writer(open(ins_gt50_vcf, "w"), vcf_reader),
-        "indel_50": vcf.Writer(open(indel_50_vcf, "w"), vcf_reader),
-        "indel_gt50": vcf.Writer(open(indel_gt50_vcf, "w"), vcf_reader),
-    }
+
+def _info_end(info):
+    for item in info.split(";"):
+        if item.startswith("END="):
+            try:
+                return int(item.split("=", 1)[1])
+            except ValueError:
+                return None
+    return None
+
+
+def _variant_class(ref, alts, pos, info):
+    concrete_alts = [alt for alt in alts if alt and not alt.startswith("<")]
+    if not concrete_alts:
+        return "indel_gt50"
+
+    if len(ref) == 1 and all(len(alt) == 1 for alt in concrete_alts):
+        if all(_transition(ref, alt) for alt in concrete_alts):
+            return "snp_ts"
+        return "snp_tv"
+
+    max_alt_len = max(len(alt) for alt in concrete_alts)
+    end = _info_end(info)
+    ref_span = max(1, (end - pos + 1) if end is not None else len(ref))
+
+    if max_alt_len > len(ref):
+        return "ins_50" if max_alt_len < 51 else "ins_gt50"
+    if ref_span > max_alt_len:
+        return "del_50" if ref_span < 51 else "del_gt50"
+
+    indel_len = max(ref_span, max_alt_len)
+    return "indel_50" if indel_len < 51 else "indel_gt50"
+
+
+class_paths = {
+    "snp_tv": f"{in_vcf}.X_tv_snp.vcf",
+    "snp_ts": f"{in_vcf}.X_ts_snp.vcf",
+    "del_50": f"{in_vcf}.X_del_50.vcf",
+    "del_gt50": f"{in_vcf}.X_del_gt50.vcf",
+    "ins_50": f"{in_vcf}.X_ins_50.vcf",
+    "ins_gt50": f"{in_vcf}.X_ins_gt50.vcf",
+    "indel_50": f"{in_vcf}.X_indel_50.vcf",
+    "indel_gt50": f"{in_vcf}.X_indel_gt50.vcf",
 }
+counts = {key: 0 for key in class_paths}
+headers = []
+writers = {}
 
+try:
+    with _open_text(in_vcf) as in_fh:
+        for line in in_fh:
+            if line.startswith("#"):
+                headers.append(line)
+                continue
+            if not writers:
+                for key, path in class_paths.items():
+                    writers[key] = open(path, "w")
+                    writers[key].writelines(headers)
+            fields = line.rstrip("\n").split("\t")
+            if len(fields) < 8:
+                continue
+            pos = int(fields[1])
+            ref = fields[3]
+            alts = fields[4].split(",")
+            info = fields[7]
+            variant_class = _variant_class(ref, alts, pos, info)
+            writers[variant_class].write(line)
+            counts[variant_class] += 1
+finally:
+    if not writers:
+        for key, path in class_paths.items():
+            writers[key] = open(path, "w")
+            writers[key].writelines(headers)
+    for out_fh in writers.values():
+        out_fh.close()
 
-ctr = 0
-ctr2 = 0
-for record in vcf_reader:
-    try:
-        vt = record.var_type
-        vst = record.var_subtype
+for path in class_paths.values():
+    os.system(f"bgzip -f {path}")
+    os.system(f"tabix -f {path}.gz")
 
-        if vt == "snp":
-            if vst == "ts":
-                vcf_out_ds["classes"]["snp_ts"].write_record(record)
-                snp_ts_count += 1
-            elif vst == "tv":
-                vcf_out_ds["classes"]["snp_tv"].write_record(record)
-                snp_tv_count += 1
-        elif vt == "indel":
-            if vst == "ins":
-                if len(record.ALT) == 1:
-                    if len(record.ALT[0]) < 51:
-                        vcf_out_ds["classes"]["ins_50"].write_record(record)
-                        ins_50_count += 1
-                    elif len(record.ALT[0]) > 50 and len(record.ALT[0]) < 51:
-                        vcf_out_ds["classes"]["ins_gt50"].write_record(record)
-                        ins_gt50_count += 1
-                    else:
-                        vcf_out_ds["classes"]["ins_gt50"].write_record(record)
-                        ins_gt50_count += 1
-                else:
-                    max_alt_len = 0
-                    for il in record.ALT:
-                        if len(il) > max_alt_len:
-                            max_alt_len = len(il)
-                    if max_alt_len < 51:
-                        vcf_out_ds["classes"]["ins_50"].write_record(record)
-                        ins_50_count += 1
-                    elif max_alt_len > 50:
-                        vcf_out_ds["classes"]["ins_gt50"].write_record(record)
-                        ins_gt50_count += 1
-                    else:
-                        vcf_out_ds["classes"]["ins_gt50"].write_record(record)
-                        ins_gt50_count += 1
-            elif vst == "del":
-                dellen = record.end - record.start
-                if dellen < 51:
-                    vcf_out_ds["classes"]["del_50"].write_record(record)
-                    del_50_count += 1
-                elif dellen > 50:
-                    vcf_out_ds["classes"]["del_gt50"].write_record(record)
-                    del_gt50_count += 1
-                else:
-                    vcf_out_ds["classes"]["del_gt50"].write_record(record)
-                    del_gt50_count += 1
-            else:
-                # weird indel
-                ilen = 0
-                for a in record.ALT:
-                    ilen = ilen + len(a) + (record.end - record.start)
-                if ilen < 51:
-                    vcf_out_ds["classes"]["indel_50"].write_record(record)
-                    indel_count_50 += 1
-                else:
-                    vcf_out_ds["classes"]["indel_gt50"].write_record(record)
-                    indel_count_gt50 += 1
-        else:
-            ilen = 0
-            for a in record.ALT:
-                ilen = ilen + len(a) + (record.end - record.start)
-            if ilen < 51:
-                vcf_out_ds["classes"]["indel_50"].write_record(record)
-                indel_count_50 += 1
-            else:
-                vcf_out_ds["classes"]["indel_gt50"].write_record(record)
-                indel_count_gt50 += 1
-        ctr = ctr + 1
-        if ctr > 10000:
-            print(".", ctr2)
-            ctr = 0
-            ctr2 = ctr2 + 1
-    except Exception as e:
-        print("WHAT HAPPENED?")
-
-        ilen = 0
-        for a in record.ALT:
-            ilen = ilen + len(a) + (record.end - record.start)
-        print("!!!!!!! Error in parsing VCF  ", record, "--", e, " LEN: ", ilen)
-
-        if ilen < 51:
-            vcf_out_ds["classes"]["indel_50"].write_record(record)
-            indel_count_50 += 1
-        else:
-            vcf_out_ds["classes"]["indel_gt50"].write_record(record)
-            indel_count_gt50 += 1
-            vcf_out_ds['classes']['indel'].write_record(record)
-
-
-for i in vcf_out_ds["classes"]:
-    vcf_out_ds["classes"][i].close()
-
-os.system("bgzip -f {0}".format(snp_tv_vcf))
-os.system("bgzip -f {0}".format(snp_ts_vcf))
-os.system("bgzip -f {0}".format(indel_50_vcf))
-os.system("bgzip -f {0}".format(indel_gt50_vcf))
-os.system("bgzip -f {0}".format(ins_50_vcf))
-os.system("bgzip -f {0}".format(ins_gt50_vcf))
-os.system("bgzip -f {0}".format(del_50_vcf))
-os.system("bgzip -f {0}".format(del_gt50_vcf))
-
-
-os.system("tabix -f {0}.gz".format(snp_tv_vcf))
-os.system("tabix -f {0}.gz".format(snp_ts_vcf))
-os.system("tabix -f {0}.gz".format(indel_50_vcf))
-os.system("tabix -f {0}.gz".format(indel_gt50_vcf))
-os.system("tabix -f {0}.gz".format(ins_50_vcf))
-os.system("tabix -f {0}.gz".format(ins_gt50_vcf))
-os.system("tabix -f {0}.gz".format(del_50_vcf))
-os.system("tabix -f {0}.gz".format(del_gt50_vcf))
-
-out_count_fh.write(
-    "Sample\tCallClass\tSNPts\tSNPtv\tIns50\tIns_gt50\tDel50\tDel_gt50\tIndel_50\tIndel_gt50\tTgtRegionSize\tAltName\n"
-)
-
-out_count_fh.write(
-    "{10}\t{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{11}\n".format(
-        call_class,
-        snp_ts_count,
-        snp_tv_count,
-        ins_50_count,
-        ins_gt50_count,
-        del_50_count,
-        del_gt50_count,
-        indel_count_50,
-        indel_count_gt50,
-        tgt_region_size,
-        sample_mg,
-        sample_coriel,
+with open(count_out, "w") as out_count_fh:
+    out_count_fh.write(
+        "Sample\tCallClass\tSNPts\tSNPtv\tIns50\tIns_gt50\tDel50\tDel_gt50\t"
+        "Indel_50\tIndel_gt50\tTgtRegionSize\tAltName\n"
     )
-)
-
-out_count_fh.close()
+    out_count_fh.write(
+        "{sample}\t{call_class}\t{snp_ts}\t{snp_tv}\t{ins_50}\t{ins_gt50}\t"
+        "{del_50}\t{del_gt50}\t{indel_50}\t{indel_gt50}\t{target}\t{alt}\n".format(
+            sample=sample_mg,
+            call_class=call_class,
+            snp_ts=counts["snp_ts"],
+            snp_tv=counts["snp_tv"],
+            ins_50=counts["ins_50"],
+            ins_gt50=counts["ins_gt50"],
+            del_50=counts["del_50"],
+            del_gt50=counts["del_gt50"],
+            indel_50=counts["indel_50"],
+            indel_gt50=counts["indel_gt50"],
+            target=tgt_region_size,
+            alt=sample_coriel,
+        )
+    )
