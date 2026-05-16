@@ -11,6 +11,9 @@ thousandsSep_format: ","
 sample_names_replace_regex: true
 sample_names_replace:
   "\\.md\\.(chr[0-9XYM]+)$": ".\\1"
+  "\\.metrics$": ""
+  "_FR$": ""
+  "^(.*)-([A-Za-z0-9_]+)-(dmd|smd|spmd|na)-cram$": "\\1.\\2.\\3"
 
 extra_fn_clean_trim:
   - ".snv.sort.vcf.gz.tbi"
@@ -18,10 +21,6 @@ extra_fn_clean_trim:
   - ".mosdepth.summary.sort.bed"
   - ".idxstat.tsv"
   - ".bcfstats.tsv"
-  - ".R1.fastq.gz"
-  - ".R2.fastq.gz"
-  - ".R1.fastq"
-  - ".R2.fastq"
   - "_md"
   - ".vcf.gz"
   - ".bam"
@@ -33,10 +32,15 @@ extra_fn_clean_trim:
   - ".idxstat"
   - ".mosdepth.summary.sort"
   - ".bcfstats"
+  - ".alignment_summary_metrics.txt"
+  - ".insert_size_metrics.txt"
+  - ".quality_yield_metrics.txt"
+  - ".quality_distribution_metrics.txt"
+  - ".gc_bias.summary_metrics.txt"
+  - ".gc_bias.detail_metrics.txt"
 
 
 module_order:
-  - peddy
   - fastqc
   - fastq_screen
   - bamtools
@@ -47,7 +51,6 @@ module_order:
   - mosdepth
   - goleft_indexcov
   - sentieon
-  - somalier
   - vcftools
   - kat
   - custom_content 
@@ -72,9 +75,6 @@ module_order:
   
 table_columns_visible:
   verifybamid-FREEMIX: True
-  peddy-family_id: False
-  peddy-ancestry_prediction: True
-  peddy-ancestry_prob_het_check: True
   fastqc-percent_duplicates: True
   fastqc-percent_gc: False
   fastqc-avg_sequence_length: True
@@ -351,18 +351,9 @@ sp:
   alignstats_gs:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 
-peddy/background_pca:
-  fn: "*.peddy.background_pca.json"
-peddy/het_check:
-  fn: "*.peddy.het_check.csv"
-peddy/ped_check:
-  fn: "*.peddy.ped_check.*csv"
-peddy/sex_check:
-  fn: "*.peddy.sex_check.csv"
-peddy/summary_table:
-  fn: "*.peddy.peddy.ped"
-
 exclude_modules:
+  - peddy
+  - somalier
   - slamdunk
   - adapterRemoval
   - rseqc

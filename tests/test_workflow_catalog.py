@@ -34,7 +34,7 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
         options={
             "jobs": 24,
             "aligners": ["strobe", "bwa2a", "sent"],
-            "dedupers": ["dppl"],
+            "dedupers": ["dmd"],
             "snv_callers": ["oct", "sentd", "deep19"],
             "print_commands": True,
             "keep_going": True,
@@ -47,16 +47,17 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
     assert preview["summary"]["targets"] == [
         "produce_alignstats",
         "produce_snv_concordances",
-        "produce_manta",
-        "produce_tiddit",
-        "produce_dysgu",
+        "produce_manta_sv_vcf",
+        "produce_tiddit_sv_vcf",
+        "produce_dysgu_sv_vcf",
         "produce_kat",
-        "produce_multiqc_final_wgs",
+        "produce_multiqc_all",
     ]
     assert preview["argv"][:3] == ["dy-r", "produce_alignstats", "produce_snv_concordances"]
     assert "-j" in preview["argv"]
     assert "genome_build=hg38" in preview["argv"]
     assert "aligners=['strobe','bwa2a','sent']" in preview["argv"]
+    assert "dedupers=['dmd']" in preview["argv"]
     assert preview["shell_preview"].startswith("source dyoainit && dy-a slurm hg38 && dy-r ")
 
 

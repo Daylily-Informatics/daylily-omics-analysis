@@ -221,7 +221,7 @@ localrules:
     produce_rochehc_vcf,
 
 
-rule produce_rochehc_vcf:  # TARGET: Roche GATK HaplotypeCaller filtered VCF
+rule produce_rochehc_vcf:  # DEPRECATED TARGET: use produce_rochehc_snv_vcf
     input:
         expand(
             MDIR
@@ -241,4 +241,3 @@ rule produce_rochehc_vcf:  # TARGET: Roche GATK HaplotypeCaller filtered VCF
 
         ls {output} ) >> {log} 2>&1;
         """
-

@@ -241,7 +241,7 @@ rule clear_combined_deep19_vcf:  # TARGET:  clear combined deep vcf so the chunk
         "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 
 
-rule produce_deep19_vcf:  # TARGET: deep variant vcf
+rule produce_deep19_vcf:  # DEPRECATED TARGET: use produce_deep19_snv_vcf
     input:
         vcftb=expand(
             MDIR

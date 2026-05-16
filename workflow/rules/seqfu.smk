@@ -79,9 +79,15 @@ rule compile_seqfu:
             head -n 35 $single_file2 > {output.mqc2};
             find {params.mdir} -name '*seqfuR2.mqc.tsv' -exec sh -c 'tail -n 1 "$1" >> "$2"' sh {{}} {output.mqc2} \\;;
         fi;
-        printf "read\\tsource_path\\n" > {output.mqc};
-        find {params.mdir} -name '*seqfuR1.mqc.tsv' -exec sh -c 'printf "R1\\t%s\\n" "$1" >> "$2"' sh {{}} {output.mqc} \\;;
-        find {params.mdir} -name '*seqfuR2.mqc.tsv' -exec sh -c 'printf "R2\\t%s\\n" "$1" >> "$2"' sh {{}} {output.mqc} \\;;
+        printf "Sample\\tbase_sample\\tread\\tsource_path\\n" > {output.mqc};
+        find {params.mdir} -name '*seqfuR1.mqc.tsv' | sort | while IFS= read -r source_path; do
+            base_sample=$(basename "$source_path" .seqfuR1.mqc.tsv);
+            printf "%s.R1\\t%s\\tR1\\t%s\\n" "$base_sample" "$base_sample" "$source_path" >> {output.mqc};
+        done;
+        find {params.mdir} -name '*seqfuR2.mqc.tsv' | sort | while IFS= read -r source_path; do
+            base_sample=$(basename "$source_path" .seqfuR2.mqc.tsv);
+            printf "%s.R2\\t%s\\tR2\\t%s\\n" "$base_sample" "$base_sample" "$source_path" >> {output.mqc};
+        done;
         touch {output.d};
 
         """

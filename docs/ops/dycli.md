@@ -76,19 +76,25 @@ For manual debugging, use this order:
 | --- | --- |
 | `produce_alignstats` | Alignment statistics and aggregate report. |
 | `produce_snv_concordances` | GIAB/RTG concordance for available truth data. |
-| `produce_sentD_vcf` | Illumina Sentieon DNAscope. |
-| `produce_deep19_vcf` | DeepVariant 1.9. |
-| `produce_sentdont_vcf` | ONT Sentieon SNV calling. |
-| `produce_sentdpb_vcf` | PacBio Sentieon SNV calling. |
-| `produce_sentdug_vcf` | Ultima Genomics SNV calling. |
-| `produce_cgt7p_vcf` | Complete Genomics/MGI Sentieon DNAscope via `sentcg`. |
-| `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid workflow. |
-| `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid workflow. |
-| `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant workflows. |
+| `produce_sentd_snv_vcf` | Illumina Sentieon DNAscope. |
+| `produce_deep19_snv_vcf` | DeepVariant 1.9. |
+| `produce_sentdont_snv_vcf` | ONT Sentieon SNV calling. |
+| `produce_sentdpb_snv_vcf` | PacBio Sentieon SNV calling. |
+| `produce_sentdug_snv_vcf` | Ultima Genomics SNV calling. |
+| `produce_cgt7p_snv_vcf` | Complete Genomics/MGI Sentieon DNAscope via `sentcg`. |
+| `produce_sentdhiom_snv_vcf` | Modular Illumina+ONT hybrid workflow. |
+| `produce_sentdhuom_snv_vcf` | Modular Ultima+ONT hybrid workflow. |
+| `produce_dmd_dedup_cram`, `produce_smd_dedup_cram`, `produce_na_dedup_cram` | Canonical dedup selector targets; legacy `dppl` normalizes to `dmd`. |
+| `produce_all_align`, `produce_all_dedup_cram`, `produce_all_snv_vcf`, `produce_all_sv_vcf` | Run every registered selector in that stage, subject to manifest/platform compatibility. |
+| `produce_manta_sv_vcf`, `produce_tiddit_sv_vcf`, `produce_dysgu_sv_vcf` | Structural variant workflows. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
-| `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
-| `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
-| `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
-| `produce_multiqc_final`, `produce_multiqc_final_wgs` | Final routine MultiQC aggregation. |
+| `produce_multiqc_input_data` | MultiQC for input sequence-data QC. |
+| `produce_multiqc_cram` | MultiQC for CRAM/alignment QC. |
+| `produce_multiqc_snv`, `produce_multiqc_sv` | MultiQC for SNV and SV QC scopes. |
+| `produce_multiqc_sample_qc` | MultiQC for sample-level contamination, relatedness, and sex/QC signals. |
+| `produce_multiqc_variant_annotation` | MultiQC for VEP/SnpEff and other annotation summaries. |
+| `produce_multiqc_all` | Canonical final routine MultiQC aggregation. |
 
 Use `dy-r help` and tab completion for the full target list.
+Legacy selector and MultiQC targets remain available but are marked as
+deprecated; prefer the canonical names in new runbooks.

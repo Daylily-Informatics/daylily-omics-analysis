@@ -69,7 +69,8 @@ rule bcftools_variant_stats_gather:
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
-            "sample_id",
+            "Sample",
+            "base_sample",
             "aligner",
             "deduper",
             "snv_caller",
@@ -93,7 +94,8 @@ rule bcftools_variant_stats_gather:
                             metrics[fields[2].rstrip(":").lower()] = fields[3]
                 writer.writerow(
                     {
-                        "sample_id": sample_id,
+                        "Sample": sample_id,
+                        "base_sample": sample,
                         "aligner": aligner,
                         "deduper": deduper,
                         "snv_caller": caller,

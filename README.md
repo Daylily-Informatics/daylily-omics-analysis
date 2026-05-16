@@ -85,31 +85,39 @@ Common flags passed through `dy-r`:
 | --- | --- |
 | `produce_alignstats` | Alignment statistics and aggregate `alignstats_combo_mqc.tsv`. |
 | `produce_snv_concordances` | GIAB/RTG concordance outputs where truth metadata is present. |
-| `produce_sentD_vcf` | Illumina Sentieon DNAscope SNV calling. |
-| `produce_deep19_vcf` | DeepVariant 1.9 SNV calling. |
-| `produce_sentdont_vcf` | ONT Sentieon SNV calling. |
-| `produce_sentdpb_vcf` | PacBio Sentieon SNV calling. |
-| `produce_sentdug_vcf` | Ultima Genomics SNV calling, usually on `hg38_broad`. |
-| `produce_cgt7p_vcf` | Complete Genomics/MGI Sentieon DNAscope path using `sentcg` and `cgt7p`. |
-| `produce_sentdhiom_vcf` | Modular Illumina+ONT hybrid Sentieon workflow. |
-| `produce_sentdhuom_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
-| `produce_manta`, `produce_tiddit`, `produce_dysgu` | Structural variant callers. |
+| `produce_sentd_snv_vcf` | Illumina Sentieon DNAscope SNV calling. |
+| `produce_deep19_snv_vcf` | DeepVariant 1.9 SNV calling. |
+| `produce_sentdont_snv_vcf` | ONT Sentieon SNV calling. |
+| `produce_sentdpb_snv_vcf` | PacBio Sentieon SNV calling. |
+| `produce_sentdug_snv_vcf` | Ultima Genomics SNV calling, usually on `hg38_broad`. |
+| `produce_cgt7p_snv_vcf` | Complete Genomics/MGI Sentieon DNAscope path using `sentcg` and `cgt7p`. |
+| `produce_sentdhiom_snv_vcf` | Modular Illumina+ONT hybrid Sentieon workflow. |
+| `produce_sentdhuom_snv_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
+| `produce_dmd_dedup_cram`, `produce_smd_dedup_cram`, `produce_na_dedup_cram` | Canonical dedup selector targets; `dppl` is accepted only as a deprecated alias for `dmd`. |
+| `produce_all_align`, `produce_all_dedup_cram`, `produce_all_snv_vcf`, `produce_all_sv_vcf` | Run every registered selector in that stage, subject to manifest/platform compatibility. |
+| `produce_manta_sv_vcf`, `produce_tiddit_sv_vcf`, `produce_dysgu_sv_vcf` | Structural variant callers. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
 | `produce_verifybamid2_panel_comparison` | Runs selected VerifyBamID2 SNP panels from `--config verifybamid2_panels=[...]` and writes a comparison TSV. |
-| `produce_multiqc_seq_data` | MultiQC for input sequence-data QC. |
-| `produce_multiqc_alignment` | MultiQC for sequence-data plus alignment and contamination QC. |
-| `produce_multiqc_variants` | MultiQC for sequence, alignment, and variant/annotation QC. |
-| `produce_multiqc_final`, `produce_multiqc_final_wgs` | Final routine MultiQC aggregation. |
+| `produce_multiqc_input_data` | MultiQC for input sequence-data QC. |
+| `produce_multiqc_cram` | MultiQC for CRAM/alignment QC. |
+| `produce_multiqc_snv`, `produce_multiqc_sv` | MultiQC for SNV and SV QC scopes. |
+| `produce_multiqc_sample_qc` | MultiQC for sample-level QC such as contamination and relatedness. |
+| `produce_multiqc_variant_annotation` | MultiQC for annotation QC such as VEP/SnpEff. |
+| `produce_multiqc_all` | Canonical final routine MultiQC aggregation. |
+
+Legacy selector targets such as `produce_sentD_vcf`, `produce_manta`, and
+`produce_multiqc_final_wgs` remain available for now, but are marked as
+deprecated in the workflow and docs. Current examples should use the canonical
+selector names above.
 
 ## Complete Genomics / MGI WGS
 
-Complete Genomics T7+ and MGI-style WGS uses the dedicated `sentcg -> smd -> cgt7p` path:
+Complete Genomics T7+ and MGI-style WGS uses the dedicated `sentcg -> smd -> cgt7p` path. The canonical selector form avoids selector `--config` lists:
 
 ```bash
-dy-r produce_alignstats produce_cgt7p_vcf produce_snv_concordances \
-  -p -j 20 -k -T 1 \
-  --retries 0 --rerun-incomplete --keep-incomplete \
-  --config aligners=[sentcg] dedupers=[smd] snv_callers=[cgt7p]
+dy-r produce_sentcg_align produce_smd_dedup_cram produce_cgt7p_snv_vcf \
+  produce_alignstats produce_snv_concordances \
+  -p -j 20 -k -T 1 --retries 0 --rerun-incomplete --keep-incomplete
 ```
 
 This path uses Sentieon BWA MEM with `DNAscopeMGIWGS2.1.bundle/bwa.model`, read group platform `DNBSEQ`, Sentieon duplicate marking, and DNAscope with `DNAscopeMGIWGS2.1.bundle/dnascope.model` plus `--pcr_indel_model none`.

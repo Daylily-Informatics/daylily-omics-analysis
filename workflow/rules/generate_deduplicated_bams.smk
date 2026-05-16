@@ -24,7 +24,7 @@ rule produce_deduplicated_crams:  # TARGET : Generate CRAMs with all configured 
         "touch {output};"
 
 
-rule dedup_doppelmark:  # TARGET : Generate CRAMs with Doppelmark duplicate marking (dmd)
+rule dedup_doppelmark:  # DEPRECATED TARGET: use produce_dmd_dedup_cram
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram",
@@ -38,7 +38,7 @@ rule dedup_doppelmark:  # TARGET : Generate CRAMs with Doppelmark duplicate mark
         "touch {output};"
 
 
-rule dedup_sentieon:  # TARGET : Generate CRAMs with Sentieon MarkDuplicates (smd)
+rule dedup_sentieon:  # DEPRECATED TARGET: use produce_smd_dedup_cram
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram",
@@ -52,7 +52,7 @@ rule dedup_sentieon:  # TARGET : Generate CRAMs with Sentieon MarkDuplicates (sm
         "touch {output};"
 
 
-rule dedup_none:  # TARGET : Generate CRAMs without duplicate marking (na)
+rule dedup_none:  # DEPRECATED TARGET: use produce_na_dedup_cram
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram",

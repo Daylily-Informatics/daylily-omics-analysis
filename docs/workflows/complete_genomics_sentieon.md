@@ -11,10 +11,9 @@ Use:
 - SNV caller: `cgt7p`
 
 ```bash
-dy-r produce_alignstats produce_cgt7p_vcf produce_snv_concordances \
-  -p -j 20 -k -T 1 \
-  --retries 0 --rerun-incomplete --keep-incomplete \
-  --config aligners=[sentcg] dedupers=[smd] snv_callers=[cgt7p]
+dy-r produce_sentcg_align produce_smd_dedup_cram produce_cgt7p_snv_vcf \
+  produce_alignstats produce_snv_concordances \
+  -p -j 20 -k -T 1 --retries 0 --rerun-incomplete --keep-incomplete
 ```
 
 Dry-run first by adding `-n`.
@@ -77,4 +76,4 @@ The current tests assert the key routing and model facts:
 python -m pytest tests/test_complete_genomics_sentieon.py
 ```
 
-That test verifies the MGI model paths, `DNBSEQ` platform, and the routing from `produce_cgt7p_vcf` to `sentcg` and `cgt7p`.
+That test verifies the MGI model paths, `DNBSEQ` platform, and the routing from `produce_cgt7p_snv_vcf` to `sentcg` and `cgt7p`.

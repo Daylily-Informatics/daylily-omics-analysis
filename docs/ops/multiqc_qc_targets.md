@@ -5,11 +5,18 @@ that matches the run scope:
 
 | Target | Scope |
 | --- | --- |
-| `produce_multiqc_seq_data` | Input sequence-data QC. |
-| `produce_multiqc_alignment` | Sequence-data QC plus raw/no-dedup and deduped alignment QC, contamination, and relatedness. |
-| `produce_multiqc_variants` | Sequence, alignment, variant QC, annotation summaries, ExpansionHunter, and concordance where truth metadata exists. |
-| `produce_multiqc_final` | Alias for the routine final WGS MultiQC report. |
-| `produce_multiqc_final_wgs` | Routine final WGS MultiQC report. |
+| `produce_multiqc_input_data` | Input sequence-data QC. |
+| `produce_multiqc_cram` | CRAM/alignment QC, including configured dedup-level alignment QC. |
+| `produce_multiqc_snv` | SNV QC summaries and related staged variant metrics. |
+| `produce_multiqc_sv` | SV QC/report scope for selected SV callers. |
+| `produce_multiqc_sample_qc` | Sample-level QC such as contamination, relatedness, and sex/QC signals. |
+| `produce_multiqc_variant_annotation` | Annotation QC such as VEP and SnpEff summaries. |
+| `produce_multiqc_all` | Canonical final routine WGS MultiQC report. |
+
+Deprecated compatibility targets remain available for existing runbooks:
+`produce_multiqc_seq_data`, `produce_multiqc_alignment`,
+`produce_multiqc_variants`, `produce_multiqc_final`, and
+`produce_multiqc_final_wgs`.
 
 Routine final reporting is controlled by `multiqc_qc` in the active profile
 `rule_config.yaml`:
@@ -44,7 +51,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | Picard metrics | Alignment QC | per-sample Picard alignment QC outputs |
 | Qualimap | Alignment QC | per-sample Qualimap outputs |
 | mosdepth | Alignment QC | per-sample mosdepth summaries |
-| coverage evenness | Alignment QC | `other_reports/normcovevenness_combo_mqc.tsv` and per-sample markdown |
+| coverage evenness | Alignment QC | `other_reports/norm_cov_evenness_combo_mqc.tsv` and per-sample markdown |
 | goleft | Alignment QC | per-sample goleft outputs |
 | Alignment QC output inventory | Alignment QC | `other_reports/alignment_qc_outputs_mqc.tsv` |
 | VerifyBamID2 | Contamination QC | panel-scoped per-sample `.vb2.tsv` files |

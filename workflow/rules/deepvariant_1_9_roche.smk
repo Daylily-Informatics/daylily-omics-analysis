@@ -265,7 +265,7 @@ rule clear_combined_deep19_r_vcf:  # TARGET: clear combined deep19r vcf so chunk
         "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 
 
-rule produce_deep19_r_vcf:  # TARGET: DeepVariant 1.9 Roche VCF
+rule produce_deep19_r_vcf:  # DEPRECATED TARGET: use produce_deep19r_snv_vcf
     input:
         vcftb=expand(
             MDIR
@@ -334,4 +334,3 @@ rule prep_deep19_r_chunkdirs:
         touch {output};
         ls {output}; ) > {log} 2>&1;
         """
-

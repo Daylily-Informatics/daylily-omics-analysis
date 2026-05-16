@@ -12,11 +12,11 @@ First, generate VCFs from your short-read and long-read data using standard dayl
 
 ```bash
 # Example: ILMN short-read + DeepVariant
-dy-r produce_snv_concordances -p -k -j 10 \
-  --config aligners=['bwa2a'] dedupers=['dmd'] snv_callers=['deep19']
+dy-r produce_bwa2a_align produce_dmd_dedup_cram produce_deep19_snv_vcf \
+  produce_snv_concordances -p -k -j 10
 
 # Example: ONT long-read + Sentieon
-dy-r produce_sentdont_vcf -p -k -j 10
+dy-r produce_sentmm2ont_align produce_na_dedup_cram produce_sentdont_snv_vcf -p -k -j 10
 ```
 
 ### 2. Configure units.tsv

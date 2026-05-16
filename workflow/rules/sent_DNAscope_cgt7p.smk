@@ -253,7 +253,7 @@ localrules:
     produce_cgt7p_vcf,
 
 
-rule produce_cgt7p_vcf:  # TARGET: Complete Genomics MGI Sentieon DNAscope VCF
+rule produce_cgt7p_vcf:  # DEPRECATED TARGET: use produce_cgt7p_snv_vcf
     input:
         expand(
             MDIR

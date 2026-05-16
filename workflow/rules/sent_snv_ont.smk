@@ -206,7 +206,7 @@ rule clear_combined_sentdont_vcf:  # TARGET:  clear combined sentdont vcf so the
 localrules:
     produce_sentdont_vcf,
 
-rule produce_sentdont_vcf:  # TARGET: sentieon dnascope vcf
+rule produce_sentdont_vcf:  # DEPRECATED TARGET: use produce_sentdont_snv_vcf
     input:
         expand(
             MDIR

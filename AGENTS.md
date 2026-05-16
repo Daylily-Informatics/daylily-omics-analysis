@@ -26,6 +26,7 @@ Always `conda activate DAY-EC`, little is done in this repo from a mac, but most
   - INITIALIZE: source the `dyoainit` script to initialize the dy-cli. (note: the output of dyoainit should tell you how to activte slurm or local execution env, set genome build, run example commands.
   - ACTIVATE: `dy-a local hg38` to activate the local execution env, or  `dy-a slurm hg38` to activate the slurm execution env. Note, the second argument is the genome build, and must be set. In practice, this is almost always `hg38`, but could be `b37` or `hg38_broad`. 
   - RUN: `dy-r help` to see the available targets, and the init output should tell you how to run the common workflow. Important flags: -n for dry run, -p to print helpful info to stdout, -j for job limit (local should be 1 or 2, slurm can be 300-500), -k to keep going if a job fails... the dy-r cli command actually composes a complex snakemake command given these user command line specified ones. Run `dy-r --help` for all of them.
+- For future work on replacing the `dy-*` alias model with shell functions or executable entrypoints, read `docs/potential_future_improvements.md` first.
 
 ## Headnode Persistent tmux Pipeline Launch Spec
 Use this pattern when a user asks an agent to launch Daylily workflow commands on an AWS ParallelCluster headnode and leave the run inspectable after the agent disconnects.

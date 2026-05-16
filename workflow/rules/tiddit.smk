@@ -90,7 +90,7 @@ rule tiddit_sort_index:
 
 localrules: produce_tiddit,
 
-rule produce_tiddit:  # TARGET: Produce All Tiddit
+rule produce_tiddit:  # DEPRECATED TARGET: use produce_tiddit_sv_vcf
     priority: 45
     threads: 1
     input:

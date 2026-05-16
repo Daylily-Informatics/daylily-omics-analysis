@@ -65,7 +65,8 @@ rule snpeff_annotation_gather:
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
-            "sample_id",
+            "Sample",
+            "base_sample",
             "aligner",
             "deduper",
             "snv_caller",
@@ -78,9 +79,11 @@ rule snpeff_annotation_gather:
             writer.writeheader()
             for path in input:
                 sample, aligner, deduper, caller = _variant_qc_parts(path)
+                sample_id = day_stage_sample_id(sample, aligner, deduper, caller)
                 writer.writerow(
                     {
-                        "sample_id": sample,
+                        "Sample": sample_id,
+                        "base_sample": sample,
                         "aligner": aligner,
                         "deduper": deduper,
                         "snv_caller": caller,

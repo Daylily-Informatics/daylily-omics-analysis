@@ -1,0 +1,104 @@
+target	kind	code	status	delegates_to
+produce_sent_align	aligner	sent	current	produce_sentieon_bwa_sort_bam
+produce_bwa2a_align	aligner	bwa2a	current	produce_bwa_mem2_sort_bam
+produce_strobe_align	aligner	strobe	current	produce_strobe_align_sort_bam
+produce_sentcg_align	aligner	sentcg	current	produce_sentieon_cgt7p_bwa_sort_bam
+produce_sentmm2_align	aligner	sentmm2	current	produce_sentmm2_align_sort
+produce_sentmm2ont_align	aligner	sentmm2ont	current	produce_sentmm2ont_align_sort
+produce_all_align	aligner	all	current	
+produce_bwa_mem2_sort_bam	aligner	bwa2a	deprecated	
+produce_sentieon_bwa_sort_bam	aligner	sent	deprecated	
+produce_sentieon_cgt7p_bwa_sort_bam	aligner	sentcg	deprecated	
+produce_strobe_align_sort_bam	aligner	strobe	deprecated	
+produce_sentmm2_align_sort	aligner	sentmm2	deprecated	
+produce_sentmm2ont_align_sort	aligner	sentmm2ont	deprecated	
+produce_cgt7p_vcf	aligner	sentcg	deprecated	
+produce_pangenome_sr_vcf	aligner	pangenome_sr	deprecated	
+produce_pangenome_ug_vcf	aligner	pangenome_ug	deprecated	
+produce_dmd_dedup_cram	deduper	dmd	current	dedup_doppelmark
+produce_smd_dedup_cram	deduper	smd	current	dedup_sentieon
+produce_na_dedup_cram	deduper	na	current	dedup_none
+produce_all_dedup_cram	deduper	all	current	produce_deduplicated_crams
+dedup_doppelmark	deduper	dmd	deprecated	
+dedup_sentieon	deduper	smd	deprecated	
+dedup_none	deduper	na	deprecated	
+produce_sentd_snv_vcf	snv_caller	sentd	current	produce_sentD_vcf
+produce_cgt7p_snv_vcf	snv_caller	cgt7p	current	produce_cgt7p_vcf
+produce_sentdpb_snv_vcf	snv_caller	sentdpb	current	produce_sentdpb_vcf
+produce_sentdont_snv_vcf	snv_caller	sentdont	current	produce_sentdont_vcf
+produce_sentdug_snv_vcf	snv_caller	sentdug	current	produce_sentdug_vcf
+produce_sentdhio_snv_vcf	snv_caller	sentdhio	current	produce_sentdhio_vcf
+produce_sentdhuo_snv_vcf	snv_caller	sentdhuo	current	produce_sentdhuo_vcf
+produce_sentdhip_snv_vcf	snv_caller	sentdhip	current	produce_sentdhip_vcf
+produce_sentdhup_snv_vcf	snv_caller	sentdhup	current	produce_sentdhup_vcf
+produce_sentdhiom_snv_vcf	snv_caller	sentdhiom	current	produce_sentdhiom_vcf
+produce_sentdhuom_snv_vcf	snv_caller	sentdhuom	current	produce_sentdhuom_vcf
+produce_sentdhipm_snv_vcf	snv_caller	sentdhipm	current	produce_sentdhipm_vcf
+produce_sentdhupm_snv_vcf	snv_caller	sentdhupm	current	produce_sentdhupm_vcf
+produce_sentdhrom_snv_vcf	snv_caller	sentdhrom	current	produce_sentdhrom_vcf
+produce_sentdhrpm_snv_vcf	snv_caller	sentdhrpm	current	produce_sentdhrpm_vcf
+produce_sentdhiomr_snv_vcf	snv_caller	sentdhiomr	current	produce_sentdhiomr_vcf
+produce_sentdhipmr_snv_vcf	snv_caller	sentdhipmr	current	produce_sentdhipmr_vcf
+produce_sentdhuomr_snv_vcf	snv_caller	sentdhuomr	current	produce_sentdhuomr_vcf
+produce_sentdhupmr_snv_vcf	snv_caller	sentdhupmr	current	produce_sentdhupmr_vcf
+produce_sentpg_snv_vcf	snv_caller	sentpg	current	produce_sentpg_vcf
+produce_gatk_snv_vcf	snv_caller	gatk	current	produce_sentieon_gatk_vcf
+produce_deep19_snv_vcf	snv_caller	deep19	current	produce_deep19_vcf
+produce_deep19r_snv_vcf	snv_caller	deep19r	current	produce_deep19_r_vcf
+produce_deep15_snv_vcf	snv_caller	deep15	current	produce_deep15_vcf
+produce_oct_snv_vcf	snv_caller	oct	current	produce_oct_vcf
+produce_clair3_snv_vcf	snv_caller	clair3	current	produce_clair3_vcf
+produce_lfq2_snv_vcf	snv_caller	lfq2	current	produce_lofreq2_vcf
+produce_varn_snv_vcf	snv_caller	varn	current	produce_varn_vcf
+produce_aiv_snv_vcf	snv_caller	aiv	current	produce_aiv_vcf
+produce_mutect2_snv_vcf	snv_caller	mutect2	current	produce_mutect2_vcf
+produce_dvsom_snv_vcf	snv_caller	dvsom	current	produce_dvsom_vcf
+produce_slk2g_snv_vcf	snv_caller	slk2g	current	produce_strelka2_germline_vcf
+produce_slk2s_snv_vcf	snv_caller	slk2s	current	produce_strelka2_somatic_vcf
+produce_senttn_snv_vcf	snv_caller	senttn	current	produce_sent_TNscope_vcf
+produce_rochehc_snv_vcf	snv_caller	rochehc	current	produce_rochehc_vcf
+produce_all_snv_vcf	snv_caller	all	current	
+produce_sentD_vcf	snv_caller	sentd	deprecated	
+produce_cgt7p_vcf	snv_caller	cgt7p	deprecated	
+produce_sentdpb_vcf	snv_caller	sentdpb	deprecated	
+produce_sentdont_vcf	snv_caller	sentdont	deprecated	
+produce_sentdug_vcf	snv_caller	sentdug	deprecated	
+produce_sentdhio_vcf	snv_caller	sentdhio	deprecated	
+produce_sentdhuo_vcf	snv_caller	sentdhuo	deprecated	
+produce_sentdhip_vcf	snv_caller	sentdhip	deprecated	
+produce_sentdhup_vcf	snv_caller	sentdhup	deprecated	
+produce_sentdhiom_vcf	snv_caller	sentdhiom	deprecated	
+produce_sentdhuom_vcf	snv_caller	sentdhuom	deprecated	
+produce_sentdhipm_vcf	snv_caller	sentdhipm	deprecated	
+produce_sentdhupm_vcf	snv_caller	sentdhupm	deprecated	
+produce_sentdhrom_vcf	snv_caller	sentdhrom	deprecated	
+produce_sentdhrpm_vcf	snv_caller	sentdhrpm	deprecated	
+produce_sentdhiomr_vcf	snv_caller	sentdhiomr	deprecated	
+produce_sentdhipmr_vcf	snv_caller	sentdhipmr	deprecated	
+produce_sentdhuomr_vcf	snv_caller	sentdhuomr	deprecated	
+produce_sentdhupmr_vcf	snv_caller	sentdhupmr	deprecated	
+produce_sentpg_vcf	snv_caller	sentpg	deprecated	
+produce_pangenome_sr_vcf	snv_caller	sentpg	deprecated	
+produce_pangenome_ug_vcf	snv_caller	sentpg	deprecated	
+produce_sentieon_gatk_vcf	snv_caller	gatk	deprecated	
+produce_deep19_vcf	snv_caller	deep19	deprecated	
+produce_deep19_r_vcf	snv_caller	deep19r	deprecated	
+produce_deep15_vcf	snv_caller	deep15	deprecated	
+produce_oct_vcf	snv_caller	oct	deprecated	
+produce_clair3_vcf	snv_caller	clair3	deprecated	
+produce_lofreq2_vcf	snv_caller	lfq2	deprecated	
+produce_varn_vcf	snv_caller	varn	deprecated	
+produce_aiv_vcf	snv_caller	aiv	deprecated	
+produce_mutect2_vcf	snv_caller	mutect2	deprecated	
+produce_dvsom_vcf	snv_caller	dvsom	deprecated	
+produce_strelka2_germline_vcf	snv_caller	slk2g	deprecated	
+produce_strelka2_somatic_vcf	snv_caller	slk2s	deprecated	
+produce_sent_TNscope_vcf	snv_caller	senttn	deprecated	
+produce_rochehc_vcf	snv_caller	rochehc	deprecated	
+produce_tiddit_sv_vcf	sv_caller	tiddit	current	produce_tiddit
+produce_manta_sv_vcf	sv_caller	manta	current	produce_manta
+produce_dysgu_sv_vcf	sv_caller	dysgu	current	produce_dysgu
+produce_all_sv_vcf	sv_caller	all	current	
+produce_tiddit	sv_caller	tiddit	deprecated	
+produce_manta	sv_caller	manta	deprecated	
+produce_dysgu	sv_caller	dysgu	deprecated	

@@ -20,7 +20,7 @@ for COV in 1x 3x; do
     
     tmux new-session -d -s "ilmn-solo-${COV}" -c "${ADIR}/daylily-omics-analysis"
     
-    tmux send-keys -t "ilmn-solo-${COV}" "cd ${ADIR}/daylily-omics-analysis && source ~/.bashrc && . dyoainit --project agbt_2026 && source bin/day_activate slurm hg38_broad && source bin/day_run produce_snv_concordances -p -k -j 300 --config aligners=[bwa2a] dedupers=[dppl] snv_callers=[deep19]" Enter
+    tmux send-keys -t "ilmn-solo-${COV}" "cd ${ADIR}/daylily-omics-analysis && source ~/.bashrc && . dyoainit --project agbt_2026 && source bin/day_activate slurm hg38_broad && source bin/day_run produce_bwa2a_align produce_dmd_dedup_cram produce_deep19_snv_vcf produce_snv_concordances -p -k -j 300" Enter
     
     echo "Launched ilmn-solo-${COV}"
     sleep 2
@@ -28,4 +28,3 @@ done
 
 echo ""
 tmux ls
-

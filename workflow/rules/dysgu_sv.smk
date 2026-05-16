@@ -89,7 +89,7 @@ rule dysgu_sort_index:
 
 localrules: produce_dysgu,
 
-rule produce_dysgu:  # TARGET: Produce All Dysgu
+rule produce_dysgu:  # DEPRECATED TARGET: use produce_dysgu_sv_vcf
     priority: 39
     input:
         expand(MDIR +"{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)

@@ -70,7 +70,7 @@ def _expansionhunter_target_paths(suffix):
         if alnr in EXPANSIONHUNTER_DEDUP_ALIGNERS:
             if not non_na_dedupers:
                 raise WorkflowError(
-                    f"ExpansionHunter for {alnr} requires a non-na deduper; set dedupers=['dppl'] or another real deduper."
+                    f"ExpansionHunter for {alnr} requires a non-na deduper; set dedupers=['dmd'] or another real deduper."
                 )
             for ddup in non_na_dedupers:
                 for sample in SSAMPS:

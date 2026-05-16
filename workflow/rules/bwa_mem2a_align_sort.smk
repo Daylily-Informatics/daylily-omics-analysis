@@ -96,6 +96,6 @@ rule bwa_mem2_sort:
 
 localrules: produce_bwa_mem2_sort_bam,
 
-rule produce_bwa_mem2_sort_bam:  # TARGET: produce_bwa_mem2_sort_bam
+rule produce_bwa_mem2_sort_bam:  # DEPRECATED TARGET: use produce_bwa2a_align
      input:
          expand(MDIR + "{sample}/align/bwa2a/{sample}.bwa2a.sort.bam", sample=SAMPS)

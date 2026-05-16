@@ -193,7 +193,7 @@ else:
 
 localrules: produce_strobe_align_sort_bam,
 
-rule produce_strobe_align_sort_bam:  # TARGET: strobe aligner sorted bam
+rule produce_strobe_align_sort_bam:  # DEPRECATED TARGET: use produce_strobe_align
      input:
          expand(MDIR + "{sample}/align/strobe/{sample}.strobe.sort.bam", sample=SAMPS)
  

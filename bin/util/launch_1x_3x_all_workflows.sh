@@ -9,18 +9,16 @@ REPO="git@github.com:Daylily-Informatics/daylily-omics-analysis.git"
 MANIFEST_DIR=".test_data/data/agbt_2026/1x_3x"
 
 # Workflow definitions: name, target, config_args, units_dir
-# For ILMN solo: need aligners, dedupers, snv_callers
-# For platform-specific: use produce_*_vcf targets
-# NOTE: Config args use single quotes around the whole list to avoid shell parsing issues
+# Canonical selector targets encode aligner, deduper, and caller choices.
 declare -A WORKFLOWS=(
-    ["ilmn-solo"]="produce_snv_concordances|--config aligners=[bwa2a] dedupers=[dppl] snv_callers=[deep19]|ilmn-solo"
-    ["pacbio-solo"]="produce_sentdpb_vcf||pacbio-solo"
-    ["ultima-solo"]="produce_sentdug_vcf||ultima-solo"
-    ["ont-solo"]="produce_sentdont_vcf||ont-solo"
-    ["hybrid-cli-ilmn-ont"]="produce_sentdhio_vcf||hybrid-cli-ilmn-ont"
-    ["hybrid-cli-ultima-ont"]="produce_sentdhuo_vcf||hybrid-cli-ultima-ont"
-    ["hybrid-mod-ilmn-ont"]="produce_sentdhiom_vcf||hybrid-mod-ilmn-ont"
-    ["hybrid-mod-ultima-ont"]="produce_sentdhuom_vcf||hybrid-mod-ultima-ont"
+    ["ilmn-solo"]="produce_bwa2a_align produce_dmd_dedup_cram produce_deep19_snv_vcf produce_snv_concordances||ilmn-solo"
+    ["pacbio-solo"]="produce_sentmm2_align produce_na_dedup_cram produce_sentdpb_snv_vcf||pacbio-solo"
+    ["ultima-solo"]="produce_na_dedup_cram produce_sentdug_snv_vcf||ultima-solo"
+    ["ont-solo"]="produce_sentmm2ont_align produce_na_dedup_cram produce_sentdont_snv_vcf||ont-solo"
+    ["hybrid-cli-ilmn-ont"]="produce_sentdhio_snv_vcf||hybrid-cli-ilmn-ont"
+    ["hybrid-cli-ultima-ont"]="produce_sentdhuo_snv_vcf||hybrid-cli-ultima-ont"
+    ["hybrid-mod-ilmn-ont"]="produce_sentdhiom_snv_vcf||hybrid-mod-ilmn-ont"
+    ["hybrid-mod-ultima-ont"]="produce_sentdhuom_snv_vcf||hybrid-mod-ultima-ont"
 )
 
 COVERAGES=("1x" "3x")
@@ -79,4 +77,3 @@ echo "=== All 16 workflows launched ==="
 echo ""
 echo "Monitor with: tmux ls"
 echo "Check queue:  squeue -u ubuntu -o '%.8i %.20P %.30j %.8T %.10M'"
-
