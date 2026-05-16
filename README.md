@@ -95,6 +95,7 @@ Common flags passed through `dy-r`:
 | `produce_sentdhuom_snv_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
 | `produce_dmd_dedup_cram`, `produce_smd_dedup_cram`, `produce_na_dedup_cram` | Canonical dedup selector targets; `dppl` is accepted only as a deprecated alias for `dmd`. |
 | `produce_all_align`, `produce_all_dedup_cram`, `produce_all_snv_vcf`, `produce_all_sv_vcf` | Run every registered selector in that stage, subject to manifest/platform compatibility. |
+| `produce_bclconvert_fastqs`, `produce_bclconvert_metrics`, `produce_bclconvert_multiqc`, `produce_bclconvert_fastqs_and_metrics` | Illumina BCL Convert bootstrap, generated units, demux metrics, and MultiQC-ready BCL metric tables. |
 | `produce_manta_sv_vcf`, `produce_tiddit_sv_vcf`, `produce_dysgu_sv_vcf` | Structural variant callers. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
 | `produce_verifybamid2_panel_comparison` | Runs selected VerifyBamID2 SNP panels from `--config verifybamid2_panels=[...]` and writes a comparison TSV. |
@@ -155,7 +156,7 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 | [`docs/ops/dir_and_file_scheme.md`](docs/ops/dir_and_file_scheme.md) | Current result layout and naming conventions. |
 | [`docs/ops/workflow_catalog.md`](docs/ops/workflow_catalog.md) | Packaged workflow catalog API and current contents. |
 | [`docs/workflows/complete_genomics_sentieon.md`](docs/workflows/complete_genomics_sentieon.md) | Complete Genomics/MGI `sentcg/smd/cgt7p` workflow. |
-| [`docs/workflows/bclconvert_bootstrap.md`](docs/workflows/bclconvert_bootstrap.md) | Illumina BCL Convert bootstrap path. |
+| [`docs/workflows/bclconvert_bootstrap.md`](docs/workflows/bclconvert_bootstrap.md) | Illumina BCL Convert bootstrap path, generated units, BCL metrics, and MultiQC custom-data integration. |
 | [`docs/workflows/ensemble_vcf.md`](docs/workflows/ensemble_vcf.md) | Ensemble VCF workflow notes. |
 | [`docs/remote_test_execution.md`](docs/remote_test_execution.md) | Remote tmux/Slurm execution pattern. |
 

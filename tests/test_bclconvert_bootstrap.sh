@@ -17,6 +17,7 @@ TESTS_FAILED=0
 PARSER="workflow/scripts/parse_bclconvert_samplesheet.py"
 UNITS_GENERATOR="workflow/scripts/bclconvert_fastq_list_to_units.py"
 METRICS_SUMMARY="workflow/scripts/bclconvert_metrics_summary.py"
+METRICS_TO_MULTIQC="workflow/scripts/bclconvert_metrics_to_multiqc.py"
 RULE_FILE="workflow/rules/bclconvert.smk"
 COMMON_FILE="workflow/rules/common.smk"
 
@@ -559,8 +560,11 @@ rule_names = [
     "run_bclconvert",
     "bclconvert_generate_units_tsv",
     "bclconvert_metrics_summary",
+    "bclconvert_metrics_multiqc_exports",
     "multiqc_bclconvert",
     "produce_bclconvert_fastqs",
+    "produce_bclconvert_metrics",
+    "produce_bclconvert_multiqc",
     "produce_bclconvert_fastqs_and_metrics",
 ]
 for idx, name in enumerate(rule_names):
@@ -572,7 +576,8 @@ for idx, name in enumerate(rule_names):
         if pos != -1:
             end = min(end, pos)
     block = text[start:end]
-    assert "shell:" in block, name
+    if name not in {"produce_bclconvert_metrics", "produce_bclconvert_multiqc"}:
+        assert "shell:" in block, name
 ' "$RULE_FILE"
   test_result "verify literal container directive and shell-only new rules" "$?"
 }
@@ -593,6 +598,8 @@ test_bootstrap_blank_or_missing_units_gate() {
 from pathlib import Path
 text = Path("workflow/rules/common.smk").read_text(encoding="utf-8")
 assert "produce_bclconvert_fastqs" in text
+assert "produce_bclconvert_metrics" in text
+assert "produce_bclconvert_multiqc" in text
 assert "produce_bclconvert_fastqs_and_metrics" in text
 assert "allow_bootstrap=BCL_BOOTSTRAP_MODE" in text
 assert "if not BCL_BOOTSTRAP_MODE:" in text

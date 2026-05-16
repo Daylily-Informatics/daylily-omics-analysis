@@ -20,7 +20,7 @@ The production contract is that this repository runs inside a `daylily-ephemeral
 | Document | Use |
 | --- | --- |
 | [`workflows/complete_genomics_sentieon.md`](workflows/complete_genomics_sentieon.md) | Complete Genomics/MGI `sentcg -> smd -> cgt7p`. |
-| [`workflows/bclconvert_bootstrap.md`](workflows/bclconvert_bootstrap.md) | Illumina BCL Convert bootstrap. |
+| [`workflows/bclconvert_bootstrap.md`](workflows/bclconvert_bootstrap.md) | Illumina BCL Convert bootstrap, generated units, demux metrics, and MultiQC custom-data exports. |
 | [`workflows/ensemble_vcf.md`](workflows/ensemble_vcf.md) | Ensemble VCF notes. |
 | [`README_sentieon_pangenome_shortreads.md`](README_sentieon_pangenome_shortreads.md) | Sentieon pangenome short-read notes. |
 

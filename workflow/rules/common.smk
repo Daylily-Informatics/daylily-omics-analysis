@@ -317,6 +317,8 @@ cluster_config = cluster_config  # noqa   ### Just needed to quiet linters
 
 BCL_BOOTSTRAP_TARGETS = {
     "produce_bclconvert_fastqs",
+    "produce_bclconvert_metrics",
+    "produce_bclconvert_multiqc",
     "produce_bclconvert_fastqs_and_metrics",
 }
 
@@ -331,6 +333,14 @@ def _boolish(value, default=False):
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _bclconvert_enabled_for_multiqc():
+    cfg = config.get("multiqc_qc", {})
+    enabled = cfg.get("enable_tools", [])
+    if isinstance(enabled, str):
+        enabled = [item.strip() for item in enabled.split(",") if item.strip()]
+    return "bclconvert" in {str(item).strip() for item in enabled}
 
 
 def _sanitize_run_id(value):
@@ -372,7 +382,7 @@ def _derive_bcl_bootstrap_run_id():
 
 BCL_BOOTSTRAP_MODE = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS) or _boolish(
     config.get("bootstrap_bclconvert", False)
-)
+) or _bclconvert_enabled_for_multiqc()
 BCL_BOOTSTRAP_RUN_ID = _derive_bcl_bootstrap_run_id()
 config["bootstrap_bclconvert"] = BCL_BOOTSTRAP_MODE
 config["bclconvert_bootstrap_run_id"] = BCL_BOOTSTRAP_RUN_ID

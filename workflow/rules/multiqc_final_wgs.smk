@@ -9,6 +9,8 @@ RPT_TITLE = os.environ.get("RPT_TITLE", "Final")
 
 def _seq_data_component_inputs(wildcards):
     paths = _sequence_qc_native_inputs(wildcards)
+    if qc_tool_enabled("bclconvert", default=False):
+        paths.append(MDIR + "other_reports/bclconvert_metrics_mqc.done")
     paths.append(MDIR + "other_reports/sequence_qc_outputs_mqc.tsv")
     return paths
 

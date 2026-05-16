@@ -298,6 +298,11 @@ def test_multiqc_config_custom_content_entries() -> None:
     for key in (
         "seqfu",
         "sequence_qc_outputs",
+        "bclconvert_demux",
+        "bclconvert_lane_summary",
+        "bclconvert_fastq_manifest",
+        "bclconvert_unknown_barcodes",
+        "bclconvert_index_hopping",
         "alignment_qc_outputs",
         "contamination",
         "verifybamid2_panel_comparison",

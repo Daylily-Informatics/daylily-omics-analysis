@@ -19,6 +19,7 @@ Run shell contract tests when CLI entrypoints or BCL Convert bootstrap docs chan
 ```bash
 bash tests/test_cli_commands.sh
 bash tests/test_bclconvert_bootstrap.sh
+python -m pytest -q tests/test_bclconvert_multiqc.py
 ```
 
 ## Test Inventory
@@ -27,6 +28,7 @@ bash tests/test_bclconvert_bootstrap.sh
 | --- | --- |
 | `tests/test_cli_commands.sh` | CLI shell entrypoints, aliases, completion, monitor behavior, and docs coverage. |
 | `tests/test_bclconvert_bootstrap.sh` | BCL Convert bootstrap scripts, rules, fixtures, and report expectations. |
+| `tests/test_bclconvert_multiqc.py` | BCL Convert genome-build `other_reports/*_mqc.tsv` exports and MultiQC custom-data registration. |
 | `tests/test_complete_genomics_sentieon.py` | Complete Genomics/MGI model paths and `sentcg/cgt7p` routing. |
 | `tests/test_tool_catalog_docs.py` | README/catalog link, tool-catalog schema, and required code-sourced rows. |
 | `tests/test_multiqc_qc_targets.py` | Staged MultiQC targets, runtime-gated QC tools, VEP chunking, and final report contracts. |

@@ -1,0 +1,158 @@
+from __future__ import annotations
+
+import csv
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+FIXTURE_DIR = REPO_ROOT / ".test_data" / "data" / "bclconvert"
+
+
+def _read(path: str) -> str:
+    full_path = REPO_ROOT / path
+    assert full_path.exists(), path
+    return full_path.read_text(encoding="utf-8")
+
+
+def _yaml(path: str) -> dict:
+    return yaml.safe_load(_read(path))
+
+
+def _read_tsv(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
+
+
+def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
+    rule = _read("workflow/rules/bclconvert.smk")
+    common = _read("workflow/rules/common.smk")
+    multiqc = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    assert 'BCL_MQC_DIR = f"{MDIR}other_reports"' in rule
+    assert "rule bclconvert_metrics_multiqc_exports:" in rule
+    assert "workflow/scripts/bclconvert_metrics_to_multiqc.py" in rule
+    assert "bclconvert_demux_mqc.tsv" in rule
+    assert "bclconvert_unknown_barcodes_mqc.tsv" in rule
+    assert "bclconvert_index_hopping_mqc.tsv" in rule
+    assert "bclconvert_fastq_manifest_mqc.tsv" in rule
+    assert "bclconvert_lane_summary_mqc.tsv" in rule
+    assert "rule produce_bclconvert_metrics:" in rule
+    assert "rule produce_bclconvert_multiqc:" in rule
+    assert '.get("bclconvert", {})' in rule
+    assert 'config/external_tools/multiqc_config.yaml' in rule
+
+    assert '"produce_bclconvert_metrics"' in common
+    assert '"produce_bclconvert_multiqc"' in common
+    assert "def _bclconvert_enabled_for_multiqc" in common
+    assert 'qc_tool_enabled("bclconvert", default=False)' in multiqc
+    assert 'MDIR + "other_reports/bclconvert_metrics_mqc.done"' in multiqc
+
+
+def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
+    config = _yaml("config/external_tools/multiqc_config.yaml")
+    for key in (
+        "bclconvert_demux",
+        "bclconvert_lane_summary",
+        "bclconvert_fastq_manifest",
+        "bclconvert_unknown_barcodes",
+        "bclconvert_index_hopping",
+    ):
+        assert key in config["custom_data"]
+        assert key in config["sp"]
+        assert config["custom_data"][key]["file_format"] == "tsv"
+        assert config["custom_data"][key]["plot_type"] == "table"
+
+    for path in (
+        "config/day_profiles/local/templates/rule_config.yaml",
+        "config/day_profiles/slurm/templates/rule_config.yaml",
+    ):
+        profile = _yaml(path)
+        assert profile["multiqc"]["bclconvert"]["config_yaml"] == "config/external_tools/multiqc_config.yaml"
+        assert profile["multiqc"]["bclconvert"]["env_yaml"] == "../envs/multiqc_v0.1.yaml"
+
+
+def test_bclconvert_metrics_to_multiqc_outputs_sample_first(tmp_path: Path) -> None:
+    report_dir = tmp_path / "run_a" / "fastq" / "Reports"
+    report_dir.mkdir(parents=True)
+    for name in (
+        "Demultiplex_Stats.csv",
+        "fastq_list.csv",
+        "Top_Unknown_Barcodes.csv",
+        "Index_Hopping_Counts.csv",
+    ):
+        shutil.copy2(FIXTURE_DIR / name, report_dir / name)
+
+    metrics_dir = tmp_path / "metrics"
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "bclconvert_metrics_summary.py"),
+            "--report-dir",
+            str(report_dir),
+            "--demux-out",
+            str(metrics_dir / "demultiplex_stats.tsv"),
+            "--unknown-out",
+            str(metrics_dir / "unknown_barcodes.tsv"),
+            "--hopping-out",
+            str(metrics_dir / "index_hopping.tsv"),
+            "--fastq-manifest-out",
+            str(metrics_dir / "fastq_manifest.tsv"),
+            "--rollup-json-out",
+            str(metrics_dir / "rollup.json"),
+        ],
+        check=True,
+    )
+
+    mqc_dir = tmp_path / "other_reports"
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "bclconvert_metrics_to_multiqc.py"),
+            "--demux-tsv",
+            str(metrics_dir / "demultiplex_stats.tsv"),
+            "--unknown-tsv",
+            str(metrics_dir / "unknown_barcodes.tsv"),
+            "--hopping-tsv",
+            str(metrics_dir / "index_hopping.tsv"),
+            "--fastq-manifest-tsv",
+            str(metrics_dir / "fastq_manifest.tsv"),
+            "--rollup-json",
+            str(metrics_dir / "rollup.json"),
+            "--demux-out",
+            str(mqc_dir / "bclconvert_demux_mqc.tsv"),
+            "--unknown-out",
+            str(mqc_dir / "bclconvert_unknown_barcodes_mqc.tsv"),
+            "--hopping-out",
+            str(mqc_dir / "bclconvert_index_hopping_mqc.tsv"),
+            "--fastq-manifest-out",
+            str(mqc_dir / "bclconvert_fastq_manifest_mqc.tsv"),
+            "--lane-summary-out",
+            str(mqc_dir / "bclconvert_lane_summary_mqc.tsv"),
+        ],
+        check=True,
+    )
+
+    demux_rows = _read_tsv(mqc_dir / "bclconvert_demux_mqc.tsv")
+    assert demux_rows[0]["Sample"] == "run_a.L1.Omega_XTR_1-2-200_180.R1"
+    assert demux_rows[0]["sample_id"] == "Omega_XTR_1-2-200_180"
+    assert demux_rows[0]["reads"] == "1000"
+
+    fastq_rows = _read_tsv(mqc_dir / "bclconvert_fastq_manifest_mqc.tsv")
+    assert fastq_rows[0]["Sample"] == "run_a.L1.Omega_XTR_1-2-200_180.RG001"
+    assert fastq_rows[0]["read1_file"].endswith("_R1_001.fastq.gz")
+
+    unknown_rows = _read_tsv(mqc_dir / "bclconvert_unknown_barcodes_mqc.tsv")
+    assert unknown_rows[0]["Sample"] == "run_a.L1.unknown_barcode.AAAAAAAAAA.CCCCCCCCCC"
+    assert unknown_rows[0]["reads"] == "12"
+
+    lane_rows = _read_tsv(mqc_dir / "bclconvert_lane_summary_mqc.tsv")
+    assert {row["Sample"] for row in lane_rows} == {"run_a.L1", "run_a.L2"}
+    assert next(row for row in lane_rows if row["Sample"] == "run_a.L1")["total_pf_reads"] == "1050"
+
+    hopping_header = (mqc_dir / "bclconvert_index_hopping_mqc.tsv").read_text(encoding="utf-8").splitlines()[0]
+    assert hopping_header.startswith("Sample\t")

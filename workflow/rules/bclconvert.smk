@@ -68,6 +68,8 @@ BCL_TABLE_DIR = f"{BCL_ROOT}/tables"
 BCL_METRIC_DIR = f"{BCL_ROOT}/metrics"
 BCL_REPORT_OUT_DIR = f"{BCL_ROOT}/reports"
 BCL_LOG_DIR = f"{BCL_ROOT}/logs"
+BCL_MQC_DIR = f"{MDIR}other_reports"
+BCL_MQC_LOG_DIR = f"{BCL_MQC_DIR}/logs"
 
 BCL_VALIDATE_OK = f"{BCL_LOG_DIR}/validated.ok"
 BCL_NORMALIZED_SAMPLE_SHEET = f"{BCL_ROOT}/normalized.SampleSheet.csv"
@@ -76,17 +78,18 @@ BCL_WARNINGS = f"{BCL_LOG_DIR}/bclconvert_validate_inputs.warnings.log"
 BCL_DONE = f"{BCL_LOG_DIR}/bclconvert.done"
 BCL_FASTQS_COMPLETE = f"{BCL_ROOT}/fastqs.complete"
 BCL_BOOTSTRAP_COMPLETE = f"{BCL_ROOT}/bclconvert.bootstrap.complete"
+BCL_MQC_COMPLETE = f"{BCL_MQC_DIR}/bclconvert_metrics_mqc.done"
 
 BCL_METRICS_ENV = "../envs/bclconvert_metrics_v0.1.yaml"
 MULTIQC_ENV = (
     config.get("multiqc", {})
-    .get("bcl2fq", {})
+    .get("bclconvert", {})
     .get("env_yaml", "../envs/multiqc_v0.1.yaml")
 )
 MULTIQC_CONFIG = (
     config.get("multiqc", {})
-    .get("bcl2fq", {})
-    .get("config_yaml", "config/external_tools/multiqc_bcl2fq.yaml")
+    .get("bclconvert", {})
+    .get("config_yaml", "config/external_tools/multiqc_config.yaml")
 )
 SAMPLES_TABLE = str(
     config.get("samples_table", os.path.abspath(os.path.join("config", "samples.tsv")))
@@ -106,6 +109,8 @@ BCL_SEQ_PLATFORM_OVERRIDE = str(BCLCFG.get("seq_platform_override", "") or "")
 
 localrules:
     produce_bclconvert_fastqs,
+    produce_bclconvert_metrics,
+    produce_bclconvert_multiqc,
     produce_bclconvert_fastqs_and_metrics,
 
 
@@ -272,11 +277,52 @@ rule bclconvert_metrics_summary:
         """
 
 
+rule bclconvert_metrics_multiqc_exports:
+    input:
+        demux_tsv=f"{BCL_METRIC_DIR}/demultiplex_stats.tsv",
+        unknown_tsv=f"{BCL_METRIC_DIR}/unknown_barcodes.tsv",
+        hopping_tsv=f"{BCL_METRIC_DIR}/index_hopping.tsv",
+        fastq_manifest_tsv=f"{BCL_METRIC_DIR}/fastq_manifest.tsv",
+        rollup_json=f"{BCL_METRIC_DIR}/rollup.json",
+    output:
+        demux_mqc=f"{BCL_MQC_DIR}/bclconvert_demux_mqc.tsv",
+        unknown_mqc=f"{BCL_MQC_DIR}/bclconvert_unknown_barcodes_mqc.tsv",
+        hopping_mqc=f"{BCL_MQC_DIR}/bclconvert_index_hopping_mqc.tsv",
+        fastq_manifest_mqc=f"{BCL_MQC_DIR}/bclconvert_fastq_manifest_mqc.tsv",
+        lane_summary_mqc=f"{BCL_MQC_DIR}/bclconvert_lane_summary_mqc.tsv",
+        done=touch(BCL_MQC_COMPLETE),
+    threads:
+        1
+    conda:
+        BCL_METRICS_ENV
+    log:
+        f"{BCL_MQC_LOG_DIR}/bclconvert_metrics_multiqc_exports.log",
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {BCL_MQC_DIR:q} {BCL_MQC_LOG_DIR:q}
+        : > {log:q}
+        python workflow/scripts/bclconvert_metrics_to_multiqc.py \
+          --demux-tsv {input.demux_tsv:q} \
+          --unknown-tsv {input.unknown_tsv:q} \
+          --hopping-tsv {input.hopping_tsv:q} \
+          --fastq-manifest-tsv {input.fastq_manifest_tsv:q} \
+          --rollup-json {input.rollup_json:q} \
+          --demux-out {output.demux_mqc:q} \
+          --unknown-out {output.unknown_mqc:q} \
+          --hopping-out {output.hopping_mqc:q} \
+          --fastq-manifest-out {output.fastq_manifest_mqc:q} \
+          --lane-summary-out {output.lane_summary_mqc:q} \
+          >> {log:q} 2>&1
+        """
+
+
 rule multiqc_bclconvert:
     input:
         done=BCL_DONE,
         demux=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
         fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
+        mqc_exports=BCL_MQC_COMPLETE,
     output:
         html=f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
     threads:
@@ -299,6 +345,7 @@ rule multiqc_bclconvert:
           --filename {params.multiqc_filename:q} \
           --outdir {BCL_REPORT_OUT_DIR:q} \
           {BCL_FASTQ_DIR:q} \
+          {BCL_MQC_DIR:q} \
           >> {log:q} 2>&1
         test -s {output.html:q}
         """
@@ -314,6 +361,16 @@ rule produce_bclconvert_fastqs:
         "touch {output}"
 
 
+rule produce_bclconvert_metrics:  # TARGET: gather BCL Convert metrics into genome-build MultiQC custom-data TSVs
+    input:
+        BCL_MQC_COMPLETE,
+
+
+rule produce_bclconvert_multiqc:  # TARGET: gather BCL Convert metrics and build a focused MultiQC report
+    input:
+        f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
+
+
 rule produce_bclconvert_fastqs_and_metrics:
     input:
         BCL_VALIDATE_OK,
@@ -324,6 +381,7 @@ rule produce_bclconvert_fastqs_and_metrics:
         f"{BCL_METRIC_DIR}/index_hopping.tsv",
         f"{BCL_METRIC_DIR}/fastq_manifest.tsv",
         f"{BCL_METRIC_DIR}/rollup.json",
+        BCL_MQC_COMPLETE,
         f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
     output:
         touch(BCL_BOOTSTRAP_COMPLETE),

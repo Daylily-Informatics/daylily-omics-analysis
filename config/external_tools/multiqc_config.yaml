@@ -191,6 +191,46 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'sequence_qc_outputs'
+  bclconvert_demux:
+    id: 'bclconvert_demux'
+    section_name: 'BCL Convert Demultiplex Stats'
+    description: 'Per-run, per-lane, per-sample BCL Convert demultiplexing statistics'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bclconvert_demux'
+  bclconvert_lane_summary:
+    id: 'bclconvert_lane_summary'
+    section_name: 'BCL Convert Lane Summary'
+    description: 'Lane-level BCL Convert read, index-match, undetermined, and barcode summary metrics'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bclconvert_lane_summary'
+  bclconvert_fastq_manifest:
+    id: 'bclconvert_fastq_manifest'
+    section_name: 'BCL Convert FASTQ Manifest'
+    description: 'FASTQ files produced by BCL Convert and exposed for downstream Daylily units generation'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bclconvert_fastq_manifest'
+  bclconvert_unknown_barcodes:
+    id: 'bclconvert_unknown_barcodes'
+    section_name: 'BCL Convert Unknown Barcodes'
+    description: 'Top unknown barcode rows reported by BCL Convert'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bclconvert_unknown_barcodes'
+  bclconvert_index_hopping:
+    id: 'bclconvert_index_hopping'
+    section_name: 'BCL Convert Index Hopping'
+    description: 'Index hopping counts reported by BCL Convert when present'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bclconvert_index_hopping'
   alignment_qc_outputs:
     id: 'alignment_qc_outputs'
     section_name: 'Alignment QC Output Inventory'
@@ -324,6 +364,16 @@ sp:
     fn: "other_reports/seqfu_mqc.tsv"
   sequence_qc_outputs:
     fn: "other_reports/sequence_qc_outputs_mqc.tsv"
+  bclconvert_demux:
+    fn: "other_reports/bclconvert_demux_mqc.tsv"
+  bclconvert_lane_summary:
+    fn: "other_reports/bclconvert_lane_summary_mqc.tsv"
+  bclconvert_fastq_manifest:
+    fn: "other_reports/bclconvert_fastq_manifest_mqc.tsv"
+  bclconvert_unknown_barcodes:
+    fn: "other_reports/bclconvert_unknown_barcodes_mqc.tsv"
+  bclconvert_index_hopping:
+    fn: "other_reports/bclconvert_index_hopping_mqc.tsv"
   alignment_qc_outputs:
     fn: "other_reports/alignment_qc_outputs_mqc.tsv"
   contamination:

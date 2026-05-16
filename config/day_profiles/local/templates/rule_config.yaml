@@ -523,6 +523,9 @@ multiqc:
     bcl2fq:
         config_yaml: "config/external_tools/multiqc_bcl2fq.yaml"
         env_yaml: "../envs/multiqc_v0.1.yaml"
+    bclconvert:
+        config_yaml: "config/external_tools/multiqc_config.yaml"
+        env_yaml: "../envs/multiqc_v0.1.yaml"
     final:
         config_yaml: "config/external_tools/multiqc_final.yaml"
         env_yaml: "../envs/multiqc_v0.1.yaml"

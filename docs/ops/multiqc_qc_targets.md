@@ -75,6 +75,21 @@ into any staged/final `produce_multiqc_*` target.
 alignment QC beside configured real dedupers. Set it to `false` when a dry-run
 or smoke fixture cannot produce raw/no-dedup alignment QC.
 
+BCL Convert metrics are not routine defaults because they require a BCL run
+directory and SampleSheet, not the normal post-staging `units.tsv` inputs. Run
+`produce_bclconvert_metrics` to write BCL custom-data TSVs into
+`results/day/<build>/other_reports/`, or explicitly require those BCL sections
+in a staged/final report with:
+
+```bash
+dy-r produce_multiqc_all \
+  --config 'multiqc_qc={"enable_tools":["bclconvert"]}' \
+  -p -j 20 -k
+```
+
+See [`../workflows/bclconvert_bootstrap.md`](../workflows/bclconvert_bootstrap.md)
+for the exact BCL metric sections and output files.
+
 VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
 without clobbering each other. The default routine panel is `100k`; run
 `produce_verifybamid2_panel_comparison --config verifybamid2_panels=["1k","100k","1m"]`
