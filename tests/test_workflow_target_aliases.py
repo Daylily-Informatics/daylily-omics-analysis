@@ -86,6 +86,18 @@ def test_all_targets_expand_complete_registered_sets() -> None:
     assert "codes.update(_current_alias_codes(kind))" in common
 
 
+def test_selector_targets_handle_aggregate_delegates_with_explicit_inputs() -> None:
+    selector_rules = _read("workflow/rules/workflow_target_aliases.smk")
+
+    assert 'if delegate == "dedup_none":' in selector_rules
+    assert "def _workflow_na_dedup_inputs" in selector_rules
+    assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in selector_rules
+    assert "{sample}.{alnr}.na.cram.crai" in selector_rules
+    assert "{sample}.{alnr}.na.bam.bai" in selector_rules
+    assert 'if delegate == "produce_sentmm2_align_sort":' in selector_rules
+    assert 'if delegate == "produce_sentmm2ont_align_sort":' in selector_rules
+
+
 def test_auto_config_injection_covers_all_selector_dimensions() -> None:
     bin_day_run = _read("bin/day_run")
     common = _read("workflow/rules/common.smk")

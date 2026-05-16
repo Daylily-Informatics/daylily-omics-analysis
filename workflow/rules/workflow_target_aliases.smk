@@ -33,6 +33,25 @@ def _workflow_target_delegate_rules(kind, target):
 def _workflow_target_alias_inputs(kind, target):
     inputs = []
     for delegate in _workflow_target_delegate_rules(kind, target):
+        if delegate == "dedup_none":
+            inputs.extend(_workflow_na_dedup_inputs())
+            continue
+        if delegate == "produce_sentmm2_align_sort":
+            inputs.extend(
+                expand(
+                    MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram",
+                    sample=PB_SENTMM2_SAMPS,
+                )
+            )
+            continue
+        if delegate == "produce_sentmm2ont_align_sort":
+            inputs.extend(
+                expand(
+                    MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram",
+                    sample=ONT_SENTMM2ONT_SAMPS,
+                )
+            )
+            continue
         try:
             delegate_rule = getattr(rules, delegate)
         except AttributeError:
@@ -47,6 +66,41 @@ def _workflow_target_alias_inputs(kind, target):
             )
         inputs.extend(delegate_inputs)
     return sorted(set(str(path) for path in inputs))
+
+
+def _workflow_na_dedup_aligners():
+    aligners = set(ALIGNERS) | set(CRAM_ALIGNERS) | set(BAM_ALIGNERS)
+    for alnr, _snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS):
+        aligners.add(alnr)
+    return sorted(aligners)
+
+
+def _workflow_na_dedup_inputs():
+    inputs = []
+    for alnr in _workflow_na_dedup_aligners():
+        if alnr in BAM_ALIGNERS:
+            inputs.extend(
+                expand(
+                    [
+                        MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.bam",
+                        MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.bam.bai",
+                    ],
+                    sample=SSAMPS,
+                    alnr=[alnr],
+                )
+            )
+        else:
+            inputs.extend(
+                expand(
+                    [
+                        MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram",
+                        MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram.crai",
+                    ],
+                    sample=SSAMPS,
+                    alnr=[alnr],
+                )
+            )
+    return inputs
 
 
 def _workflow_target_alias_marker(target):
