@@ -1,10 +1,9 @@
 
 """ Take rtg vcfeval summary.txt file, pull out the 'None' filtered data and regurigtate it with some add'l values calc'd"""
+import csv
 import os
 import sys
-import pandas as pd
 import re
-import math
 
 if len(sys.argv) < 11:
     raise SystemExit(
@@ -202,102 +201,85 @@ for cnt in [fn_count, fp_count, tp_count]:
 
 print(ds_var, file=sys.stderr)
 
-df = pd.DataFrame(ds_var)
-try:
-    df["TgtRegionSize"] = df["TP"]["tgtRegionSize"]
-except Exception:
-    df["TgtRegionSize"] = None
-try:
-    df = df.drop("tgtRegionSize")
-except Exception:
-    pass
 
-df["TN"] = None
-for i in df.iterrows():
-    if math.isnan(i[1]["TP"]):
-        i[1]["TP"] = 0.0
-        df["TP"][i[0]] = 0.0
-    if math.isnan(i[1]["FN"]):
-        i[1]["FN"] = 0.0
-        df["FN"][i[0]] = 0.0
-    if math.isnan(i[1]["FP"]):
-        i[1]["FP"] = 0.0
-        df["FP"][i[0]] = 0.0
+def _safe_div(num, den):
+    try:
+        den = float(den)
+        if den == 0:
+            return None
+        return float(num) / den
+    except Exception:
+        return None
 
-    df["TN"][i[0]] = float(i[1]["TgtRegionSize"]) - (
-        float(i[1]["TP"]) + float(i[1]["FN"])
+
+def _empty_none(value):
+    return "" if value is None else value
+
+
+variant_classes = [
+    "SNPts",
+    "SNPtv",
+    "INS_50",
+    "INS_gt50",
+    "DEL_50",
+    "DEL_gt50",
+    "Indel_50",
+    "Indel_gt50",
+]
+for call_class_data in ds_var.values():
+    for variant_class in call_class_data:
+        if variant_class != "tgtRegionSize" and variant_class not in variant_classes:
+            variant_classes.append(variant_class)
+
+rows = []
+for variant_class in variant_classes:
+    tp = float(ds_var.get("TP", {}).get(variant_class, 0.0) or 0.0)
+    fn = float(ds_var.get("FN", {}).get(variant_class, 0.0) or 0.0)
+    fp = float(ds_var.get("FP", {}).get(variant_class, 0.0) or 0.0)
+    try:
+        target_size = float(ds_var.get("TP", {}).get("tgtRegionSize"))
+    except Exception:
+        target_size = None
+    tn = None if target_size is None else target_size - (tp + fn)
+    rows.append(
+        {
+            "VariantClass": variant_class,
+            "TgtRegionSize": target_size,
+            "TN": tn,
+            "FN": fn,
+            "TP": tp,
+            "FP": fp,
+        }
     )
-df.loc["All"] = df.sum()
 
-df["TgtRegionSize"]["All"] = tgt_region_size
-df["TN"]["All"] = tgt_region_size - (df["TP"]["All"] + df["FN"]["All"])
-
-
-df["Specificity"] = None
-df["Sensitivity-Recall"] = None
-df["FDR"] = None
-df["PPV"] = None
-df["Precision"] = None
-df["Fscore"] = None
-
-for i in df.iterrows():
-    try:
-        df["Precision"][i[0]] = float(i[1]["TP"]) / (
-            float(i[1]["TP"]) + float(i[1]["FP"])
-        )
-    except Exception:
-        df["Precision"][i[0]] = None
-    try:
-        df["Sensitivity-Recall"][i[0]] = float(i[1]["TP"]) / (
-            float(i[1]["TP"]) + float(i[1]["FN"])
-        )
-    except Exception:
-        df["Sensitivity-Recall"][i[0]] = None
-    try:
-        df["Specificity"][i[0]] = float(i[1]["TN"]) / (
-            float(i[1]["TN"]) + float(i[1]["FP"])
-        )
-    except Exception:
-        df["Specificity"][i[0]] = None
-    try:
-        df["FDR"][i[0]] = float(i[1]["FP"]) / (float(i[1]["TP"]) + float(i[1]["FP"]))
-    except Exception:
-        df["FDR"][i[0]] = None
-    try:
-        df["PPV"][i[0]] = 1.0 - float(
-            float(i[1]["FP"]) / (float(i[1]["TP"]) + float(i[1]["FP"]))
-        )
-    except Exception:
-        df["PPV"][i[0]] = None
-    try:  # TPTPFP = Precision TPTPFN--Sensitivity
-        df["Fscore"][i[0]] = 2.0 * (
-            (
-                (float(i[1]["TP"]) / (float(i[1]["TP"]) + float(i[1]["FP"])))
-                * (float(i[1]["TP"]) / (float(i[1]["TP"]) + float(i[1]["FN"])))
-            )
-            / (
-                (float(i[1]["TP"]) / (float(i[1]["TP"]) + float(i[1]["FP"])))
-                + (float(i[1]["TP"]) / (float(i[1]["TP"]) + float(i[1]["FN"])))
-            )
-        )
-    except Exception:
-        df["Fscore"][i[0]] = None
-
-df.index.name = "VariantClass"
-df = df.reset_index()
-stage_sample = f"{sample}.{alnr}.{ddup}.{snv_caller}"
-df["Sample"] = df["VariantClass"].map(
-    lambda variant_class: f"{stage_sample}.{variant_class}"
+all_tp = sum(float(row["TP"]) for row in rows)
+all_fn = sum(float(row["FN"]) for row in rows)
+all_fp = sum(float(row["FP"]) for row in rows)
+rows.append(
+    {
+        "VariantClass": "All",
+        "TgtRegionSize": tgt_region_size,
+        "TN": tgt_region_size - (all_tp + all_fn),
+        "FN": all_fn,
+        "TP": all_tp,
+        "FP": all_fp,
+    }
 )
-df["InputSample"] = sample
-df["AltId"] = alt_id
-df["ROI"] = cmp_footprint
-df["Subset"] = subset
-df["AllVarMeanDP"] = allvar_mean_dp
-df['CovBin'] = cov_bin
-df['Aligner'] = alnr
-df['Deduper'] = ddup
-df['SNVCaller'] = snv_caller
+
+for row in rows:
+    precision = _safe_div(row["TP"], row["TP"] + row["FP"])
+    sensitivity = _safe_div(row["TP"], row["TP"] + row["FN"])
+    row["Precision"] = precision
+    row["Sensitivity-Recall"] = sensitivity
+    row["Specificity"] = _safe_div(row["TN"], row["TN"] + row["FP"])
+    row["FDR"] = _safe_div(row["FP"], row["TP"] + row["FP"])
+    row["PPV"] = None if row["FDR"] is None else 1.0 - row["FDR"]
+    if precision is None or sensitivity is None or (precision + sensitivity) == 0:
+        row["Fscore"] = None
+    else:
+        row["Fscore"] = 2.0 * ((precision * sensitivity) / (precision + sensitivity))
+
+stage_sample = f"{sample}.{alnr}.{ddup}.{snv_caller}"
 print_cols = [
     'Sample',
     'VariantClass',
@@ -321,4 +303,26 @@ print_cols = [
     'Deduper',
     'SNVCaller',
 ]
-df.to_csv(even_newer_summary, sep="\t", columns=print_cols, index=False)
+for row in rows:
+    variant_class = row["VariantClass"]
+    row["Sample"] = f"{stage_sample}.{variant_class}"
+    row["InputSample"] = sample
+    row["AltId"] = alt_id
+    row["ROI"] = cmp_footprint
+    row["Subset"] = subset
+    row["AllVarMeanDP"] = allvar_mean_dp
+    row["CovBin"] = cov_bin
+    row["Aligner"] = alnr
+    row["Deduper"] = ddup
+    row["SNVCaller"] = snv_caller
+
+with open(even_newer_summary, "w", newline="") as out_fh:
+    writer = csv.DictWriter(
+        out_fh,
+        fieldnames=print_cols,
+        delimiter="\t",
+        extrasaction="ignore",
+    )
+    writer.writeheader()
+    for row in rows:
+        writer.writerow({key: _empty_none(row.get(key)) for key in print_cols})
