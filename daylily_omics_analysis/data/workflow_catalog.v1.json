@@ -132,13 +132,13 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dppl"
+            "dmd"
           ],
           "required": true,
           "render_as": "config_list",
           "choices": [
             {
-              "value": "dppl",
+              "value": "dmd",
               "label": "Doppelmark"
             }
           ]
@@ -202,10 +202,10 @@
       "targets": [
         "produce_alignstats",
         "produce_snv_concordances",
-        "produce_manta",
-        "produce_tiddit",
-        "produce_dysgu",
-        "produce_multiqc_final_wgs"
+        "produce_manta_sv_vcf",
+        "produce_tiddit_sv_vcf",
+        "produce_dysgu_sv_vcf",
+        "produce_multiqc_all"
       ],
       "options": [
         {
@@ -269,13 +269,13 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dppl"
+            "dmd"
           ],
           "required": true,
           "render_as": "config_list",
           "choices": [
             {
-              "value": "dppl",
+              "value": "dmd",
               "label": "Doppelmark"
             }
           ]
@@ -340,11 +340,11 @@
       "targets": [
         "produce_alignstats",
         "produce_snv_concordances",
-        "produce_manta",
-        "produce_tiddit",
-        "produce_dysgu",
+        "produce_manta_sv_vcf",
+        "produce_tiddit_sv_vcf",
+        "produce_dysgu_sv_vcf",
         "produce_kat",
-        "produce_multiqc_final_wgs"
+        "produce_multiqc_all"
       ],
       "options": [
         {
@@ -409,13 +409,13 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dppl"
+            "dmd"
           ],
           "required": true,
           "render_as": "config_list",
           "choices": [
             {
-              "value": "dppl",
+              "value": "dmd",
               "label": "Doppelmark"
             }
           ]

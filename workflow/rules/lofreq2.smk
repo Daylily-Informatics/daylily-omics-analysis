@@ -272,7 +272,7 @@ rule lofreq2_concat_index_chunks:
         """
 
 
-rule produce_lofreq2_vcf:  # TARGET: lofreq2 vcfs
+rule produce_lofreq2_vcf:  # DEPRECATED TARGET: use produce_lfq2_snv_vcf
     input:
         vcftb=expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.lfq2.snv.sort.vcf.gz",

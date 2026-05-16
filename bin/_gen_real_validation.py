@@ -60,7 +60,7 @@ lines = [
     '',
     '# Run standard SR pipeline: alignment + dedup + SNV calling + concordance + SV callers',
     'echo "--- Starting Phase 2 SR pipeline $(date) ---"',
-    'bash bin/day_run produce_snv_concordances produce_manta produce_tiddit --config aligners=[sent] dedupers=[dppl] snv_callers=[sentd] sv_callers=[manta,tiddit] -p -j 2 -k -T 1 2>&1 | tee "$LOG_DIR/real_phase2_sr.log"',
+    'bash bin/day_run produce_sent_align produce_dmd_dedup_cram produce_sentd_snv_vcf produce_manta_sv_vcf produce_tiddit_sv_vcf produce_snv_concordances -p -j 2 -k -T 1 2>&1 | tee "$LOG_DIR/real_phase2_sr.log"',
     'rc=${PIPESTATUS[0]}',
     'echo "RETURN CODE for Phase 2: $rc" | tee -a "$LOG_DIR/real_phase2_sr.log"',
     'echo "--- Finished Phase 2 $(date) ---"',
@@ -82,4 +82,3 @@ with open(out, 'w') as f:
     f.write('\n'.join(lines) + '\n')
 os.chmod(out, 0o755)
 print(f'Written {len(lines)} lines to {out}')
-

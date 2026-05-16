@@ -181,6 +181,6 @@ rule sentmm2ont_align_sort:
 
 localrules: produce_sentmm2ont_align_sort,
 
-rule produce_sentmm2ont_align_sort:  # TARGET: produce_sentmm2ont_align_sort
+rule produce_sentmm2ont_align_sort:  # DEPRECATED TARGET: use produce_sentmm2ont_align
     input:
         expand(MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram", sample=ONT_SENTMM2ONT_SAMPS)

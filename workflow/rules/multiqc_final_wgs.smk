@@ -174,6 +174,13 @@ localrules:
     sequence_qc_outputs_custom_data,
     alignment_qc_outputs_custom_data,
     aggregate_report_components,
+    produce_multiqc_input_data,
+    produce_multiqc_cram,
+    produce_multiqc_snv,
+    produce_multiqc_sv,
+    produce_multiqc_sample_qc,
+    produce_multiqc_variant_annotation,
+    produce_multiqc_all,
     produce_multiqc_seq_data,
     produce_multiqc_alignment,
     produce_multiqc_variants,
@@ -440,26 +447,61 @@ report_header_info:
         """
 
 
-rule produce_multiqc_seq_data:  # TARGET: Generated sequence-data QC report
+rule produce_multiqc_input_data:  # TARGET: canonical input sequence-data QC report
     input:
         MDIR + "reports/DAY_seq_data_multiqc.html"
 
 
-rule produce_multiqc_alignment:  # TARGET: Generated sequence and alignment QC report
+rule produce_multiqc_cram:  # TARGET: canonical CRAM/alignment QC report
     input:
         MDIR + "reports/DAY_alignment_multiqc.html"
 
 
-rule produce_multiqc_variants:  # TARGET: Generated sequence, alignment, and variant QC report
+rule produce_multiqc_snv:  # TARGET: canonical SNV QC report
     input:
         MDIR + "reports/DAY_variants_multiqc.html"
 
 
-rule produce_multiqc_final:  # TARGET: Generated All Routine WGS QC Reports
+rule produce_multiqc_sv:  # TARGET: canonical SV QC report
+    input:
+        MDIR + "reports/DAY_variants_multiqc.html"
+
+
+rule produce_multiqc_sample_qc:  # TARGET: canonical sample-level QC report
+    input:
+        MDIR + "reports/DAY_alignment_multiqc.html"
+
+
+rule produce_multiqc_variant_annotation:  # TARGET: canonical variant annotation QC report
+    input:
+        MDIR + "reports/DAY_variants_multiqc.html"
+
+
+rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
     input:
         MDIR + "reports/DAY_final_multiqc.html"
 
 
-rule produce_multiqc_final_wgs:  # TARGET: Generated All WGS Reports
+rule produce_multiqc_seq_data:  # DEPRECATED TARGET: use produce_multiqc_input_data
+    input:
+        MDIR + "reports/DAY_seq_data_multiqc.html"
+
+
+rule produce_multiqc_alignment:  # DEPRECATED TARGET: use produce_multiqc_cram
+    input:
+        MDIR + "reports/DAY_alignment_multiqc.html"
+
+
+rule produce_multiqc_variants:  # DEPRECATED TARGET: use produce_multiqc_snv / produce_multiqc_variant_annotation
+    input:
+        MDIR + "reports/DAY_variants_multiqc.html"
+
+
+rule produce_multiqc_final:  # DEPRECATED TARGET: use produce_multiqc_all
+    input:
+        MDIR + "reports/DAY_final_multiqc.html"
+
+
+rule produce_multiqc_final_wgs:  # DEPRECATED TARGET: use produce_multiqc_all
     input:
         MDIR + "reports/DAY_final_multiqc.html"

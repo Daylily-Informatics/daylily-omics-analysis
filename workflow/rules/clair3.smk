@@ -304,7 +304,7 @@ rule clear_combined_clair3_vcf:  # TARGET : Clear combined Clair3 VCFs for re-ev
     shell:
         "(rm {input.vcf}*  1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 
-rule produce_clair3_vcf:  # TARGET: clair3 vcf
+rule produce_clair3_vcf:  # DEPRECATED TARGET: use produce_clair3_snv_vcf
     input:
         vcftb=expand(
             MDIR

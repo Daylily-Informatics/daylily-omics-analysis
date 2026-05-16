@@ -1,5 +1,6 @@
 from snakemake.utils import validate
 from snakemake.exceptions import WorkflowError
+import csv
 import re
 import os
 import pandas as pd
@@ -398,6 +399,78 @@ def first_val(df, col):
         return None
     return df.iloc[0].get(col)
 
+
+WORKFLOW_TARGET_ALIAS_PATH = os.path.join("config", "workflow_target_aliases.tsv")
+
+
+def _load_workflow_target_aliases():
+    aliases = []
+    with open(WORKFLOW_TARGET_ALIAS_PATH, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            aliases.append({key: str(value or "") for key, value in row.items()})
+    return aliases
+
+
+WORKFLOW_TARGET_ALIASES = _load_workflow_target_aliases()
+TARGET_ALIAS_BY_KIND = {}
+for _alias in WORKFLOW_TARGET_ALIASES:
+    TARGET_ALIAS_BY_KIND.setdefault(_alias["kind"], []).append(_alias)
+
+
+def _target_alias_code_map(kind):
+    return {
+        row["target"]: row["code"]
+        for row in TARGET_ALIAS_BY_KIND.get(kind, [])
+        if row["code"] and row["code"] != "all"
+    }
+
+
+def _target_alias_codes_from_argv(kind):
+    codes = set()
+    for arg in sys.argv:
+        for row in TARGET_ALIAS_BY_KIND.get(kind, []):
+            if row["target"] != arg or not row["code"]:
+                continue
+            if row["code"] == "all":
+                codes.update(_current_alias_codes(kind))
+            else:
+                codes.add(row["code"])
+    return codes
+
+
+def _current_alias_codes(kind):
+    return sorted(
+        {
+            row["code"]
+            for row in TARGET_ALIAS_BY_KIND.get(kind, [])
+            if row["status"] == "current" and row["code"] and row["code"] != "all"
+        }
+    )
+
+
+def _current_alias_targets(kind, *, include_all=False):
+    return [
+        row["target"]
+        for row in TARGET_ALIAS_BY_KIND.get(kind, [])
+        if row["status"] == "current"
+        and row["target"]
+        and (include_all or row["code"] != "all")
+    ]
+
+
+def _delegate_targets(kind):
+    return [
+        row["delegates_to"]
+        for row in TARGET_ALIAS_BY_KIND.get(kind, [])
+        if row["status"] == "current" and row["delegates_to"]
+    ]
+
+
+CANONICAL_ALIGNER_CODES = _current_alias_codes("aligner")
+CANONICAL_DEDUPER_CODES = _current_alias_codes("deduper")
+CANONICAL_SNV_CALLER_CODES = _current_alias_codes("snv_caller")
+CANONICAL_SV_CALLER_CODES = _current_alias_codes("sv_caller")
+
 # ####  PARSE SUPPORTING DATA FILES/DIRS INTO CONFIG
 # -----------------------------------
 # suppporting dirs
@@ -550,17 +623,6 @@ else:
 
 # Fallback: auto-detect aligners from env var set by bin/day_run,
 # or from sys.argv for direct snakemake invocations.
-_ALIGNER_TARGET_MAP = {
-    "produce_bwa_mem2_sort_bam": "bwa2a",
-    "produce_sentieon_bwa_sort_bam": "sent",
-    "produce_sentieon_cgt7p_bwa_sort_bam": "sentcg",
-    "produce_cgt7p_vcf": "sentcg",
-    "produce_strobe_align_sort_bam": "strobe",
-    "produce_sentmm2_align_sort": "sentmm2",
-    "produce_sentmm2ont_align_sort": "sentmm2ont",
-    "produce_pangenome_sr_vcf": "pangenome_sr",
-    "produce_pangenome_ug_vcf": "pangenome_ug",
-}
 if not ALIGNERS:
     _auto_aligners_env = os.environ.get('_DY_AUTO_ALIGNERS', '')
     if _auto_aligners_env:
@@ -569,10 +631,7 @@ if not ALIGNERS:
             f'''colr "...INFO: Auto-detected aligners from env: {ALIGNERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
     else:
-        _cli_aligner_codes = set()
-        for _arg in sys.argv:
-            if _arg in _ALIGNER_TARGET_MAP:
-                _cli_aligner_codes.add(_ALIGNER_TARGET_MAP[_arg])
+        _cli_aligner_codes = _target_alias_codes_from_argv("aligner")
         if _cli_aligner_codes:
             ALIGNERS = sorted(_cli_aligner_codes)
             os.system(
@@ -585,10 +644,10 @@ os.system(
 
 # Handle dedupers
 # Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), na (no dedup / skip)
-# Legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
+# Deprecated legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
 # If no dedupers specified, defaults to ['na'] (no dedup).
 DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
-DDUP_VALID_CODES = {"dmd", "smd", "spmd", "na"}
+DDUP_VALID_CODES = set(CANONICAL_DEDUPER_CODES)
 
 DDUP = []
 if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
@@ -598,20 +657,22 @@ if 'dedupers' not in config or config.get('dedupers') is None or len(config.get(
     )
 else:
     _raw_ddup = sorted(set(config["dedupers"]))
+    _legacy_ddup = sorted(set(_raw_ddup) & set(DDUP_LEGACY_MAP))
+    if _legacy_ddup:
+        os.system(
+            f'''colr "...WARNING: Deprecated deduper code(s) {_legacy_ddup} were normalized to canonical deduper code(s). Use dmd/smd/na instead." "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
     DDUP = sorted(set(DDUP_LEGACY_MAP.get(d, d) for d in _raw_ddup))
     _unknown = set(DDUP) - DDUP_VALID_CODES
     if _unknown:
-        os.system(
-            f'''colr "...WARNING: Unknown deduper codes: {_unknown}. Valid: {DDUP_VALID_CODES}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        raise WorkflowError(
+            f"Unknown deduper code(s): {sorted(_unknown)}. "
+            f"Valid canonical codes: {sorted(DDUP_VALID_CODES)}. "
+            "Legacy dppl is accepted and normalized to dmd."
         )
 
 # Fallback: auto-detect dedupers from env var set by bin/day_run,
 # or from sys.argv for direct snakemake invocations.
-_DEDUP_TARGET_MAP = {
-    "dedup_doppelmark": "dmd",
-    "dedup_sentieon": "smd",
-    "dedup_none": "na",
-}
 _auto_dedup_codes = set()
 
 # Primary: env var from bin/day_run
@@ -621,9 +682,7 @@ if _auto_dedupers_env:
 
 # Secondary: sys.argv scan (direct snakemake invocation)
 if not _auto_dedup_codes:
-    for _arg in sys.argv:
-        if _arg in _DEDUP_TARGET_MAP:
-            _auto_dedup_codes.add(_DEDUP_TARGET_MAP[_arg])
+    _auto_dedup_codes = _target_alias_codes_from_argv("deduper")
 
 if _auto_dedup_codes:
     _had_only_default = (set(DDUP) == {"na"}) and (
@@ -658,38 +717,6 @@ else:
 
 # Fallback: auto-detect SNV callers from env var set by bin/day_run,
 # or from sys.argv for direct snakemake invocations.
-_SNV_CALLER_TARGET_MAP = {
-    "produce_sentD_vcf": "sentd",
-    "produce_cgt7p_vcf": "cgt7p",
-    "produce_sentdpb_vcf": "sentdpb",
-    "produce_sentdont_vcf": "sentdont",
-    "produce_sentdug_vcf": "sentdug",
-    "produce_sentdhio_vcf": "sentdhio",
-    "produce_sentdhuo_vcf": "sentdhuo",
-    "produce_sentpg_vcf": "sentpg",
-    "produce_pangenome_sr_vcf": "sentpg",
-    "produce_pangenome_ug_vcf": "sentpg",
-    "produce_sentieon_gatk_vcf": "gatk",
-    "produce_deep19_vcf": "deep19",
-    "produce_deep15_vcf": "deep15",
-    "produce_oct_vcf": "oct",
-    "produce_clair3_vcf": "clair3",
-    "produce_lofreq2_vcf": "lfq2",
-    "produce_varn_vcf": "varn",
-    "produce_aiv_vcf": "aiv",
-    "produce_mutect2_vcf": "mutect2",
-    "produce_dvsom_vcf": "dvsom",
-    "produce_strelka2_germline_vcf": "slk2g",
-    "produce_strelka2_somatic_vcf": "slk2s",
-    "produce_sent_TNscope_vcf": "senttn",
-    "produce_rochehc_vcf": "rochehc",
-    "produce_deep19_r_vcf": "deep19r",
-    # Modular refactored hybrid targets (r-suffix)
-    "produce_sentdhiomr_vcf": "sentdhiomr",
-    "produce_sentdhipmr_vcf": "sentdhipmr",
-    "produce_sentdhuomr_vcf": "sentdhuomr",
-    "produce_sentdhupmr_vcf": "sentdhupmr",
-}
 if not snv_CALLERS:
     _auto_snv_env = os.environ.get('_DY_AUTO_SNV_CALLERS', '')
     if _auto_snv_env:
@@ -698,10 +725,7 @@ if not snv_CALLERS:
             f'''colr "...INFO: Auto-detected SNV callers from env: {snv_CALLERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
         )
     else:
-        _cli_snv_codes = set()
-        for _arg in sys.argv:
-            if _arg in _SNV_CALLER_TARGET_MAP:
-                _cli_snv_codes.add(_SNV_CALLER_TARGET_MAP[_arg])
+        _cli_snv_codes = _target_alias_codes_from_argv("snv_caller")
         if _cli_snv_codes:
             snv_CALLERS = sorted(_cli_snv_codes)
             os.system(
@@ -743,6 +767,25 @@ else:
     os.system(
         f"""colr 'SV Callers:{sv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
     )   
+
+if not sv_CALLERS:
+    _auto_sv_env = os.environ.get('_DY_AUTO_SV_CALLERS', '')
+    if _auto_sv_env:
+        sv_CALLERS = sorted(set(_auto_sv_env.split(',')))
+        os.system(
+            f'''colr "...INFO: Auto-detected SV callers from env: {sv_CALLERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+        )
+    else:
+        _cli_sv_codes = _target_alias_codes_from_argv("sv_caller")
+        if _cli_sv_codes:
+            sv_CALLERS = sorted(_cli_sv_codes)
+            os.system(
+                f'''colr "...INFO: Auto-detected SV caller targets on CLI. sv_CALLERS set to: {sv_CALLERS}" "$DY_WT1" "$DY_WB1" "$DY_WS1" 1>&2'''
+            )
+
+os.system(
+    f"""colr 'SV Callers (final): {sv_CALLERS}' "$DY_WT1" "$DY_B1" "$DY_WS1" 1>&2;"""
+)
     
 
 

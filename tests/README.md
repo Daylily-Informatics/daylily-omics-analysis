@@ -25,7 +25,7 @@ conda activate DAY-EC
 | --- | --- |
 | `test_cli_commands.sh` | `day-monitor`, `day-activate`, `day-run`, `day-set-genome-build`, `day-deactivate`, aliases, completion, shell syntax, and selected docs coverage. |
 | `test_bclconvert_bootstrap.sh` | BCL Convert bootstrap scripts, fixtures, generated units table behavior, and report expectations. |
-| `test_complete_genomics_sentieon.py` | MGI bundle paths, `DNBSEQ` platform, and `produce_cgt7p_vcf` routing to `sentcg/cgt7p`. |
+| `test_complete_genomics_sentieon.py` | MGI bundle paths, `DNBSEQ` platform, and canonical/deprecated `cgt7p` routing to `sentcg/cgt7p`. |
 | `test_workflow_catalog.py` | `load_workflow_catalog()` and `render_workflow_command()` behavior. |
 
 ## Notes

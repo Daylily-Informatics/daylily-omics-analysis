@@ -69,6 +69,13 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
 
     for rule_name in (
+        "rule produce_multiqc_input_data:",
+        "rule produce_multiqc_cram:",
+        "rule produce_multiqc_snv:",
+        "rule produce_multiqc_sv:",
+        "rule produce_multiqc_sample_qc:",
+        "rule produce_multiqc_variant_annotation:",
+        "rule produce_multiqc_all:",
         "rule produce_multiqc_seq_data:",
         "rule produce_multiqc_alignment:",
         "rule produce_multiqc_variants:",
@@ -348,7 +355,7 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert config["sample_names_replace"][r"_FR$"] == ""
     assert (
         config["sample_names_replace"][
-            r"^(.*)-([A-Za-z0-9_]+)-(dppl|dmd|smd|spmd|na)-cram$"
+            r"^(.*)-([A-Za-z0-9_]+)-(dmd|smd|spmd|na)-cram$"
         ]
         == r"\1.\2.\3"
     )
@@ -394,6 +401,13 @@ def test_multiqc_runtime_policy_documented() -> None:
         "produce_multiqc_alignment",
         "produce_multiqc_variants",
         "produce_multiqc_final",
+        "produce_multiqc_input_data",
+        "produce_multiqc_cram",
+        "produce_multiqc_snv",
+        "produce_multiqc_sv",
+        "produce_multiqc_sample_qc",
+        "produce_multiqc_variant_annotation",
+        "produce_multiqc_all",
         "runtime_gate_minutes: 45",
         'enable_tools=["fastv"]',
         "site_mix genotype-free contamination",

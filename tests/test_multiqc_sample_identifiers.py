@@ -147,7 +147,7 @@ def test_native_multiqc_collision_modules_are_excluded_and_cleaned() -> None:
     assert "\n  - peddy\n" not in multiqc[multiqc.index("module_order:") : multiqc.index("table_columns_visible:")]
     assert "\n  - somalier\n" not in multiqc[multiqc.index("module_order:") : multiqc.index("table_columns_visible:")]
     assert 'peddy/background_pca:' not in multiqc
-    assert r"^(.*)-([A-Za-z0-9_]+)-(dppl|dmd|smd|spmd|na)-cram$" in multiqc
+    assert r"^(.*)-([A-Za-z0-9_]+)-(dmd|smd|spmd|na)-cram$" in multiqc
     assert r"\.metrics$" in multiqc
     assert "_FR$" in multiqc
     assert ".alignment_summary_metrics.txt" in multiqc

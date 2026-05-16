@@ -84,23 +84,35 @@ Supported build names are currently `hg38`, `hg38_broad`, and `b37`.
 
 ## Config Precedence
 
-Run-level overrides can be passed with Snakemake `--config` through `dy-r`:
+Canonical target selectors should be used for routine aligner, deduper, SNV,
+and SV caller selection:
 
 ```bash
-dy-r produce_snv_concordances \
-  -p -j 20 \
-  --config aligners=[sent] dedupers=[smd] snv_callers=[sentd]
+dy-r produce_sent_align produce_dmd_dedup_cram produce_sentd_snv_vcf \
+  produce_snv_concordances \
+  -p -j 20
 ```
+
+Run-level overrides can still be passed with Snakemake `--config` through
+`dy-r` for non-selector settings such as optional QC gates, HTD callers, or
+reference/debug overrides.
 
 Common code selectors:
 
 | Selector | Examples |
 | --- | --- |
 | `aligners` | `sent`, `sentcg`, `bwa2a`, `strobe` |
-| `dedupers` | `smd`, `dmd`, `spmd`, `na` |
+| `dedupers` | `dmd`, `smd`, `na` |
 | `snv_callers` | `sentd`, `cgt7p`, `deep19`, `oct`, `clair3`, `lfq2` |
 
-Use target-specific docs before mixing selectors; not every caller is valid for every aligner.
+Use target-specific docs before mixing selectors; not every caller is valid for
+every aligner. New runbooks should prefer canonical target selectors, which
+populate these values automatically when possible. For example, `produce_sent_align`,
+`produce_dmd_dedup_cram`, `produce_sentd_snv_vcf`, and
+`produce_manta_sv_vcf` remove the need to pass `aligners=[sent]`,
+`dedupers=[dmd]`, `snv_callers=[sentd]`, or `sv_callers=[manta]` explicitly.
+The legacy deduper code `dppl` still normalizes to `dmd`, but it is not a
+current selector value.
 
 ## Scratch And Temp Files
 

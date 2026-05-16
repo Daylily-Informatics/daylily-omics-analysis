@@ -34,4 +34,7 @@ After a run completes:
 dy-r produce_snv_concordances --report ./smk_report.html
 ```
 
-Daylily aggregate QC reports are produced by workflow targets such as `produce_multiqc_final_wgs` and by rule-specific report compilers under `results/day/<build>/other_reports/`.
+Daylily aggregate QC reports are produced by workflow targets such as
+`produce_multiqc_all` and by rule-specific report compilers under
+`results/day/<build>/other_reports/`. The older `produce_multiqc_final_wgs`
+target remains available as a deprecated compatibility alias.

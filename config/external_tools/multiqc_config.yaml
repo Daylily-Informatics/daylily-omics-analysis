@@ -13,7 +13,7 @@ sample_names_replace:
   "\\.md\\.(chr[0-9XYM]+)$": ".\\1"
   "\\.metrics$": ""
   "_FR$": ""
-  "^(.*)-([A-Za-z0-9_]+)-(dppl|dmd|smd|spmd|na)-cram$": "\\1.\\2.\\3"
+  "^(.*)-([A-Za-z0-9_]+)-(dmd|smd|spmd|na)-cram$": "\\1.\\2.\\3"
 
 extra_fn_clean_trim:
   - ".snv.sort.vcf.gz.tbi"

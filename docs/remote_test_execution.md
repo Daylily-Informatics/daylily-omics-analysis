@@ -79,12 +79,12 @@ Only inspect or control jobs for the workset under test. Do not cancel unrelated
 
 | Workflow | Targets |
 | --- | --- |
-| Illumina SNV/concordance | `produce_snv_concordances produce_alignstats` |
-| Complete Genomics/MGI | `produce_alignstats produce_cgt7p_vcf produce_snv_concordances` |
-| ONT | `produce_sentdont_vcf produce_alignstats produce_snv_concordances` |
-| PacBio | `produce_sentdpb_vcf produce_alignstats produce_snv_concordances` |
-| Ultima | `produce_sentdug_vcf produce_alignstats produce_snv_concordances` |
-| Hybrid Illumina+ONT modular | `produce_sentdhiom_vcf produce_alignstats produce_snv_concordances` |
-| Hybrid Ultima+ONT modular | `produce_sentdhuom_vcf produce_alignstats produce_snv_concordances` |
+| Illumina SNV/concordance | `produce_sent_align produce_dmd_dedup_cram produce_sentd_snv_vcf produce_snv_concordances produce_alignstats` |
+| Complete Genomics/MGI | `produce_sentcg_align produce_smd_dedup_cram produce_cgt7p_snv_vcf produce_alignstats produce_snv_concordances` |
+| ONT | `produce_sentmm2ont_align produce_na_dedup_cram produce_sentdont_snv_vcf produce_alignstats produce_snv_concordances` |
+| PacBio | `produce_sentmm2_align produce_na_dedup_cram produce_sentdpb_snv_vcf produce_alignstats produce_snv_concordances` |
+| Ultima | `produce_na_dedup_cram produce_sentdug_snv_vcf produce_alignstats produce_snv_concordances` |
+| Hybrid Illumina+ONT modular | `produce_sentdhiom_snv_vcf produce_sentdhiom_sv produce_alignstats produce_snv_concordances` |
+| Hybrid Ultima+ONT modular | `produce_sentdhuom_snv_vcf produce_alignstats produce_snv_concordances` |
 
 Dry-run first with `-n`.

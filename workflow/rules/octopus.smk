@@ -278,7 +278,7 @@ localrules:
     produce_oct_vcf,
 
 
-rule produce_oct_vcf:  # TARGET: octopus vcf
+rule produce_oct_vcf:  # DEPRECATED TARGET: use produce_oct_snv_vcf
     input:
         expand(
             MDIR

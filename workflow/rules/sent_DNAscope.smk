@@ -241,7 +241,7 @@ localrules:
     produce_sentD_vcf,
 
 
-rule produce_sentD_vcf:  # TARGET: sentieon dnascope vcf
+rule produce_sentD_vcf:  # DEPRECATED TARGET: use produce_sentd_snv_vcf
     input:
         expand(
             MDIR

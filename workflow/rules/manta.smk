@@ -126,7 +126,7 @@ rule manta_sort_and_index:
 
 localrules: produce_manta,
 
-rule produce_manta:   # TARGET: just produce manta vcfs
+rule produce_manta:   # DEPRECATED TARGET: use produce_manta_sv_vcf
     priority: 38
     input:
         expand(MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz.tbi",sample=SSAMPS,alnr=ALIGNERS,ddup=DDUP)
