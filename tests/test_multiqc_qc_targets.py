@@ -368,6 +368,8 @@ def test_multiqc_config_custom_content_entries() -> None:
     ):
         assert key in config["custom_data"]
         assert key in config["sp"]
+        assert "parent_id" in config["custom_data"][key]
+        assert "parent_name" in config["custom_data"][key]
 
     excludes = set(config["exclude_modules"])
     assert "fastp" not in excludes
@@ -375,8 +377,22 @@ def test_multiqc_config_custom_content_entries() -> None:
     assert "snpeff" not in excludes
     assert "peddy" not in excludes
     assert "somalier" not in excludes
-    assert "verifyBAMID" in excludes
+    assert "verifyBAMID" not in excludes
     assert "sexdetermine" in excludes
+
+    parents = {
+        custom["parent_name"]
+        for custom in config["custom_data"].values()
+        if "parent_name" in custom
+    }
+    assert "Input, demux, read QC, trimming" in parents
+    assert "Alignment, BAM/CRAM, dedup, coverage" in parents
+    assert "Variant, genotype, benchmark, annotation" in parents
+    assert "Proteomics, workflow, misc" in parents
+    section_order = config["report_section_order"]
+    assert section_order["fastqc"]["order"] < section_order["samtools"]["order"]
+    assert section_order["samtools"]["order"] < section_order["peddy"]["order"]
+    assert section_order["peddy"]["order"] < section_order["bcftools"]["order"]
 
 
 def test_multiqc_sample_name_cleanup_contract() -> None:
@@ -403,6 +419,23 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
         ".gc_bias.detail_metrics.txt",
     ):
         assert picard_suffix in trim
+    assert ".rtg.vcfstats.txt" in trim
+    assert ".verifybamid.selfSM" in trim
+    assert ".peddy.sex_check.csv" in trim
+    assert ".peddy.het_check.csv" in trim
+    assert ".peddy.ped_check.csv" in trim
+    assert ".legacy_compat.bam" in trim
+    filename_modules = set(config["use_filename_as_sample_name"])
+    for module in (
+        "samtools",
+        "picard",
+        "mosdepth",
+        "verifybamid",
+        "peddy",
+        "somalier",
+        "bcftools",
+    ):
+        assert module in filename_modules
     assert config["sample_names_replace_regex"] is True
     assert config["sample_names_replace"][r"\.md\.(chr[0-9XYM]+)$"] == r".\1"
     assert config["sample_names_replace"][r"\.metrics$"] == ""
@@ -423,6 +456,33 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert "relatedness" in module_order
     assert "verifyBAMID" not in module_order
     assert "verifybamid2_panel_comparison" in module_order
+
+
+def test_multiqc_reports_scan_only_staged_inputs() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    assert "rule stage_multiqc_inputs:" in text
+    assert "workflow/scripts/stage_multiqc_inputs.py" in text
+    assert "workflow/scripts/validate_multiqc_sample_ids.py" in text
+    assert "reports/multiqc_inputs/seq_data" in text
+    assert "reports/multiqc_inputs/alignment" in text
+    assert "reports/multiqc_inputs/variants" in text
+    assert "reports/multiqc_inputs/final" in text
+    assert "--input-root {params.input_root:q}" in text
+    for rule_name, stage in (
+        ("rule multiqc_seq_data:", "seq_data"),
+        ("rule multiqc_alignment:", "alignment"),
+        ("rule multiqc_variants:", "variants"),
+        ("rule multiqc_final_wgs:", "final"),
+    ):
+        body = text[text.index(rule_name) :]
+        next_rule = body.find("\n\nrule ", 1)
+        if next_rule != -1:
+            body = body[:next_rule]
+        assert f'stage_dir=MDIR + "reports/multiqc_inputs/{stage}"' in body
+        assert "{params.stage_dir:q}" in body
+        assert "{MDIR} > {log:q}" not in body
+        assert "{MDIR} >> {log:q}" not in body
 
 
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
@@ -486,6 +546,17 @@ def test_multiqc_runtime_policy_documented() -> None:
         "runtime_gate_minutes: 45",
         'enable_tools=["fastv"]',
         "site_mix genotype-free contamination",
+        "reports/multiqc_inputs/<stage>/",
+        "Duplicate `(module, Sample)` pairs fail during staging",
+        "`<sample>.<aligner>.<deduper>.<snv_caller>`",
+        "`<sample>.<aligner>.<deduper>.<sv_caller>`",
+        "Peddy CSVs and VerifyBamID `.selfSM` files are rewritten",
+        "`parent_id` / `parent_name` grouping",
         "QC gap:",
     ):
         assert expected in doc
+
+    catalog = _read("docs/catalog_of_tools.md")
+    assert "stage-scoped sample identity" in catalog
+    assert "stage_multiqc_inputs.py" in catalog
+    assert "validate_multiqc_sample_ids.py" in catalog

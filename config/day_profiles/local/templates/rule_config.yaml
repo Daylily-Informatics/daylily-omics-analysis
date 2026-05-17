@@ -405,6 +405,12 @@ manta:
     ld_preload: "  "
     partition: "i8"
 
+legacy_cram_compat_bam:
+    threads: 4
+    mem_mb: 16000
+    env_yaml: "../envs/samtools_v0.1.yaml"
+    partition: "i8"
+
 merge_bam:
     threads: 7
     smem: '3G'

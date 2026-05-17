@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import gzip
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -311,6 +312,236 @@ def test_multiqc_log_guard_renames_empty_logs_and_rejects_nonempty_logs(
         module.guard_log_dir(log_dir)
 
 
+def _write_peddy_csv(prefix: Path, suffix: str, sample: str) -> None:
+    path = Path(str(prefix) + suffix)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "sample_id,family_id,ped_sex,predicted_sex,error\n"
+        f"{sample},{sample},male,male,False\n",
+        encoding="utf-8",
+    )
+
+
+def test_stage_multiqc_inputs_rewrites_peddy_to_variant_stage_ids(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    other_reports = root / "other_reports"
+    other_reports.mkdir(parents=True)
+    rows = []
+    for deduper in ("na", "dmd"):
+        prefix = (
+            root
+            / "HG001/align/sent"
+            / deduper
+            / "snv/sentd/peddy"
+            / f"HG001.sent.{deduper}.sentd.peddy."
+        )
+        for suffix in ("sex_check.csv", "het_check.csv", "ped_check.csv"):
+            _write_peddy_csv(prefix, suffix, "HG001")
+        rows.append(
+            {
+                "Sample": f"HG001.sent.{deduper}.sentd",
+                "base_sample": "HG001",
+                "aligner": "sent",
+                "deduper": deduper,
+                "snv_caller": "sentd",
+                "peddy_prefix": str(prefix),
+            }
+        )
+    custom = other_reports / "peddy_sample_qc_mqc.tsv"
+    with custom.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "Sample",
+                "base_sample",
+                "aligner",
+                "deduper",
+                "snv_caller",
+                "peddy_prefix",
+            ],
+            delimiter="\t",
+        )
+        writer.writeheader()
+        writer.writerows(rows)
+
+    out_dir = root / "reports/multiqc_inputs/variants"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, custom)
+    stager.finish()
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        manifest_rows = list(csv.DictReader(handle, delimiter="\t"))
+    peddy_samples = {
+        row["Sample"] for row in manifest_rows if row["module"] == "peddy"
+    }
+    assert peddy_samples == {"HG001.sent.na.sentd", "HG001.sent.dmd.sentd"}
+    assert all(row["Sample"] != "custom_content" for row in manifest_rows)
+    staged_sex = out_dir / "native/peddy/HG001.sent.dmd.sentd/HG001.sent.dmd.sentd.peddy.sex_check.csv"
+    assert staged_sex.read_text(encoding="utf-8").splitlines()[1].startswith(
+        "HG001.sent.dmd.sentd,"
+    )
+
+
+def test_stage_multiqc_inputs_guards_against_native_sample_collisions(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_collision_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    other_reports = root / "other_reports"
+    other_reports.mkdir(parents=True)
+    custom = other_reports / "peddy_sample_qc_mqc.tsv"
+    prefixes = []
+    for idx in (1, 2):
+        prefix = (
+            root
+            / f"HG001/align/sent/dmd/snv/sentd/peddy/run{idx}"
+            / "HG001.sent.dmd.sentd.peddy."
+        )
+        for suffix in ("sex_check.csv", "het_check.csv", "ped_check.csv"):
+            _write_peddy_csv(prefix, suffix, "HG001")
+        prefixes.append(prefix)
+    custom.write_text(
+        "Sample\tbase_sample\taligner\tdeduper\tsnv_caller\tpeddy_prefix\n"
+        f"HG001.sent.dmd.sentd\tHG001\tsent\tdmd\tsentd\t{prefixes[0]}\n"
+        f"HG001.sent.dmd.sentd\tHG001\tsent\tdmd\tsentd\t{prefixes[1]}\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/variants"
+    stager = module.Stager(root, out_dir, out_dir / "manifest.tsv")
+    stager.reset()
+    with pytest.raises(module.StagingError, match="MultiQC sample collision"):
+        module.stage_known_input(stager, custom)
+
+
+def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_alignment_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    samt = root / "HG001/align/sent/dmd/alignqc/samtmetrics"
+    samt.mkdir(parents=True)
+    for suffix in ("stats.tsv", "flagstat.tsv", "idxstat.tsv"):
+        (samt / f"HG001.sent.dmd.{suffix}").write_text("metric\n", encoding="utf-8")
+    complete = samt / "HG001.sent.dmd.complete"
+    complete.write_text("done\n", encoding="utf-8")
+    mosdepth = (
+        root
+        / "HG001/align/sent/dmd/alignqc/mosdepth/HG001.sent.dmd.mosdepth.summary.sort.bed"
+    )
+    mosdepth.parent.mkdir(parents=True)
+    mosdepth.write_text("chrom\tlength\tbases\tmean\n", encoding="utf-8")
+    picard_done = (
+        root
+        / "HG001/align/sent/dmd/alignqc/picard/picard/HG001.sent.dmd.done"
+    )
+    picard_done.parent.mkdir(parents=True)
+    picard_done.write_text("done\n", encoding="utf-8")
+    picard_metric = (
+        root
+        / "HG001/align/sent/dmd/alignqc/picard/"
+        / "HG001.sent.dmd.alignment_summary_metrics.txt"
+    )
+    picard_metric.write_text("CATEGORY\tTOTAL_READS\nPAIR\t1\n", encoding="utf-8")
+    qmap_done = (
+        root
+        / "HG001/align/sent/dmd/alignqc/qmap/HG001.sent/dmd/HG001.sent.dmd.qmap.done"
+    )
+    qmap_done.parent.mkdir(parents=True)
+    qmap_done.write_text("done\n", encoding="utf-8")
+    (qmap_done.parent / "genome_results.txt").write_text("number of reads = 1\n", encoding="utf-8")
+    vb2_tsv = (
+        root
+        / "HG001/align/sent/dmd/alignqc/contam/vb2/100k/HG001.sent.dmd.100k.vb2.tsv"
+    )
+    vb2_tsv.parent.mkdir(parents=True)
+    vb2_tsv.write_text("SEQ_ID\tFREEMIX\nHG001\t0.01\n", encoding="utf-8")
+    vb2_selfsm = vb2_tsv.with_name("HG001.sent.dmd.100k.vb2.selfSM")
+    vb2_selfsm.write_text("SEQ_ID\tFREEMIX\nHG001\t0.01\n", encoding="utf-8")
+
+    out_dir = root / "reports/multiqc_inputs/alignment"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, complete)
+    module.stage_known_input(stager, mosdepth)
+    module.stage_known_input(stager, picard_done)
+    module.stage_known_input(stager, qmap_done)
+    module.stage_known_input(stager, vb2_tsv)
+    stager.finish()
+
+    assert (out_dir / "native/samtools/HG001.sent.dmd.stats.tsv").exists()
+    assert (
+        out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.summary.sort.bed"
+    ).exists()
+    assert (
+        out_dir / "native/picard/HG001.sent.dmd.alignment_summary_metrics.txt"
+    ).exists()
+    assert (out_dir / "native/qualimap/HG001.sent.dmd/genome_results.txt").exists()
+    staged_selfsm = out_dir / "native/verifybamid/HG001.sent.dmd.100k.verifybamid.selfSM"
+    assert staged_selfsm.exists()
+    assert staged_selfsm.read_text(encoding="utf-8").splitlines()[1].startswith(
+        "HG001.sent.dmd.100k\t"
+    )
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        samples = {row["Sample"] for row in csv.DictReader(handle, delimiter="\t")}
+    assert samples == {"HG001.sent.dmd", "HG001.sent.dmd.100k"}
+
+
+def test_validate_multiqc_sample_ids_rejects_collapsed_native_outputs(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/validate_multiqc_sample_ids.py",
+        "validate_multiqc_sample_ids_under_test",
+    )
+    manifest = tmp_path / "manifest.tsv"
+    manifest.write_text(
+        "Sample\tmodule\tstage\tbase_sample\taligner\tdeduper\tcaller\t"
+        "input_kind\tsource_path\tstaged_path\tgroup_id\n"
+        "HG001.sent.na.sentd\tpeddy\tsnv\tHG001\tsent\tna\tsentd\t"
+        "peddy_sex_check.csv\ta\tb\tc\n"
+        "HG001.sent.dmd.sentd\tpeddy\tsnv\tHG001\tsent\tdmd\tsentd\t"
+        "peddy_sex_check.csv\td\te\tf\n",
+        encoding="utf-8",
+    )
+    collapsed = tmp_path / "collapsed.json"
+    collapsed.write_text(
+        json.dumps({"report_saved_raw_data": {"multiqc_peddy": {"HG001": {}}}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit, match="collapsed stage-aware samples"):
+        module.validate(manifest, collapsed)
+
+    valid = tmp_path / "valid.json"
+    valid.write_text(
+        json.dumps(
+            {
+                "report_saved_raw_data": {
+                    "multiqc_peddy": {
+                        "HG001.sent.na.sentd": {},
+                        "HG001.sent.dmd.sentd": {},
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    module.validate(manifest, valid)
+
+
 def test_rtg_vcfeval_requests_explicit_memory() -> None:
     concordance = _read("workflow/rules/rtg_vcfeval.smk")
 
@@ -320,17 +551,23 @@ def test_rtg_vcfeval_requests_explicit_memory() -> None:
 
 def test_manta_converts_cram_to_bam_before_calling() -> None:
     manta_rule = _read("workflow/rules/manta.smk")
-    manta_env = _read("workflow/envs/manta_v0.1.yaml")
+    gatk_rule = _read("workflow/rules/gatk_contam.smk")
+    compat_rule = _read("workflow/rules/legacy_cram_compat_bam.smk")
+    snakefile = _read("workflow/Snakefile")
     slurm_config = _read("config/day_profiles/slurm/templates/rule_config.yaml")
 
-    assert "gatk_cram_compat.sh" in manta_rule
-    assert "--mode bam" in manta_rule
-    assert '--out "$MANTA_BAM"' in manta_rule
-    assert 'configManta.py --bam "$SAFE_IN"' in manta_rule
+    assert 'include: "rules/legacy_cram_compat_bam.smk"' in snakefile
+    assert "bam=temp(" in compat_rule
+    assert "bai=temp(" in compat_rule
+    assert "samtools view" in compat_rule
+    assert "samtools index" in compat_rule
+    assert "bam=rules.legacy_cram_compat_bam.output.bam" in manta_rule
+    assert "bam = rules.legacy_cram_compat_bam.output.bam" in gatk_rule
+    assert "gatk_cram_compat.sh" not in gatk_rule
+    assert "configManta.py --bam {input.bam}" in manta_rule
     assert 'mem_mb=config["manta"].get("mem_mb", 128000)' in manta_rule
-    assert "htslib=1.13" in manta_env
-    assert "samtools=1.13" in manta_env
     assert "manta:\n    threads: 128\n    mem_mb: 128000" in slurm_config
+    assert "legacy_cram_compat_bam:\n    threads: 32\n    mem_mb: 64000" in slurm_config
 
 
 def test_native_multiqc_collision_modules_are_excluded_and_cleaned() -> None:

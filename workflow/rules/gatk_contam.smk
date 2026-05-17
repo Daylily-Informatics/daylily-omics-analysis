@@ -5,7 +5,8 @@
 
 rule gatk_contam:
     input:
-        cram = MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        bam = rules.legacy_cram_compat_bam.output.bam,
+        bai = rules.legacy_cram_compat_bam.output.bai,
         # common sites VCF (gnomAD/common SNPs) and its index
         sites_vcf = config["supporting_files"]["files"]["gatk"]["af_sites"],
         sites_vcf_tbi = lambda wildcards: config["supporting_files"]["files"]["gatk"]["af_sites"] + ".tbi",
@@ -44,11 +45,8 @@ rule gatk_contam:
         mkdir -p "$(dirname {output.pile_merged})"/logs;
         rm -f {params.old_mqc};
 
-        SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {input.ref_fa} --mode bam --threads {threads} 2>> {log})";
-        echo "gatk_contam SAFE_IN=${{SAFE_IN}}" >> {log};
-
         gatk --java-options "-Xmx{params.java_heap_mb}m -Djava.io.tmpdir=${{TMPDIR:-/tmp}}" GetPileupSummaries \
-          -I "${{SAFE_IN}}" \
+          -I {input.bam} \
           -V {input.sites_vcf} \
           -R {input.ref_fa} \
           -L {input.sites_vcf} \

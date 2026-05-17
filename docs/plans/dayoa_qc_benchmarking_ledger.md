@@ -63,3 +63,52 @@ Ledger path: `/Users/jmajor/projects/daylily/daylily-omics-analysis/docs/plans/d
 - Full pytest sweep: `python -m pytest -q` -> `120 passed, 1 skipped`.
 - Static/script checks: `python -m py_compile workflow/scripts/parse_truvari_summary.py workflow/scripts/summarize_run_qc_report.py workflow/scripts/summarize_unmapped_metagenomics.py bin/build_illumina_read_fate_river.py workflow/scripts/compile_contamination_mqc.py` -> pass; YAML load check for updated config/schema/env files -> `yaml ok`; `git diff --check` -> pass.
 - Dry-runs: `produce_illumina_run_qc` -> 6-job DAG; `produce_read_fate_river` -> 5-job DAG; `produce_ont_run_qc produce_ultima_run_qc` -> 4-job DAG; `produce_sv_concordances` with fixture manifests and explicit Truvari truthsets -> 12-job DAG; `produce_unmapped_metagenomics_quick` with fixture manifests and explicit Kraken2 config -> 12-job DAG.
+
+## Follow-up Control Ledger: MultiQC Sample Identity And Section Grouping
+
+Controlling plan: `thread://multiqc-sample-identity-and-section-grouping-2026-05-17`
+Ledger path: `/Users/jmajor/projects/daylily/daylily-omics-analysis/docs/plans/dayoa_qc_benchmarking_ledger.md`
+
+### Follow-up Gate 0 Baseline
+
+- Repo: `/Users/jmajor/projects/daylily/daylily-omics-analysis`
+- Branch and status: `git status --short --branch` -> `## codex/dayoa-qc-benchmarking-20260517...origin/codex/dayoa-qc-benchmarking-20260517`; dirty tracked files: `config/day_profiles/local/templates/rule_config.yaml`, `config/day_profiles/slurm/templates/rule_config.yaml`, `tests/test_multiqc_sample_identifiers.py`, `workflow/Snakefile`, `workflow/rules/gatk_contam.smk`, `workflow/rules/manta.smk`; untracked `0_7_724/`, `workflow/rules/legacy_cram_compat_bam.smk`.
+- Existing user/current-work changes: legacy CRAM-to-BAM compatibility rule wiring is present and must be preserved; `0_7_724/` remains an untracked fixture/report artifact unless explicitly promoted into tests.
+- Source sweep: `rg -n "rule (multiqc|produce_multiqc|.*multiqc|.*mqc|peddy|mosdepth|picard|qualimap|goleft|gen_samstats|verifybamid2|bcftools|rtg|vep|snpeff|relatedness|tiddit|truvari)|sample_names_replace|extra_fn_clean_trim|module_order|custom_data|sp:" workflow/rules config/external_tools/multiqc_config.yaml tests docs/ops/multiqc_qc_targets.md docs/catalog_of_tools.md` -> current final/staged MultiQC scans raw `MDIR`; sample cleaning is global in `config/external_tools/multiqc_config.yaml`; custom stage-aware TSV coverage exists for many aggregate reports.
+- Fixture evidence: `0_7_724/reports/DAY_final_multiqc_data/multiqc_data.json` saved raw data shows native `multiqc_peddy` keyed by base sample only, native `multiqc_verifybamid` has both base-sample and partial stage IDs, while `multiqc_samtools_stats` and `multiqc_bcftools_stats` preserve deeper stage names. This confirms silent-overwrite risk for multi-deduper/multi-caller reports.
+- Baseline checks: `python -m pytest -q tests/test_multiqc_qc_targets.py tests/test_multiqc_sample_identifiers.py` -> `30 passed`.
+- Hard constraints: no fallback behavior; missing or duplicate stage IDs must hard fail; final/staged MultiQC must scan deterministic staged inputs instead of raw `MDIR`; run-level QC remains separate; no live S3/headnode/AWS validation without approval.
+
+### Follow-up Status Counts
+
+- OPEN: 0
+- IN_PROGRESS: 0
+- ATTEMPTING_BUGFIX: 0
+- SUCCESS: 9
+- DUPLICATE: 0
+- NO_LONGER_NEEDED: 0
+- FAIL: 0
+- BLOCKED: 0
+
+| ID | Area/Repo | Requirement/Surface | Status | Category | Approval Gate | Owner | Evidence | Root Cause | Terminal Note |
+|---|---|---|---|---|---|---|---|---|---|
+| MQCID-001 | MultiQC identity | Gate 0 inventory for current branch, dirty files, MultiQC config, native/custom report inputs, fixture report evidence, and sample-collision risks | SUCCESS | plan_amendment | Gate 0 | orchestrator | Follow-up Gate 0 baseline recorded above before implementation; preserved pre-existing legacy CRAM compatibility edits and untracked `0_7_724/`. |  | Gate 0 evidence is recorded and prior `LEDGER-001` through `DOC-001` rows remain terminal. |
+| MQCID-002 | MultiQC identity | Define and document the stage sample ID contract | SUCCESS | config_or_startup_contract | Gate 1 | orchestrator | Added the stage-scoped `Sample` contract to `docs/ops/multiqc_qc_targets.md`; tests assert FASTQ/read, BAM/CRAM, SNV VCF, SV VCF, benchmark subclass, and multi-input precedence wording. |  | Contract is documented and covered by docs tests. |
+| MQCID-003 | MultiQC staging | Add deterministic MultiQC input staging with a manifest and duplicate/collision guard | SUCCESS | feature_implementation | Gate 1 | orchestrator | Added `workflow/scripts/stage_multiqc_inputs.py`, `rule stage_multiqc_inputs`, per-stage `reports/multiqc_inputs/<stage>/manifest.tsv`, duplicate `(module, Sample)` collision checks, and report rules that scan staged trees instead of raw `MDIR`; dry-runs for `produce_multiqc_input_data`, `produce_multiqc_cram`, `produce_multiqc_snv`, and `produce_multiqc_all` all built DAGs with fixture manifests. |  | Staged report inputs are deterministic and fail on duplicate stage IDs. |
+| MQCID-004 | Alignment modules | Fix native alignment-stage modules: samtools, picard, mosdepth, qualimap, goleft_indexcov, VerifyBamID where native parsing is used | SUCCESS | feature_implementation | Gate 1 | orchestrator | Staging covers samtools stats/flagstat/idxstat, Picard metrics, Qualimap tree outputs, mosdepth summaries, goleft indexcov trees, Somalier extracts, and VerifyBamID `.selfSM`; removed `verifyBAMID` from `exclude_modules`; tests stage samtools, Picard, Qualimap, mosdepth, and VerifyBamID fixture outputs with expected IDs. |  | Native alignment-stage report inputs retain `<sample>.<aligner>.<deduper>` or panel-scoped VerifyBamID IDs. |
+| MQCID-005 | Variant modules | Fix native variant-stage modules: peddy, bcftools, vcftools/RTG stats, VEP, SnpEff, Somalier, TIDDIT/Truvari where native parsing is used | SUCCESS | feature_implementation | Gate 1 | orchestrator | Peddy native CSVs are staged under stage-aware basenames and rewritten to `Sample` values such as `HG001.sent.na.sentd` and `HG001.sent.dmd.sentd`; custom TSV/native source staging covers bcftools stats, RTG vcfstats, TIDDIT summaries, Truvari/SNV benchmark custom rows, VEP, SnpEff, and Somalier-related custom/native report inputs. |  | Variant-stage reports preserve deduper and caller identity; no SNV/SV caller rows collapse to base sample IDs in fixture tests. |
+| MQCID-006 | Sequence/run modules | Verify sequence/run-level modules: FastQC, SeqFu custom data, BCL Convert, InterOp, CheckQC, ONT, Ultima | SUCCESS | contract_test | Gate 1 | orchestrator | FastQC staged inputs use `<sample>.R1` / `<sample>.R2`; SeqFu, BCL Convert, InterOp, CheckQC, ONT, and Ultima remain documented as run/read-level or custom-data paths, with run-level QC still separate from final WGS MultiQC. Focused and full pytest gates passed. |  | Sequence/read/run modules respect the stage contract without pulling run-level QC into final WGS MultiQC. |
+| MQCGRP-001 | MultiQC grouping | Group DayOA-active report sections by category using real custom-content parent groups plus `report_section_order` for native modules | SUCCESS | feature_implementation | Gate 1 | orchestrator | Added `parent_id` / `parent_name` groups to DayOA custom content and `report_section_order` for native/custom sections in `config/external_tools/multiqc_config.yaml`; tests assert the read QC, alignment/coverage, variant/benchmark/annotation, and workflow-reporting groups and ordering. |  | Active report sections are grouped/ordered by DayOA tool category using native MultiQC mechanisms. |
+| MQCTEST-001 | Tests | Add fixture tests and a post-MultiQC sample identity validator | SUCCESS | contract_test | Gate 1 | orchestrator | Added `workflow/scripts/validate_multiqc_sample_ids.py`; extended `tests/test_multiqc_sample_identifiers.py`, `tests/test_multiqc_qc_targets.py`, and `tests/test_plan_qc_benchmarking_contracts.py` for staging, collision failures, validator failures, docs/config contracts, and shell-only guard coverage. Combined gate -> `82 passed, 1 skipped`; full pytest -> `126 passed, 1 skipped`. |  | Sample identity drift is covered by unit, fixture, config, docs, validator, and shell-only guard tests. |
+| MQCDOC-001 | Docs | Update MultiQC docs/tool catalog with the sample identity contract and report grouping policy | SUCCESS | historical_docs_only | Gate 4 | orchestrator | Updated `docs/ops/multiqc_qc_targets.md` and `docs/catalog_of_tools.md` with the staged input tree, manifest, stage-scoped sample IDs, native parser rewrite policy, VerifyBamID panel IDs, and section grouping policy. |  | Operator docs and tool catalog now match the implemented MultiQC identity/grouping behavior. |
+
+### Follow-up Final Acceptance
+
+- Focused pytest: `python -m pytest -q tests/test_multiqc_sample_identifiers.py tests/test_multiqc_qc_targets.py` -> `35 passed`.
+- Static checks: `python -m py_compile workflow/scripts/stage_multiqc_inputs.py workflow/scripts/validate_multiqc_sample_ids.py` -> pass; `python -c 'import yaml; yaml.safe_load(open("config/external_tools/multiqc_config.yaml")); print("yaml ok")'` -> `yaml ok`; `git diff --check` -> pass.
+- Combined pytest gate: `python -m pytest -q tests/test_run_qc_reports.py tests/test_truvari_sv_benchmark.py tests/test_unmapped_metagenomics.py tests/test_plan_qc_benchmarking_contracts.py tests/test_multiqc_qc_targets.py tests/test_giab_qc_contracts.py tests/test_multiqc_sample_identifiers.py tests/test_tool_catalog_docs.py tests/test_workflow_target_aliases.py` -> `82 passed, 1 skipped`.
+- Full pytest sweep: `python -m pytest -q` -> `126 passed, 1 skipped`.
+- Snakemake dry-runs: using local `DAYOA` Snakemake env with `DAY_ROOT=$PWD DAY_BIOME=AWSPC DAY_PROFILE=local/templates DAY_GENOME_BUILD=hg38` and fixture sample/unit tables, `produce_multiqc_input_data` -> 7-job DAG, `produce_multiqc_cram` -> 14-job DAG, `produce_multiqc_snv` -> 18-job DAG, `produce_multiqc_all` -> 20-job DAG.
+- Live AWS/headnode/S3 validation was not run and was not approved in this thread.
+- All follow-up rows terminal: yes.
+- Objective complete: yes for local implementation, tests, docs, config, and DAG construction; live report rendering on a headnode remains outside this local validation pass.

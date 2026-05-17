@@ -59,6 +59,7 @@ def _alignment_component_inputs(wildcards):
         )
     if qc_tool_enabled("relatedness"):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
+        paths.extend(_relatedness_native_inputs(wildcards))
     return paths
 
 
@@ -147,6 +148,22 @@ def _alignment_qc_native_inputs(wildcards):
     return paths
 
 
+def _relatedness_native_inputs(wildcards):
+    paths = []
+    qddups = qc_alignment_dedupers()
+    alnrs = QC_CRAM_ALIGNERS
+    paths.extend(
+        expand(
+            MDIR
+            + "other_reports/relatedness/{alnr}/{ddup}/somalier/extract/{sample}.somalier",
+            sample=SSAMPS,
+            alnr=alnrs,
+            ddup=qddups,
+        )
+    )
+    return paths
+
+
 def _variant_component_inputs(wildcards):
     paths = list(_alignment_component_inputs(wildcards))
     pairs = valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
@@ -184,11 +201,27 @@ def _final_component_inputs(wildcards):
     return _variant_component_inputs(wildcards)
 
 
+def _multiqc_stage_component_inputs(wildcards):
+    stage = wildcards.report_stage
+    if stage == "seq_data":
+        return _seq_data_component_inputs(wildcards)
+    if stage == "alignment":
+        return _alignment_component_inputs(wildcards)
+    if stage == "variants":
+        return _variant_component_inputs(wildcards)
+    if stage == "final":
+        return _final_component_inputs(wildcards) + [
+            MDIR + "other_reports/rules_benchmark_data_mqc.tsv"
+        ]
+    raise ValueError(f"Unknown MultiQC report stage: {stage}")
+
+
 localrules:
     collect_rules_benchmark_data,
     collect_rules_benchmark_data_singleton,
     sequence_qc_outputs_custom_data,
     alignment_qc_outputs_custom_data,
+    stage_multiqc_inputs,
     aggregate_report_components,
     produce_multiqc_input_data,
     produce_multiqc_cram,
@@ -286,9 +319,37 @@ rule aggregate_report_components:
         "mkdir -p $(dirname {output}); touch {output};"
 
 
+rule stage_multiqc_inputs:
+    input:
+        _multiqc_stage_component_inputs
+    output:
+        done=touch(MDIR + "reports/multiqc_inputs/{report_stage}/.stage.done"),
+        manifest=MDIR + "reports/multiqc_inputs/{report_stage}/manifest.tsv",
+    log:
+        MDIR + "reports/logs/{report_stage}_multiqc_input_staging.log"
+    params:
+        input_root=MDIR,
+        stage_dir=MDIR + "reports/multiqc_inputs/{report_stage}",
+        cluster_sample="stage_multiqc_inputs",
+    container: None
+    conda:
+        "../envs/vanilla_v0.1.yaml"
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {log:q})
+        python workflow/scripts/stage_multiqc_inputs.py \
+          --input-root {params.input_root:q} \
+          --output-dir {params.stage_dir:q} \
+          --manifest {output.manifest:q} \
+          {input:q} > {log:q} 2>&1
+        """
+
+
 rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
     input:
-        _seq_data_component_inputs
+        stage_done=MDIR + "reports/multiqc_inputs/seq_data/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/seq_data/manifest.tsv",
     output:
         f"{MDIR}reports/DAY_seq_data_multiqc.html",
     benchmark:
@@ -304,6 +365,8 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="multiqc_seq_data",
+        stage_dir=MDIR + "reports/multiqc_inputs/seq_data",
+        data_json=MDIR + "reports/DAY_seq_data_multiqc_data/multiqc_data.json",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
@@ -324,13 +387,17 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
           -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
-          {MDIR} > {log:q} 2>&1
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
         """
 
 
 rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
     input:
-        _alignment_component_inputs
+        stage_done=MDIR + "reports/multiqc_inputs/alignment/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/alignment/manifest.tsv",
     output:
         f"{MDIR}reports/DAY_alignment_multiqc.html",
     benchmark:
@@ -346,6 +413,8 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="multiqc_alignment",
+        stage_dir=MDIR + "reports/multiqc_inputs/alignment",
+        data_json=MDIR + "reports/DAY_alignment_multiqc_data/multiqc_data.json",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
@@ -366,13 +435,17 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
           -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
-          {MDIR} > {log:q} 2>&1
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
         """
 
 
 rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC report
     input:
-        _variant_component_inputs
+        stage_done=MDIR + "reports/multiqc_inputs/variants/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/variants/manifest.tsv",
     output:
         f"{MDIR}reports/DAY_variants_multiqc.html",
     benchmark:
@@ -388,6 +461,8 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="multiqc_variants",
+        stage_dir=MDIR + "reports/multiqc_inputs/variants",
+        data_json=MDIR + "reports/DAY_variants_multiqc_data/multiqc_data.json",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
@@ -408,7 +483,10 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
           -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
-          {MDIR} > {log:q} 2>&1
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
         """
 
 
@@ -416,6 +494,8 @@ rule multiqc_final_wgs:  # TARGET: the big report
     input:
         components=f"{MDIR}logs/report_components_aggregated.done",
         benchmark=f"{MDIR}other_reports/rules_benchmark_data_mqc.tsv",
+        stage_done=MDIR + "reports/multiqc_inputs/final/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/final/manifest.tsv",
     output:
         html=f"{MDIR}reports/DAY_final_multiqc.html",
         header=f"{MDIR}reports/multiqc_header.yaml",
@@ -434,6 +514,8 @@ rule multiqc_final_wgs:  # TARGET: the big report
         cluster_sample="multiqc_final",
         cemail=config["day_contact_email"],
         rtitle=RPT_TITLE,
+        stage_dir=MDIR + "reports/multiqc_inputs/final",
+        data_json=MDIR + "reports/DAY_final_multiqc_data/multiqc_data.json",
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a.log",
     container:
@@ -486,7 +568,10 @@ report_header_info:
         --filename {output.html:q} \
         -i '{params.rtitle} Multiqc Report ' \
         -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
-        {MDIR} >> {log:q} 2>&1;
+        {params.stage_dir:q} >> {log:q} 2>&1;
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1;
         ls -lt {output.html:q} {output.header:q} >> {log:q} 2>&1;
         """
 

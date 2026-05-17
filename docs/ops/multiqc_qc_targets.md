@@ -36,6 +36,39 @@ smoke run must remain out of routine staged and final targets unless
 `multiqc_qc.enable_tools`. Explicitly enabled tools are required DAG inputs;
 missing or malformed outputs should fail instead of being silently skipped.
 
+## Stage-Scoped Sample Identity
+
+Final and staged WGS MultiQC reports do not scan `results/day/<build>/`
+directly. Each report first builds a deterministic
+`results/day/<build>/reports/multiqc_inputs/<stage>/` tree and
+`manifest.tsv`. MultiQC scans only that staged tree, and the manifest records
+the expected `Sample`, module, source path, staged path, and stage components.
+Duplicate `(module, Sample)` pairs fail during staging so MultiQC cannot
+silently overwrite one deduper, caller, or panel with another.
+
+The `Sample` field is a stage-scoped analysis identifier, not just the
+biological sample. It is derived from the most processed input used by the
+tool:
+
+| Tool input class | `Sample` contract |
+| --- | --- |
+| FASTQ/read QC | `<sample>.R1`, `<sample>.R2`, or explicit run/lane/sample IDs for demux/run QC |
+| BAM/CRAM-derived QC | `<sample>.<aligner>.<deduper>` |
+| SNV VCF-derived QC | `<sample>.<aligner>.<deduper>.<snv_caller>` |
+| SV VCF-derived QC | `<sample>.<aligner>.<deduper>.<sv_caller>` |
+| Benchmark subclasses | the stage ID plus ROI/class suffix, for example `<sample>.<aligner>.<deduper>.<caller>.<class>` |
+
+For multi-input tools, the more processed input wins: VCF identity beats
+BAM/CRAM identity, which beats FASTQ/run-metric identity. For example, Peddy
+run on two Sentieon DNAscope VCFs for the same biological sample must produce
+distinct rows such as `HG001.sent.na.sentd` and `HG001.sent.dmd.sentd`.
+
+Some native MultiQC modules derive sample names from file contents instead of
+filenames. Daylily stages report-only copies with corrected sample IDs for
+those modules. Peddy CSVs and VerifyBamID `.selfSM` files are rewritten in the
+staged tree so the native parsers see the same stage-scoped IDs as the custom
+DayOA tables. The source analysis outputs are not modified.
+
 ## Routine By Default
 
 These integrations are wired into staged/final MultiQC when their normal
@@ -110,7 +143,10 @@ Illumina run-level fetches copy only named metrics files; they do not use
 explicit and must not be `default`.
 
 VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
-without clobbering each other. The default routine panel is `100k`; run
+without clobbering each other. The native VerifyBamID input staged for MultiQC
+uses `<sample>.<aligner>.<deduper>.<panel>` so panel-specific `.selfSM` rows do
+not collapse back to the biological sample. The default routine panel is
+`100k`; run
 `produce_verifybamid2_panel_comparison --config verifybamid2_panels=["1k","100k","1m"]`
 to compare the historical 1K panel, the 100K 1000G panel, and the staged 1M
 panel.
@@ -119,11 +155,12 @@ panel prefix with `verifybamid2_panel_svd_prefixes={"1m":"/path/to/prefix"}`;
 the value must be a real VerifyBamID2 SVD prefix with `.UD`, `.V`, `.mu`, and
 `.bed` files.
 
-MultiQC sample names are kept at the deepest meaningful analysis identity:
-raw sequence data uses the sample or read-pair ID, alignment QC uses
-`sample.aligner`, dedup-level QC uses `sample.aligner.deduper`, variant QC uses
-`sample.aligner.deduper.caller`, and chromosome-scattered data keeps the
-chromosome explicitly, such as `sample.sent.dmd.sentd.chr1`.
+Report sections are grouped by the DayOA-active tool categories in
+`config/external_tools/multiqc_config.yaml`. Custom-content sections use real
+MultiQC `parent_id` / `parent_name` grouping, while native modules use
+`report_section_order` so read QC appears before alignment QC, sample/variant
+identity checks, variant annotation/benchmarking, and workflow benchmark
+sections.
 
 ## Optional Or Deep QC
 

@@ -18,8 +18,14 @@ def test_new_qc_benchmarking_rules_are_shell_only() -> None:
         "workflow/rules/run_qc_reports.smk",
         "workflow/rules/truvari_sv_benchmark.smk",
         "workflow/rules/unmapped_metagenomics.smk",
+        "workflow/rules/multiqc_final_wgs.smk",
     ):
         text = _read(path)
+        if path == "workflow/rules/multiqc_final_wgs.smk":
+            text = text[
+                text.index("rule stage_multiqc_inputs:") :
+                text.index("rule multiqc_seq_data:")
+            ]
         assert re.search(r"^\s*run:", text, flags=re.MULTILINE) is None, path
         assert re.search(r"^\s*script:", text, flags=re.MULTILINE) is None, path
         assert re.search(r"^\s*shell:", text, flags=re.MULTILINE) is not None, path

@@ -18,8 +18,8 @@ rule manta_get_centos_env:
 rule manta:
     """https://github.com/Illumina/manta"""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        bam=rules.legacy_cram_compat_bam.output.bam,
+        bai=rules.legacy_cram_compat_bam.output.bai,
     output:
         vcf=f"{MDIR}" + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.vcf",
     threads: config["manta"]["threads"]
@@ -55,16 +55,12 @@ rule manta:
 
         mkdir -p $(dirname {log})
 
-        MANTA_BAM="$TMPDIR/manta_input.bam"
-        SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {params.huref} --mode bam --threads {threads} --out "$MANTA_BAM" 2>> {log})"
-        echo "manta SAFE_IN=${{SAFE_IN}}" >> {log}
-
         # --- Run Manta (may legitimately fail on some inputs) ---
         rm -rf {params.work_dir} 2>/dev/null || true
         mkdir -p {params.work_dir}
 
         MANTA_OK=true
-        configManta.py --bam "$SAFE_IN" --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
+        configManta.py --bam {input.bam} --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
             echo "ERROR: configManta.py failed" >> {log}
             MANTA_OK=false
         }}
