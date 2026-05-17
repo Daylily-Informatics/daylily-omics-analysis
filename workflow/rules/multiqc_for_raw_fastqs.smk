@@ -31,13 +31,14 @@ rule multiqc_for_raw_fastqs:
     log:
         f"{MDIR}logs/multiqc/SEQQC_multiqc.FQ.log",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
 
 
         dbill='$';
         cp ./config/external_tools/multiqc_header.yaml ./$(dirname {output})/rfq_multiqc_header.yaml;
+        multiqc --version > {log} 2>&1 || true
 
         multiqc -f  \
         --config   ./$(dirname {output})/rfq_multiqc_header.yaml \
@@ -47,7 +48,7 @@ rule multiqc_for_raw_fastqs:
         --filename {output} \
         -i 'FASTQ Multiqc Report' \
         -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
-        $(dirname {input} )/../ > {log} 2>&1;
+        $(dirname {input} )/../ >> {log} 2>&1;
         ls -lt {output};
 
         """

@@ -51,6 +51,8 @@ module_order:
   - mosdepth
   - goleft_indexcov
   - sentieon
+  - peddy
+  - somalier
   - vcftools
   - kat
   - custom_content 
@@ -64,6 +66,7 @@ module_order:
   - relatedness
   - bcftools_variant_stats
   - rtg_vcfstats
+  - tiddit_sv
   - peddy_sample_qc
   - vep_annotation
   - snpeff_annotation
@@ -295,6 +298,14 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'rtg_vcfstats'
+  tiddit_sv:
+    id: 'tiddit_sv'
+    section_name: 'TIDDIT SV Summary'
+    description: 'Summary counts for selected TIDDIT structural variant VCFs'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'tiddit_sv'
   peddy_sample_qc:
     id: 'peddy_sample_qc'
     section_name: 'Peddy Sample QC'
@@ -390,6 +401,8 @@ sp:
     fn: "other_reports/bcftools_variant_stats_mqc.tsv"
   rtg_vcfstats:
     fn: "other_reports/rtg_vcfstats_mqc.tsv"
+  tiddit_sv:
+    fn: "other_reports/tiddit_sv_mqc.tsv"
   peddy_sample_qc:
     fn: "other_reports/peddy_sample_qc_mqc.tsv"
   vep_annotation:
@@ -402,8 +415,6 @@ sp:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 
 exclude_modules:
-  - peddy
-  - somalier
   - slamdunk
   - adapterRemoval
   - rseqc

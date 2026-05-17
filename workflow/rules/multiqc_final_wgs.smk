@@ -151,6 +151,7 @@ def _variant_component_inputs(wildcards):
     pairs = valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
     paths.append(MDIR + "other_reports/bcftools_variant_stats_mqc.tsv")
     paths.append(MDIR + "other_reports/rtg_vcfstats_mqc.tsv")
+    paths.extend(_sv_component_inputs(wildcards))
     if qc_tool_enabled("peddy"):
         paths.extend(["logs/peddy_gathered.done", MDIR + "other_reports/peddy_sample_qc_mqc.tsv"])
     if qc_tool_enabled("expansionhunter") and set(ALIGNERS) & EXPANSIONHUNTER_ALIGNERS:
@@ -163,6 +164,13 @@ def _variant_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
     if len(CONCORDANCE_SAMPLES.keys()) > 0 and pairs:
         paths.append(MDIR + "other_reports/giab_concordance_mqc.tsv")
+    return paths
+
+
+def _sv_component_inputs(wildcards):
+    paths = []
+    if "tiddit" in sv_CALLERS:
+        paths.append(MDIR + "other_reports/tiddit_sv_mqc.tsv")
     return paths
 
 
@@ -230,7 +238,7 @@ rule sequence_qc_outputs_custom_data:
     output:
         MDIR + "other_reports/sequence_qc_outputs_mqc.tsv"
     log:
-        MDIR + "other_reports/logs/sequence_qc_outputs_mqc.log"
+        MDIR + "other_reports/logs/sequence_qc_outputs_custom_data.log"
     container: None
     shell:
         """
@@ -249,7 +257,7 @@ rule alignment_qc_outputs_custom_data:
     output:
         MDIR + "other_reports/alignment_qc_outputs_mqc.tsv"
     log:
-        MDIR + "other_reports/logs/alignment_qc_outputs_mqc.log"
+        MDIR + "other_reports/logs/alignment_qc_outputs_custom_data.log"
     container: None
     shell:
         """
@@ -291,14 +299,19 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         gtag=config["gittag"],
         cluster_sample="multiqc_seq_data",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
+          --ignore "*/other_reports/logs/*" \
+          --ignore "other_reports/logs/*" \
+          --ignore "*_mqc.log" \
           --template default \
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
@@ -326,14 +339,19 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         gtag=config["gittag"],
         cluster_sample="multiqc_alignment",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
+          --ignore "*/other_reports/logs/*" \
+          --ignore "other_reports/logs/*" \
+          --ignore "*_mqc.log" \
           --template default \
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
@@ -361,14 +379,19 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         gtag=config["gittag"],
         cluster_sample="multiqc_variants",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
         multiqc -f \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
+          --ignore "*/other_reports/logs/*" \
+          --ignore "other_reports/logs/*" \
+          --ignore "*_mqc.log" \
           --template default \
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
@@ -402,11 +425,13 @@ rule multiqc_final_wgs:  # TARGET: the big report
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a.log",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
         dbill='$';
         mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
         echo '''
 report_header_info:
   - Project/Budget: "REGSUB_PROJECT"
@@ -438,6 +463,9 @@ report_header_info:
         --config {output.header:q} \
         --config ./config/external_tools/multiqc_config.yaml  \
         --custom-css-file ./config/external_tools/multiqc.css \
+        --ignore "*/other_reports/logs/*" \
+        --ignore "other_reports/logs/*" \
+        --ignore "*_mqc.log" \
         --ignore "*/norm_cov_eveness/*" \
         --ignore "*sort_metrics/*" \
         --template default \

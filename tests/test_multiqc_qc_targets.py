@@ -88,6 +88,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "def _seq_data_component_inputs" in text
     assert "def _alignment_component_inputs" in text
     assert "def _variant_component_inputs" in text
+    assert "def _sv_component_inputs" in text
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
@@ -107,6 +108,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "relatedness_mqc.tsv",
         "bcftools_variant_stats_mqc.tsv",
         "rtg_vcfstats_mqc.tsv",
+        "tiddit_sv_mqc.tsv",
         "peddy_sample_qc_mqc.tsv",
         "expansionhunter_mqc.tsv",
         "vep_annotation_mqc.tsv",
@@ -177,8 +179,31 @@ def test_multiqc_custom_output_inventory_rules_exist() -> None:
         assert expected in script
 
 
+def test_multiqc_ignores_other_report_logs_and_custom_logs_avoid_mqc_suffix() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+    htd = _read("workflow/rules/htd_calls.smk")
+
+    assert text.count('--ignore "*/other_reports/logs/*"') >= 4
+    assert text.count('--ignore "other_reports/logs/*"') >= 4
+    assert text.count('--ignore "*_mqc.log"') >= 4
+    assert text.count("workflow/scripts/multiqc_log_guard.py") >= 4
+    assert text.count("multiqc --version") >= 4
+    assert "docker://multiqc/multiqc:v1.35" in text
+    assert "daylilyinformatics/daylily_multiqc:0.2" not in text
+    assert "sequence_qc_outputs_custom_data.log" in text
+    assert "alignment_qc_outputs_custom_data.log" in text
+    assert "sequence_qc_outputs_mqc.log" not in text
+    assert "alignment_qc_outputs_mqc.log" not in text
+    assert "htd_calls_custom_data.log" in htd
+    for rule_file in (REPO_ROOT / "workflow/rules").glob("*.smk"):
+        rule_text = rule_file.read_text(encoding="utf-8")
+        assert "sequence_qc_outputs_mqc.log" not in rule_text, rule_file
+        assert "alignment_qc_outputs_mqc.log" not in rule_text, rule_file
+
+
 def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     site_mix = _read("workflow/rules/site_mix_contam.smk")
+    contamination_script = _read("workflow/scripts/compile_contamination_mqc.py")
     relatedness = _read("workflow/rules/relatedness_batch.smk")
     report_script = _read("workflow/scripts/relatedness_report.py")
     report_env = _yaml("workflow/envs/report.yaml")
@@ -193,8 +218,10 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "site_mix_donor_mqc.tsv",
         "QC_CRAM_ALIGNERS",
         "qc_alignment_dedupers()",
-    ):
-        assert expected in site_mix
+            "workflow/scripts/compile_contamination_mqc.py",
+        ):
+            assert expected in site_mix
+    assert '"Sample",' in contamination_script
 
     for expected in (
         "rule relatedness_batch_manifest:",
@@ -237,12 +264,17 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
     snpeff = _read("workflow/rules/snpeff.smk")
+    tiddit = _read("workflow/rules/tiddit.smk")
     slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
 
     assert "rule bcftools_variant_stats_gather:" in bcftools
     assert "bcftools_variant_stats_mqc.tsv" in bcftools
     assert "rule rtg_vcfstats_gather:" in rtg
     assert "rtg_vcfstats_mqc.tsv" in rtg
+    assert "rule tiddit_sv_mqc_gather:" in tiddit
+    assert "workflow/scripts/tiddit_sv_to_multiqc.py" in tiddit
+    assert "tiddit_sv_mqc.tsv" in tiddit
+    assert 'if "tiddit" not in sv_CALLERS:' in tiddit
     assert "rule peddy_sample_qc_gather:" in peddy
     assert "peddy_sample_qc_mqc.tsv" in peddy
     assert "rule vep:" not in vep
@@ -311,6 +343,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "relatedness",
         "bcftools_variant_stats",
         "rtg_vcfstats",
+        "tiddit_sv",
         "peddy_sample_qc",
         "vep_annotation",
         "snpeff_annotation",
@@ -324,8 +357,8 @@ def test_multiqc_config_custom_content_entries() -> None:
     assert "fastp" not in excludes
     assert "vep" not in excludes
     assert "snpeff" not in excludes
-    assert "peddy" in excludes
-    assert "somalier" in excludes
+    assert "peddy" not in excludes
+    assert "somalier" not in excludes
     assert "verifyBAMID" in excludes
     assert "sexdetermine" in excludes
 
@@ -367,8 +400,8 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
 
     module_order = config["module_order"]
     assert len(module_order) == len(set(module_order))
-    assert "peddy" not in module_order
-    assert "somalier" not in module_order
+    assert "peddy" in module_order
+    assert "somalier" in module_order
     assert "peddy_sample_qc" in module_order
     assert "relatedness" in module_order
     assert "verifyBAMID" not in module_order
@@ -378,6 +411,7 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     common = _read("workflow/rules/common.smk")
     contamination = _read("workflow/rules/site_mix_contam.smk")
+    contamination_script = _read("workflow/scripts/compile_contamination_mqc.py")
     bcftools = _read("workflow/rules/bcftools_vcfstat.smk")
     rtg_vcfstats = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
@@ -385,7 +419,8 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     snpeff = _read("workflow/rules/snpeff.smk")
 
     assert "def day_stage_sample_id(sample, *components)" in common
-    assert "day_stage_sample_id(sample, aligner, deduper)" in contamination
+    assert "_stage_sample_id(sample, aligner, deduper)" in contamination_script
+    assert "compile_contamination_mqc.py" in contamination
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in bcftools
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in rtg_vcfstats
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in peddy

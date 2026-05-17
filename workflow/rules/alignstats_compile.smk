@@ -54,18 +54,17 @@ rule alignstats_compile:
         cluster_sample="na",
     log:
         MDIR + "logs/alignstats_summary_compile.log",
-    conda:
-        config["alignstats"]["env_yaml"]
     shell:
-        "(mkdir -p {MDIR}logs/as;"
-        "echo STARTcompileAstats > {log};"
-        "find {MDIR}*/align/*/*/alignqc/alignstats/*alignstats.tsv | head -n 1 | parallel -j 1 'head -n 1 {params.l}{params.r} > {output[0]}; echo a_{params.l}{params.r} >> {log}' >> {log} 2>&1; "
-        "find {MDIR}*/align/*/*/alignqc/alignstats/*alignstats.tsv | parallel -j 1 'tail -n 1 {params.l}{params.r} >> {output[0]}; echo b_{params.l}{params.r}  >> {log} ' >> {log} 2>&1;  "
-        "cp {output[0]} {output[1]};"
-        "cp {output[0]} {output[2]};" #         "perl -pi -e 's/_DBC0_0//g;' {output};"
-        ") || touch logs/ALIGNSTATSCOMPIEFAILEDw_$? ; "
-        "perl -pi -e 's/ /\t/g;' {output[2]};"
-        "cp {output[2]} {output[3]};"
+        """
+        set -euo pipefail
+        python workflow/scripts/compile_alignstats.py \
+          --mdir {MDIR:q} \
+          --log {log:q} \
+          --bsummary {output[0]:q} \
+          --csummary {output[1]:q} \
+          --combo {output[2]:q} \
+          --generalstats {output[3]:q}
+        """
 
 
 localrules:

@@ -1,4 +1,4 @@
-0#### TIDDIT IS A MORE DAYERN sv CALLER
+#### TIDDIT IS A MORE DAYERN sv CALLER
 # -------------------------------------
 # It leverages snv calls and some population
 # freq data to do it's work. It is a
@@ -88,7 +88,39 @@ rule tiddit_sort_index:
 
 
 
-localrules: produce_tiddit,
+def _tiddit_sv_mqc_inputs(wildcards):
+    if "tiddit" not in sv_CALLERS:
+        return []
+    return expand(
+        MDIR
+        + "{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz",
+        sample=SSAMPS,
+        alnr=QC_CRAM_ALIGNERS,
+        ddup=DDUP,
+    )
+
+
+localrules:
+    tiddit_sv_mqc_gather,
+    produce_tiddit,
+
+
+rule tiddit_sv_mqc_gather:
+    input:
+        _tiddit_sv_mqc_inputs
+    output:
+        MDIR + "other_reports/tiddit_sv_mqc.tsv"
+    log:
+        MDIR + "other_reports/logs/tiddit_sv_custom_data.log"
+    container: None
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        python workflow/scripts/tiddit_sv_to_multiqc.py \
+          --output {output:q} \
+          {input:q} > {log:q} 2>&1
+        """
 
 rule produce_tiddit:  # DEPRECATED TARGET: use produce_tiddit_sv_vcf
     priority: 45

@@ -27,9 +27,9 @@ rule multiqc_cov_aln:  # TARGET : Run Alignment and Generate Alignment and Cover
         gbranch=config["gitbranch"],
         cluster_sample=f"{RU[0]}_{EX[0]}",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
-        "(multiqc --interactive -x '*.js' -x '*bench.tsv' -x '*.bam' -x '*.fastq.gz' -x '*multiqc*' -x '*pyc' -x '*.fastq.gz'  -x  '*impute*glm*' -f -i 'SEQQC / COVERAGE & ALIGNMENT REPORT' -p  -b '{RU[0]}_{EX[0]} ___ {params.gbranch} {params.gtag} {params.ghash}' --sample-filters config/external_tools/multiqc_samplebtn_lcwgs.tsv -n {params.fn} -o {params.odir} --profile-runtime -c {params.micro_cfg} -c {params.macro_cfg} {MDIR}) || (echo 'Multiqc Exited With: '$? && time sleep 1 && echo done) "
+        "(multiqc --version > {log} 2>&1 || true; multiqc --interactive -x '*.js' -x '*bench.tsv' -x '*.bam' -x '*.fastq.gz' -x '*multiqc*' -x '*pyc' -x '*.fastq.gz'  -x  '*impute*glm*' -f -i 'SEQQC / COVERAGE & ALIGNMENT REPORT' -p  -b '{RU[0]}_{EX[0]} ___ {params.gbranch} {params.gtag} {params.ghash}' --sample-filters config/external_tools/multiqc_samplebtn_lcwgs.tsv -n {params.fn} -o {params.odir} --profile-runtime -c {params.micro_cfg} -c {params.macro_cfg} {MDIR} >> {log} 2>&1) || (echo 'Multiqc Exited With: '$? && time sleep 1 && echo done) "
 
 
 localrules:

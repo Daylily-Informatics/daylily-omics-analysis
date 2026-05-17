@@ -3,6 +3,7 @@
 # - Optional donor attribution uses a candidate BAM/CRAM/VCF manifest.
 
 import csv
+import json
 import os
 
 
@@ -131,6 +132,28 @@ def _seconds_to_minutes(value):
     except (TypeError, ValueError):
         return ""
 
+
+def _sample_external_ids_json(wildcards=None):
+    sample_info = config.get("sample_info", {})
+    return json.dumps(
+        {
+            sample: str(sample_info.get(sample, {}).get("external_sample_id", sample))
+            for sample in SSAMPS
+        }
+    )
+
+
+def _verifybamid2_panel_metadata_json(wildcards=None):
+    metadata = {}
+    for panel_id in VERIFYBAMID2_PANELS:
+        panel_cfg = _verifybamid2_panel_config(panel_id)
+        metadata[panel_id] = {
+            "label": str(panel_cfg.get("label", panel_id)),
+            "snp_count": str(panel_cfg.get("snp_count", "")),
+            "svd_prefix": _supporting_file_name(panel_cfg.get("svd_prefix", "")),
+        }
+    return json.dumps(metadata)
+
 rule site_mix_contam:
     input:
         pileups = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.pileups.table",
@@ -207,234 +230,29 @@ rule contamination_mqc_gather:
         vb2_comparison=MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv",
         site_mix=MDIR + "other_reports/site_mix_contam_mqc.tsv",
         donors=MDIR + "other_reports/site_mix_donor_mqc.tsv",
-    run:
-        os.makedirs(os.path.dirname(str(output.contamination)), exist_ok=True)
-        contamination_fields = [
-            "sample_id",
-            "external_sample_id",
-            "aligner",
-            "deduper",
-            "panel_id",
-            "panel_label",
-            "tool",
-            "method",
-            "contamination_fraction",
-            "contamination_pct",
-            "ci_low_fraction",
-            "ci_high_fraction",
-            "unknown_contamination_fraction",
-            "unknown_contamination_pct",
-            "site_count",
-            "read_count",
-            "mean_depth",
-            "svd_prefix",
-            "source_path",
-            "status",
-        ]
-        vb2_fields = [
-            "sample_id",
-            "external_sample_id",
-            "aligner",
-            "deduper",
-            "panel_id",
-            "panel_label",
-            "snp_count",
-            "svd_prefix",
-            "freemix_fraction",
-            "contamination_pct",
-            "site_count",
-            "read_count",
-            "mean_depth",
-            "runtime_seconds",
-            "runtime_minutes",
-            "task_cost",
-            "source_path",
-            "benchmark_path",
-            "status",
-        ]
-        donor_fields = [
-            "sample_id",
-            "external_sample_id",
-            "aligner",
-            "deduper",
-            "source_rank",
-            "source_sample_id",
-            "is_unknown_source",
-            "contamination_fraction",
-            "contamination_pct",
-            "single_source_delta_log_likelihood",
-            "source_path",
-        ]
-        with open(output.contamination, "w", newline="") as contam_handle, open(
-            output.site_mix, "w", newline=""
-        ) as site_handle, open(output.vb2_comparison, "w", newline="") as vb2_handle:
-            contam_writer = csv.DictWriter(
-                contam_handle, fieldnames=contamination_fields, delimiter="\t"
-            )
-            site_writer = csv.DictWriter(
-                site_handle, fieldnames=contamination_fields, delimiter="\t"
-            )
-            vb2_writer = csv.DictWriter(
-                vb2_handle, fieldnames=vb2_fields, delimiter="\t"
-            )
-            contam_writer.writeheader()
-            site_writer.writeheader()
-            vb2_writer.writeheader()
-            vb2_benchmarks = _benchmark_by_vb2_key(input.vb2_bench)
-            for path in input.vb2:
-                sample, external, aligner, deduper, panel_id = _parse_vb2_panel_path(path)
-                sample_id = day_stage_sample_id(sample, aligner, deduper)
-                with open(path, newline="") as handle:
-                    rows = list(csv.DictReader(handle, delimiter="\t"))
-                row = rows[0] if rows else {}
-                freemix = row.get("FREEMIX", "")
-                panel_cfg = _verifybamid2_panel_config(panel_id)
-                benchmark_path = vb2_benchmarks.get((sample, aligner, deduper, panel_id), "")
-                benchmark = _read_benchmark_row(benchmark_path)
-                runtime_seconds = benchmark.get("s", "")
-                panel_label = str(panel_cfg.get("label", panel_id))
-                snp_count = str(panel_cfg.get("snp_count", row.get("#SNPS", "")))
-                svd_prefix = _supporting_file_name(panel_cfg["svd_prefix"])
-                contam_row = {
-                    "sample_id": sample_id,
-                    "external_sample_id": external,
-                    "aligner": aligner,
-                    "deduper": deduper,
-                    "panel_id": panel_id,
-                    "panel_label": panel_label,
-                    "tool": "verifybamid2",
-                    "method": "freemix",
-                    "contamination_fraction": freemix,
-                    "contamination_pct": _safe_pct(freemix),
-                    "ci_low_fraction": "",
-                    "ci_high_fraction": "",
-                    "unknown_contamination_fraction": "",
-                    "unknown_contamination_pct": "",
-                    "site_count": row.get("#SNPS", snp_count),
-                    "read_count": row.get("#READS", ""),
-                    "mean_depth": row.get("AVG_DP", ""),
-                    "svd_prefix": svd_prefix,
-                    "source_path": path,
-                    "status": "ok" if freemix not in ["", "NA"] else "no_call",
-                }
-                contam_writer.writerow(contam_row)
-                vb2_writer.writerow(
-                    {
-                        "sample_id": sample_id,
-                        "external_sample_id": external,
-                        "aligner": aligner,
-                        "deduper": deduper,
-                        "panel_id": panel_id,
-                        "panel_label": panel_label,
-                        "snp_count": snp_count,
-                        "svd_prefix": svd_prefix,
-                        "freemix_fraction": freemix,
-                        "contamination_pct": _safe_pct(freemix),
-                        "site_count": row.get("#SNPS", snp_count),
-                        "read_count": row.get("#READS", ""),
-                        "mean_depth": row.get("AVG_DP", ""),
-                        "runtime_seconds": runtime_seconds,
-                        "runtime_minutes": _seconds_to_minutes(runtime_seconds),
-                        "task_cost": benchmark.get("task_cost", ""),
-                        "source_path": path,
-                        "benchmark_path": benchmark_path,
-                        "status": contam_row["status"],
-                    }
-                )
-            for path in input.gatk:
-                sample, external, aligner, deduper = _parse_contam_path(path)
-                sample_id = day_stage_sample_id(sample, aligner, deduper)
-                with open(path, newline="") as handle:
-                    rows = list(csv.DictReader(handle, delimiter="\t"))
-                row = rows[0] if rows else {}
-                freemix = row.get("FREEMIX", "")
-                contam_writer.writerow(
-                    {
-                        "sample_id": sample_id,
-                        "external_sample_id": external,
-                        "aligner": aligner,
-                        "deduper": deduper,
-                        "panel_id": "",
-                        "panel_label": "",
-                        "tool": "gatk",
-                        "method": "freemix",
-                        "contamination_fraction": freemix,
-                        "contamination_pct": _safe_pct(freemix),
-                        "ci_low_fraction": "",
-                        "ci_high_fraction": "",
-                        "unknown_contamination_fraction": "",
-                        "unknown_contamination_pct": "",
-                        "site_count": row.get("#SNPS", ""),
-                        "read_count": row.get("#READS", ""),
-                        "mean_depth": row.get("AVG_DP", ""),
-                        "svd_prefix": "",
-                        "source_path": path,
-                        "status": "ok" if freemix not in ["", "NA"] else "no_call",
-                    }
-                )
-            for path in input.site_mix:
-                sample, external, aligner, deduper = _parse_contam_path(path)
-                sample_id = day_stage_sample_id(sample, aligner, deduper)
-                with open(path, newline="") as handle:
-                    rows = list(csv.DictReader(handle, delimiter="\t"))
-                row = rows[0] if rows else {}
-                out_row = {
-                    "sample_id": sample_id,
-                    "external_sample_id": external,
-                    "aligner": aligner,
-                    "deduper": deduper,
-                    "panel_id": "",
-                    "panel_label": "",
-                    "tool": "site_mix",
-                    "method": row.get("method", "genotype_free_site_mix"),
-                    "contamination_fraction": row.get("contamination_fraction", ""),
-                    "contamination_pct": row.get("contamination_pct", ""),
-                    "ci_low_fraction": row.get("ci_low_fraction", ""),
-                    "ci_high_fraction": row.get("ci_high_fraction", ""),
-                    "unknown_contamination_fraction": row.get(
-                        "unknown_contamination_fraction", ""
-                    ),
-                    "unknown_contamination_pct": row.get("unknown_contamination_pct", ""),
-                    "site_count": row.get("site_count", ""),
-                    "read_count": row.get("read_count", ""),
-                    "mean_depth": row.get("mean_depth", ""),
-                    "svd_prefix": "",
-                    "source_path": path,
-                    "status": "ok"
-                    if row.get("contamination_fraction", "") not in ["", "NA"]
-                    else "no_call",
-                }
-                contam_writer.writerow(out_row)
-                site_writer.writerow(out_row)
-        with open(output.donors, "w", newline="") as donor_handle:
-            donor_writer = csv.DictWriter(
-                donor_handle, fieldnames=donor_fields, delimiter="\t"
-            )
-            donor_writer.writeheader()
-            for path in input.site_mix_donors:
-                sample, external, aligner, deduper = _parse_contam_path(path)
-                sample_id = day_stage_sample_id(sample, aligner, deduper)
-                with open(path, newline="") as handle:
-                    for row in csv.DictReader(handle, delimiter="\t"):
-                        donor_writer.writerow(
-                            {
-                                "sample_id": sample_id,
-                                "external_sample_id": external,
-                                "aligner": aligner,
-                                "deduper": deduper,
-                                "source_rank": row.get("source_rank", ""),
-                                "source_sample_id": row.get("source_sample_id", ""),
-                                "is_unknown_source": row.get("is_unknown_source", ""),
-                                "contamination_fraction": row.get(
-                                    "contamination_fraction", ""
-                                ),
-                                "contamination_pct": row.get("contamination_pct", ""),
-                                "single_source_delta_log_likelihood": row.get(
-                                    "single_source_delta_log_likelihood", ""
-                                ),
-                                "source_path": path,
-                            }
-                        )
+    params:
+        sample_map=_sample_external_ids_json,
+        panel_metadata=_verifybamid2_panel_metadata_json,
+    log:
+        MDIR + "other_reports/logs/contamination_custom_data.log",
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output.contamination:q}) $(dirname {log:q})
+        python workflow/scripts/compile_contamination_mqc.py \
+          --sample-map-json {params.sample_map:q} \
+          --panel-metadata-json {params.panel_metadata:q} \
+          --contamination-output {output.contamination:q} \
+          --vb2-comparison-output {output.vb2_comparison:q} \
+          --site-mix-output {output.site_mix:q} \
+          --donor-output {output.donors:q} \
+          --vb2 {input.vb2:q} \
+          --vb2-bench {input.vb2_bench:q} \
+          --gatk {input.gatk:q} \
+          --site-mix {input.site_mix:q} \
+          --site-mix-donors {input.site_mix_donors:q} \
+          > {log:q} 2>&1
+        """
 
 
 rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix contamination estimates
