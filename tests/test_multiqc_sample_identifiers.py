@@ -84,6 +84,16 @@ def test_custom_output_inventory_uses_stage_aware_sample_first_column(tmp_path: 
     assert row["deduper"] == "dmd"
     assert_valid_multiqc_sample_id(str(row["Sample"]), requires_deduper=True)
 
+    summary = tmp_path / "results/day/hg38/other_reports/alignstats_combo_mqc.tsv"
+    summary.parent.mkdir(parents=True, exist_ok=True)
+    summary.write_text("Sample\tmetric\nHG001.sent.dmd\t1\n", encoding="utf-8")
+    row = module._infer_record("alignment_qc", str(summary))
+    assert row["Sample"] == "alignment_qc.alignstats_combo"
+    assert row["base_sample"] == ""
+    assert row["aligner"] == ""
+    assert row["deduper"] == ""
+    assert row["tool"] == "alignstats_combo_mqc"
+
 
 def test_sequence_and_coverage_custom_tsv_contracts_are_sample_first() -> None:
     seqfu = _read("workflow/rules/seqfu.smk")
@@ -425,6 +435,112 @@ def test_stage_multiqc_inputs_guards_against_native_sample_collisions(
         module.stage_known_input(stager, custom)
 
 
+def test_stage_multiqc_inputs_allows_repeated_custom_inventory_sample_rows(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_custom_inventory_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    other_reports = root / "other_reports"
+    other_reports.mkdir(parents=True)
+    custom = other_reports / "alignment_qc_outputs_mqc.tsv"
+    custom.write_text(
+        "Sample\tbase_sample\tstage\ttool\taligner\tdeduper\tsource_path\n"
+        "HG001.sent.dmd\tHG001\talignment_qc\tcontam\tsent\tdmd\tgatk.tsv\n"
+        "HG001.sent.dmd\tHG001\talignment_qc\tmosdepth\tsent\tdmd\tmosdepth.bed\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, custom)
+    stager.finish()
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    assert [row["Sample"] for row in rows] == ["HG001.sent.dmd", "HG001.sent.dmd"]
+    assert {row["group_id"] for row in rows} == {
+        f"{custom}:HG001.sent.dmd",
+    }
+
+
+def test_stage_multiqc_inputs_groups_custom_rows_with_discovered_native_sources(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_custom_native_sources_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    native = (
+        root
+        / "HG001/align/sent/dmd/snv/sentd/vcf_stats/"
+        / "HG001.sent.dmd.sentd.rtg.vcfstats.txt"
+    )
+    native.parent.mkdir(parents=True)
+    native.write_text("rtg stats\n", encoding="utf-8")
+    custom = root / "other_reports/rtg_vcfstats_mqc.tsv"
+    custom.parent.mkdir(parents=True)
+    custom.write_text(
+        "Sample\tbase_sample\taligner\tdeduper\tsnv_caller\tsource_path\n"
+        f"HG001.sent.dmd.sentd\tHG001\tsent\tdmd\tsentd\t{native}\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, custom)
+    stager.finish()
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    rtg_rows = [row for row in rows if row["module"] == "rtg_vcfstats"]
+    assert len(rtg_rows) == 2
+    assert {row["Sample"] for row in rtg_rows} == {"HG001.sent.dmd.sentd"}
+    assert {row["group_id"] for row in rtg_rows} == {
+        f"{custom}:HG001.sent.dmd.sentd",
+    }
+
+
+def test_stage_multiqc_inputs_allows_fastqc_zip_and_html_for_same_read(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_fastqc_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    fastqc_dir = root / "HG001/seqqc/fastqc"
+    fastqc_dir.mkdir(parents=True)
+    done = fastqc_dir / "HG001.fastqc.done"
+    done.write_text("done\n", encoding="utf-8")
+    (fastqc_dir / "HG001.R1_fastqc.html").write_text("<html></html>\n", encoding="utf-8")
+    (fastqc_dir / "HG001.R1_fastqc.zip").write_text("zip\n", encoding="utf-8")
+    (fastqc_dir / "HG001.R2_fastqc.html").write_text("<html></html>\n", encoding="utf-8")
+    (fastqc_dir / "HG001.R2_fastqc.zip").write_text("zip\n", encoding="utf-8")
+
+    out_dir = root / "reports/multiqc_inputs/seq_data"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, done)
+    stager.finish()
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    fastqc_samples = [row["Sample"] for row in rows if row["module"] == "fastqc"]
+    assert sorted(fastqc_samples) == ["HG001.R1", "HG001.R1", "HG001.R2", "HG001.R2"]
+    assert {
+        row["group_id"] for row in rows if row["module"] == "fastqc"
+    } == {"fastqc:HG001:R1", "fastqc:HG001:R2"}
+
+
 def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) -> None:
     module = _load_module(
         REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
@@ -490,7 +606,7 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
         out_dir / "native/picard/HG001.sent.dmd.alignment_summary_metrics.txt"
     ).exists()
     assert (out_dir / "native/qualimap/HG001.sent.dmd/genome_results.txt").exists()
-    staged_selfsm = out_dir / "native/verifybamid/HG001.sent.dmd.100k.verifybamid.selfSM"
+    staged_selfsm = out_dir / "native/verifybamid/HG001.sent.dmd.100k.selfSM"
     assert staged_selfsm.exists()
     assert staged_selfsm.read_text(encoding="utf-8").splitlines()[1].startswith(
         "HG001.sent.dmd.100k\t"
@@ -498,6 +614,71 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     with manifest.open(newline="", encoding="utf-8") as handle:
         samples = {row["Sample"] for row in csv.DictReader(handle, delimiter="\t")}
     assert samples == {"HG001.sent.dmd", "HG001.sent.dmd.100k"}
+
+
+def test_stage_multiqc_inputs_rewrites_somalier_native_files(tmp_path: Path) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_somalier_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    somalier = root / "other_reports/relatedness/sent/dmd/somalier"
+    somalier.mkdir(parents=True)
+    samples = somalier / "cohort.samples.tsv"
+    samples.write_text(
+        "#family_id\tsample_id\tgt_depth_mean\tab_std\n"
+        "HG001\tHG001\t12.5\t0.55\n"
+        "HG002\tHG002\t11.5\t0.54\n",
+        encoding="utf-8",
+    )
+    pairs = somalier / "cohort.pairs.tsv"
+    pairs.write_text(
+        "#sample_a\tsample_b\trelatedness\tibs0\tibs2\texpected_relatedness\n"
+        "HG001\tHG002\t0.5\t1\t10\t0.5\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, samples)
+    module.stage_known_input(stager, pairs)
+    stager.finish()
+
+    staged_samples = out_dir / "native/somalier/sent.dmd/cohort.samples.tsv"
+    staged_pairs = out_dir / "native/somalier/sent.dmd/cohort.pairs.tsv"
+    assert "HG001.sent.dmd" in staged_samples.read_text(encoding="utf-8")
+    assert "HG001.sent.dmd\tHG002.sent.dmd" in staged_pairs.read_text(encoding="utf-8")
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        somalier_samples = {
+            row["Sample"]
+            for row in csv.DictReader(handle, delimiter="\t")
+            if row["module"] == "somalier"
+        }
+    assert somalier_samples == {
+        "HG001.sent.dmd",
+        "HG002.sent.dmd",
+        "HG001.sent.dmd*HG002.sent.dmd",
+    }
+
+
+def test_multiqc_module_exclude_file_renders_empty_args_by_default(tmp_path: Path) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/multiqc_module_exclude_args.py",
+        "multiqc_module_exclude_args_under_test",
+    )
+    exclude_file = REPO_ROOT / "config/multiqc_module_exclude.txt"
+    assert module.render_args(exclude_file) == ""
+
+    populated = tmp_path / "exclude.txt"
+    populated.write_text("peddy\nsomalier\n", encoding="utf-8")
+    assert module.render_args(populated) == "--exclude peddy --exclude somalier"
+
+    bad = tmp_path / "bad.txt"
+    bad.write_text(" peddy\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="invalid MultiQC module name"):
+        module.render_args(bad)
 
 
 def test_validate_multiqc_sample_ids_rejects_collapsed_native_outputs(
@@ -570,19 +751,58 @@ def test_manta_converts_cram_to_bam_before_calling() -> None:
     assert "legacy_cram_compat_bam:\n    threads: 32\n    mem_mb: 64000" in slurm_config
 
 
-def test_native_multiqc_collision_modules_are_excluded_and_cleaned() -> None:
+def test_native_multiqc_modules_are_enabled_and_stage_cleaned() -> None:
     multiqc = _read("config/external_tools/multiqc_config.yaml")
-    picard = _read("workflow/rules/picard.smk")
+    snakefile = _read("workflow/Snakefile")
+    exclude_file = REPO_ROOT / "config/multiqc_module_exclude.txt"
 
-    assert "\n  - peddy\n" not in multiqc[multiqc.index("exclude_modules:") :]
-    assert "\n  - somalier\n" not in multiqc[multiqc.index("exclude_modules:") :]
+    assert "exclude_modules: []" in multiqc
+    assert exclude_file.exists()
+    assert not exclude_file.read_text(encoding="utf-8").strip()
+    assert "\n  - goleft_indexcov\n" in multiqc[multiqc.index("module_order:") : multiqc.index("table_columns_visible:")]
     assert "\n  - peddy\n" in multiqc[multiqc.index("module_order:") : multiqc.index("table_columns_visible:")]
     assert "\n  - somalier\n" in multiqc[multiqc.index("module_order:") : multiqc.index("table_columns_visible:")]
+    filename_block = multiqc[
+        multiqc.index("use_filename_as_sample_name:") : multiqc.index("extra_fn_clean_trim:")
+    ]
+    assert "\n  - goleft_indexcov\n" not in filename_block
+    assert "\n  - peddy\n" not in filename_block
+    assert "\n  - somalier\n" not in filename_block
     assert 'peddy/background_pca:' not in multiqc
     assert r"^(.*)-([A-Za-z0-9_]+)-(dmd|smd|spmd|na)-cram$" in multiqc
     assert r"\.metrics$" in multiqc
     assert "_FR$" in multiqc
     assert ".alignment_summary_metrics.txt" in multiqc
     assert ".insert_size_metrics.txt" in multiqc
-    assert "O={params.prefix:q}" in picard
-    assert "O=$pic_d" not in picard
+    active_includes = [
+        line.strip()
+        for line in snakefile.splitlines()
+        if line.strip().startswith("include:")
+    ]
+    assert 'include: "rules/picard.smk"' not in active_includes
+    assert '# include: "rules/picard.smk"' in snakefile
+    assert 'include: "rules/qualimap.smk"' not in active_includes
+    assert '# include: "rules/qualimap.smk"' in snakefile
+    assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
+    assert "alignqc/qmap" not in _read("workflow/rules/multiqc_cov_aln.smk")
+
+
+def test_container_profile_uses_fsx_tmp_for_image_builds_and_binds_dev_shm() -> None:
+    day_run = _read("bin/day_run")
+
+    assert 'source "$profile_env_script"' in day_run
+    assert "Profile environment script failed before Snakemake launch" in day_run
+
+    for profile in ("local", "slurm"):
+        config = _read(f"config/day_profiles/{profile}/templates/config.yaml")
+        profile_env = _read(f"config/day_profiles/{profile}/templates/profile_env.bash")
+
+        assert "-B /dev/shm:/dev/shm" in config
+        assert 'export APPTAINER_TMPDIR="/fsx/scratch/dayoa_apptainer_tmp/${dayoa_user}"' in profile_env
+        assert 'export SINGULARITY_TMPDIR="${APPTAINER_TMPDIR}"' in profile_env
+        assert (
+            'export APPTAINER_CACHEDIR="/fsx/resources/environments/apptainer_cache/${dayoa_user}/${dayoa_host}"'
+            in profile_env
+        )
+        assert 'export SINGULARITY_CACHEDIR="${APPTAINER_CACHEDIR}"' in profile_env
+        assert 'mkdir -p "${APPTAINER_TMPDIR}" "${APPTAINER_CACHEDIR}" || return 1' in profile_env

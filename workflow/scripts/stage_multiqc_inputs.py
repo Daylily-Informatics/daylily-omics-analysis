@@ -320,7 +320,7 @@ def stage_custom_tsv(stager: Stager, source: Path) -> None:
                 deduper=row.get("deduper", ""),
                 caller=row.get("snv_caller", row.get("sv_caller", "")),
                 input_kind="custom_mqc_row",
-                group_id=f"{source}:{idx}",
+                group_id=f"{source}:{sample}",
             )
             stage_native_sources_from_custom_row(stager, source, row)
 
@@ -360,6 +360,7 @@ def stage_native_sources_from_custom_row(
     if not source_path:
         return
     source = Path(source_path)
+    custom_group = f"{custom_source}:{row.get('Sample', '')}"
     if source.name.endswith(".bcfstats.tsv"):
         parts = parse_variant_parts(source, "snv")
         stager.copy_file(
@@ -368,7 +369,7 @@ def stage_native_sources_from_custom_row(
             parts,
             module="bcftools_stats",
             input_kind="bcftools_stats",
-            group_id=str(source),
+            group_id=custom_group,
         )
     elif source.name.endswith(".rtg.vcfstats.txt"):
         parts = parse_variant_parts(source, "snv")
@@ -378,7 +379,7 @@ def stage_native_sources_from_custom_row(
             parts,
             module="rtg_vcfstats",
             input_kind="rtg_vcfstats",
-            group_id=str(source),
+            group_id=custom_group,
         )
     elif source.name.endswith(".tiddit.sv.summary.tsv"):
         parts = parse_variant_parts(source, "sv")
@@ -388,7 +389,7 @@ def stage_native_sources_from_custom_row(
             parts,
             module="tiddit",
             input_kind="tiddit_summary",
-            group_id=str(source),
+            group_id=custom_group,
         )
 
 
@@ -436,7 +437,7 @@ def stage_fastqc_done(stager: Stager, source: Path) -> None:
             read_parts,
             module="fastqc",
             input_kind=f"fastqc_{read}",
-            group_id=str(candidate),
+            group_id=f"fastqc:{parts.sample}:{read}",
         )
 
 
@@ -543,7 +544,7 @@ def stage_verifybamid_tsv(stager: Stager, source: Path) -> None:
     dest = (
         stager.output_dir
         / "native/verifybamid"
-        / f"{stage_parts.stage_sample}.verifybamid.selfSM"
+        / f"{stage_parts.stage_sample}.selfSM"
     )
     copy_rewritten_delimited(
         selfsm,
@@ -584,6 +585,79 @@ def stage_somalier_extract(stager: Stager, source: Path) -> None:
     )
 
 
+def parse_relatedness_parts(path: Path) -> tuple[str, str]:
+    parts = path_parts(path)
+    try:
+        relatedness_idx = parts.index("relatedness")
+        aligner = parts[relatedness_idx + 1]
+        deduper = parts[relatedness_idx + 2]
+    except (ValueError, IndexError) as exc:
+        raise StagingError(f"could not parse Somalier relatedness path: {path}") from exc
+    return aligner, deduper
+
+
+def rewrite_somalier_cohort(source: Path, dest: Path, aligner: str, deduper: str) -> list[str]:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with source.open(newline="", encoding="utf-8") as in_handle:
+        reader = csv.reader(in_handle, delimiter="\t")
+        try:
+            header = next(reader)
+        except StopIteration as exc:
+            raise StagingError(f"empty Somalier cohort file: {source}") from exc
+        rows = list(reader)
+
+    clean_header = [field.lstrip("#") for field in header]
+    sample_indexes = [
+        idx
+        for idx, field in enumerate(clean_header)
+        if field in {"sample_id", "sample_a", "sample_b"}
+    ]
+    if not sample_indexes:
+        raise StagingError(f"Somalier cohort file lacks sample columns: {source}")
+
+    sample_map: dict[str, str] = {}
+    for row in rows:
+        for idx in sample_indexes:
+            if idx < len(row) and row[idx]:
+                sample_map[row[idx]] = f"{row[idx]}.{aligner}.{deduper}"
+
+    staged_samples: list[str] = []
+    with dest.open("w", newline="", encoding="utf-8") as out_handle:
+        writer = csv.writer(out_handle, delimiter="\t", lineterminator="\n")
+        writer.writerow(header)
+        for row in rows:
+            rewritten = [sample_map.get(value, value) for value in row]
+            writer.writerow(rewritten)
+            if "sample_id" in clean_header:
+                sample_idx = clean_header.index("sample_id")
+                staged_samples.append(rewritten[sample_idx])
+            else:
+                sample_a_idx = clean_header.index("sample_a")
+                sample_b_idx = clean_header.index("sample_b")
+                staged_samples.append(
+                    f"{rewritten[sample_a_idx]}*{rewritten[sample_b_idx]}"
+                )
+    return staged_samples
+
+
+def stage_somalier_cohort(stager: Stager, source: Path) -> None:
+    aligner, deduper = parse_relatedness_parts(source)
+    dest = stager.output_dir / "native/somalier" / f"{aligner}.{deduper}" / source.name
+    staged_samples = rewrite_somalier_cohort(source, dest, aligner, deduper)
+    for idx, sample in enumerate(staged_samples, start=2):
+        stager.add_manifest_sample_row(
+            source,
+            dest,
+            sample=sample,
+            module="somalier",
+            stage="alignment",
+            aligner=aligner,
+            deduper=deduper,
+            input_kind=source.name,
+            group_id=f"{source}:{idx}",
+        )
+
+
 def stage_known_input(stager: Stager, source: Path) -> None:
     name = source.name
     if name.endswith("_mqc.tsv") or name.endswith(".mqc.tsv"):
@@ -602,6 +676,8 @@ def stage_known_input(stager: Stager, source: Path) -> None:
         stage_goleft_done(stager, source)
     elif name.endswith(".vb2.tsv"):
         stage_verifybamid_tsv(stager, source)
+    elif name in {"cohort.samples.tsv", "cohort.pairs.tsv"} and "/somalier/" in source.as_posix():
+        stage_somalier_cohort(stager, source)
     elif name.endswith(".somalier"):
         stage_somalier_extract(stager, source)
     elif name.endswith(".done") or name.endswith(".html") or name.endswith(".json"):

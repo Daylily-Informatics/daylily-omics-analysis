@@ -83,24 +83,6 @@ def _alignment_qc_native_inputs(wildcards):
     paths.extend(
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
-        )
-    )
-    paths.extend(
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
-        )
-    )
-    paths.extend(
-        expand(
-            MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
             sample=SSAMPS,
             alnr=alnrs,
@@ -155,8 +137,15 @@ def _relatedness_native_inputs(wildcards):
     paths.extend(
         expand(
             MDIR
-            + "other_reports/relatedness/{alnr}/{ddup}/somalier/extract/{sample}.somalier",
-            sample=SSAMPS,
+            + "other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.samples.tsv",
+            alnr=alnrs,
+            ddup=qddups,
+        )
+    )
+    paths.extend(
+        expand(
+            MDIR
+            + "other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.pairs.tsv",
             alnr=alnrs,
             ddup=qddups,
         )
@@ -350,6 +339,7 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
     input:
         stage_done=MDIR + "reports/multiqc_inputs/seq_data/.stage.done",
         stage_manifest=MDIR + "reports/multiqc_inputs/seq_data/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         f"{MDIR}reports/DAY_seq_data_multiqc.html",
     benchmark:
@@ -375,14 +365,14 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f \
+          $module_excludes \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
           --ignore "*/other_reports/logs/*" \
           --ignore "other_reports/logs/*" \
           --ignore "*_mqc.log" \
-          --ignore "*vb2_mqc.tsv" \
-          --ignore "*gatk_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
@@ -398,6 +388,7 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
     input:
         stage_done=MDIR + "reports/multiqc_inputs/alignment/.stage.done",
         stage_manifest=MDIR + "reports/multiqc_inputs/alignment/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         f"{MDIR}reports/DAY_alignment_multiqc.html",
     benchmark:
@@ -423,14 +414,14 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f \
+          $module_excludes \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
           --ignore "*/other_reports/logs/*" \
           --ignore "other_reports/logs/*" \
           --ignore "*_mqc.log" \
-          --ignore "*vb2_mqc.tsv" \
-          --ignore "*gatk_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
@@ -446,6 +437,7 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
     input:
         stage_done=MDIR + "reports/multiqc_inputs/variants/.stage.done",
         stage_manifest=MDIR + "reports/multiqc_inputs/variants/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         f"{MDIR}reports/DAY_variants_multiqc.html",
     benchmark:
@@ -471,14 +463,14 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f \
+          $module_excludes \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
           --ignore "*/other_reports/logs/*" \
           --ignore "other_reports/logs/*" \
           --ignore "*_mqc.log" \
-          --ignore "*vb2_mqc.tsv" \
-          --ignore "*gatk_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
@@ -496,6 +488,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         benchmark=f"{MDIR}other_reports/rules_benchmark_data_mqc.tsv",
         stage_done=MDIR + "reports/multiqc_inputs/final/.stage.done",
         stage_manifest=MDIR + "reports/multiqc_inputs/final/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         html=f"{MDIR}reports/DAY_final_multiqc.html",
         header=f"{MDIR}reports/multiqc_header.yaml",
@@ -553,17 +546,15 @@ report_header_info:
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
         perl -pi -e "s/REGSUB_MRKDUPCOST/$MRKDUP_AVG_MINUTES min, costing \\\$dbill$MRKDUP_AVG_COST/g;" {output.header:q} >> {log:q} 2>&1;
 
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f  \
+        $module_excludes \
         --config {output.header:q} \
         --config ./config/external_tools/multiqc_config.yaml  \
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*/other_reports/logs/*" \
         --ignore "other_reports/logs/*" \
         --ignore "*_mqc.log" \
-        --ignore "*vb2_mqc.tsv" \
-        --ignore "*gatk_mqc.tsv" \
-        --ignore "*/norm_cov_eveness/*" \
-        --ignore "*sort_metrics/*" \
         --template default \
         --filename {output.html:q} \
         -i '{params.rtitle} Multiqc Report ' \

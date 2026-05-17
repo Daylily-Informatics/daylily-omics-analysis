@@ -22,6 +22,18 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
 
     assert 'include: "rules/fastp.smk"' not in snakefile
+    assert 'include: "rules/picard.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if not line.strip().startswith("#")
+    ]
+    assert '# include: "rules/picard.smk"' in snakefile
+    assert 'include: "rules/qualimap.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if not line.strip().startswith("#")
+    ]
+    assert '# include: "rules/qualimap.smk"' in snakefile
+    assert "alignqc/picard" not in _read("workflow/rules/multiqc_final_wgs.smk")
+    assert "alignqc/picard" not in _read("workflow/rules/multiqc_cov_aln.smk")
+    assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
+    assert "alignqc/qmap" not in _read("workflow/rules/multiqc_cov_aln.smk")
     for include in (
         'include: "rules/fastv.smk"',
         'include: "rules/seqfu.smk"',
@@ -371,14 +383,14 @@ def test_multiqc_config_custom_content_entries() -> None:
         assert "parent_id" in config["custom_data"][key]
         assert "parent_name" in config["custom_data"][key]
 
-    excludes = set(config["exclude_modules"])
-    assert "fastp" not in excludes
-    assert "vep" not in excludes
-    assert "snpeff" not in excludes
-    assert "peddy" not in excludes
-    assert "somalier" not in excludes
-    assert "verifyBAMID" not in excludes
-    assert "sexdetermine" in excludes
+    assert config["exclude_modules"] == []
+    exclude_file = REPO_ROOT / "config/multiqc_module_exclude.txt"
+    assert exclude_file.exists()
+    assert [
+        line.strip()
+        for line in exclude_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ] == []
 
     parents = {
         custom["parent_name"]
@@ -431,11 +443,11 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
         "picard",
         "mosdepth",
         "verifybamid",
-        "peddy",
-        "somalier",
         "bcftools",
     ):
         assert module in filename_modules
+    for module in ("goleft_indexcov", "peddy", "somalier"):
+        assert module not in filename_modules
     assert config["sample_names_replace_regex"] is True
     assert config["sample_names_replace"][r"\.md\.(chr[0-9XYM]+)$"] == r".\1"
     assert config["sample_names_replace"][r"\.metrics$"] == ""
@@ -480,6 +492,9 @@ def test_multiqc_reports_scan_only_staged_inputs() -> None:
         if next_rule != -1:
             body = body[:next_rule]
         assert f'stage_dir=MDIR + "reports/multiqc_inputs/{stage}"' in body
+        assert 'module_exclude_config="config/multiqc_module_exclude.txt"' in body
+        assert "multiqc_module_exclude_args.py" in body
+        assert "$module_excludes" in body
         assert "{params.stage_dir:q}" in body
         assert "{MDIR} > {log:q}" not in body
         assert "{MDIR} >> {log:q}" not in body
@@ -522,8 +537,8 @@ def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> Non
     assert "gatk_mqc.tsv" not in gatk.split("output:", 1)[1].split("log:", 1)[0]
     assert "{params.old_mqc}" in verifybamid2
     assert "{params.old_mqc}" in gatk
-    assert multiqc_final.count('--ignore "*vb2_mqc.tsv"') >= 4
-    assert multiqc_final.count('--ignore "*gatk_mqc.tsv"') >= 4
+    assert '--ignore "*vb2_mqc.tsv"' not in multiqc_final
+    assert '--ignore "*gatk_mqc.tsv"' not in multiqc_final
 
 
 def test_multiqc_runtime_policy_documented() -> None:

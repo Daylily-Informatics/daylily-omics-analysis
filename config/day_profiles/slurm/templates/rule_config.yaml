@@ -984,6 +984,7 @@ picard:
 qualimap:
     threads: 32
     java_mem_size: "150000M"
+    mem_mb: 160000
     env_yaml: "../envs/qualimap_v0.1.yaml"
     glances: " "
     numactl: "none"

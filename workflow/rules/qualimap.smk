@@ -9,10 +9,10 @@ def _get_queue():
     return " -q dev-long "
 
 rule qualimap:
-    """Run Qualimap on CRAMs"""
+    """Run Qualimap on a temporary BAM sidecar for CRAM-reader compatibility."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        bam=rules.legacy_cram_compat_bam.output.bam,
+        bai=rules.legacy_cram_compat_bam.output.bai,
     output:
         d=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
     benchmark:
@@ -20,11 +20,12 @@ rule qualimap:
     resources:
         vcpu=config["qualimap"]["threads"],
         threads=config["qualimap"]["threads"],
+        mem_mb=config["qualimap"]["mem_mb"],
         partition=config["qualimap"]["partition"],
     params:
         java_mem_size=config["qualimap"]["java_mem_size"],
         cluster_sample=ret_sample,
-        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        genome_gc_distr=config["qualimap"].get("genome_gc_distr", "HUMAN"),
     conda:
         config["qualimap"]["env_yaml"]
     threads: config["qualimap"]["threads"]
@@ -32,11 +33,12 @@ rule qualimap:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}/logs/{sample}.{alnr}.{ddup}.qmap.log",
     shell:
         """
-        set +euo pipefail;
-        rm -rf $(dirname {output.d} ) || echo rmFailedQMAP ;
-        mkdir -p $(echo $(dirname {output.d} )/logs ) ;
+        set -euo pipefail
+        rm -rf $(dirname {output.d:q})
+        mkdir -p $(echo $(dirname {output.d:q})/logs ) ;
         export dn=$(dirname {output.d} );
-        qualimap bamqc -bam {input.cram} -nt {threads} -c -gd {params.huref}  -outformat HTML  -outdir $dn --java-mem-size={params.java_mem_size} > {log} 2>&1   || echo QMAPERROR;
-        touch {output.d};
+        qualimap bamqc -bam {input.bam:q} -nt {threads} -c -gd {params.genome_gc_distr:q}  -outformat HTML  -outdir $dn --java-mem-size={params.java_mem_size:q} > {log:q} 2>&1
+        test -s "$dn/genome_results.txt"
+        touch {output.d:q};
         ls {output.d};
         """

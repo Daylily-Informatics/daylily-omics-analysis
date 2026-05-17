@@ -70,10 +70,6 @@ rule cov_aln_qc:
         #    alnr=ALL_ALIGNERS,
         #),
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
-        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done", sample=SSAMPS,alnr=ALL_ALIGNERS, ddup=DDUP),
         expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",

@@ -287,10 +287,14 @@ include: "rules/multiqc_singleton.smk"
 include: "rules/multiqc_for_raw_fastqs.smk"
 include: "rules/octopus.smk"
 include: "rules/peddy.smk"
-include: "rules/picard.smk"
+# Picard is disabled at the workflow import level. Current Picard/htsjdk cannot
+# read the CRAM 3.1 outputs produced by the short-read path reliably.
+# include: "rules/picard.smk"
 include: "rules/prep_input_sample_files.smk"
 include: "rules/bclconvert.smk"
-include: "rules/qualimap.smk"
+# Qualimap is disabled at the workflow import level. The current Qualimap build
+# is too slow and unreliable for routine service on these short-read CRAM/BAMs.
+# include: "rules/qualimap.smk"
 include: "rules/rtg_vcfeval.smk"
 include: "rules/rtg_vcfstats.smk"
 include: "rules/run_qc_reports.smk"
