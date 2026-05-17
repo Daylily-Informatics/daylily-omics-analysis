@@ -66,6 +66,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | ExpansionHunter | STR QC | `other_reports/expansionhunter_mqc.tsv` when STR-capable aligners are selected |
 | Selected HTD callers | HTD QC | `other_reports/htd_calls_mqc.tsv` when `htd_callers` is non-empty |
 | RTG concordance | Benchmarking | `other_reports/giab_concordance_mqc.tsv` when truth metadata is configured |
+| Truvari SV concordance | Benchmarking | `other_reports/giab_sv_concordance_mqc.tsv` when `truvari_sv_benchmark.truthsets` is configured |
 | Daylily benchmarks | Runtime/cost QC | `other_reports/rules_benchmark_data_mqc.tsv` |
 
 `fastp` is intentionally not imported by `workflow/Snakefile` and is not pulled
@@ -89,6 +90,24 @@ dy-r produce_multiqc_all \
 
 See [`../workflows/bclconvert_bootstrap.md`](../workflows/bclconvert_bootstrap.md)
 for the exact BCL metric sections and output files.
+
+## Separate Run-Level QC
+
+Run-level QC is intentionally outside the final WGS MultiQC DAG because it
+starts from vendor run-folder metrics rather than post-staging sample units.
+The focused targets write under `results/day/<build>/run_qc/`:
+
+| Target | Inputs | Outputs |
+| --- | --- | --- |
+| `produce_illumina_run_qc` | explicit `run_qc.illumina.run_s3_uri`, `profile`, and `region`; copied XML/BCL Convert/InterOp metric subset | InterOp CSVs, CheckQC JSON, small HTML/TSV summary, and focused InterOp/CheckQC MultiQC HTML |
+| `produce_read_fate_river` | the same explicit Illumina run config plus `other_reports/alignstats_combo_mqc.tsv` | read-fate RIVER HTML, TSV, Markdown, and raw-metric inventory |
+| `produce_ont_run_qc` | explicit `run_qc.ont.metrics_path` and optional run URI | ONT HTML/TSV summary |
+| `produce_ultima_run_qc` | explicit `run_qc.ultima.metrics_path` and optional run URI | Ultima HTML/TSV summary |
+| `produce_run_qc_reports` | all explicit run-level inputs above | all run-level reports |
+
+Illumina run-level fetches copy only named metrics files; they do not use
+`aws s3 sync`, recursive S3 copies, or FASTQ paths. The AWS profile must be
+explicit and must not be `default`.
 
 VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
 without clobbering each other. The default routine panel is `100k`; run
@@ -117,6 +136,7 @@ MultiQC by default:
 | KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
 | SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
+| Unmapped-read metagenomics | Kraken2 classification depends on an explicit external database and can be expensive. | `produce_unmapped_metagenomics_quick` with `unmapped_metagenomics.kraken2_db`, `threads`, `mem_mb`, `partition`, and `max_reads` |
 
 site_mix was promoted to routine default after at-sanity validation showed the
 GATK pileup plus estimator path completed under the 30-minute service

@@ -195,6 +195,10 @@ def qc_alignment_dedupers():
     return sorted(ddups)
 
 
+def qc_contamination_dedupers():
+    return sorted(set(DDUP))
+
+
 BOOTSTRAP_UNIT_COLUMNS = [
     "RUNID",
     "SAMPLEID",

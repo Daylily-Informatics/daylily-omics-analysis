@@ -180,7 +180,7 @@ def test_contamination_target_expansion_includes_deduper_level(
     target_text = text[target_start:]
 
     assert expected in target_text
-    assert "ddup=DDUP" in target_text or "ddup=qc_alignment_dedupers()" in target_text
+    assert "ddup=DDUP" in target_text or "ddup=qc_contamination_dedupers()" in target_text
 
 
 def test_gatk_contam_env_includes_cram_compat_tools() -> None:

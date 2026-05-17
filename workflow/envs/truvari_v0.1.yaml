@@ -1,10 +1,9 @@
 channels:
   - conda-forge
   - bioconda
-  - anaconda
-  - r
   - defaults
 dependencies:
-  - manta
-  - htslib=1.13
-  - samtools=1.13
+  - python=3.11
+  - truvari=4.3.1
+  - bcftools
+  - htslib

@@ -246,10 +246,13 @@ def test_contamination_and_tiddit_custom_tsvs_are_sample_first(tmp_path: Path) -
     with contam_out.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
         assert rows[0]["Sample"] == "HG003.sent.dmd"
+        assert rows[0]["base_sample"] == "HG003"
+        assert rows[0]["sample_id"] == "HG003"
         assert rows[0]["external_sample_id"] == "EXT-HG003"
     with vb2_out.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
         assert rows[0]["Sample"] == "HG003.sent.dmd"
+        assert rows[0]["base_sample"] == "HG003"
         assert rows[0]["panel_id"] == "100k"
     for output in (site_out, donor_out):
         assert output.read_text(encoding="utf-8").split("\t", 1)[0] == "Sample"
@@ -313,6 +316,21 @@ def test_rtg_vcfeval_requests_explicit_memory() -> None:
 
     assert 'mem_mb=config["rtg_vcfeval"].get("mem_mb", 64000)' in concordance
     assert 'mem_mb=config["rtg_vcfeval"].get("parse_mem_mb", 16000)' in concordance
+
+
+def test_manta_converts_cram_to_bam_before_calling() -> None:
+    manta_rule = _read("workflow/rules/manta.smk")
+    manta_env = _read("workflow/envs/manta_v0.1.yaml")
+    slurm_config = _read("config/day_profiles/slurm/templates/rule_config.yaml")
+
+    assert "gatk_cram_compat.sh" in manta_rule
+    assert "--mode bam" in manta_rule
+    assert '--out "$MANTA_BAM"' in manta_rule
+    assert 'configManta.py --bam "$SAFE_IN"' in manta_rule
+    assert 'mem_mb=config["manta"].get("mem_mb", 128000)' in manta_rule
+    assert "htslib=1.13" in manta_env
+    assert "samtools=1.13" in manta_env
+    assert "manta:\n    threads: 128\n    mem_mb: 128000" in slurm_config
 
 
 def test_native_multiqc_collision_modules_are_excluded_and_cleaned() -> None:

@@ -1,0 +1,15 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python
+  - pandas
+  - plotly
+  - boto3
+  - awscli
+  - multiqc==1.35
+  - pip
+  - pip:
+      - interop==1.9.0
+      - checkqc

@@ -55,7 +55,7 @@ module_order:
   - somalier
   - vcftools
   - kat
-  - custom_content 
+  - custom_content
   - sequence_qc_outputs
   - alignment_qc_outputs
   - expansionhunter
@@ -67,6 +67,7 @@ module_order:
   - bcftools_variant_stats
   - rtg_vcfstats
   - tiddit_sv
+  - giab_sv_concordance
   - peddy_sample_qc
   - vep_annotation
   - snpeff_annotation
@@ -75,7 +76,7 @@ module_order:
   - norm_cov_evenness_combo
   - rules_benchmark_data
   - alignstats_combo
-  
+
 table_columns_visible:
   verifybamid-FREEMIX: True
   fastqc-percent_duplicates: True
@@ -142,6 +143,15 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'giab_concordance'
+      format: "{:.4f}"
+  giab_sv_concordance:
+    id: 'giab_sv_concordance'
+    section_name: 'SV Controls Concordance Report'
+    description: 'Truvari structural variant concordance stats for explicitly configured GIAB SV truth regions'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'giab_sv_concordance'
       format: "{:.4f}"
   norm_cov_evenness_combo:
     id: 'norm_cov_evenness_combo'
@@ -363,6 +373,8 @@ custom_data:
 sp:
   giab_concordance:
     fn: "other_reports/giab_concordance_mqc.tsv"
+  giab_sv_concordance:
+    fn: "other_reports/giab_sv_concordance_mqc.tsv"
   norm_cov_evenness_combo:
     fn: "other_reports/norm_cov_evenness_combo_mqc.tsv"
   rules_benchmark_data:

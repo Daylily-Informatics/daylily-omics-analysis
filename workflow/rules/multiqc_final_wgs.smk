@@ -65,6 +65,7 @@ def _alignment_component_inputs(wildcards):
 def _alignment_qc_native_inputs(wildcards):
     paths = []
     qddups = qc_alignment_dedupers()
+    contam_ddups = qc_contamination_dedupers()
     alnrs = QC_CRAM_ALIGNERS
     paths.append(MDIR + "other_reports/alignstats_combo_mqc.tsv")
     paths.append(MDIR + "other_reports/norm_cov_evenness_combo_mqc.tsv")
@@ -129,7 +130,7 @@ def _alignment_qc_native_inputs(wildcards):
                 + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
-                ddup=qddups,
+                ddup=contam_ddups,
                 vb2panel=VERIFYBAMID2_PANELS,
             )
         )
@@ -140,7 +141,7 @@ def _alignment_qc_native_inputs(wildcards):
                 + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
-                ddup=qddups,
+                ddup=contam_ddups,
             )
         )
     return paths
@@ -171,6 +172,11 @@ def _sv_component_inputs(wildcards):
     paths = []
     if "tiddit" in sv_CALLERS:
         paths.append(MDIR + "other_reports/tiddit_sv_mqc.tsv")
+    if (
+        config.get("truvari_sv_benchmark", {}).get("truthsets")
+        and set(sv_CALLERS) & {"dysgu", "manta", "tiddit"}
+    ):
+        paths.append(MDIR + "other_reports/giab_sv_concordance_mqc.tsv")
     return paths
 
 
@@ -312,6 +318,8 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
           --ignore "*/other_reports/logs/*" \
           --ignore "other_reports/logs/*" \
           --ignore "*_mqc.log" \
+          --ignore "*vb2_mqc.tsv" \
+          --ignore "*gatk_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
@@ -352,6 +360,8 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
           --ignore "*/other_reports/logs/*" \
           --ignore "other_reports/logs/*" \
           --ignore "*_mqc.log" \
+          --ignore "*vb2_mqc.tsv" \
+          --ignore "*gatk_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
@@ -392,6 +402,8 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
           --ignore "*/other_reports/logs/*" \
           --ignore "other_reports/logs/*" \
           --ignore "*_mqc.log" \
+          --ignore "*vb2_mqc.tsv" \
+          --ignore "*gatk_mqc.tsv" \
           --template default \
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
@@ -466,6 +478,8 @@ report_header_info:
         --ignore "*/other_reports/logs/*" \
         --ignore "other_reports/logs/*" \
         --ignore "*_mqc.log" \
+        --ignore "*vb2_mqc.tsv" \
+        --ignore "*gatk_mqc.tsv" \
         --ignore "*/norm_cov_eveness/*" \
         --ignore "*sort_metrics/*" \
         --template default \

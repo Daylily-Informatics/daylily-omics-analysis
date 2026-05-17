@@ -455,6 +455,7 @@ manta_sort_and_index:
 
 manta:
     threads: 128
+    mem_mb: 128000
     env_yaml: "../envs/manta_v0.1.yaml"
     numactl: "none"
     ld_preload: "  "

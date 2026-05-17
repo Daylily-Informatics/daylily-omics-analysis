@@ -26,6 +26,9 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
         'include: "rules/fastv.smk"',
         'include: "rules/seqfu.smk"',
         'include: "rules/relatedness_batch.smk"',
+        'include: "rules/run_qc_reports.smk"',
+        'include: "rules/truvari_sv_benchmark.smk"',
+        'include: "rules/unmapped_metagenomics.smk"',
     ):
         assert include in snakefile
 
@@ -58,6 +61,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert '"site_mix"' not in common[common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")]
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
+    assert "def qc_contamination_dedupers" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
@@ -98,6 +102,9 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
+    assert "qc_contamination_dedupers()" in text
+    assert 'config.get("truvari_sv_benchmark", {}).get("truthsets")' in text
+    assert '{"dysgu", "manta", "tiddit"}' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
@@ -109,6 +116,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "bcftools_variant_stats_mqc.tsv",
         "rtg_vcfstats_mqc.tsv",
         "tiddit_sv_mqc.tsv",
+        "giab_sv_concordance_mqc.tsv",
         "peddy_sample_qc_mqc.tsv",
         "expansionhunter_mqc.tsv",
         "vep_annotation_mqc.tsv",
@@ -140,6 +148,11 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     assert 'printf "%s.R1\\\\t%s\\\\tR1\\\\t%s\\\\n"' in seqfu
     assert 'printf "%s.R2\\\\t%s\\\\tR2\\\\t%s\\\\n"' in seqfu
     assert "\n  - fastp\n" not in multiqc
+    assert "\n  - giab_sv_concordance\n" in multiqc
+    assert "giab_sv_concordance:" in multiqc
+    assert "other_reports/giab_sv_concordance_mqc.tsv" in multiqc
+    catalog = _read("docs/catalog_of_tools.md")
+    assert "Native MultiQC SeqFu parsing is the intended replacement path once validated" in catalog
 
 
 def test_fastp_is_not_pulled_by_staged_multiqc_targets() -> None:
@@ -217,11 +230,14 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
         "QC_CRAM_ALIGNERS",
-        "qc_alignment_dedupers()",
-            "workflow/scripts/compile_contamination_mqc.py",
-        ):
-            assert expected in site_mix
+        "qc_contamination_dedupers()",
+        "workflow/scripts/compile_contamination_mqc.py",
+    ):
+        assert expected in site_mix
     assert '"Sample",' in contamination_script
+    assert '"base_sample",' in contamination_script
+    assert '"sample_id": sample_id' not in contamination_script
+    assert '"sample_id": sample' in contamination_script
 
     for expected in (
         "rule relatedness_batch_manifest:",
@@ -400,6 +416,7 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
 
     module_order = config["module_order"]
     assert len(module_order) == len(set(module_order))
+    assert all(entry == entry.strip() for entry in module_order)
     assert "peddy" in module_order
     assert "somalier" in module_order
     assert "peddy_sample_qc" in module_order
@@ -420,6 +437,9 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
 
     assert "def day_stage_sample_id(sample, *components)" in common
     assert "_stage_sample_id(sample, aligner, deduper)" in contamination_script
+    assert "qc_contamination_dedupers()" in contamination
+    assert '"base_sample": sample' in contamination_script
+    assert '"sample_id": sample,' in contamination_script
     assert "compile_contamination_mqc.py" in contamination
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in bcftools
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in rtg_vcfstats
@@ -429,6 +449,21 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     assert "marker = f\".{alnr}.{ddup}.{caller}.\"" in bcftools
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
+
+
+def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> None:
+    verifybamid2 = _read("workflow/rules/verifybamid2_contam.smk")
+    gatk = _read("workflow/rules/gatk_contam.smk")
+    multiqc_final = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    assert "qc_contamination_dedupers()" in verifybamid2
+    assert "qc_contamination_dedupers()" in gatk
+    assert "vb2_mqc.tsv" not in verifybamid2.split("output:", 1)[1].split("log:", 1)[0]
+    assert "gatk_mqc.tsv" not in gatk.split("output:", 1)[1].split("log:", 1)[0]
+    assert "{params.old_mqc}" in verifybamid2
+    assert "{params.old_mqc}" in gatk
+    assert multiqc_final.count('--ignore "*vb2_mqc.tsv"') >= 4
+    assert multiqc_final.count('--ignore "*gatk_mqc.tsv"') >= 4
 
 
 def test_multiqc_runtime_policy_documented() -> None:

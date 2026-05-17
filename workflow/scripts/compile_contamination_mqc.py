@@ -11,6 +11,7 @@ from pathlib import Path
 
 CONTAMINATION_FIELDS = [
     "Sample",
+    "base_sample",
     "sample_id",
     "external_sample_id",
     "aligner",
@@ -35,6 +36,7 @@ CONTAMINATION_FIELDS = [
 
 VB2_FIELDS = [
     "Sample",
+    "base_sample",
     "sample_id",
     "external_sample_id",
     "aligner",
@@ -58,6 +60,7 @@ VB2_FIELDS = [
 
 DONOR_FIELDS = [
     "Sample",
+    "base_sample",
     "sample_id",
     "external_sample_id",
     "aligner",
@@ -146,28 +149,24 @@ def _benchmark_by_vb2_key(paths: list[str]) -> dict[tuple[str, str, str, str], s
     return benchmarks
 
 
-def _write_header(path: str, fieldnames: list[str]) -> csv.DictWriter:
+def _write_header(path: str, fieldnames: list[str]) -> tuple[csv.DictWriter, object]:
     out_path = Path(path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     handle = out_path.open("w", newline="", encoding="utf-8")
     writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
     writer.writeheader()
-    writer._dayoa_handle = handle  # type: ignore[attr-defined]
-    return writer
-
-
-def _close_writer(writer: csv.DictWriter) -> None:
-    handle = getattr(writer, "_dayoa_handle")
-    handle.close()
+    return writer, handle
 
 
 def compile_reports(args: argparse.Namespace) -> None:
     sample_map = json.loads(args.sample_map_json)
     panel_metadata = json.loads(args.panel_metadata_json)
-    contam_writer = _write_header(args.contamination_output, CONTAMINATION_FIELDS)
-    site_writer = _write_header(args.site_mix_output, CONTAMINATION_FIELDS)
-    vb2_writer = _write_header(args.vb2_comparison_output, VB2_FIELDS)
-    donor_writer = _write_header(args.donor_output, DONOR_FIELDS)
+    contam_writer, contam_handle = _write_header(
+        args.contamination_output, CONTAMINATION_FIELDS
+    )
+    site_writer, site_handle = _write_header(args.site_mix_output, CONTAMINATION_FIELDS)
+    vb2_writer, vb2_handle = _write_header(args.vb2_comparison_output, VB2_FIELDS)
+    donor_writer, donor_handle = _write_header(args.donor_output, DONOR_FIELDS)
 
     try:
         vb2_benchmarks = _benchmark_by_vb2_key(args.vb2_bench)
@@ -187,7 +186,8 @@ def compile_reports(args: argparse.Namespace) -> None:
             svd_prefix = str(panel_cfg.get("svd_prefix", ""))
             contam_row = {
                 "Sample": sample_id,
-                "sample_id": sample_id,
+                "base_sample": sample,
+                "sample_id": sample,
                 "external_sample_id": external,
                 "aligner": aligner,
                 "deduper": deduper,
@@ -212,7 +212,8 @@ def compile_reports(args: argparse.Namespace) -> None:
             vb2_writer.writerow(
                 {
                     "Sample": sample_id,
-                    "sample_id": sample_id,
+                    "base_sample": sample,
+                    "sample_id": sample,
                     "external_sample_id": external,
                     "aligner": aligner,
                     "deduper": deduper,
@@ -242,7 +243,8 @@ def compile_reports(args: argparse.Namespace) -> None:
             contam_writer.writerow(
                 {
                     "Sample": sample_id,
-                    "sample_id": sample_id,
+                    "base_sample": sample,
+                    "sample_id": sample,
                     "external_sample_id": external,
                     "aligner": aligner,
                     "deduper": deduper,
@@ -271,7 +273,8 @@ def compile_reports(args: argparse.Namespace) -> None:
             row = _read_first_row(path)
             out_row = {
                 "Sample": sample_id,
-                "sample_id": sample_id,
+                "base_sample": sample,
+                "sample_id": sample,
                 "external_sample_id": external,
                 "aligner": aligner,
                 "deduper": deduper,
@@ -307,7 +310,8 @@ def compile_reports(args: argparse.Namespace) -> None:
                     donor_writer.writerow(
                         {
                             "Sample": sample_id,
-                            "sample_id": sample_id,
+                            "base_sample": sample,
+                            "sample_id": sample,
                             "external_sample_id": external,
                             "aligner": aligner,
                             "deduper": deduper,
@@ -325,8 +329,8 @@ def compile_reports(args: argparse.Namespace) -> None:
                         }
                     )
     finally:
-        for writer in (contam_writer, site_writer, vb2_writer, donor_writer):
-            _close_writer(writer)
+        for handle in (contam_handle, site_handle, vb2_handle, donor_handle):
+            handle.close()
 
 
 def main() -> int:

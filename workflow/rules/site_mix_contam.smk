@@ -16,7 +16,7 @@ def _contam_qc_paths(tool, suffix):
         + suffix,
         sample=SSAMPS,
         alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_alignment_dedupers(),
+        ddup=qc_contamination_dedupers(),
     )
 
 
@@ -34,7 +34,7 @@ def _verifybamid2_qc_paths(suffix):
         + suffix,
         sample=SSAMPS,
         alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_alignment_dedupers(),
+        ddup=qc_contamination_dedupers(),
         vb2panel=VERIFYBAMID2_PANELS,
     )
 
@@ -44,7 +44,7 @@ def _verifybamid2_benchmark_paths():
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.bench.tsv",
         sample=SSAMPS,
         alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_alignment_dedupers(),
+        ddup=qc_contamination_dedupers(),
         vb2panel=VERIFYBAMID2_PANELS,
     )
 
@@ -65,7 +65,7 @@ def _parse_contam_path(path):
     name = os.path.basename(str(path))
     sample = aligner = deduper = None
     for alnr in QC_CRAM_ALIGNERS:
-        for ddup in qc_alignment_dedupers():
+        for ddup in qc_contamination_dedupers():
             marker = f".{alnr}.{ddup}."
             if marker in name:
                 sample = name.split(marker, 1)[0]
@@ -80,6 +80,10 @@ def _parse_contam_path(path):
         "external_sample_id", sample
     )
     return sample, str(external), aligner, deduper
+
+
+def _contam_stage_sample_id(sample, aligner, deduper):
+    return day_stage_sample_id(sample, aligner, deduper)
 
 
 def _parse_vb2_panel_path(path):
@@ -114,7 +118,7 @@ def _benchmark_by_vb2_key(paths):
     for path in paths:
         name = os.path.basename(str(path))
         for alnr in QC_CRAM_ALIGNERS:
-            for ddup in qc_alignment_dedupers():
+            for ddup in qc_contamination_dedupers():
                 marker = f".{alnr}.{ddup}."
                 if marker not in name:
                     continue
@@ -173,6 +177,9 @@ rule site_mix_contam:
         partition = config["site_mix_contam"]["partition"],
     params:
         cluster_sample = ret_sample,
+        stage_sample=lambda wildcards: _contam_stage_sample_id(
+            wildcards.sample, wildcards.alnr, wildcards.ddup
+        ),
         candidate_manifest = config["site_mix_contam"]["candidate_manifest"],
         min_depth = config["site_mix_contam"]["min_depth"],
         max_depth = config["site_mix_contam"]["max_depth"],
@@ -192,7 +199,7 @@ rule site_mix_contam:
         fi
 
         bin/util/genotype_free_contam_estimator.py \
-          --sample-id "{params.cluster_sample}" \
+          --sample-id "{params.stage_sample}" \
           --counts-tsv {input.pileups} \
           --output {output.tsv} \
           --donor-output {output.donors} \
@@ -261,6 +268,6 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
         ),
         MDIR + "other_reports/site_mix_contam_mqc.tsv",

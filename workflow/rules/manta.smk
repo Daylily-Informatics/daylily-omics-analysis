@@ -30,6 +30,8 @@ rule manta:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/logs/{sample}.{alnr}.manta.log",
     resources:
         vcpu=config["manta"]["threads"],
+        threads=config["manta"]["threads"],
+        mem_mb=config["manta"].get("mem_mb", 128000),
         partition=config["manta"]["partition"],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -53,12 +55,16 @@ rule manta:
 
         mkdir -p $(dirname {log})
 
+        MANTA_BAM="$TMPDIR/manta_input.bam"
+        SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {params.huref} --mode bam --threads {threads} --out "$MANTA_BAM" 2>> {log})"
+        echo "manta SAFE_IN=${{SAFE_IN}}" >> {log}
+
         # --- Run Manta (may legitimately fail on some inputs) ---
         rm -rf {params.work_dir} 2>/dev/null || true
         mkdir -p {params.work_dir}
 
         MANTA_OK=true
-        configManta.py --bam {input.cram} --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
+        configManta.py --bam "$SAFE_IN" --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
             echo "ERROR: configManta.py failed" >> {log}
             MANTA_OK=false
         }}

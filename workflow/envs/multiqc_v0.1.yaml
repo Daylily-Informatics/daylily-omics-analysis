@@ -3,5 +3,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - multiqc==1.25.2
+  - multiqc==1.35
   - perl

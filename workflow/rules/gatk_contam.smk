@@ -19,7 +19,6 @@ rule gatk_contam:
         contam      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.contam.tsv",
         selfSM      = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.selfSM",
         tsv         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
-        mqc         = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk_mqc.tsv",
         stamp       = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.done",
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/logs/{sample}.{alnr}.{ddup}.gatk_contam.log",
@@ -36,12 +35,14 @@ rule gatk_contam:
     params:
         cluster_sample = ret_sample,
         alnr = get_alnr,
-        java_heap_mb = config["gatk_contam"].get("java_heap_mb", 64000)
+        java_heap_mb = config["gatk_contam"].get("java_heap_mb", 64000),
+        old_mqc = MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk_mqc.tsv",
     shell:
         r"""
         set -euo pipefail;
 
         mkdir -p "$(dirname {output.pile_merged})"/logs;
+        rm -f {params.old_mqc};
 
         SAFE_IN="$(bin/util/gatk_cram_compat.sh --in {input.cram} --ref {input.ref_fa} --mode bam --threads {threads} 2>> {log})";
         echo "gatk_contam SAFE_IN=${{SAFE_IN}}" >> {log};
@@ -67,7 +68,6 @@ rule gatk_contam:
         printf "{params.cluster_sample}.{params.alnr}\tNA\tNA\tNA\tNA\tNA\t%s\t-1\t-1\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\n" "${{contam_val:-NA}}" >> {output.selfSM};
 
         cp {output.selfSM} {output.tsv};
-        cp {output.selfSM} {output.mqc};
         touch {output.stamp};
         """
 
@@ -81,5 +81,5 @@ rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estima
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
         )
