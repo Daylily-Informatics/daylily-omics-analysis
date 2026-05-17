@@ -272,7 +272,10 @@ include: "rules/smn_copynumbercaller.smk"
 include: "rules/generate_deduplicated_bams.smk"
 include: "rules/go_left.smk"
 # include: "rules/hisat2.smk"
-include: "rules/kat.smk"
+# KAT is disabled at the workflow import level. It is too slow/noisy for routine
+# service and should not be pulled into any active target until explicitly
+# revalidated.
+# include: "rules/kat.smk"
 include: "rules/seqfu.smk"
 include: "rules/lofreq2.smk"
 include: "rules/aivariant.smk"

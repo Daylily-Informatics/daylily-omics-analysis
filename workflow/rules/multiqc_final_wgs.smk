@@ -23,8 +23,6 @@ def _sequence_qc_native_inputs(wildcards):
         )
     if qc_tool_enabled("seqfu"):
         paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
-    if qc_tool_enabled("kat", long_running=True):
-        paths.extend(expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SAMPS))
     if qc_tool_enabled("fastv", long_running=True):
         paths.extend(
             expand(

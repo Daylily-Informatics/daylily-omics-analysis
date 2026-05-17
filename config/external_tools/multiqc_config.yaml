@@ -70,7 +70,6 @@ module_order:
   - peddy
   - somalier
   - vcftools
-  - kat
   - custom_content
   - sequence_qc_outputs
   - alignment_qc_outputs

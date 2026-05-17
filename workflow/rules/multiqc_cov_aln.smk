@@ -90,7 +90,6 @@ rule cov_aln_qc:
         #),
 	#        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.html", sample=SSAMPS),
         #expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SSAMPS),
-        #expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SSAMPS),
         #expand(MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done", sample=SSAMPS),
         #MDIR+"logs/seqfu.done",
     output:

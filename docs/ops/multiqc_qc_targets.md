@@ -178,7 +178,6 @@ MultiQC by default:
 | Tool / integration | Reason | Enable with |
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
-| KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
 | SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
 | Unmapped-read metagenomics | Kraken2 classification depends on an explicit external database and can be expensive. | `produce_unmapped_metagenomics_quick` with `unmapped_metagenomics.kraken2_db`, `threads`, `mem_mb`, `partition`, and `max_reads` |

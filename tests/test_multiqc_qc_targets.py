@@ -68,8 +68,11 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "kat", "vep", "snpeff"):
+    for tool in ("fastv", "vep", "snpeff"):
         assert f'"{tool}"' in common
+    assert '"kat"' not in common[
+        common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
+    ]
     assert '"site_mix"' not in common[common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")]
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
@@ -83,6 +86,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
+    snakefile = _read("workflow/Snakefile")
 
     for rule_name in (
         "rule produce_multiqc_input_data:",
@@ -108,7 +112,12 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
-    assert "qc_tool_enabled(\"kat\", long_running=True)" in text
+    assert "qc_tool_enabled(\"kat\"" not in text
+    assert "seqqc/kat" not in text
+    assert 'include: "rules/kat.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
+    assert '# include: "rules/kat.smk"' in snakefile
     assert "qc_tool_enabled(\"site_mix\")" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text

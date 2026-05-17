@@ -319,7 +319,7 @@
     {
       "workflow_id": "germline_wgs_kitchensink",
       "display_name": "Germline WGS Kitchensink",
-      "description": "Broad germline WGS run with multiple aligners, SNV callers, SV callers, KAT, MultiQC, and alignment statistics.",
+      "description": "Broad germline WGS run with multiple aligners, SNV callers, SV callers, MultiQC, and alignment statistics.",
       "supported_genome_builds": [
         "hg38"
       ],
@@ -343,7 +343,6 @@
         "produce_manta_sv_vcf",
         "produce_tiddit_sv_vcf",
         "produce_dysgu_sv_vcf",
-        "produce_kat",
         "produce_multiqc_all"
       ],
       "options": [
