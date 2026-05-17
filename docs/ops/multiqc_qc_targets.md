@@ -110,10 +110,13 @@ alignment QC beside configured real dedupers. Set it to `false` when a dry-run
 or smoke fixture cannot produce raw/no-dedup alignment QC.
 
 BCL Convert metrics are not routine defaults because they require a BCL run
-directory and SampleSheet, not the normal post-staging `units.tsv` inputs. Run
-`produce_bclconvert_metrics` to write BCL custom-data TSVs into
-`results/day/<build>/other_reports/`, or explicitly require those BCL sections
-in a staged/final report with:
+directory and SampleSheet, not the normal post-staging `units.tsv` inputs. With
+`--config run_context_file=config/runs.tsv`, BCL Convert writes under
+`results/runs/<runid>/bclconvert/`, including
+`tables/generated.units.tsv`, `metrics/`, and `multiqc_report.html`. Without a
+run context, the existing explicit `bclconvert` config path still writes the
+genome-build custom-data TSVs into `results/day/<build>/other_reports/`.
+Explicitly require those BCL sections in a staged/final report with:
 
 ```bash
 dy-r produce_multiqc_all \
@@ -128,19 +131,24 @@ for the exact BCL metric sections and output files.
 
 Run-level QC is intentionally outside the final WGS MultiQC DAG because it
 starts from vendor run-folder metrics rather than post-staging sample units.
-The focused targets write under `results/day/<build>/run_qc/`:
+The focused targets now read `config/runs.tsv` when launched as run analysis.
+Mounted run-directory mode uses `RUN_DIR=/fsx/run_dir_mounts/<mount_id>`, while
+S3 mode is used only when `SOURCE_S3_URI` is explicitly populated. Run outputs
+write under `results/runs/<runid>/run_qc/`:
 
 | Target | Inputs | Outputs |
 | --- | --- | --- |
-| `produce_illumina_run_qc` | explicit `run_qc.illumina.run_s3_uri`, `profile`, and `region`; copied XML/BCL Convert/InterOp metric subset | InterOp CSVs, CheckQC JSON, small HTML/TSV summary, and focused InterOp/CheckQC MultiQC HTML |
-| `produce_read_fate_river` | the same explicit Illumina run config plus `other_reports/alignstats_combo_mqc.tsv` | read-fate RIVER HTML, TSV, Markdown, and raw-metric inventory |
+| `produce_illumina_run_qc` | `config/runs.tsv` Illumina row with mounted `RUN_DIR`, or explicit `SOURCE_S3_URI`, `PROFILE`, and `REGION` for S3 mode | InterOp CSVs, CheckQC JSON, `summary.html`, `summary.tsv`, and focused InterOp/CheckQC MultiQC HTML |
+| `produce_read_fate_river` | the same Illumina run context plus `other_reports/alignstats_combo_mqc.tsv` | read-fate RIVER HTML, TSV, Markdown, and raw-metric inventory |
 | `produce_ont_run_qc` | explicit `run_qc.ont.metrics_path` and optional run URI | ONT HTML/TSV summary |
 | `produce_ultima_run_qc` | explicit `run_qc.ultima.metrics_path` and optional run URI | Ultima HTML/TSV summary |
 | `produce_run_qc_reports` | all explicit run-level inputs above | all run-level reports |
 
-Illumina run-level fetches copy only named metrics files; they do not use
+Illumina S3-mode fetches copy only named metrics files; they do not use
 `aws s3 sync`, recursive S3 copies, or FASTQ paths. The AWS profile must be
-explicit and must not be `default`.
+explicit and must not be `default` when S3 mode is selected. Mounted mode links
+or copies only the named metric subset from `RUN_DIR` into the run output tree;
+it does not write back into the mounted run directory.
 
 VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
 without clobbering each other. The native VerifyBamID input staged for MultiQC

@@ -3,6 +3,7 @@ from snakemake.exceptions import WorkflowError
 import csv
 import re
 import os
+import sys
 import pandas as pd
 
 
@@ -20,6 +21,177 @@ def _as_config_list(value):
     if isinstance(value, str):
         return [item.strip() for item in value.split(",") if item.strip()]
     return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _requested_targets():
+    return {arg for arg in sys.argv[1:] if not str(arg).startswith("-")}
+
+
+def _filled(value):
+    return str(value or "").strip() not in {"", "None", "none", "NA", "na"}
+
+
+RUN_CONTEXT_REQUIRED_COLUMNS = [
+    "RUNID",
+    "PLATFORM",
+    "RUN_DIR",
+    "SOURCE_S3_URI",
+    "MOUNT_ID",
+    "SAMPLE_SHEET",
+    "BASECALLING_STATE",
+    "RUN_STATUS",
+    "OUTPUT_ROOT",
+    "REGION",
+    "PROFILE",
+]
+
+
+def _resolve_run_context_file():
+    configured = config.get("run_context_file", "")
+    if _filled(configured):
+        path = os.path.abspath(str(configured))
+        if not os.path.exists(path):
+            raise WorkflowError(
+                f"The run context file specified via --config run_context_file={configured} was not found."
+            )
+        return path
+
+    default_path = os.path.abspath(os.path.join("config", "runs.tsv"))
+    if os.path.exists(default_path):
+        return default_path
+    return ""
+
+
+def _validate_run_context_run_id(run_id):
+    if not _filled(run_id):
+        raise WorkflowError("config/runs.tsv RUNID is required and must not be blank.")
+    text = str(run_id).strip()
+    if not re.match(r"^[A-Za-z0-9._-]+$", text):
+        raise WorkflowError(
+            f"config/runs.tsv RUNID contains unsupported path characters: {text!r}."
+        )
+    return text
+
+
+def _validate_run_context_platform(platform):
+    text = str(platform or "").strip().upper()
+    supported = {"ILMN", "ONT", "ULTIMA", "PACBIO", "OTHER"}
+    if text not in supported:
+        raise WorkflowError(
+            "config/runs.tsv PLATFORM must be one of "
+            + ", ".join(sorted(supported))
+            + f"; observed {platform!r}."
+        )
+    return text
+
+
+def _normalize_run_context_row(row):
+    normalized = {column: str(row.get(column, "") or "").strip() for column in RUN_CONTEXT_REQUIRED_COLUMNS}
+    normalized["RUNID"] = _validate_run_context_run_id(normalized["RUNID"])
+    normalized["PLATFORM"] = _validate_run_context_platform(normalized["PLATFORM"])
+    if not _filled(normalized["RUN_DIR"]) and not _filled(normalized["SOURCE_S3_URI"]):
+        raise WorkflowError(
+            f"config/runs.tsv row for RUNID={normalized['RUNID']} must populate RUN_DIR or SOURCE_S3_URI."
+        )
+    if _filled(normalized["SOURCE_S3_URI"]) and not normalized["SOURCE_S3_URI"].startswith("s3://"):
+        raise WorkflowError(
+            f"config/runs.tsv SOURCE_S3_URI for RUNID={normalized['RUNID']} must start with s3://."
+        )
+    if (
+        _filled(normalized["SOURCE_S3_URI"])
+        and not _filled(normalized["RUN_DIR"])
+        and not _filled(normalized["PROFILE"])
+    ):
+        raise WorkflowError(
+            f"config/runs.tsv PROFILE for RUNID={normalized['RUNID']} is required for S3 mode."
+        )
+    if (
+        _filled(normalized["SOURCE_S3_URI"])
+        and not _filled(normalized["RUN_DIR"])
+        and str(normalized["PROFILE"]).strip() == "default"
+    ):
+        raise WorkflowError(
+            f"config/runs.tsv PROFILE for RUNID={normalized['RUNID']} must not be default."
+        )
+    output_root = normalized["OUTPUT_ROOT"].rstrip("/")
+    if not _filled(output_root):
+        output_root = f"results/runs/{normalized['RUNID']}"
+    normalized["OUTPUT_ROOT_RESOLVED"] = output_root
+    return normalized
+
+
+def _load_run_context_rows():
+    path = _resolve_run_context_file()
+    if not path:
+        config["run_context_file"] = ""
+        return []
+
+    df = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    df.columns = [column.upper() for column in df.columns]
+    missing = [column for column in RUN_CONTEXT_REQUIRED_COLUMNS if column not in df.columns]
+    if missing:
+        raise WorkflowError(
+            "config/runs.tsv is missing required column(s): " + ", ".join(missing)
+        )
+    if df.empty:
+        raise WorkflowError("config/runs.tsv has headers but no run rows.")
+
+    config["run_context_file"] = path
+    return [_normalize_run_context_row(row) for row in df.to_dict(orient="records")]
+
+
+RUN_CONTEXT_ROWS = _load_run_context_rows()
+RUN_CONTEXT_BY_RUNID = {row["RUNID"]: row for row in RUN_CONTEXT_ROWS}
+RUN_CONTEXTS_BY_PLATFORM = {}
+for _run_context_row in RUN_CONTEXT_ROWS:
+    RUN_CONTEXTS_BY_PLATFORM.setdefault(
+        _run_context_row["PLATFORM"], _run_context_row
+    )
+
+RUN_CONTEXT_RUN_ID_OVERRIDE = str(
+    config.get("run_context_run_id", config.get("run_id", "")) or ""
+).strip()
+if RUN_CONTEXT_RUN_ID_OVERRIDE and RUN_CONTEXT_RUN_ID_OVERRIDE not in RUN_CONTEXT_BY_RUNID:
+    raise WorkflowError(
+        f"--config run_context_run_id={RUN_CONTEXT_RUN_ID_OVERRIDE} was not found in config/runs.tsv."
+    )
+
+
+def run_context_for_platform(platform=None, *, require=False):
+    if not RUN_CONTEXT_ROWS:
+        if require:
+            raise WorkflowError(
+                "This run-analysis target requires config/runs.tsv or --config run_context_file=/path/to/runs.tsv."
+            )
+        return None
+
+    platform_key = str(platform or "").strip().upper()
+    if RUN_CONTEXT_RUN_ID_OVERRIDE:
+        row = RUN_CONTEXT_BY_RUNID[RUN_CONTEXT_RUN_ID_OVERRIDE]
+        if platform_key and row["PLATFORM"] != platform_key:
+            raise WorkflowError(
+                f"Run context {RUN_CONTEXT_RUN_ID_OVERRIDE} has PLATFORM={row['PLATFORM']}, not {platform_key}."
+            )
+        return row
+
+    if platform_key:
+        row = RUN_CONTEXTS_BY_PLATFORM.get(platform_key)
+        if row is None and require:
+            raise WorkflowError(f"config/runs.tsv has no row with PLATFORM={platform_key}.")
+        return row
+
+    return RUN_CONTEXT_ROWS[0]
+
+
+def run_context_output_root(platform=None, *, require=False):
+    row = run_context_for_platform(platform, require=require)
+    if row is None:
+        return ""
+    return row["OUTPUT_ROOT_RESOLVED"].rstrip("/")
+
+
+config["_run_context_rows"] = RUN_CONTEXT_ROWS
+config["_run_context_run_ids"] = sorted(RUN_CONTEXT_BY_RUNID)
 
 
 MULTIQC_QC_LONG_RUNNING_TOOLS = {
@@ -301,7 +473,6 @@ def _build_bootstrap_unit_records(sample_df: pd.DataFrame) -> pd.DataFrame:
         }
     )
     return pd.DataFrame([bootstrap_row])
-import sys
 import yaml
 import multiprocessing
 import random
@@ -325,10 +496,6 @@ BCL_BOOTSTRAP_TARGETS = {
     "produce_bclconvert_multiqc",
     "produce_bclconvert_fastqs_and_metrics",
 }
-
-
-def _requested_targets():
-    return {arg for arg in sys.argv[1:] if not str(arg).startswith("-")}
 
 
 def _boolish(value, default=False):
@@ -372,6 +539,9 @@ def _read_samplesheet_run_name(sample_sheet_path):
 
 
 def _derive_bcl_bootstrap_run_id():
+    run_context = run_context_for_platform("ILMN", require=False)
+    if run_context is not None:
+        return run_context["RUNID"]
     bcl_cfg = config.get("bclconvert", {})
     configured = _sanitize_run_id(bcl_cfg.get("run_id", ""))
     if configured:

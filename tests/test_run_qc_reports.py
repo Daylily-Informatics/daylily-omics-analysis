@@ -39,13 +39,19 @@ def test_illumina_run_qc_contract_uses_explicit_inputs_and_metric_subset() -> No
     rules = _read("workflow/rules/run_qc_reports.smk")
 
     for required in (
-        "run_qc.illumina.run_s3_uri is required",
-        "run_qc.illumina.profile is required",
-        "run_qc.illumina.profile must not be default",
-        "run_qc.illumina.region is required",
+        "config/runs.tsv is required for Illumina run QC",
+        "SOURCE_S3_URI is required for Illumina run QC S3 mode",
+        "PROFILE is required for Illumina run QC S3 mode",
+        "PROFILE must not be default for Illumina run QC S3 mode",
+        "REGION is required for Illumina run QC S3 mode",
     ):
         assert required in rules
 
+    assert 'RUNQC_ILMN_MODE = _runqc_illumina_mode(RUNQC_ILMN_CONTEXT)' in rules
+    assert 'RUNQC_ILMN_ROOT = _runqc_root(RUNQC_ILMN_CONTEXT, "illumina")' in rules
+    assert 'RUNQC_ILMN_REPORT_DIR + "/summary.html"' in rules
+    assert 'RUNQC_ILMN_TABLE_DIR + "/summary.tsv"' in rules
+    assert "link_or_copy_required" in rules
     assert "AWS_PROFILE={params.profile:q} AWS_REGION={params.region:q}" in rules
     assert "aws s3 cp \"$run_uri/$rel\"" in rules
     assert "aws s3 sync" not in rules

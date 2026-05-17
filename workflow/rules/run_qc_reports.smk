@@ -29,11 +29,52 @@ RUNQC_MULTIQC_ENV = (
     .get("env_yaml", "../envs/multiqc_v0.1.yaml")
 )
 
-RUNQC_ILMN_ROOT = MDIR + "run_qc/illumina"
+RUNQC_ILMN_TARGET_REQUESTED = bool(
+    _requested_targets()
+    & {"produce_illumina_run_qc", "produce_read_fate_river", "produce_run_qc_reports"}
+)
+RUNQC_ONT_TARGET_REQUESTED = bool(
+    _requested_targets() & {"produce_ont_run_qc", "produce_run_qc_reports"}
+)
+RUNQC_UG_TARGET_REQUESTED = bool(
+    _requested_targets() & {"produce_ultima_run_qc", "produce_run_qc_reports"}
+)
+
+RUNQC_ILMN_CONTEXT = run_context_for_platform(
+    "ILMN", require=RUNQC_ILMN_TARGET_REQUESTED
+)
+RUNQC_ONT_CONTEXT = run_context_for_platform(
+    "ONT", require=RUNQC_ONT_TARGET_REQUESTED
+)
+RUNQC_UG_CONTEXT = run_context_for_platform(
+    "ULTIMA", require=RUNQC_UG_TARGET_REQUESTED
+)
+
+
+def _runqc_root(context, platform_dir):
+    if context is None:
+        return f"results/runs/_run_context_required/run_qc/{platform_dir}"
+    return f"{context['OUTPUT_ROOT_RESOLVED'].rstrip('/')}/run_qc/{platform_dir}"
+
+
+def _runqc_illumina_mode(context):
+    if context is None:
+        return ""
+    if _filled(context.get("RUN_DIR", "")):
+        return "mounted"
+    if _filled(context.get("SOURCE_S3_URI", "")):
+        return "s3"
+    raise WorkflowError(
+        f"RUNID={context['RUNID']} must populate RUN_DIR for mounted Illumina run QC or SOURCE_S3_URI for S3 mode."
+    )
+
+
+RUNQC_ILMN_MODE = _runqc_illumina_mode(RUNQC_ILMN_CONTEXT)
+RUNQC_ILMN_ROOT = _runqc_root(RUNQC_ILMN_CONTEXT, "illumina")
 RUNQC_ILMN_SOURCE_RUN = RUNQC_ILMN_ROOT + "/source_run_subset"
 RUNQC_ILMN_INTEROP_DIR = RUNQC_ILMN_SOURCE_RUN + "/InterOp"
-RUNQC_ILMN_REPORT_DIR = RUNQC_ILMN_ROOT + "/reports"
-RUNQC_ILMN_TABLE_DIR = RUNQC_ILMN_ROOT + "/tables"
+RUNQC_ILMN_REPORT_DIR = RUNQC_ILMN_ROOT
+RUNQC_ILMN_TABLE_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_LOG_DIR = RUNQC_ILMN_ROOT + "/logs"
 RUNQC_ILMN_REPORT_PREFIX = _runqc_safe_token(
     RUNQC_ILMN_CFG.get("report_prefix", "illumina_read_fate_river"),
@@ -52,8 +93,8 @@ RUNQC_ILMN_RIVER_INVENTORY = (
     + ".md"
 )
 
-RUNQC_ONT_ROOT = MDIR + "run_qc/ont"
-RUNQC_UG_ROOT = MDIR + "run_qc/ultima"
+RUNQC_ONT_ROOT = _runqc_root(RUNQC_ONT_CONTEXT, "ont")
+RUNQC_UG_ROOT = _runqc_root(RUNQC_UG_CONTEXT, "ultima")
 
 
 localrules:
@@ -76,9 +117,11 @@ rule illumina_run_qc_fetch_metric_subset:
     output:
         done=RUNQC_ILMN_LOG_DIR + "/metric_subset_fetched.done",
     params:
-        run_s3_uri=_runqc_text(RUNQC_ILMN_CFG, "run_s3_uri"),
-        profile=_runqc_text(RUNQC_ILMN_CFG, "profile"),
-        region=_runqc_text(RUNQC_ILMN_CFG, "region"),
+        mode=RUNQC_ILMN_MODE,
+        run_dir="" if RUNQC_ILMN_CONTEXT is None else RUNQC_ILMN_CONTEXT["RUN_DIR"],
+        source_s3_uri="" if RUNQC_ILMN_CONTEXT is None else RUNQC_ILMN_CONTEXT["SOURCE_S3_URI"],
+        profile="" if RUNQC_ILMN_CONTEXT is None else RUNQC_ILMN_CONTEXT["PROFILE"],
+        region="" if RUNQC_ILMN_CONTEXT is None else RUNQC_ILMN_CONTEXT["REGION"],
         source_run=RUNQC_ILMN_SOURCE_RUN,
         cluster_sample="illumina_run_qc_fetch_metric_subset",
     log:
@@ -90,25 +133,29 @@ rule illumina_run_qc_fetch_metric_subset:
         set -euo pipefail
         mkdir -p $(dirname {output.done:q}) $(dirname {log:q}) {params.source_run:q}
         : > {log:q}
-        if [ -z {params.run_s3_uri:q} ]; then
-            echo "run_qc.illumina.run_s3_uri is required" >> {log:q}
+        if [ -z {params.mode:q} ]; then
+            echo "config/runs.tsv is required for Illumina run QC" >> {log:q}
             exit 2
         fi
-        if [ -z {params.profile:q} ]; then
-            echo "run_qc.illumina.profile is required" >> {log:q}
-            exit 2
-        fi
-        if [ {params.profile:q} = "default" ]; then
-            echo "run_qc.illumina.profile must not be default" >> {log:q}
-            exit 2
-        fi
-        if [ -z {params.region:q} ]; then
-            echo "run_qc.illumina.region is required" >> {log:q}
-            exit 2
-        fi
-        command -v aws >> {log:q} 2>&1
-        run_uri=$(printf "%s" {params.run_s3_uri:q} | sed 's:/*$::')
-        copy_required () {{
+        link_or_copy_required () {{
+            rel="$1"
+            dest="{params.source_run}/$rel"
+            src="$(printf "%s" {params.run_dir:q} | sed 's:/*$::')/$rel"
+            mkdir -p "$(dirname "$dest")"
+            test -s "$src"
+            ln -sf "$src" "$dest"
+            test -s "$dest"
+        }}
+        link_or_copy_optional () {{
+            rel="$1"
+            src="$(printf "%s" {params.run_dir:q} | sed 's:/*$::')/$rel"
+            if [ -s "$src" ]; then
+                dest="{params.source_run}/$rel"
+                mkdir -p "$(dirname "$dest")"
+                ln -sf "$src" "$dest"
+            fi
+        }}
+        s3_copy_required () {{
             rel="$1"
             dest="{params.source_run}/$rel"
             mkdir -p "$(dirname "$dest")"
@@ -116,15 +163,17 @@ rule illumina_run_qc_fetch_metric_subset:
               aws s3 cp "$run_uri/$rel" "$dest" >> {log:q} 2>&1
             test -s "$dest"
         }}
-        for rel in \
-          RunInfo.xml \
-          RunParameters.xml \
-          SampleSheet.csv \
-          RunCompletionStatus.xml \
-          Analysis/1/Data/BCLConvert/SampleSheet.csv \
-          Analysis/1/Data/BCLConvert/fastq/Reports/fastq_list.csv \
-          Analysis/1/Data/BCLConvert/fastq/Reports/Quality_Metrics.csv \
-          Analysis/1/Data/BCLConvert/fastq/Reports/Adapter_Metrics.csv \
+        s3_copy_optional () {{
+            rel="$1"
+            dest="{params.source_run}/$rel"
+            mkdir -p "$(dirname "$dest")"
+            AWS_PROFILE={params.profile:q} AWS_REGION={params.region:q} \
+              aws s3 cp "$run_uri/$rel" "$dest" >> {log:q} 2>&1 || true
+            if [ -e "$dest" ]; then
+                test -s "$dest"
+            fi
+        }}
+        required_rels="RunInfo.xml
           InterOp/CorrectedIntMetricsOut.bin \
           InterOp/EmpiricalPhasingMetricsOut.bin \
           InterOp/ExtendedTileMetricsOut.bin \
@@ -132,9 +181,54 @@ rule illumina_run_qc_fetch_metric_subset:
           InterOp/ImageMetricsOut.bin \
           InterOp/QMetricsOut.bin \
           InterOp/SummaryRunMetricsOut.bin \
-          InterOp/TileMetricsOut.bin
-        do
-            copy_required "$rel"
+          InterOp/TileMetricsOut.bin"
+        optional_rels="RunParameters.xml
+          runParameters.xml
+          SampleSheet.csv
+          RunCompletionStatus.xml
+          Analysis/1/Data/BCLConvert/SampleSheet.csv
+          Analysis/1/Data/BCLConvert/fastq/Reports/fastq_list.csv
+          Analysis/1/Data/BCLConvert/fastq/Reports/Quality_Metrics.csv
+          Analysis/1/Data/BCLConvert/fastq/Reports/Adapter_Metrics.csv"
+        if [ {params.mode:q} = "mounted" ]; then
+            test -d {params.run_dir:q}
+            for rel in $required_rels; do
+                link_or_copy_required "$rel"
+            done
+            for rel in $optional_rels; do
+                link_or_copy_optional "$rel"
+            done
+        elif [ {params.mode:q} = "s3" ]; then
+            if [ -z {params.source_s3_uri:q} ]; then
+                echo "SOURCE_S3_URI is required for Illumina run QC S3 mode" >> {log:q}
+                exit 2
+            fi
+            if [ -z {params.profile:q} ]; then
+                echo "PROFILE is required for Illumina run QC S3 mode" >> {log:q}
+                exit 2
+            fi
+            if [ {params.profile:q} = "default" ]; then
+                echo "PROFILE must not be default for Illumina run QC S3 mode" >> {log:q}
+                exit 2
+            fi
+            if [ -z {params.region:q} ]; then
+                echo "REGION is required for Illumina run QC S3 mode" >> {log:q}
+                exit 2
+            fi
+            command -v aws >> {log:q} 2>&1
+            run_uri=$(printf "%s" {params.source_s3_uri:q} | sed 's:/*$::')
+            for rel in $required_rels; do
+                s3_copy_required "$rel"
+            done
+            for rel in $optional_rels; do
+                s3_copy_optional "$rel"
+            done
+        else
+            echo "Unsupported Illumina run QC mode: {params.mode}" >> {log:q}
+            exit 2
+        fi
+        for rel in $required_rels; do
+            test -s "{params.source_run}/$rel"
         done
         touch {output.done:q}
         """
@@ -206,11 +300,11 @@ rule illumina_run_qc_report:
         interop_index_summary=RUNQC_ILMN_TABLE_DIR + "/interop_index_summary.csv",
         checkqc_json=RUNQC_ILMN_TABLE_DIR + "/checkqc.json",
     output:
-        html=RUNQC_ILMN_REPORT_DIR + "/illumina_run_qc.html",
-        tsv=RUNQC_ILMN_TABLE_DIR + "/illumina_run_qc_summary.tsv",
+        html=RUNQC_ILMN_REPORT_DIR + "/summary.html",
+        tsv=RUNQC_ILMN_TABLE_DIR + "/summary.tsv",
         done=RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_report.done",
     params:
-        run_s3_uri=_runqc_text(RUNQC_ILMN_CFG, "run_s3_uri"),
+        run_s3_uri="" if RUNQC_ILMN_CONTEXT is None else RUNQC_ILMN_CONTEXT["SOURCE_S3_URI"],
         cluster_sample="illumina_run_qc_report",
     log:
         RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_report.log",
@@ -239,7 +333,7 @@ rule illumina_run_qc_multiqc:
         checkqc_json=RUNQC_ILMN_TABLE_DIR + "/checkqc.json",
         report_done=RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_report.done",
     output:
-        html=RUNQC_ILMN_REPORT_DIR + "/illumina_run_qc_multiqc.html",
+        html=RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
     params:
         root=RUNQC_ILMN_ROOT,
         cluster_sample="illumina_run_qc_multiqc",
@@ -275,7 +369,7 @@ rule illumina_run_qc_read_fate_river:
     params:
         out_dir=RUNQC_ILMN_REPORT_DIR,
         source_run=RUNQC_ILMN_SOURCE_RUN,
-        run_s3_uri=_runqc_text(RUNQC_ILMN_CFG, "run_s3_uri"),
+        run_s3_uri="" if RUNQC_ILMN_CONTEXT is None else RUNQC_ILMN_CONTEXT["SOURCE_S3_URI"],
         report_prefix=RUNQC_ILMN_REPORT_PREFIX,
         report_title=RUNQC_ILMN_REPORT_TITLE,
         cluster_sample="illumina_run_qc_read_fate_river",
@@ -304,8 +398,8 @@ rule illumina_run_qc_read_fate_river:
 
 rule ont_run_qc_report:
     output:
-        html=RUNQC_ONT_ROOT + "/reports/ont_run_qc.html",
-        tsv=RUNQC_ONT_ROOT + "/tables/ont_run_qc_summary.tsv",
+        html=RUNQC_ONT_ROOT + "/summary.html",
+        tsv=RUNQC_ONT_ROOT + "/summary.tsv",
         done=RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done",
     params:
         metrics_path=_runqc_text(RUNQC_ONT_CFG, "metrics_path"),
@@ -331,8 +425,8 @@ rule ont_run_qc_report:
 
 rule ultima_run_qc_report:
     output:
-        html=RUNQC_UG_ROOT + "/reports/ultima_run_qc.html",
-        tsv=RUNQC_UG_ROOT + "/tables/ultima_run_qc_summary.tsv",
+        html=RUNQC_UG_ROOT + "/summary.html",
+        tsv=RUNQC_UG_ROOT + "/summary.tsv",
         done=RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.done",
     params:
         metrics_path=_runqc_text(RUNQC_UG_CFG, "metrics_path"),
@@ -358,8 +452,8 @@ rule ultima_run_qc_report:
 
 rule produce_illumina_run_qc:  # TARGET: separate Illumina run-level QC report
     input:
-        RUNQC_ILMN_REPORT_DIR + "/illumina_run_qc.html",
-        RUNQC_ILMN_REPORT_DIR + "/illumina_run_qc_multiqc.html",
+        RUNQC_ILMN_REPORT_DIR + "/summary.html",
+        RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
 
 
 rule produce_ont_run_qc:  # TARGET: explicit ONT run-level QC placeholder report
@@ -379,7 +473,7 @@ rule produce_read_fate_river:  # TARGET: Illumina read-fate RIVER report
 
 rule produce_run_qc_reports:  # TARGET: all run-level QC reports, separate from final WGS MultiQC
     input:
-        RUNQC_ILMN_REPORT_DIR + "/illumina_run_qc.html",
-        RUNQC_ILMN_REPORT_DIR + "/illumina_run_qc_multiqc.html",
+        RUNQC_ILMN_REPORT_DIR + "/summary.html",
+        RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
         RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done",
         RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.done",
