@@ -11,14 +11,11 @@ import csv
 
 # ped file:  "family_id individual_id paternal_id maternal_id bio_sex phenotype"
 def gen_ped_file(wildcards):
-    bio_sex = config["sample_info"][wildcards.sample]["biological_sex"].lower() 
-    ped_sex = 0
-    if bio_sex in ["female"]:
+    bio_sex = sample_sex_for_required_tool(wildcards, "Peddy")
+    if bio_sex == "female":
         ped_sex = 2
-    elif bio_sex in ["male"]:
-        ped_sex = 1
     else:
-        ped_sex = 0
+        ped_sex = 1
     ped_f = f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/peddy/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.peddy.ped"
     os.system(f"mkdir -p $(dirname {ped_f});")
     ped_fh = open(ped_f, "w")
@@ -48,6 +45,9 @@ rule peddy:
     params:
         cluster_sample=ret_sample,
         ld_preload=config["malloc_alt"]["ld_preload"],
+        sex_assumption_log=lambda wildcards: sample_sex_assumption_log(
+            wildcards, "Peddy"
+        ),
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.peddy.bench.tsv"
     container:
@@ -60,6 +60,9 @@ rule peddy:
 
         mkdir -p "$(dirname "{log}")" "$(dirname "{output.done}")"
         : > "{log}"
+        if [ -n {params.sex_assumption_log:q} ]; then
+            printf '%s' {params.sex_assumption_log:q} >> "{log}"
+        fi
         rm -f "{output.done}" "{output.prefix}"
 
         printf 'running peddy\n' >> "{log}"

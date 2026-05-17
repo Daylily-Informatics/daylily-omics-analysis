@@ -36,7 +36,7 @@ sample,sample_lane,SQ,RU,EX,LANE,r1_path,r2_path,biological_sex,iddna_uid,concor
 
 ## Required Columns, 'na' Values Allowed
 
-* biological_sex=male or female or empty (an entry not mathcing make or femalke will be treated as unknown).  Mostly this information is useful as a QC check to confirm the stated sample biological sex matches what is observed.
+* biological_sex=male or female or empty (an entry not matching male or female will be treated as unknown for QC metadata). Tools that require a male/female value assume male for unknown values and write that assumption to the tool log.
 M,male,F,Female,female
 * iddna_uid -ie: TA12343 or if there are 2+ expected, connect them with : with no spaces.  ie: TA1234:TA9876
 * concordance_control_path - empty or a  path to a directory with a vcf file named 'sample.vcf' and a bed file named 'sample.bed'. These will mostly be coriel controls. The directory these files live in will be used to name the subdirs the concoirdance results are stored in . SNVs only.   *NOT IMPLEMENTED YET*
@@ -184,7 +184,8 @@ If you would like to check the concordnce of a clinical sample you are processin
 
 ### col namne == `biological_sex`
 * Values may be : na,female,none,unknown,male
-* This is usesul as metadata to have saved with the analysis, and is also used in a QC check ( presented in the final multiqc, which flags samples with a sex derived from alignment that does not match the sex entered in this column)
+* This is useful as metadata to have saved with the analysis, and is also used in a QC check presented in the final MultiQC, which flags samples with a sex derived from alignment that does not match the sex entered in this column.
+* Tools that require a strict male/female value use male when this field is empty, na, none, unknown, or otherwise invalid, and log the assumption in the tool output log.
 
 ### col namne == `iddna_uid`
 * The TA# >>(look up syntax to define multiple)<< which will be used to generate iddna metrics.  If null, metrics are still scanned, no expexted numbers will be generated, but you will still get a report of any iddnas identified (all classified as unexpected)

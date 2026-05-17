@@ -1457,13 +1457,15 @@ for _, row in samples.iterrows():
 
     # Copy through selected fields with normalization where you did it before
     # biological_sex normalization
-    bsex = str(row.get("BIOLOGICAL_SEX", "na")).strip().lower()
+    raw_bsex = str(row.get("BIOLOGICAL_SEX", "na")).strip()
+    bsex = raw_bsex.lower()
     if bsex.startswith("m"):
         bsex = "male"
     elif bsex.startswith("f"):
         bsex = "female"
     else:
         bsex = "na"
+    sample_info[samp_id]["biological_sex_raw"] = raw_bsex
     sample_info[samp_id]["biological_sex"] = bsex
 
     # Simple passthroughs
@@ -1933,6 +1935,48 @@ def get_samp_name(wildcards):
 
 def get_instrument(wildcards):
     return samples[samples["analysis_unit_uid"] == wildcards.sample]["instrument"][0]
+
+
+VALID_REQUIRED_SAMPLE_SEXES = {"male", "female"}
+
+
+def _sex_sample_id(wildcards_or_sample):
+    return str(getattr(wildcards_or_sample, "sample", wildcards_or_sample))
+
+
+def _sample_info_for_required_sex(sample):
+    return config.get("sample_info", {}).get(sample, {})
+
+
+def sample_sex_for_required_tool(wildcards_or_sample, tool_name):
+    """Return a valid sex value for tools that require male/female.
+
+    Unknown, blank, na, none, or otherwise invalid manifest values are treated as
+    male by request. Callers should also write sample_sex_assumption_log() to the
+    tool log so the assumption is visible in workflow outputs.
+    """
+    sample = _sex_sample_id(wildcards_or_sample)
+    sample_info = _sample_info_for_required_sex(sample)
+    sex = str(sample_info.get("biological_sex", "")).strip().lower()
+    if sex in VALID_REQUIRED_SAMPLE_SEXES:
+        return sex
+    return "male"
+
+
+def sample_sex_assumption_log(wildcards_or_sample, tool_name):
+    sample = _sex_sample_id(wildcards_or_sample)
+    sample_info = _sample_info_for_required_sex(sample)
+    sex = str(sample_info.get("biological_sex", "")).strip().lower()
+    if sex in VALID_REQUIRED_SAMPLE_SEXES:
+        return ""
+
+    raw_sex = str(sample_info.get("biological_sex_raw", sex)).strip()
+    if raw_sex == "":
+        raw_sex = "<empty>"
+    return (
+        f"WARNING: {tool_name} requires biological_sex male/female for sample "
+        f"{sample}; observed biological_sex={raw_sex!r}. Assuming male.\n"
+    )
 
 
 def _resolve_sample_sex(wildcards):

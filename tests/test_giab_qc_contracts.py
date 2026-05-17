@@ -132,6 +132,39 @@ def test_peddy_rule_hard_fails_and_does_not_unconditionally_mark_done() -> None:
     )
 
 
+def test_peddy_defaults_invalid_sample_sex_to_male_and_logs_assumption() -> None:
+    text = (REPO_ROOT / "workflow" / "rules" / "peddy.smk").read_text(encoding="utf-8")
+
+    assert 'sample_sex_for_required_tool(wildcards, "Peddy")' in text
+    assert "ped_sex = 0" not in text
+    assert "ped_sex = 1" in text
+    assert "ped_sex = 2" in text
+    assert "sample_sex_assumption_log(" in text
+    assert 'printf \'%s\' {params.sex_assumption_log:q} >> "{log}"' in text
+
+
+def test_required_sample_sex_helper_preserves_raw_value_and_defaults_to_male() -> None:
+    common = (REPO_ROOT / "workflow" / "rules" / "common.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'sample_info[samp_id]["biological_sex_raw"] = raw_bsex' in common
+    assert "def sample_sex_for_required_tool(" in common
+    assert "def sample_sex_assumption_log(" in common
+    assert 'return "male"' in common
+    assert "Assuming male" in common
+
+
+def test_octopus_invalid_sample_sex_uses_shared_male_default() -> None:
+    text = (REPO_ROOT / "workflow" / "rules" / "octopus.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'sample_sex_for_required_tool(wildcards, "Octopus")' in text
+    assert "X=2 Y=1" not in text
+    assert 'config["sample_info"][wildcards.sample]["biological_sex"]' not in text
+
+
 @pytest.mark.parametrize(
     "env_path",
     [
