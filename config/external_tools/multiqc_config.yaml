@@ -85,7 +85,6 @@ module_order:
   - giab_sv_concordance
   - peddy_sample_qc
   - vep_annotation
-  - snpeff_annotation
   - htd_calls
   - giab_concordance
   - norm_cov_evenness_combo
@@ -159,8 +158,6 @@ report_section_order:
     order: 4300
   vep_annotation:
     order: 4400
-  snpeff_annotation:
-    order: 4410
   htd_calls:
     order: 4500
   rules_benchmark_data:
@@ -469,16 +466,6 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'vep_annotation'
-  snpeff_annotation:
-    id: 'snpeff_annotation'
-    section_name: 'SnpEff Annotation Outputs'
-    parent_id: 'dayoa_variant_benchmark_annotation'
-    parent_name: 'Variant, genotype, benchmark, annotation'
-    description: 'SnpEff annotation outputs when optional annotation QC is enabled'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'snpeff_annotation'
   htd_calls:
     id: 'htd_calls'
     section_name: 'HTD Caller Outputs'
@@ -562,8 +549,6 @@ sp:
     fn: "other_reports/peddy_sample_qc_mqc.tsv"
   vep_annotation:
     fn: "other_reports/vep_annotation_mqc.tsv"
-  snpeff_annotation:
-    fn: "other_reports/snpeff_annotation_mqc.tsv"
   htd_calls:
     fn: "other_reports/htd_calls_mqc.tsv"
   alignstats_gs:

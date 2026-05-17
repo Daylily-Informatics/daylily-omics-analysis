@@ -103,7 +103,7 @@ Common flags passed through `dy-r`:
 | `produce_multiqc_cram` | MultiQC for CRAM/alignment QC. |
 | `produce_multiqc_snv`, `produce_multiqc_sv` | MultiQC for SNV and SV QC scopes. |
 | `produce_multiqc_sample_qc` | MultiQC for sample-level QC such as contamination and relatedness. |
-| `produce_multiqc_variant_annotation` | MultiQC for annotation QC such as VEP/SnpEff. |
+| `produce_multiqc_variant_annotation` | MultiQC for enabled annotation QC such as VEP. |
 | `produce_multiqc_all` | Canonical final routine MultiQC aggregation. |
 
 Legacy selector targets such as `produce_sentD_vcf`, `produce_manta`, and

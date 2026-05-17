@@ -10,7 +10,7 @@ that matches the run scope:
 | `produce_multiqc_snv` | SNV QC summaries and related staged variant metrics. |
 | `produce_multiqc_sv` | SV QC/report scope for selected SV callers. |
 | `produce_multiqc_sample_qc` | Sample-level QC such as contamination, relatedness, and sex/QC signals. |
-| `produce_multiqc_variant_annotation` | Annotation QC such as VEP and SnpEff summaries. |
+| `produce_multiqc_variant_annotation` | Annotation QC such as VEP summaries. |
 | `produce_multiqc_all` | Canonical final routine WGS MultiQC report. |
 
 Deprecated compatibility targets remain available for existing runbooks:
@@ -179,7 +179,6 @@ MultiQC by default:
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
-| SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
 | Unmapped-read metagenomics | Kraken2 classification depends on an explicit external database and can be expensive. | `produce_unmapped_metagenomics_quick` with `unmapped_metagenomics.kraken2_db`, `threads`, `mem_mb`, `partition`, and `max_reads` |
 
 site_mix was promoted to routine default after at-sanity validation showed the

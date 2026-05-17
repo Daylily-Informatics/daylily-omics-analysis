@@ -161,14 +161,13 @@ def test_alignstats_compile_normalizes_legacy_space_delimited_rows(
 def test_variant_and_concordance_custom_tsvs_include_full_stage_identity() -> None:
     bcftools = _read("workflow/rules/bcftools_vcfstat.smk")
     rtg_vcfstats = _read("workflow/rules/rtg_vcfstats.smk")
-    snpeff = _read("workflow/rules/snpeff.smk")
     vep = _read("workflow/rules/vep.smk")
     peddy = _read("workflow/rules/peddy.smk")
     concordance = _read("workflow/rules/rtg_vcfeval.smk")
     concordance_parser = _read("workflow/scripts/parse-vcfeval-summary.py")
     tiddit = _read("workflow/rules/tiddit.smk")
 
-    for text in (bcftools, rtg_vcfstats, snpeff, vep, peddy):
+    for text in (bcftools, rtg_vcfstats, vep, peddy):
         assert '"Sample",' in text
         assert '"base_sample",' in text
         assert '"sample_id": sample' not in text

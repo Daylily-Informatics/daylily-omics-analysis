@@ -68,8 +68,11 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "vep", "snpeff"):
+    for tool in ("fastv", "vep"):
         assert f'"{tool}"' in common
+    assert '"snpeff"' not in common[
+        common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
+    ]
     assert '"kat"' not in common[
         common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
     ]
@@ -120,7 +123,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert '# include: "rules/kat.smk"' in snakefile
     assert "qc_tool_enabled(\"site_mix\")" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
-    assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
+    assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
     assert "qc_contamination_dedupers()" in text
@@ -141,10 +144,14 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "peddy_sample_qc_mqc.tsv",
         "expansionhunter_mqc.tsv",
         "vep_annotation_mqc.tsv",
-        "snpeff_annotation_mqc.tsv",
         "rules_benchmark_data_mqc.tsv",
     ):
         assert expected in text
+    assert "snpeff_annotation_mqc.tsv" not in text
+    assert '# include: "rules/snpeff.smk"' in snakefile
+    assert 'include: "rules/snpeff.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
@@ -300,7 +307,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     rtg = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
-    snpeff = _read("workflow/rules/snpeff.smk")
+    snakefile = _read("workflow/Snakefile")
     tiddit = _read("workflow/rules/tiddit.smk")
     slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
 
@@ -357,8 +364,10 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
     assert "vep_annotation_mqc.tsv" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
-    assert "bgzip -c > {output.annovcf}" in snpeff
-    assert "snpeff_annotation_mqc.tsv" in snpeff
+    assert '# include: "rules/snpeff.smk"' in snakefile
+    assert 'include: "rules/snpeff.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
 
 
 def test_multiqc_config_custom_content_entries() -> None:
@@ -383,7 +392,6 @@ def test_multiqc_config_custom_content_entries() -> None:
         "tiddit_sv",
         "peddy_sample_qc",
         "vep_annotation",
-        "snpeff_annotation",
         "htd_calls",
         "expansionhunter",
     ):
@@ -392,6 +400,8 @@ def test_multiqc_config_custom_content_entries() -> None:
         assert "parent_id" in config["custom_data"][key]
         assert "parent_name" in config["custom_data"][key]
 
+    assert "snpeff_annotation" not in config["custom_data"]
+    assert "snpeff_annotation" not in config["sp"]
     assert config["exclude_modules"] == []
     exclude_file = REPO_ROOT / "config/multiqc_module_exclude.txt"
     assert exclude_file.exists()
@@ -517,7 +527,6 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     rtg_vcfstats = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
-    snpeff = _read("workflow/rules/snpeff.smk")
 
     assert "def day_stage_sample_id(sample, *components)" in common
     assert "_stage_sample_id(sample, aligner, deduper)" in contamination_script
@@ -529,7 +538,6 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in rtg_vcfstats
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in peddy
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in vep
-    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in snpeff
     assert "marker = f\".{alnr}.{ddup}.{caller}.\"" in bcftools
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common

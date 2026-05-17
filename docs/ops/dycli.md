@@ -92,7 +92,7 @@ For manual debugging, use this order:
 | `produce_multiqc_cram` | MultiQC for CRAM/alignment QC. |
 | `produce_multiqc_snv`, `produce_multiqc_sv` | MultiQC for SNV and SV QC scopes. |
 | `produce_multiqc_sample_qc` | MultiQC for sample-level contamination, relatedness, and sex/QC signals. |
-| `produce_multiqc_variant_annotation` | MultiQC for VEP/SnpEff and other annotation summaries. |
+| `produce_multiqc_variant_annotation` | MultiQC for enabled annotation summaries such as VEP. |
 | `produce_multiqc_all` | Canonical final routine MultiQC aggregation. |
 
 Use `dy-r help` and tab completion for the full target list.

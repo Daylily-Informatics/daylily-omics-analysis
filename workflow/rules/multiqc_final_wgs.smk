@@ -163,8 +163,6 @@ def _variant_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")
     if qc_tool_enabled("vep", long_running=True):
         paths.append(MDIR + "other_reports/vep_annotation_mqc.tsv")
-    if qc_tool_enabled("snpeff", long_running=True):
-        paths.append(MDIR + "other_reports/snpeff_annotation_mqc.tsv")
     if HTD_CALLERS:
         paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
     if len(CONCORDANCE_SAMPLES.keys()) > 0 and pairs:

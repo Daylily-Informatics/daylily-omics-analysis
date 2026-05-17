@@ -197,7 +197,6 @@ config["_run_context_run_ids"] = sorted(RUN_CONTEXT_BY_RUNID)
 MULTIQC_QC_LONG_RUNNING_TOOLS = {
     "fastv",
     "vep",
-    "snpeff",
 }
 
 SUPPORTED_HTD_CALLERS = (
