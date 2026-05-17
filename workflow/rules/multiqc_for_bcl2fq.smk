@@ -109,11 +109,12 @@ rule multiqc_bcl2fq:
         cluster_sample="bcl2fqMQC_{config['b2fq_ruid']}",
         iop_d="results/bcl2fq_reports/"+config["b2fq_ruid"],
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
        """
        (ln -s {params.rud} results/bcl2fq_reports/{params.ru}) ;
        (mkdir -p $(dirname {output.interop1}) ) ;
+       multiqc --version > {log} 2>&1 || true ;
        ### export LD_LIBRARY_PATH=./resources/lib/ &&
        mkdir -p {params.interop_d};
        ### export LD_LIBRARY_PATH=./resources/lib/ && interop_summary {params.iop_d} --csv=1 > {output.interop1};
@@ -123,7 +124,7 @@ rule multiqc_bcl2fq:
         ### export LD_LIBRARY_PATH=./resources/lib/ && interop_plot_by_lane  {params.iop_d} | perl -pe "s/(output \')(.*)(\.png)/\$1{params.odir2}\$2\$3_mqc\.png/g" | gnuplot;
         ### export LD_LIBRARY_PATH=./resources/lib/ && interop_plot_qscore_histogram  {params.iop_d} | perl -pe "s/(output \')(.*)(\.png)/\$1{params.odir2}\$2\$3_mqc\.png/g" | gnuplot;
        ### export LD_LIBRARY_PATH=./resources/lib/ && interop_plot_qscore_heatmap  {params.iop_d}| perl -pe "s/(output \')(.*)(\.png)/\$1{params.odir2}\$2\$3_mqc\.png/g" | gnuplot;
-       multiqc --interactive -m custom_content  -m interop -m bcl2fastq -x '*/mod/*' -x '*.js' -x '*.bam' -x '*.fastq.gz' -x '*multiqc*' -x '*pyc' -x '*.fastq.gz' -v -x '*/impute/*'  -i '{params.ru} BCL2FQ/Interop REPORT' -p  -b '{params.ru} ___ {params.gbranch} {params.gtag} {params.ghash}' -n {params.fn} -o {params.odir} --profile-runtime  -c {params.macro_cfg} -f results/ ;
+       multiqc --interactive -m custom_content  -m interop -m bcl2fastq -x '*/mod/*' -x '*.js' -x '*.bam' -x '*.fastq.gz' -x '*multiqc*' -x '*pyc' -x '*.fastq.gz' -v -x '*/impute/*'  -i '{params.ru} BCL2FQ/Interop REPORT' -p  -b '{params.ru} ___ {params.gbranch} {params.gtag} {params.ghash}' -n {params.fn} -o {params.odir} --profile-runtime  -c {params.macro_cfg} -f results/ >> {log} 2>&1 ;
         touch {params.mdir}benchmarks/bcl2fq_{params.ru}_multiqc.bench.tsv ;
         ls {output}; """
         # in lieu of the command line latency wait

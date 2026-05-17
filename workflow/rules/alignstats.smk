@@ -100,6 +100,7 @@ rule finish_align_stats:
         n=config["alignstats"]["num_reads_in_mem"],
         cluster_sample=ret_sample,
         alnr_f=fetch_alnr,
+        ddup=lambda wildcards: wildcards.ddup,
         ld_preload=" "
         if "ld_preload" not in config["malloc_alt"]
         else config["malloc_alt"]["ld_preload"],
@@ -107,14 +108,22 @@ rule finish_align_stats:
         if "ld_preload" not in config["alignstats"]
         else config["alignstats"]["ld_preload"],
     run:
-        import os
-        import sys
+        import csv
         import json
 
         j = json.load(open(f"{input.json}", "r"))
-        aa = "sample\taligner\t" + "\t".join([str(x) for x in sorted(j)])
-        bb = f"{params.cluster_sample}.{params.alnr_f}\t{params.alnr_f}\t" + "\t".join(
-            [str(j[x]) for x in sorted(j)]
-        )
-        os.system(f"echo {aa} > {output.tsv} ; echo {bb} >> {output.tsv}")
-
+        metric_fields = [str(x) for x in sorted(j)]
+        fieldnames = ["Sample", "base_sample", "aligner", "deduper"] + metric_fields
+        row = {
+            "Sample": day_stage_sample_id(
+                params.cluster_sample, params.alnr_f, params.ddup
+            ),
+            "base_sample": params.cluster_sample,
+            "aligner": params.alnr_f,
+            "deduper": params.ddup,
+        }
+        row.update({field: str(j[field]) for field in metric_fields})
+        with open(output.tsv, "w", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
+            writer.writeheader()
+            writer.writerow(row)

@@ -290,12 +290,14 @@ rule expansionhunter_multiqc:
         gtag=config["gittag"],
         cluster_sample="expansionhunter_multiqc",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
         set -euo pipefail
         mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
         : > {log:q}
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs >> {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
         multiqc --interactive -m custom_content -f \
           --config {input.config:q} \
           --filename $(basename {output.html:q}) \

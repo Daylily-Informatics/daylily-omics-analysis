@@ -51,10 +51,13 @@ rule multiqc_singleton:  # TARGET: the big report
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a2.log",
     container:
-        "docker://daylilyinformatics/daylily_multiqc:0.2"
+        "docker://multiqc/multiqc:v1.35"
     shell:
         """
         dbill='$';
+        mkdir -p $(dirname {output[0]}) $(dirname {log})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR}other_reports/logs > {log} 2>&1
+        multiqc --version >> {log} 2>&1 || true
 
         echo '''
 report_header_info:
@@ -89,6 +92,9 @@ report_header_info:
         --custom-css-file ./config/external_tools/multiqc.css \
         --template default \
         --ignore "*sort_metrics/*" \
+        --ignore "*/other_reports/logs/*" \
+        --ignore "other_reports/logs/*" \
+        --ignore "*_mqc.log" \
         --ignore "*/norm_cov_eveness/*" \
         --filename {output[0]} \
         -i '{params.rtitle} Multiqc Report' \
