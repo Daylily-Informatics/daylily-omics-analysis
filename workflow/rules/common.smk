@@ -1680,9 +1680,6 @@ def get_raw_fastq_qc_R2s(wildcards):
     return sorted(r2 for _r1, r2 in _fastq_qc_pairs(wildcards.sample))
 
 
-FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]
-
-
 def get_fastq_r1_r2(wildcards):
     # generate filepaths corresponding to {sample} : {RR} combos
     if wildcards.RR == "R1":
@@ -1725,6 +1722,8 @@ if "remove_samples" in config:
     for rs in config["remove_samples"]:
         SAMPS.remove(rs)
         print(f"SAMPLE REMOVED: {rs}")
+
+FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]
 
 SSAMPS = {}
 for sample in samples["sample"].unique():

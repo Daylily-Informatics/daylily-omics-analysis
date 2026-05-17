@@ -575,33 +575,29 @@ def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:
 
 
 def test_relatedness_classification_interface_and_manifest_validation(tmp_path: Path) -> None:
-    pd = pytest.importorskip("pandas")
-    pytest.importorskip("jinja2")
     module = _load_module(
         REPO_ROOT / "workflow" / "scripts" / "relatedness_report.py",
         "relatedness_report_under_test",
     )
     manifest_path = tmp_path / "samples.tsv"
     manifest_path.write_text(
-        "sample_id\tpath\tpath_type\tsex\tfamily_id\n"
-        "HG002\t/fsx/not-mounted/HG002.cram\tcram\tmale\ttrio\n"
-        "HG003\t/fsx/not-mounted/HG003.cram\tcram\tmale\ttrio\n"
-        "HG004\t/fsx/not-mounted/HG004.cram\tcram\tfemale\ttrio\n"
-        "NA12878\t/fsx/not-mounted/NA12878.vcf.gz\tvcf\tfemale\tceph\n",
+        "sample_id\tpath\tpath_type\tsex\tfamily_id\texternal_sample_id\n"
+        "HG002\t/fsx/not-mounted/HG002.cram\tcram\tmale\ttrio\tKID\n"
+        "HG003\t/fsx/not-mounted/HG003.cram\tcram\tmale\ttrio\tDAD\n"
+        "HG004\t/fsx/not-mounted/HG004.cram\tcram\tfemale\ttrio\tMOM\n"
+        "NA12878\t/fsx/not-mounted/NA12878.vcf.gz\tvcf\tfemale\tceph\tNA12878\n",
         encoding="utf-8",
     )
     manifest = module.load_manifest(manifest_path)
     assert list(manifest["sample_id"]) == ["HG002", "HG003", "HG004", "NA12878"]
 
-    pairs = pd.DataFrame(
-        [
-            {"sample_a": "HG002", "sample_b": "HG002", "relatedness": "0.99", "ibs0": "0"},
-            {"sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"},
-            {"sample_a": "HG003", "sample_b": "HG004", "relatedness": "0.48", "ibs0": "12"},
-            {"sample_a": "HG002", "sample_b": "NA12878", "relatedness": "0.02", "ibs0": "90"},
-            {"sample_a": "HG004", "sample_b": "NA12878", "relatedness": "0.28", "ibs0": "4"},
-        ]
-    )
+    pairs = [
+        {"sample_a": "HG002", "sample_b": "HG002", "relatedness": "0.99", "ibs0": "0"},
+        {"sample_a": "KID", "sample_b": "DAD", "relatedness": "0.50", "ibs0": "0.5"},
+        {"sample_a": "DAD", "sample_b": "MOM", "relatedness": "0.48", "ibs0": "12"},
+        {"sample_a": "HG002", "sample_b": "NA12878", "relatedness": "0.02", "ibs0": "90"},
+        {"sample_a": "MOM", "sample_b": "NA12878", "relatedness": "0.28", "ibs0": "4"},
+    ]
     expected = module.load_expected(
         [
             {"samples": ["HG002", "HG003"], "relationship": "father_child"},
@@ -622,9 +618,9 @@ def test_relatedness_classification_interface_and_manifest_validation(tmp_path: 
     assert by_pair[("HG004", "NA12878")].status == "FAIL"
     assert "expected unrelated; observed ambiguous" in by_pair[("HG004", "NA12878")].note
 
-    hash_prefixed_pairs = pd.DataFrame(
-        [{"#sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"}]
-    )
+    hash_prefixed_pairs = [
+        {"#sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"}
+    ]
     assert module.classify_pairs(hash_prefixed_pairs, manifest)[0].relationship == "parent_child"
 
 

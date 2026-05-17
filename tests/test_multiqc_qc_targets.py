@@ -114,6 +114,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "def _variant_component_inputs" in text
     assert "def _sv_component_inputs" in text
     assert "FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]" in common
+    assert common.index("SAMPS = list(get_samp_ids())") < common.index("FASTQ_QC_SAMPS =")
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
