@@ -1658,6 +1658,31 @@ def get_raw_R2s(wildcards):
     return sorted(r2s)
 
 
+def _fastq_qc_pairs(sample):
+    pairs = []
+    for _, row in samples[samples["sample"] == sample].iterrows():
+        r1 = _clean_component(row.get("r1_path", ""))
+        r2 = _clean_component(row.get("r2_path", ""))
+        if r1 and r2:
+            pairs.append((os.path.abspath(r1), os.path.abspath(r2)))
+    return pairs
+
+
+def sample_has_fastq_qc_inputs(sample):
+    return bool(_fastq_qc_pairs(sample))
+
+
+def get_raw_fastq_qc_R1s(wildcards):
+    return sorted(r1 for r1, _r2 in _fastq_qc_pairs(wildcards.sample))
+
+
+def get_raw_fastq_qc_R2s(wildcards):
+    return sorted(r2 for _r1, r2 in _fastq_qc_pairs(wildcards.sample))
+
+
+FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]
+
+
 def get_fastq_r1_r2(wildcards):
     # generate filepaths corresponding to {sample} : {RR} combos
     if wildcards.RR == "R1":

@@ -90,6 +90,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
     snakefile = _read("workflow/Snakefile")
+    common = _read("workflow/rules/common.smk")
 
     for rule_name in (
         "rule produce_multiqc_input_data:",
@@ -112,6 +113,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "def _alignment_component_inputs" in text
     assert "def _variant_component_inputs" in text
     assert "def _sv_component_inputs" in text
+    assert "FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]" in common
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
@@ -121,6 +123,9 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
     ]
     assert '# include: "rules/kat.smk"' in snakefile
+    assert "sample=FASTQ_QC_SAMPS" in text
+    seq_inputs = text[text.index("def _sequence_qc_native_inputs") : text.index("def _alignment_component_inputs")]
+    assert "sample=SAMPS" not in seq_inputs
     assert "qc_tool_enabled(\"site_mix\")" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
@@ -165,7 +170,17 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     assert ": > {log.a};" in fastp
     assert "{sample}.R1.fastq.gz" in fastqc
     assert "{sample}.R2.fastq.gz" in fastqc
+    assert "get_raw_fastq_qc_R1s" in fastqc
+    assert "get_raw_fastq_qc_R2s" in fastqc
+    assert "SKIP: fastqc_subsampled found no paired FASTQ inputs" in fastqc
+    assert "sample=FASTQ_QC_SAMPS" in fastqc
     assert "{params.r1_link:q} {params.r2_link:q}" in fastqc
+    assert "get_raw_fastq_qc_R1s" in seqfu
+    assert "sample=FASTQ_QC_SAMPS" in seqfu
+    assert "SKIP: seqfu found no paired FASTQ inputs" in seqfu
+    assert "get_raw_fastq_qc_R1s" in fastv
+    assert "sample=FASTQ_QC_SAMPS" in fastv
+    assert "SKIP: fastv found no paired FASTQ inputs" in fastv
     assert "{input.fpqr1s}" in fastv
     assert "{input.fpqr2s}" in fastv
     assert "mkdir -p $(dirname {output});" in fastv
@@ -288,7 +303,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     ]
     assert "--genome-build" not in extract_rule
     assert "-o {params.prefix:q}" not in extract_rule
-    assert "--out-dir {params.out_dir:q}" in extract_rule
+    assert '--out-dir "$tmp_dir"' in extract_rule
     assert "--sample-prefix" not in extract_rule
     assert "setuptools" in report_env["dependencies"]
 

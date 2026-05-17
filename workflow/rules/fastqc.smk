@@ -7,8 +7,8 @@ import os
 
 rule fastqc_subsampled:
     input:
-        fqr1s=get_raw_R1s,
-        fqr2s=get_raw_R2s,
+        fqr1s=get_raw_fastq_qc_R1s,
+        fqr2s=get_raw_fastq_qc_R2s,
     output:
         f"{MDIR}" + "{sample}/seqqc/fastqc/{sample}.fastqc.done",
     benchmark:
@@ -37,6 +37,11 @@ rule fastqc_subsampled:
         mkdir -p {params.input_dir:q} ;
         r1_inputs=({input.fqr1s:q})
         r2_inputs=({input.fqr2s:q})
+        if [[ "${{#r1_inputs[@]}}" -eq 0 && "${{#r2_inputs[@]}}" -eq 0 ]]; then
+            printf 'SKIP: fastqc_subsampled found no paired FASTQ inputs for %s; likely CRAM/BAM-only or manifest FASTQ path is na.\n' "{wildcards.sample}" > {log:q}
+            touch {output:q}
+            exit 0
+        fi
         if [[ "${{#r1_inputs[@]}}" -ne 1 || "${{#r2_inputs[@]}}" -ne 1 ]]; then
             printf 'fastqc_subsampled expects exactly one R1 and one R2 for %s; got R1=%s R2=%s\n' "{wildcards.sample}" "${{#r1_inputs[@]}}" "${{#r2_inputs[@]}}" >&2
             exit 1
@@ -56,7 +61,7 @@ localrules:
 
 rule just_fastqc:
     input:
-        expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SAMPS),
+        expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=FASTQ_QC_SAMPS),
     output:
         "fqc.done",
     threads: 1

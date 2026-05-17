@@ -7,8 +7,8 @@ import os
 
 rule fastv:
     input:
-        fpqr1s=get_raw_R1s,
-        fpqr2s=get_raw_R2s,
+        fpqr1s=get_raw_fastq_qc_R1s,
+        fpqr2s=get_raw_fastq_qc_R2s,
         #fpq1=getR1sS,  # MDIR + "{sample}/seqqc/fastp/{sample}.R1.fastp.fastq.gz",
         #fpq2=getR2sS,  # MDIR + "{sample}/seqqc/fastp/{sample}.R2.fastp.fastq.gz",
     output:
@@ -39,6 +39,13 @@ rule fastv:
     shell:
         "mkdir -p  {params.odir} $(dirname {log}); "
         ": > {log}; "
+        "r1_inputs=({input.fpqr1s:q}); r2_inputs=({input.fpqr2s:q}); "
+        "if [[ \"${{#r1_inputs[@]}}\" -eq 0 && \"${{#r2_inputs[@]}}\" -eq 0 ]]; then "
+        "printf 'SKIP: fastv found no paired FASTQ inputs for %s; likely CRAM/BAM-only or manifest FASTQ path is na.\\n' \"{wildcards.sample}\" > {log}; "
+        "gzip -c /dev/null > {output.fv1}; gzip -c /dev/null > {output.fv2}; "
+        "printf '<html><body>SKIP: no paired FASTQ inputs</body></html>\\n' > {output.html}; "
+        "printf '{{\"status\":\"skipped\",\"reason\":\"no paired FASTQ inputs\"}}\\n' > {output.json}; "
+        "exit 0; fi; "
         " cp {params.jsf1} {params.odir}; cp {params.jsf2} {params.odir} >> {log} 2>&1; "
         "fastv -i <(gzip -dc -- {input.fpqr1s} ) -I <(gzip -dc -- {input.fpqr2s} ) -o {output.fv1} -O {output.fv2} --reads_to_process {params.reads_to_process} --detect_adapter_for_pe --low_complexity_filter -h {output.html} -j {output.json} -w {threads} -y -k {params.covid_kmer} -g {params.covid_genome} -c {params.microbial_kmers} >> {log} 2>&1;"
         " perl -pe 's/http\:\/\/opengene\.org\/plotly/plotly/g;' {output.html} >> {log} 2>&1; "
@@ -48,7 +55,7 @@ rule fastv:
 
 rule produce_fastv:  # TARGET: fastv output
     input:
-        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json", sample=SAMPS),
+        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json", sample=FASTQ_QC_SAMPS),
     output:
         MDIR + "logs/multiqc/fastv.done",
     shell:

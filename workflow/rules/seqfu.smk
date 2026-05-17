@@ -14,8 +14,8 @@ rule seqfu:
         #fqs=get_raw_fastqs,
         #f1=getR1sS,  # method defined in fastp.smk
         #f2=getR2sS,  # method defined in fastp.smk
-        f1=get_raw_R1s,
-        f2=get_raw_R2s,
+        f1=get_raw_fastq_qc_R1s,
+        f2=get_raw_fastq_qc_R2s,
     output:
         mqc_r1=f"{MDIR}" + "{sample}/seqqc/seqfu/{sample}.seqfuR1.mqc.tsv",
         mqc_r2=f"{MDIR}" + "{sample}/seqqc/seqfu/{sample}.seqfuR2.mqc.tsv",
@@ -38,6 +38,15 @@ rule seqfu:
     shell:
         """
         mkdir -p $(dirname {output.mqc_r1});
+        r1_inputs=({input.f1:q})
+        r2_inputs=({input.f2:q})
+        if [[ "${{#r1_inputs[@]}}" -eq 0 && "${{#r2_inputs[@]}}" -eq 0 ]]; then
+            printf 'SKIP: seqfu found no paired FASTQ inputs for %s; likely CRAM/BAM-only or manifest FASTQ path is na.\n' "{wildcards.sample}" > {log}
+            printf 'NO DATA FOUND\n' > {output.mqc_r1}
+            printf 'NO DATA FOUND\n' > {output.mqc_r2}
+            touch {output.sent}
+            exit 0
+        fi
         ( cat  <(gzip -dc -- {input.f1} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r1} - &
         cat <(gzip -dc -- {input.f2} ) | env {params.ld_preload} seqfu stats --nice -b  --verbose --multiqc ./{output.mqc_r2} - &
         wait;
@@ -52,7 +61,7 @@ localrules:
 
 rule compile_seqfu:
     input:
-        expand(MDIR + "{sample}/seqqc/seqfu/{sample}.seqfu.done", sample=SAMPS),
+        expand(MDIR + "{sample}/seqqc/seqfu/{sample}.seqfu.done", sample=FASTQ_QC_SAMPS),
     container:
         None
     output:
