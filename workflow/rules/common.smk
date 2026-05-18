@@ -1164,9 +1164,9 @@ def _load_fastq_path_list_helpers():
     spec = importlib.util.spec_from_file_location(
         "dayoa_fastq_path_lists", helper_path
     )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    loaded_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(loaded_module)
+    return loaded_module
 
 
 _fastq_path_lists = _load_fastq_path_list_helpers()
