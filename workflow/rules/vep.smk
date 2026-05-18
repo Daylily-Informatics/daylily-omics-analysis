@@ -304,6 +304,7 @@ rule vep_annotation_gather:
             "snv_caller",
             "annotation_tool",
             "vcf_gz",
+            "summary_glob",
             "status",
         ]
         with open(output[0], "w", newline="") as out_handle:
@@ -312,6 +313,15 @@ rule vep_annotation_gather:
             for path in input:
                 sample, aligner, deduper, caller = _variant_qc_parts(path)
                 sample_id = day_stage_sample_id(sample, aligner, deduper, caller)
+                vcf_gz = str(path).removesuffix(".tbi")
+                vep_dir = os.path.dirname(vcf_gz)
+                vep_prefix = os.path.basename(vcf_gz).removesuffix(".vep.vcf.gz")
+                summary_glob = os.path.join(
+                    vep_dir,
+                    "chunks",
+                    "*",
+                    f"{vep_prefix}.*.vep.vcf.gz_summary.html",
+                )
                 writer.writerow(
                     {
                         "Sample": sample_id,
@@ -320,7 +330,8 @@ rule vep_annotation_gather:
                         "deduper": deduper,
                         "snv_caller": caller,
                         "annotation_tool": "vep",
-                        "vcf_gz": str(path).removesuffix(".tbi"),
+                        "vcf_gz": vcf_gz,
+                        "summary_glob": summary_glob,
                         "status": "ok",
                     }
                 )

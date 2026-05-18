@@ -507,6 +507,58 @@ def test_stage_multiqc_inputs_groups_custom_rows_with_discovered_native_sources(
     }
 
 
+def test_stage_multiqc_inputs_copies_vep_summary_htmls_without_rewriting(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_vep_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    vep_dir = root / "HG001/align/sent/dmd/snv/sentd/vep"
+    final_vcf = vep_dir / "HG001.sent.dmd.sentd.vep.vcf.gz"
+    final_vcf.parent.mkdir(parents=True)
+    final_vcf.write_text("vcf\n", encoding="utf-8")
+    for chrom in ("chr1", "chr2"):
+        summary = vep_dir / "chunks" / chrom / f"HG001.sent.dmd.sentd.{chrom}.vep.vcf.gz_summary.html"
+        summary.parent.mkdir(parents=True)
+        summary.write_text("<html><head><title>VEP summary</title></head></html>\n", encoding="utf-8")
+    custom = root / "other_reports/vep_annotation_mqc.tsv"
+    custom.parent.mkdir(parents=True)
+    custom.write_text(
+        "Sample\tbase_sample\taligner\tdeduper\tsnv_caller\tannotation_tool\tvcf_gz\tsummary_glob\tstatus\n"
+        f"HG001.sent.dmd.sentd\tHG001\tsent\tdmd\tsentd\tvep\t{final_vcf}\t{vep_dir}/chunks/*/HG001.sent.dmd.sentd.*.vep.vcf.gz_summary.html\tok\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, custom)
+    stager.finish()
+
+    assert (
+        out_dir
+        / "native/vep/HG001.sent.dmd.sentd/HG001.sent.dmd.sentd.chr1.vep.vcf.gz_summary.html"
+    ).exists()
+    assert (
+        out_dir
+        / "native/vep/HG001.sent.dmd.sentd/HG001.sent.dmd.sentd.chr2.vep.vcf.gz_summary.html"
+    ).exists()
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        vep_rows = [
+            row
+            for row in csv.DictReader(handle, delimiter="\t")
+            if row["module"] == "vep"
+        ]
+    assert {row["input_kind"] for row in vep_rows} == {"vep_summary_html"}
+    assert {row["Sample"] for row in vep_rows} == {
+        "HG001.sent.dmd.sentd.chr1.vep.vcf.gz",
+        "HG001.sent.dmd.sentd.chr2.vep.vcf.gz",
+    }
+
+
 def test_stage_multiqc_inputs_allows_fastqc_zip_and_html_for_same_read(
     tmp_path: Path,
 ) -> None:
@@ -554,10 +606,18 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     complete.write_text("done\n", encoding="utf-8")
     mosdepth = (
         root
-        / "HG001/align/sent/dmd/alignqc/mosdepth/HG001.sent.dmd.mosdepth.summary.sort.bed"
+        / "HG001/align/sent/dmd/alignqc/mosdepth/HG001.sent.dmd.mosdepth.summary.txt"
     )
     mosdepth.parent.mkdir(parents=True)
     mosdepth.write_text("chrom\tlength\tbases\tmean\n", encoding="utf-8")
+    (mosdepth.parent / "HG001.sent.dmd.mosdepth.global.dist.txt").write_text(
+        "chrom\tstart\tend\tdepth\n",
+        encoding="utf-8",
+    )
+    (mosdepth.parent / "HG001.sent.dmd.mosdepth.region.dist.txt").write_text(
+        "chrom\tstart\tend\tdepth\n",
+        encoding="utf-8",
+    )
     picard_done = (
         root
         / "HG001/align/sent/dmd/alignqc/picard/picard/HG001.sent.dmd.done"
@@ -598,9 +658,9 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     stager.finish()
 
     assert (out_dir / "native/samtools/HG001.sent.dmd.stats.tsv").exists()
-    assert (
-        out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.summary.sort.bed"
-    ).exists()
+    assert (out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.summary.txt").exists()
+    assert (out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.global.dist.txt").exists()
+    assert (out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.region.dist.txt").exists()
     assert (
         out_dir / "native/picard/HG001.sent.dmd.alignment_summary_metrics.txt"
     ).exists()

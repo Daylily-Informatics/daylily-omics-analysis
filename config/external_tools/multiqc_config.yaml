@@ -27,7 +27,9 @@ use_filename_as_sample_name:
 extra_fn_clean_trim:
   - ".snv.sort.vcf.gz.tbi"
   - ".snv.sort.vcf.gz"
-  - ".mosdepth.summary.sort.bed"
+  - ".mosdepth.summary.txt"
+  - ".mosdepth.global.dist.txt"
+  - ".mosdepth.region.dist.txt"
   - ".idxstat.tsv"
   - ".bcfstats.tsv"
   - "_md"
@@ -39,7 +41,6 @@ extra_fn_clean_trim:
   - ".vcf.gz.tbi"
   - ".snv.sort"
   - ".idxstat"
-  - ".mosdepth.summary.sort"
   - ".bcfstats"
   - ".alignment_summary_metrics.txt"
   - ".insert_size_metrics.txt"
@@ -84,6 +85,7 @@ module_order:
   - tiddit_sv
   - giab_sv_concordance
   - peddy_sample_qc
+  - vep
   - vep_annotation
   - htd_calls
   - giab_concordance
@@ -156,6 +158,8 @@ report_section_order:
     order: 4210
   expansionhunter:
     order: 4300
+  vep:
+    order: 4390
   vep_annotation:
     order: 4400
   htd_calls:

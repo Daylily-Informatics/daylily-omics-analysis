@@ -72,7 +72,7 @@ rule cov_aln_qc:
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,

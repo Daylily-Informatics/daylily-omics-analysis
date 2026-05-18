@@ -379,6 +379,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
     assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
     assert "vep_annotation_mqc.tsv" in vep
+    assert "summary_glob" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
     assert '# include: "rules/snpeff.smk"' in snakefile
     assert 'include: "rules/snpeff.smk"' not in [
@@ -454,8 +455,9 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert ".snv.sort" in trim
     assert ".idxstat.tsv" in trim
     assert ".idxstat" in trim
-    assert ".mosdepth.summary.sort.bed" in trim
-    assert ".mosdepth.summary.sort" in trim
+    assert ".mosdepth.summary.txt" in trim
+    assert ".mosdepth.global.dist.txt" in trim
+    assert ".mosdepth.region.dist.txt" in trim
     assert ".bcfstats.tsv" in trim
     for picard_suffix in (
         ".alignment_summary_metrics.txt",
@@ -499,6 +501,7 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert all(entry == entry.strip() for entry in module_order)
     assert "peddy" in module_order
     assert "somalier" in module_order
+    assert "vep" in module_order
     assert "peddy_sample_qc" in module_order
     assert "relatedness" in module_order
     assert "verifyBAMID" not in module_order

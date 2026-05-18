@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import glob
 import re
 import shutil
 from dataclasses import dataclass
@@ -343,6 +344,10 @@ def relative_or_name(source: Path, input_root: Path) -> Path:
 def stage_native_sources_from_custom_row(
     stager: Stager, custom_source: Path, row: dict[str, str]
 ) -> None:
+    if row.get("annotation_tool") == "vep":
+        stage_vep_summary_htmls(stager, row)
+        return
+
     if row.get("peddy_prefix"):
         prefix = Path(row["peddy_prefix"])
         sample = row.get("base_sample") or row.get("Sample", "").split(".")[0]
@@ -390,6 +395,33 @@ def stage_native_sources_from_custom_row(
             module="tiddit",
             input_kind="tiddit_summary",
             group_id=custom_group,
+        )
+
+
+def stage_vep_summary_htmls(stager: Stager, row: dict[str, str]) -> None:
+    summary_glob = row.get("summary_glob", "").strip()
+    if not summary_glob:
+        raise StagingError(
+            "VEP annotation row is missing summary_glob; regenerate vep_annotation_mqc.tsv"
+        )
+    vcf_gz = row.get("vcf_gz", "").strip()
+    if not vcf_gz:
+        raise StagingError("VEP annotation row is missing vcf_gz")
+    vcf_path = Path(vcf_gz)
+    if not vcf_path.is_file():
+        raise StagingError(f"missing VEP VCF for native summary staging: {vcf_path}")
+    parts = parse_variant_parts(vcf_path, "snv")
+    summary_paths = [Path(path) for path in sorted(glob.glob(summary_glob))]
+    if not summary_paths:
+        raise StagingError(f"no VEP summary HTML files matched: {summary_glob}")
+    for summary_path in summary_paths:
+        stager.copy_file(
+            summary_path,
+            Path("native/vep") / parts.stage_sample / summary_path.name,
+            StageParts(sample=summary_path.name.removesuffix("_summary.html"), stage="snv"),
+            module="vep",
+            input_kind="vep_summary_html",
+            group_id=str(summary_path),
         )
 
 
@@ -502,14 +534,21 @@ def stage_qualimap_done(stager: Stager, source: Path) -> None:
 
 def stage_mosdepth_summary(stager: Stager, source: Path) -> None:
     parts = parse_alignment_parts(source)
-    stager.copy_file(
-        source,
-        Path("native/mosdepth") / f"{parts.stage_sample}.mosdepth.summary.sort.bed",
-        parts,
-        module="mosdepth",
-        input_kind="mosdepth_summary",
-        group_id=str(source),
-    )
+    prefix = source.with_name(source.name.removesuffix(".mosdepth.summary.txt"))
+    for suffix, input_kind in (
+        (".mosdepth.summary.txt", "mosdepth_summary"),
+        (".mosdepth.global.dist.txt", "mosdepth_global_dist"),
+        (".mosdepth.region.dist.txt", "mosdepth_region_dist"),
+    ):
+        metric = Path(str(prefix) + suffix)
+        stager.copy_file(
+            metric,
+            Path("native/mosdepth") / metric.name,
+            parts,
+            module="mosdepth",
+            input_kind=input_kind,
+            group_id=str(source),
+        )
 
 
 def stage_goleft_done(stager: Stager, source: Path) -> None:
@@ -670,7 +709,7 @@ def stage_known_input(stager: Stager, source: Path) -> None:
         stage_picard_done(stager, source)
     elif name.endswith(".qmap.done"):
         stage_qualimap_done(stager, source)
-    elif name.endswith(".mosdepth.summary.sort.bed"):
+    elif name.endswith(".mosdepth.summary.txt"):
         stage_mosdepth_summary(stager, source)
     elif name == "goleft.done":
         stage_goleft_done(stager, source)

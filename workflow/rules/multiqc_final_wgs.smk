@@ -84,7 +84,7 @@ def _alignment_qc_native_inputs(wildcards):
     paths.extend(
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
             sample=SSAMPS,
             alnr=alnrs,
             ddup=qddups,
