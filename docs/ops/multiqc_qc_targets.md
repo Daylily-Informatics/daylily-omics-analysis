@@ -26,7 +26,7 @@ multiqc_qc:
     enable_long_running: false
     enable_tools: []
     disable_tools: []
-    include_no_dedup_alignment_qc: true
+    include_no_dedup_alignment_qc: false
     runtime_gate_minutes: 45
 ```
 
@@ -105,9 +105,9 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 `fastp` is intentionally not imported by `workflow/Snakefile` and is not pulled
 into any staged/final `produce_multiqc_*` target.
 
-`include_no_dedup_alignment_qc: true` adds the `na` no-dedup passthrough to
-alignment QC beside configured real dedupers. Set it to `false` when a dry-run
-or smoke fixture cannot produce raw/no-dedup alignment QC.
+`include_no_dedup_alignment_qc: false` keeps alignment QC scoped to configured
+real dedupers. Set it to `true` only when a run explicitly needs the `na`
+no-dedup passthrough beside configured real dedupers.
 
 BCL Convert metrics are not routine defaults because they require a BCL run
 directory and SampleSheet, not the normal post-staging `units.tsv` inputs. With

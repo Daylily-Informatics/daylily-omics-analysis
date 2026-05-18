@@ -55,7 +55,7 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert gate["enable_long_running"] is False
         assert gate["enable_tools"] == []
         assert gate["disable_tools"] == []
-        assert gate["include_no_dedup_alignment_qc"] is True
+        assert gate["include_no_dedup_alignment_qc"] is False
         assert gate["runtime_gate_minutes"] == 45
         assert config["no_dedup"]["env_yaml"] == "../envs/samtools_v0.1.yaml"
         assert "relatedness" in config
@@ -80,6 +80,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "def qc_contamination_dedupers" in common
+    assert 'cfg.get("include_no_dedup_alignment_qc", False)' in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common

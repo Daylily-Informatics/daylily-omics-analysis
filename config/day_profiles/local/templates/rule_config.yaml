@@ -326,7 +326,7 @@ multiqc_qc:
     enable_long_running: false
     enable_tools: []
     disable_tools: []
-    include_no_dedup_alignment_qc: true
+    include_no_dedup_alignment_qc: false
     runtime_gate_minutes: 45
 
 htd_callers: []

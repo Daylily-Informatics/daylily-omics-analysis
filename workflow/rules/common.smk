@@ -361,7 +361,7 @@ def qc_tool_enabled(tool, *, long_running=False, default=True):
 def qc_alignment_dedupers():
     cfg = config.get("multiqc_qc", {})
     ddups = set(DDUP)
-    if _as_boolish(cfg.get("include_no_dedup_alignment_qc", True)):
+    if _as_boolish(cfg.get("include_no_dedup_alignment_qc", False)):
         ddups.add("na")
     return sorted(ddups)
 
