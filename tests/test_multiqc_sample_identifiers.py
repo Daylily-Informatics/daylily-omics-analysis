@@ -321,6 +321,26 @@ def test_multiqc_log_guard_renames_empty_logs_and_rejects_nonempty_logs(
         module.guard_log_dir(log_dir)
 
 
+def test_force_multiqc_dark_mode_backs_up_original_html(tmp_path: Path) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/force_multiqc_dark_mode.py",
+        "force_multiqc_dark_mode_under_test",
+    )
+    html = tmp_path / "DAY_final_multiqc.html"
+    backup = tmp_path / "DAY_final_multiqc.original.html"
+    original = "<html><head><title>MultiQC</title></head><body>report</body></html>"
+    html.write_text(original, encoding="utf-8")
+
+    module.patch_html(html, backup)
+
+    assert backup.read_text(encoding="utf-8") == original
+    patched = html.read_text(encoding="utf-8")
+    assert "data-dayoa-multiqc-dark-mode" in patched
+    assert 'localStorage.setItem("mqc-theme","dark")' in patched
+    assert 'document.documentElement.setAttribute("data-bs-theme","dark")' in patched
+    assert patched.index("<head>") < patched.index("data-dayoa-multiqc-dark-mode")
+
+
 def _write_peddy_csv(prefix: Path, suffix: str, sample: str) -> None:
     path = Path(str(prefix) + suffix)
     path.parent.mkdir(parents=True, exist_ok=True)

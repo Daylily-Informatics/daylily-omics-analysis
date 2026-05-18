@@ -490,6 +490,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         html=f"{MDIR}reports/DAY_final_multiqc.html",
+        html_original=f"{MDIR}reports/DAY_final_multiqc.original.html",
         header=f"{MDIR}reports/multiqc_header.yaml",
     benchmark:
         f"{MDIR}benchmarks/DAY_all.final_multiqc.bench.tsv"
@@ -559,10 +560,13 @@ report_header_info:
         -i '{params.rtitle} Multiqc Report ' \
         -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
         {params.stage_dir:q} >> {log:q} 2>&1;
+        python workflow/scripts/force_multiqc_dark_mode.py \
+          --html {output.html:q} \
+          --backup {output.html_original:q} >> {log:q} 2>&1;
         python workflow/scripts/validate_multiqc_sample_ids.py \
           --manifest {input.stage_manifest:q} \
           --multiqc-data {params.data_json:q} >> {log:q} 2>&1;
-        ls -lt {output.html:q} {output.header:q} >> {log:q} 2>&1;
+        ls -lt {output.html:q} {output.html_original:q} {output.header:q} >> {log:q} 2>&1;
         """
 
 

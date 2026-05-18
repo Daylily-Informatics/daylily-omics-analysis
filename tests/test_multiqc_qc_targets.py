@@ -247,6 +247,9 @@ def test_multiqc_ignores_other_report_logs_and_custom_logs_avoid_mqc_suffix() ->
     assert text.count("multiqc --version") >= 4
     assert "docker://multiqc/multiqc:v1.35" in text
     assert "daylilyinformatics/daylily_multiqc:0.2" not in text
+    assert "workflow/scripts/force_multiqc_dark_mode.py" in text
+    assert "DAY_final_multiqc.original.html" in text
+    assert "--backup {output.html_original:q}" in text
     assert "sequence_qc_outputs_custom_data.log" in text
     assert "alignment_qc_outputs_custom_data.log" in text
     assert "sequence_qc_outputs_mqc.log" not in text
