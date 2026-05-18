@@ -145,77 +145,107 @@ test_day_run_exists() {
   test_result "day-run exists and is executable" $?
 }
 
-# Test 11: day-set-genome-build script exists (sourced, not executed)
+# Test 11: day-run reports package version without requiring activation
+test_day_run_version() {
+  local expected
+  local exit_code
+
+  expected=$(python -c 'from importlib.metadata import version; print("daylily-omics-analysis " + version("daylily-omics-analysis"))')
+  bin/day_run --version > /tmp/test_day_run_version.txt 2>&1
+  exit_code=$?
+
+  if [[ $exit_code -eq 0 ]] && grep -qx "$expected" /tmp/test_day_run_version.txt; then
+    exit_code=0
+  else
+    exit_code=1
+  fi
+
+  test_result "day-run --version" $exit_code
+}
+
+# Test 12: day-set-genome-build script exists (sourced, not executed)
 test_day_set_genome_build_exists() {
   [[ -f bin/day_set_genome_build ]]
   test_result "day-set-genome-build exists" $?
 }
 
-# Test 12: day-deactivate script exists (sourced, not executed)
+# Test 13: day-deactivate script exists (sourced, not executed)
 test_day_deactivate_exists() {
   [[ -f bin/day_deactivate ]]
   test_result "day-deactivate exists" $?
 }
 
-# Test 13: dyoainit defines day-monitor alias
+# Test 14: dyoainit defines day-monitor alias
 test_dyoainit_monitor_alias() {
   grep -q 'alias day-monitor="bin/day_monitor"' dyoainit
   test_result "dyoainit defines day-monitor alias" $?
 }
 
-# Test 14: dyoainit defines dy-m alias
+# Test 15: dyoainit defines dy-m alias
 test_dyoainit_dy_m_alias() {
   grep -q 'alias dy-m="bin/day_monitor"' dyoainit
   test_result "dyoainit defines dy-m alias" $?
 }
 
-# Test 15: tabcomp.bash has monitor completion
+# Test 16: tabcomp.bash has monitor completion
 test_tabcomp_monitor_completion() {
   grep -q '_dym()' bin/tabcomp.bash
   test_result "tabcomp.bash has monitor completion function" $?
 }
 
-# Test 16: tabcomp.bash registers monitor completion
+# Test 17: tabcomp.bash registers monitor completion
 test_tabcomp_monitor_registration() {
   grep -q 'complete -F _dym day-monitor dy-m' bin/tabcomp.bash
   test_result "tabcomp.bash registers monitor completion" $?
 }
 
-# Test 17: day-monitor script is valid bash
+# Test 18: tabcomp.bash includes day-run --version completion
+test_tabcomp_day_run_version_completion() {
+  grep -q -- '--version' bin/tabcomp.bash
+  test_result "tabcomp.bash completes day-run --version" $?
+}
+
+# Test 19: day-monitor script is valid bash
 test_day_monitor_bash_syntax() {
   bash -n bin/day_monitor 2>&1
   test_result "day-monitor has valid bash syntax" $?
 }
 
-# Test 18: day-activate script is valid bash
+# Test 20: day-activate script is valid bash
 test_day_activate_bash_syntax() {
   bash -n bin/day_activate 2>&1
   test_result "day-activate has valid bash syntax" $?
 }
 
-# Test 19: day-run script is valid bash
+# Test 21: day-run script is valid bash
 test_day_run_bash_syntax() {
   bash -n bin/day_run 2>&1
   test_result "day-run has valid bash syntax" $?
 }
 
-# Test 20: AGENTS.md documents monitor command
+# Test 22: AGENTS.md documents monitor command
 test_agents_md_monitor_docs() {
   grep -q "Log Locations for SLURM-based Workflows" AGENTS.md
   test_result "AGENTS.md documents SLURM log locations" $?
 }
 
-# Test 21: AGENTS.md documents SSM-only headnode access
+# Test 23: AGENTS.md documents SSM-only headnode access
 test_agents_md_ssm_docs() {
   grep -q "SSM is the only supported access model" AGENTS.md &&
     grep -q "Do not use direct SSH" AGENTS.md
   test_result "AGENTS.md documents SSM-only headnode access" $?
 }
 
-# Test 22: dycli.md documents monitor command
+# Test 24: dycli.md documents monitor command
 test_dycli_md_monitor_docs() {
   grep -q "day-monitor" docs/ops/dycli.md
   test_result "dycli.md documents day-monitor command" $?
+}
+
+# Test 25: dycli.md documents day-run --version
+test_dycli_md_version_docs() {
+  grep -q -- '--version' docs/ops/dycli.md
+  test_result "dycli.md documents day-run --version" $?
 }
 
 # Main test execution
@@ -236,18 +266,21 @@ main() {
   test_day_monitor_block_and_poll_waits
   test_day_activate_exists
   test_day_run_exists
+  test_day_run_version
   test_day_set_genome_build_exists
   test_day_deactivate_exists
   test_dyoainit_monitor_alias
   test_dyoainit_dy_m_alias
   test_tabcomp_monitor_completion
   test_tabcomp_monitor_registration
+  test_tabcomp_day_run_version_completion
   test_day_monitor_bash_syntax
   test_day_activate_bash_syntax
   test_day_run_bash_syntax
   test_agents_md_monitor_docs
   test_agents_md_ssm_docs
   test_dycli_md_monitor_docs
+  test_dycli_md_version_docs
   
   echo ""
   echo "=========================================="
