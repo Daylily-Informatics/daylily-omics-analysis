@@ -1,5 +1,6 @@
 from snakemake.utils import validate
 from snakemake.exceptions import WorkflowError
+import importlib.util
 import csv
 import re
 import os
@@ -1156,6 +1157,57 @@ def _clean_component(value):
     return re.sub(r"\s+", "", value)
 
 
+def _load_fastq_path_list_helpers():
+    helper_path = os.path.join("workflow", "scripts", "fastq_path_lists.py")
+    if not os.path.exists(helper_path):
+        raise WorkflowError(f"Missing FASTQ path list helper: {helper_path}")
+    spec = importlib.util.spec_from_file_location(
+        "dayoa_fastq_path_lists", helper_path
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_fastq_path_lists = _load_fastq_path_list_helpers()
+
+
+def _split_fastq_path_list(value):
+    try:
+        return _fastq_path_lists.split_fastq_path_list(_clean_component(value))
+    except ValueError as exc:
+        raise WorkflowError(str(exc))
+
+
+def _paired_fastq_path_lists(r1_value, r2_value, *, context, require_r2=True):
+    try:
+        r1_paths, r2_paths = _fastq_path_lists.paired_fastq_path_lists(
+            _clean_component(r1_value),
+            _clean_component(r2_value),
+            context=context,
+            require_r2=require_r2,
+        )
+    except ValueError as exc:
+        raise WorkflowError(str(exc))
+    return r1_paths, r2_paths
+
+
+def _row_fastq_path_lists(row, *, require_r2=True):
+    return _paired_fastq_path_lists(
+        row.get("r1_path", ""),
+        row.get("r2_path", ""),
+        context=f"analysis unit {row.get('analysis_unit_uid', 'unknown')}",
+        require_r2=require_r2,
+    )
+
+
+def _row_uses_direct_fastq_list(row):
+    return (
+        len(_split_fastq_path_list(row.get("r1_path", ""))) > 1
+        or len(_split_fastq_path_list(row.get("r2_path", ""))) > 1
+    )
+
+
 def _is_ont_fastq_unit(row):
     ont_r1_path = _clean_component(row.get("ONT_R1_PATH", "")).lower()
     return (
@@ -1230,6 +1282,13 @@ def _select_reads(row):
         r1_path = _clean_component(row.get(r1, ""))
         r2_path = _clean_component(row.get(r2, ""))
         if r1_path:
+            require_r2 = r1 != "ONT_R1_PATH"
+            _paired_fastq_path_lists(
+                r1_path,
+                r2_path,
+                context=f"analysis unit {row['analysis_unit_uid']} {r1}/{r2}",
+                require_r2=require_r2,
+            )
             return r1_path, r2_path if r2_path else "na"
 
     # Check for CRAM/BAM-only samples (Ultima, ONT, PacBio, Roche)
@@ -1354,10 +1413,11 @@ config["samp_fq_size"] = {}
 for s in samples["sample"]:
     if s not in config["samp_fq_size"]:
         config["samp_fq_size"][s] = 0.0
-        for r1f in samples.loc[s, ("r1_path")]:
-            if r1f in ["","na", None]:
-                pass
-            else:
+        r1_entries = samples.loc[s, ("r1_path")]
+        if isinstance(r1_entries, str):
+            r1_entries = [r1_entries]
+        for r1f_entry in r1_entries:
+            for r1f in _split_fastq_path_list(r1f_entry):
                 try:
                     config["samp_fq_size"][s] += float(
                         float(os.path.getsize(r1f)) / 1000000000.0
@@ -1642,29 +1702,35 @@ def get_fastq_r1(wildcards):
 
 def get_raw_R1s(wildcards):
     r1s = []
-    for i in samples[samples["sample"] == wildcards.sample][
-        "r1_path"
-    ]:  # .loc[wildcards.sample, "sample_lane"]['sample_lane']:
-        r1s.append(i)
-    return sorted(r1s)
+    for r1_path in samples[samples["sample"] == wildcards.sample]["r1_path"]:
+        r1s.extend(_split_fastq_path_list(r1_path))
+    return r1s
 
 
 def get_raw_R2s(wildcards):
     r2s = []
-    for i in samples[samples["sample"] == wildcards.sample][
-        "r2_path"
-    ]:  # .loc[wildcards.sample, "sample_lane"]:
-        r2s.append(i)
-    return sorted(r2s)
+    for r2_path in samples[samples["sample"] == wildcards.sample]["r2_path"]:
+        r2s.extend(_split_fastq_path_list(r2_path))
+    return r2s
 
 
 def _fastq_qc_pairs(sample):
     pairs = []
     for _, row in samples[samples["sample"] == sample].iterrows():
-        r1 = _clean_component(row.get("r1_path", ""))
-        r2 = _clean_component(row.get("r2_path", ""))
-        if r1 and r2:
-            pairs.append((os.path.abspath(r1), os.path.abspath(r2)))
+        r1_paths = _split_fastq_path_list(row.get("r1_path", ""))
+        r2_paths = _split_fastq_path_list(row.get("r2_path", ""))
+        if not r1_paths or not r2_paths:
+            continue
+        if len(r1_paths) != len(r2_paths):
+            raise WorkflowError(
+                f"analysis unit {row.get('analysis_unit_uid', 'unknown')}: "
+                f"R1 and R2 path lists must have the same number of entries "
+                f"(R1={len(r1_paths)}, R2={len(r2_paths)})"
+            )
+        pairs.extend(
+            (os.path.abspath(r1), os.path.abspath(r2))
+            for r1, r2 in zip(r1_paths, r2_paths)
+        )
     return pairs
 
 
@@ -1673,11 +1739,11 @@ def sample_has_fastq_qc_inputs(sample):
 
 
 def get_raw_fastq_qc_R1s(wildcards):
-    return sorted(r1 for r1, _r2 in _fastq_qc_pairs(wildcards.sample))
+    return [r1 for r1, _r2 in _fastq_qc_pairs(wildcards.sample)]
 
 
 def get_raw_fastq_qc_R2s(wildcards):
-    return sorted(r2 for _r1, r2 in _fastq_qc_pairs(wildcards.sample))
+    return [r2 for _r1, r2 in _fastq_qc_pairs(wildcards.sample)]
 
 
 def get_fastq_r1_r2(wildcards):
@@ -1759,20 +1825,26 @@ def get_normal_sample(wildcards):
 SAMP_SAMPI_INDEX = list(samples.index)  # deprecate
 RR = ["R1", "R2"]
 
+
+def _alignment_fastq_inputs(wildcards, mate):
+    paths = []
+    for _, row in samples[samples["sample"] == wildcards.sample].iterrows():
+        r1s, r2s = _row_fastq_path_lists(row, require_r2=False)
+        if _row_uses_direct_fastq_list(row):
+            paths.extend(r1s if mate == "R1" else r2s)
+            continue
+        paths.append(
+            f"{MDIR}{wildcards.sample}/{row['sample_lane']}.{mate}.fastq.gz"
+        )
+    return paths
+
+
 def getR2s(wildcards):
-    fr2s = []
-    for sample_lane in samples.loc[wildcards.sample, "sample_lane"]:
-        r2 = f"{MDIR}{wildcards.sample}/{sample_lane}.R2.fastq.gz"
-        fr2s.append(r2)
-    return sorted(fr2s)
+    return _alignment_fastq_inputs(wildcards, "R2")
 
 
 def getR1s(wildcards):
-    fr1s = []
-    for sample_lane in samples.loc[wildcards.sample, "sample_lane"]:
-        r1 = f"{MDIR}{wildcards.sample}/{sample_lane}.R1.fastq.gz"
-        fr1s.append(r1)
-    return sorted(fr1s)
+    return _alignment_fastq_inputs(wildcards, "R1")
 
 def getCRAMs(wildcards):
     crams = []
@@ -1786,15 +1858,15 @@ def getCRAMs(wildcards):
 def getR2sS(wildcards):
     fr2s = []
     for r2 in samples[samples["analysis_unit_uid"] == wildcards.sample]["r2_path"]:
-        fr2s.append(r2)
-    return sorted(fr2s)
+        fr2s.extend(_split_fastq_path_list(r2))
+    return fr2s
 
 
 def getR1sS(wildcards):
     fr1s = []
     for r1 in samples[samples["analysis_unit_uid"] == wildcards.sample]["r1_path"]:
-        fr1s.append(r1)
-    return sorted(fr1s)
+        fr1s.extend(_split_fastq_path_list(r1))
+    return fr1s
 
 
 # Call from params block to get sample ID back, without() wildcards (and others ) are added automatically if no () is included.

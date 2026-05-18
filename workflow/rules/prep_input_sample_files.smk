@@ -343,8 +343,17 @@ else:
         # Fetch and stage our input data, but only as links. deal with fastqs seperately until BAM creation
 
         def get_fqs(wildcards):
-            r1=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['r1_path'][0]) #os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r1_path"])
-            r2=os.path.abspath(samples[samples['sample_lane'] == wildcards.sample]['r2_path'][0])
+            row = samples[samples['sample_lane'] == wildcards.sample].iloc[0]
+            r1s = _split_fastq_path_list(row.get('r1_path', ''))
+            r2s = _split_fastq_path_list(row.get('r2_path', ''))
+            if len(r1s) != 1 or len(r2s) != 1:
+                raise WorkflowError(
+                    "pre_prep_raw_fq does not stage comma-separated FASTQ lists; "
+                    f"analysis unit {wildcards.sample} has R1={len(r1s)} R2={len(r2s)}. "
+                    "These inputs are consumed directly by alignment and sequence QC rules."
+                )
+            r1 = os.path.abspath(r1s[0]) #os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r1_path"])
+            r2 = os.path.abspath(r2s[0])
             #r2=os.path.abspath(samples.loc[(wildcards.sample, wildcards.sample_lane), "r2_path"])
             return [r1, r2]
 

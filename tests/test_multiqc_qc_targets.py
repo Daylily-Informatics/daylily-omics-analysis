@@ -169,13 +169,16 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
 
     assert "bench=MDIR" not in fastp
     assert ": > {log.a};" in fastp
-    assert "{sample}.R1.fastq.gz" in fastqc
-    assert "{sample}.R2.fastq.gz" in fastqc
+    assert 'lane_suffix=".${{lane_idx}}"' in fastqc
+    assert "${{sample_name}}.R1${{lane_suffix}}.fastq.gz" in fastqc
+    assert "${{sample_name}}.R2${{lane_suffix}}.fastq.gz" in fastqc
     assert "get_raw_fastq_qc_R1s" in fastqc
     assert "get_raw_fastq_qc_R2s" in fastqc
     assert "SKIP: fastqc_subsampled found no paired FASTQ inputs" in fastqc
     assert "sample=FASTQ_QC_SAMPS" in fastqc
-    assert "{params.r1_link:q} {params.r2_link:q}" in fastqc
+    assert "fastqc_inputs=()" in fastqc
+    assert "fastqc_subsampled requires matched R1/R2 FASTQ counts" in fastqc
+    assert "expects exactly one R1 and one R2" not in fastqc
     assert "get_raw_fastq_qc_R1s" in seqfu
     assert "sample=FASTQ_QC_SAMPS" in seqfu
     assert "SKIP: seqfu found no paired FASTQ inputs" in seqfu
