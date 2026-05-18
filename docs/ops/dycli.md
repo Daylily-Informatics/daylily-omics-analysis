@@ -42,6 +42,7 @@ Use `dy-a local hg38` for local debugging and smoke tests.
 | `--keep-incomplete` | Keep failed partial outputs for debugging. |
 | `--keep-temp` | Daylily convenience flag translated by `bin/day_run` to Snakemake `--notemp`. |
 | `--config key=value` | Override workflow config. Lists are commonly passed as `aligners=[sent]`. |
+| `--version` | Print the installed `daylily-omics-analysis` package version and exit. |
 
 `bin/day_run` records invocations in `day_cmd.log`.
 

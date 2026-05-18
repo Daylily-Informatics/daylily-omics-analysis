@@ -2,6 +2,10 @@
 
 export SNAKEMAKE_SINGULARITY_CMD="apptainer"
 
+if [[ "${1:-}" == "--version" ]]; then
+    python -c 'from importlib.metadata import version; print("daylily-omics-analysis " + version("daylily-omics-analysis"))'
+    exit $?
+fi
 
 timestamp=$(date +%Y%m%d%H%M%S);
 
