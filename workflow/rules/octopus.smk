@@ -1,4 +1,3 @@
-import sys
 import os
 
 ##### OCTOPUS- OUR snv CALLER
@@ -16,21 +15,11 @@ config["snv_pos_samps"] = {}
 def get_ploidy(wildcards):
 
     ploidy_str = " "
-    try:
-        if config["sample_info"][wildcards.sample]["biological_sex"].lower() in [
-            "male",
-            "m",
-        ]:
-            ploidy_str = ploidy_str + " --contig-ploidies X=1 Y=1 "
-        elif config["sample_info"][wildcards.sample]["biological_sex"].lower() in [
-            "female",
-            "f",
-        ]:
-            ploidy_str = ploidy_str + " --contig-ploidies X=2 Y=0 "
-        else:
-            ploidy_str = ploidy_str + " --contig-ploidies X=2 Y=1 "
-    except Exception as e:
-        print(e, file=sys.stderr)
+    bio_sex = sample_sex_for_required_tool(wildcards, "Octopus")
+    if bio_sex == "male":
+        ploidy_str = ploidy_str + " --contig-ploidies X=1 Y=1 "
+    else:
+        ploidy_str = ploidy_str + " --contig-ploidies X=2 Y=0 "
 
     return " "  # ploidy_str
 

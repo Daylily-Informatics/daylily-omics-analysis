@@ -110,12 +110,25 @@ rule relatedness_batch_somalier_extract:
         r"""
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        rm -f {output:q}
+        tmp_dir="$(mktemp -d "$(dirname {output:q})/.somalier_extract.XXXXXX")"
+        cleanup() {{
+            rm -rf "$tmp_dir"
+        }}
+        trap cleanup EXIT
         somalier extract \
           --sites {params.sites:q} \
           --fasta {params.ref:q} \
-          --out-dir {params.out_dir:q} \
+          --out-dir "$tmp_dir" \
           {input.cram:q} \
           > {log:q} 2>&1
+        mapfile -t somalier_outputs < <(find "$tmp_dir" -maxdepth 1 -type f -name "*.somalier" | sort)
+        if [ "${{#somalier_outputs[@]}}" -ne 1 ]; then
+            echo "ERROR: expected exactly one somalier extract output in $tmp_dir, found ${{#somalier_outputs[@]}}" >> {log:q}
+            printf '%s\n' "${{somalier_outputs[@]}}" >> {log:q}
+            exit 2
+        fi
+        mv "${{somalier_outputs[0]}}" {output:q}
         test -s {output:q}
         """
 
@@ -124,6 +137,7 @@ rule relatedness_batch_somalier_relate:
     input:
         _relatedness_extract_paths
     output:
+        samples=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.samples.tsv",
         pairs=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.pairs.tsv",
         groups=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.groups.tsv",
         html=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.html",
@@ -145,6 +159,7 @@ rule relatedness_batch_somalier_relate:
         mkdir -p $(dirname {output.pairs:q}) $(dirname {log:q})
         if [ {params.sample_count} -lt 2 ]; then
             printf "sample_a\tsample_b\trelatedness\tibs0\n" > {output.pairs:q}
+            printf "sample_id\tgroup\n" > {output.samples:q}
             printf "sample_id\tgroup\n" > {output.groups:q}
             printf "<html><body><h1>Relatedness QC</h1><p>No pairs available.</p></body></html>\n" > {output.html:q}
         else
@@ -152,6 +167,7 @@ rule relatedness_batch_somalier_relate:
         fi
         test -s {output.pairs:q}
         test -s {output.groups:q}
+        test -s {output.samples:q}
         test -s {output.html:q}
         """
 

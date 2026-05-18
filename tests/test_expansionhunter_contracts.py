@@ -263,14 +263,19 @@ def test_expansionhunter_rule_routes_supported_short_read_platforms() -> None:
     assert not re.search(r"['\"]pb['\"]", rule_text)
 
 
-def test_expansionhunter_rule_hard_fails_when_sample_sex_is_missing() -> None:
+def test_expansionhunter_rule_defaults_invalid_sample_sex_to_male_and_logs() -> None:
     rule_text = _read_text(EXPANSIONHUNTER_RULE)
+    common_text = _read_text(REPO_ROOT / "workflow" / "rules" / "common.smk")
     sex_section = rule_text.lower()
 
     assert "--sex" in rule_text
     assert "sample_sex" in sex_section or "sex" in sex_section
-    assert any(token in sex_section for token in ("raise", "valueerror", "systemexit"))
-    assert any(token in sex_section for token in ("unknown", "missing", "not set", "required"))
+    assert "sample_sex_for_required_tool(wildcards, \"ExpansionHunter\")" in rule_text
+    assert "sample_sex_assumption_log(" in rule_text
+    assert "printf '%s' {params.sex_assumption_log:q} >> {log:q}" in rule_text
+    assert "requires biological sex for sample" not in rule_text
+    assert "VALID_REQUIRED_SAMPLE_SEXES" in common_text
+    assert 'return "male"' in common_text
     assert "default=\"female\"" not in sex_section
     assert "get(\"sex\", \"female\")" not in sex_section
     assert "get('sex', 'female')" not in sex_section

@@ -15,10 +15,21 @@ sample_names_replace:
   "_FR$": ""
   "^(.*)-([A-Za-z0-9_]+)-(dmd|smd|spmd|na)-cram$": "\\1.\\2.\\3"
 
+use_filename_as_sample_name:
+  - fastqc
+  - samtools
+  - picard
+  - qualimap
+  - mosdepth
+  - verifybamid
+  - bcftools
+
 extra_fn_clean_trim:
   - ".snv.sort.vcf.gz.tbi"
   - ".snv.sort.vcf.gz"
-  - ".mosdepth.summary.sort.bed"
+  - ".mosdepth.summary.txt"
+  - ".mosdepth.global.dist.txt"
+  - ".mosdepth.region.dist.txt"
   - ".idxstat.tsv"
   - ".bcfstats.tsv"
   - "_md"
@@ -30,7 +41,6 @@ extra_fn_clean_trim:
   - ".vcf.gz.tbi"
   - ".snv.sort"
   - ".idxstat"
-  - ".mosdepth.summary.sort"
   - ".bcfstats"
   - ".alignment_summary_metrics.txt"
   - ".insert_size_metrics.txt"
@@ -38,6 +48,13 @@ extra_fn_clean_trim:
   - ".quality_distribution_metrics.txt"
   - ".gc_bias.summary_metrics.txt"
   - ".gc_bias.detail_metrics.txt"
+  - ".rtg.vcfstats.txt"
+  - ".verifybamid.selfSM"
+  - ".peddy.sex_check.csv"
+  - ".peddy.het_check.csv"
+  - ".peddy.ped_check.csv"
+  - ".legacy_compat.bam"
+  - ".legacy_compat.bam.bai"
 
 
 module_order:
@@ -54,8 +71,7 @@ module_order:
   - peddy
   - somalier
   - vcftools
-  - kat
-  - custom_content 
+  - custom_content
   - sequence_qc_outputs
   - alignment_qc_outputs
   - expansionhunter
@@ -67,15 +83,90 @@ module_order:
   - bcftools_variant_stats
   - rtg_vcfstats
   - tiddit_sv
+  - giab_sv_concordance
   - peddy_sample_qc
+  - vep
   - vep_annotation
-  - snpeff_annotation
   - htd_calls
   - giab_concordance
   - norm_cov_evenness_combo
   - rules_benchmark_data
   - alignstats_combo
-  
+
+report_section_order:
+  fastqc:
+    order: 1000
+  seqfu:
+    order: 1100
+  sequence_qc_outputs:
+    order: 1200
+  bclconvert_demux:
+    order: 1300
+  bclconvert_lane_summary:
+    order: 1310
+  bclconvert_fastq_manifest:
+    order: 1320
+  bclconvert_unknown_barcodes:
+    order: 1330
+  bclconvert_index_hopping:
+    order: 1340
+  samtools:
+    order: 2000
+  picard:
+    order: 2100
+  qualimap:
+    order: 2200
+  mosdepth:
+    order: 2300
+  goleft_indexcov:
+    order: 2400
+  alignment_qc_outputs:
+    order: 2500
+  alignstats_combo:
+    order: 2600
+  norm_cov_evenness_combo:
+    order: 2700
+  verifybamid:
+    order: 3000
+  contamination:
+    order: 3010
+  verifybamid2_panel_comparison:
+    order: 3020
+  site_mix_contam:
+    order: 3030
+  site_mix_donor:
+    order: 3040
+  peddy:
+    order: 3100
+  peddy_sample_qc:
+    order: 3110
+  somalier:
+    order: 3200
+  relatedness:
+    order: 3210
+  bcftools:
+    order: 4000
+  bcftools_variant_stats:
+    order: 4010
+  rtg_vcfstats:
+    order: 4020
+  tiddit_sv:
+    order: 4100
+  giab_concordance:
+    order: 4200
+  giab_sv_concordance:
+    order: 4210
+  expansionhunter:
+    order: 4300
+  vep:
+    order: 4390
+  vep_annotation:
+    order: 4400
+  htd_calls:
+    order: 4500
+  rules_benchmark_data:
+    order: 9000
+
 table_columns_visible:
   verifybamid-FREEMIX: True
   fastqc-percent_duplicates: True
@@ -137,15 +228,30 @@ custom_data:
   giab_concordance:
     id: 'giab_concordance'
     section_name: 'Controls Concordance Report'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Concordance Stats For The GIAB HC Regions For This Sample'
     file_format: 'tsv'
     plot_type: 'table'
     pconfig:
       id: 'giab_concordance'
       format: "{:.4f}"
+  giab_sv_concordance:
+    id: 'giab_sv_concordance'
+    section_name: 'SV Controls Concordance Report'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
+    description: 'Truvari structural variant concordance stats for explicitly configured GIAB SV truth regions'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'giab_sv_concordance'
+      format: "{:.4f}"
   norm_cov_evenness_combo:
     id: 'norm_cov_evenness_combo'
     section_name: 'Coverage Eveness Metrics'
+    parent_id: 'dayoa_alignment_coverage'
+    parent_name: 'Alignment, BAM/CRAM, dedup, coverage'
     description: 'Coverage Eveness Metrics'
     file_format: 'tsv'
     plot_type: 'table'
@@ -157,6 +263,8 @@ custom_data:
   rules_benchmark_data:
     id: 'rules_benchmark_data'
     section_name: 'Task Benchmark Performances'
+    parent_id: 'dayoa_workflow_reporting'
+    parent_name: 'Proteomics, workflow, misc'
     description: 'Workflow Task Benchmark Results'
     file_format: 'tsv'
     plot_type: 'table'
@@ -165,6 +273,8 @@ custom_data:
   alignstats_combo:
     id: 'alignstats_combo'
     section_name: 'Alignstats Data'
+    parent_id: 'dayoa_alignment_coverage'
+    parent_name: 'Alignment, BAM/CRAM, dedup, coverage'
     description: 'Alignstats Data'
     file_format: 'tsv'
     plot_type: 'table'
@@ -173,6 +283,8 @@ custom_data:
   expansionhunter:
     id: 'expansionhunter'
     section_name: 'ExpansionHunter STR Report'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Disease-locus short tandem repeat calls from ExpansionHunter and STRchive annotations'
     file_format: 'tsv'
     plot_type: 'table'
@@ -181,6 +293,8 @@ custom_data:
   seqfu:
     id: 'seqfu'
     section_name: 'SeqFu FASTQ Inputs'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'SeqFu FASTQ statistics files included in this batch'
     file_format: 'tsv'
     plot_type: 'table'
@@ -189,6 +303,8 @@ custom_data:
   sequence_qc_outputs:
     id: 'sequence_qc_outputs'
     section_name: 'Sequence QC Output Inventory'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'Custom-data inventory for sequence QC outputs that may otherwise rely on native MultiQC discovery'
     file_format: 'tsv'
     plot_type: 'table'
@@ -197,6 +313,8 @@ custom_data:
   bclconvert_demux:
     id: 'bclconvert_demux'
     section_name: 'BCL Convert Demultiplex Stats'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'Per-run, per-lane, per-sample BCL Convert demultiplexing statistics'
     file_format: 'tsv'
     plot_type: 'table'
@@ -205,6 +323,8 @@ custom_data:
   bclconvert_lane_summary:
     id: 'bclconvert_lane_summary'
     section_name: 'BCL Convert Lane Summary'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'Lane-level BCL Convert read, index-match, undetermined, and barcode summary metrics'
     file_format: 'tsv'
     plot_type: 'table'
@@ -213,6 +333,8 @@ custom_data:
   bclconvert_fastq_manifest:
     id: 'bclconvert_fastq_manifest'
     section_name: 'BCL Convert FASTQ Manifest'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'FASTQ files produced by BCL Convert and exposed for downstream Daylily units generation'
     file_format: 'tsv'
     plot_type: 'table'
@@ -221,6 +343,8 @@ custom_data:
   bclconvert_unknown_barcodes:
     id: 'bclconvert_unknown_barcodes'
     section_name: 'BCL Convert Unknown Barcodes'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'Top unknown barcode rows reported by BCL Convert'
     file_format: 'tsv'
     plot_type: 'table'
@@ -229,6 +353,8 @@ custom_data:
   bclconvert_index_hopping:
     id: 'bclconvert_index_hopping'
     section_name: 'BCL Convert Index Hopping'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
     description: 'Index hopping counts reported by BCL Convert when present'
     file_format: 'tsv'
     plot_type: 'table'
@@ -237,6 +363,8 @@ custom_data:
   alignment_qc_outputs:
     id: 'alignment_qc_outputs'
     section_name: 'Alignment QC Output Inventory'
+    parent_id: 'dayoa_alignment_coverage'
+    parent_name: 'Alignment, BAM/CRAM, dedup, coverage'
     description: 'Custom-data inventory for alignment QC outputs that may otherwise rely on native MultiQC discovery'
     file_format: 'tsv'
     plot_type: 'table'
@@ -245,6 +373,8 @@ custom_data:
   contamination:
     id: 'contamination'
     section_name: 'Contamination Estimates'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'VerifyBamID2, GATK, and genotype-free site-mix contamination estimates'
     file_format: 'tsv'
     plot_type: 'table'
@@ -253,6 +383,8 @@ custom_data:
   verifybamid2_panel_comparison:
     id: 'verifybamid2_panel_comparison'
     section_name: 'VerifyBamID2 SNP Panel Comparison'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Panel-aware VerifyBamID2 contamination estimates and runtime fields'
     file_format: 'tsv'
     plot_type: 'table'
@@ -261,6 +393,8 @@ custom_data:
   site_mix_contam:
     id: 'site_mix_contam'
     section_name: 'Genotype-Free Site-Mix Contamination'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Target-genotype-free same-species contamination estimates'
     file_format: 'tsv'
     plot_type: 'table'
@@ -269,6 +403,8 @@ custom_data:
   site_mix_donor:
     id: 'site_mix_donor'
     section_name: 'Site-Mix Donor Attribution'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Optional source attribution from the genotype-free contamination estimator'
     file_format: 'tsv'
     plot_type: 'table'
@@ -277,6 +413,8 @@ custom_data:
   relatedness:
     id: 'relatedness'
     section_name: 'Batch Relatedness'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Somalier relatedness classification summary'
     file_format: 'tsv'
     plot_type: 'table'
@@ -285,6 +423,8 @@ custom_data:
   bcftools_variant_stats:
     id: 'bcftools_variant_stats'
     section_name: 'bcftools Variant Stats'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Small variant count summaries from bcftools stats'
     file_format: 'tsv'
     plot_type: 'table'
@@ -293,6 +433,8 @@ custom_data:
   rtg_vcfstats:
     id: 'rtg_vcfstats'
     section_name: 'RTG VCF Stats'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'RTG vcfstats outputs included in this batch'
     file_format: 'tsv'
     plot_type: 'table'
@@ -301,6 +443,8 @@ custom_data:
   tiddit_sv:
     id: 'tiddit_sv'
     section_name: 'TIDDIT SV Summary'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Summary counts for selected TIDDIT structural variant VCFs'
     file_format: 'tsv'
     plot_type: 'table'
@@ -309,6 +453,8 @@ custom_data:
   peddy_sample_qc:
     id: 'peddy_sample_qc'
     section_name: 'Peddy Sample QC'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Peddy sex, heterozygosity, and pedigree output summary'
     file_format: 'tsv'
     plot_type: 'table'
@@ -317,22 +463,18 @@ custom_data:
   vep_annotation:
     id: 'vep_annotation'
     section_name: 'VEP Annotation Outputs'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'VEP annotation outputs when optional annotation QC is enabled'
     file_format: 'tsv'
     plot_type: 'table'
     pconfig:
       id: 'vep_annotation'
-  snpeff_annotation:
-    id: 'snpeff_annotation'
-    section_name: 'SnpEff Annotation Outputs'
-    description: 'SnpEff annotation outputs when optional annotation QC is enabled'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'snpeff_annotation'
   htd_calls:
     id: 'htd_calls'
     section_name: 'HTD Caller Outputs'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
     description: 'Selected hard-to-detect-region caller outputs'
     file_format: 'tsv'
     plot_type: 'table'
@@ -341,6 +483,8 @@ custom_data:
   alignstats_gs:
     id: 'alignstats_gs'
     section_name: 'alignstats_gs'
+    parent_id: 'dayoa_alignment_coverage'
+    parent_name: 'Alignment, BAM/CRAM, dedup, coverage'
     description: 'Alignstats for Summary Table'
     file_format: 'tsv'
     plot_type: 'generalstats'
@@ -363,6 +507,8 @@ custom_data:
 sp:
   giab_concordance:
     fn: "other_reports/giab_concordance_mqc.tsv"
+  giab_sv_concordance:
+    fn: "other_reports/giab_sv_concordance_mqc.tsv"
   norm_cov_evenness_combo:
     fn: "other_reports/norm_cov_evenness_combo_mqc.tsv"
   rules_benchmark_data:
@@ -407,101 +553,9 @@ sp:
     fn: "other_reports/peddy_sample_qc_mqc.tsv"
   vep_annotation:
     fn: "other_reports/vep_annotation_mqc.tsv"
-  snpeff_annotation:
-    fn: "other_reports/snpeff_annotation_mqc.tsv"
   htd_calls:
     fn: "other_reports/htd_calls_mqc.tsv"
   alignstats_gs:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 
-exclude_modules:
-  - slamdunk
-  - adapterRemoval
-  - rseqc
-  - sambamba
-  - preseq
-  - htseq
-  - bbmap
-  - varscan2
-  - flexbar
-  - hicexplorer
-  - biscuit
-  - deeptools
-  - afterqc
-  - bbmap
-  - biobambam2
-  - biobloomtools
-  - biscuit
-  - bowtie1
-  - bowtie2
-  - busco
-  - ccs
-  - clipandmerge
-  - clusterflow
-  - conpair
-  - cutadapt
-  - deeptools
-  - disambiguate
-  - dragen
-  - fgbio
-  - flash
-  - gatk
-  - gffcompare
-  - happy
-  - hisat2
-  - homer
-  - ivar
-  - jcvi
-  - kaiju
-  - kallisto
-  - kraken
-  - leehom
-  - lima
-  - longranger
-  - malt
-  - minionqc
-  - nanostat
-  - ngsderive
-  - optitype
-  - pangolin
-  - prokka
-  - pychopper
-  - pycoqc
-  - qorts
-  - rna_seqc
-  - rockhopper
-  - rseqc
-  - salmon
-  - samblaster
-  - sickle
-  - skewer
-  - slamdunk
-  - snippy
-  - snpsplit
-  - sortmerna
-  - stacks
-  - supernova
-  - trimmomatic
-  - varscan2
-  - bismark
-  - tophat
-  - sexdetermine
-  - verifyBAMID
-  - q3c3
-  - bclconvert/runino
-  - bustools
-  - damageprofiler
-  - dedup
-  - eigenstratdatabasetools
-  - featureCounts
-  - hicpro
-  - hicup
-  - hops
-  - macs2
-  - methylQA
-  - mirtop
-  - mirtrace
-  - mtnucratio
-  - multivcfanalyzer
-  - odgi
-  - phantompeakqualtools
+exclude_modules: []

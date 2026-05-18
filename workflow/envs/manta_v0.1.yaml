@@ -6,3 +6,5 @@ channels:
   - defaults
 dependencies:
   - manta
+  - htslib=1.13
+  - samtools=1.13

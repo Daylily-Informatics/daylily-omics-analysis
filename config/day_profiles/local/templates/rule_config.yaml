@@ -399,9 +399,16 @@ manta_sort_and_index:
 
 manta:
     threads: 7
+    mem_mb: 32000
     env_yaml: "../envs/manta_v0.1.yaml"
     numactl: ""
     ld_preload: "  "
+    partition: "i8"
+
+legacy_cram_compat_bam:
+    threads: 4
+    mem_mb: 16000
+    env_yaml: "../envs/samtools_v0.1.yaml"
     partition: "i8"
 
 merge_bam:
@@ -1017,6 +1024,7 @@ picard:
 qualimap:
     threads: 7
     java_mem_size: "50000M"
+    mem_mb: 64000
     env_yaml: "../envs/qualimap_v0.1.yaml"
     glances: " "
     numactl: ""

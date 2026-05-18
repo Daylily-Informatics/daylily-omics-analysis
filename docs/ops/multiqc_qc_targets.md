@@ -10,7 +10,7 @@ that matches the run scope:
 | `produce_multiqc_snv` | SNV QC summaries and related staged variant metrics. |
 | `produce_multiqc_sv` | SV QC/report scope for selected SV callers. |
 | `produce_multiqc_sample_qc` | Sample-level QC such as contamination, relatedness, and sex/QC signals. |
-| `produce_multiqc_variant_annotation` | Annotation QC such as VEP and SnpEff summaries. |
+| `produce_multiqc_variant_annotation` | Annotation QC such as VEP summaries. |
 | `produce_multiqc_all` | Canonical final routine WGS MultiQC report. |
 
 Deprecated compatibility targets remain available for existing runbooks:
@@ -35,6 +35,39 @@ smoke run must remain out of routine staged and final targets unless
 `multiqc_qc.enable_long_running=true` or the tool is explicitly listed in
 `multiqc_qc.enable_tools`. Explicitly enabled tools are required DAG inputs;
 missing or malformed outputs should fail instead of being silently skipped.
+
+## Stage-Scoped Sample Identity
+
+Final and staged WGS MultiQC reports do not scan `results/day/<build>/`
+directly. Each report first builds a deterministic
+`results/day/<build>/reports/multiqc_inputs/<stage>/` tree and
+`manifest.tsv`. MultiQC scans only that staged tree, and the manifest records
+the expected `Sample`, module, source path, staged path, and stage components.
+Duplicate `(module, Sample)` pairs fail during staging so MultiQC cannot
+silently overwrite one deduper, caller, or panel with another.
+
+The `Sample` field is a stage-scoped analysis identifier, not just the
+biological sample. It is derived from the most processed input used by the
+tool:
+
+| Tool input class | `Sample` contract |
+| --- | --- |
+| FASTQ/read QC | `<sample>.R1`, `<sample>.R2`, or explicit run/lane/sample IDs for demux/run QC |
+| BAM/CRAM-derived QC | `<sample>.<aligner>.<deduper>` |
+| SNV VCF-derived QC | `<sample>.<aligner>.<deduper>.<snv_caller>` |
+| SV VCF-derived QC | `<sample>.<aligner>.<deduper>.<sv_caller>` |
+| Benchmark subclasses | the stage ID plus ROI/class suffix, for example `<sample>.<aligner>.<deduper>.<caller>.<class>` |
+
+For multi-input tools, the more processed input wins: VCF identity beats
+BAM/CRAM identity, which beats FASTQ/run-metric identity. For example, Peddy
+run on two Sentieon DNAscope VCFs for the same biological sample must produce
+distinct rows such as `HG001.sent.na.sentd` and `HG001.sent.dmd.sentd`.
+
+Some native MultiQC modules derive sample names from file contents instead of
+filenames. Daylily stages report-only copies with corrected sample IDs for
+those modules. Peddy CSVs and VerifyBamID `.selfSM` files are rewritten in the
+staged tree so the native parsers see the same stage-scoped IDs as the custom
+DayOA tables. The source analysis outputs are not modified.
 
 ## Routine By Default
 
@@ -66,6 +99,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | ExpansionHunter | STR QC | `other_reports/expansionhunter_mqc.tsv` when STR-capable aligners are selected |
 | Selected HTD callers | HTD QC | `other_reports/htd_calls_mqc.tsv` when `htd_callers` is non-empty |
 | RTG concordance | Benchmarking | `other_reports/giab_concordance_mqc.tsv` when truth metadata is configured |
+| Truvari SV concordance | Benchmarking | `other_reports/giab_sv_concordance_mqc.tsv` when `truvari_sv_benchmark.truthsets` is configured |
 | Daylily benchmarks | Runtime/cost QC | `other_reports/rules_benchmark_data_mqc.tsv` |
 
 `fastp` is intentionally not imported by `workflow/Snakefile` and is not pulled
@@ -76,10 +110,13 @@ alignment QC beside configured real dedupers. Set it to `false` when a dry-run
 or smoke fixture cannot produce raw/no-dedup alignment QC.
 
 BCL Convert metrics are not routine defaults because they require a BCL run
-directory and SampleSheet, not the normal post-staging `units.tsv` inputs. Run
-`produce_bclconvert_metrics` to write BCL custom-data TSVs into
-`results/day/<build>/other_reports/`, or explicitly require those BCL sections
-in a staged/final report with:
+directory and SampleSheet, not the normal post-staging `units.tsv` inputs. With
+`--config run_context_file=config/runs.tsv`, BCL Convert writes under
+`results/runs/<runid>/bclconvert/`, including
+`tables/generated.units.tsv`, `metrics/`, and `multiqc_report.html`. Without a
+run context, the existing explicit `bclconvert` config path still writes the
+genome-build custom-data TSVs into `results/day/<build>/other_reports/`.
+Explicitly require those BCL sections in a staged/final report with:
 
 ```bash
 dy-r produce_multiqc_all \
@@ -90,8 +127,34 @@ dy-r produce_multiqc_all \
 See [`../workflows/bclconvert_bootstrap.md`](../workflows/bclconvert_bootstrap.md)
 for the exact BCL metric sections and output files.
 
+## Separate Run-Level QC
+
+Run-level QC is intentionally outside the final WGS MultiQC DAG because it
+starts from vendor run-folder metrics rather than post-staging sample units.
+The focused targets now read `config/runs.tsv` when launched as run analysis.
+Mounted run-directory mode uses `RUN_DIR=/fsx/run_dir_mounts/<mount_id>`, while
+S3 mode is used only when `SOURCE_S3_URI` is explicitly populated. Run outputs
+write under `results/runs/<runid>/run_qc/`:
+
+| Target | Inputs | Outputs |
+| --- | --- | --- |
+| `produce_illumina_run_qc` | `config/runs.tsv` Illumina row with mounted `RUN_DIR`, or explicit `SOURCE_S3_URI`, `PROFILE`, and `REGION` for S3 mode | InterOp CSVs, CheckQC JSON, `summary.html`, `summary.tsv`, and focused InterOp/CheckQC MultiQC HTML |
+| `produce_read_fate_river` | the same Illumina run context plus `other_reports/alignstats_combo_mqc.tsv` | read-fate RIVER HTML, TSV, Markdown, and raw-metric inventory |
+| `produce_ont_run_qc` | explicit `run_qc.ont.metrics_path` and optional run URI | ONT HTML/TSV summary |
+| `produce_ultima_run_qc` | explicit `run_qc.ultima.metrics_path` and optional run URI | Ultima HTML/TSV summary |
+| `produce_run_qc_reports` | all explicit run-level inputs above | all run-level reports |
+
+Illumina S3-mode fetches copy only named metrics files; they do not use
+`aws s3 sync`, recursive S3 copies, or FASTQ paths. The AWS profile must be
+explicit and must not be `default` when S3 mode is selected. Mounted mode links
+or copies only the named metric subset from `RUN_DIR` into the run output tree;
+it does not write back into the mounted run directory.
+
 VerifyBamID2 uses panel-scoped outputs so different SNP panels can be compared
-without clobbering each other. The default routine panel is `100k`; run
+without clobbering each other. The native VerifyBamID input staged for MultiQC
+uses `<sample>.<aligner>.<deduper>.<panel>` so panel-specific `.selfSM` rows do
+not collapse back to the biological sample. The default routine panel is
+`100k`; run
 `produce_verifybamid2_panel_comparison --config verifybamid2_panels=["1k","100k","1m"]`
 to compare the historical 1K panel, the 100K 1000G panel, and the staged 1M
 panel.
@@ -100,11 +163,12 @@ panel prefix with `verifybamid2_panel_svd_prefixes={"1m":"/path/to/prefix"}`;
 the value must be a real VerifyBamID2 SVD prefix with `.UD`, `.V`, `.mu`, and
 `.bed` files.
 
-MultiQC sample names are kept at the deepest meaningful analysis identity:
-raw sequence data uses the sample or read-pair ID, alignment QC uses
-`sample.aligner`, dedup-level QC uses `sample.aligner.deduper`, variant QC uses
-`sample.aligner.deduper.caller`, and chromosome-scattered data keeps the
-chromosome explicitly, such as `sample.sent.dmd.sentd.chr1`.
+Report sections are grouped by the DayOA-active tool categories in
+`config/external_tools/multiqc_config.yaml`. Custom-content sections use real
+MultiQC `parent_id` / `parent_name` grouping, while native modules use
+`report_section_order` so read QC appears before alignment QC, sample/variant
+identity checks, variant annotation/benchmarking, and workflow benchmark
+sections.
 
 ## Optional Or Deep QC
 
@@ -114,9 +178,8 @@ MultiQC by default:
 | Tool / integration | Reason | Enable with |
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
-| KAT | K-mer spectra QC is useful for debugging but can be too slow for routine reads-to-VCF service. | `enable_long_running=true` or `enable_tools=["kat"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
-| SnpEff | Annotation can exceed the routine QC budget and depends on large external databases. | `enable_long_running=true` or `enable_tools=["snpeff"]` |
+| Unmapped-read metagenomics | Kraken2 classification depends on an explicit external database and can be expensive. | `produce_unmapped_metagenomics_quick` with `unmapped_metagenomics.kraken2_db`, `threads`, `mem_mb`, `partition`, and `max_reads` |
 
 site_mix was promoted to routine default after at-sanity validation showed the
 GATK pileup plus estimator path completed under the 30-minute service

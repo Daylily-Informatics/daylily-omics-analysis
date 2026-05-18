@@ -53,22 +53,46 @@ def _derive_bclconvert_run_id(sample_sheet_path):
 
 
 BCLCFG = config.get("bclconvert", {})
-BCL_SAMPLE_SHEET = str(BCLCFG.get("sample_sheet", "SampleSheet.csv") or "SampleSheet.csv")
-BCL_RUN_DIR = str(BCLCFG.get("run_dir", "") or "")
-BCL_OUTPUT_ROOT = str(BCLCFG.get("output_root", "results/bclconvert") or "results/bclconvert").rstrip(
-    "/"
+BCL_TARGET_REQUESTED = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS)
+BCL_RUN_CONTEXT = run_context_for_platform("ILMN", require=False)
+if BCL_RUN_CONTEXT is not None and BCL_TARGET_REQUESTED:
+    if not _filled(BCL_RUN_CONTEXT.get("RUN_DIR", "")):
+        raise WorkflowError(f"RUNID={BCL_RUN_CONTEXT['RUNID']} must populate RUN_DIR for BCL Convert.")
+    if not _filled(BCL_RUN_CONTEXT.get("SAMPLE_SHEET", "")):
+        raise WorkflowError(
+            f"RUNID={BCL_RUN_CONTEXT['RUNID']} must populate SAMPLE_SHEET for BCL Convert."
+        )
+
+BCL_SAMPLE_SHEET = str(
+    BCL_RUN_CONTEXT["SAMPLE_SHEET"]
+    if BCL_RUN_CONTEXT is not None
+    else (BCLCFG.get("sample_sheet", "SampleSheet.csv") or "SampleSheet.csv")
 )
+BCL_RUN_DIR = str(
+    BCL_RUN_CONTEXT["RUN_DIR"] if BCL_RUN_CONTEXT is not None else (BCLCFG.get("run_dir", "") or "")
+)
+BCL_OUTPUT_ROOT = str(
+    BCL_RUN_CONTEXT["OUTPUT_ROOT_RESOLVED"]
+    if BCL_RUN_CONTEXT is not None
+    else (BCLCFG.get("output_root", "results/bclconvert") or "results/bclconvert")
+).rstrip("/")
 BCL_RUN_ID = str(
-    config.get("bclconvert_bootstrap_run_id", _derive_bclconvert_run_id(BCL_SAMPLE_SHEET))
+    BCL_RUN_CONTEXT["RUNID"]
+    if BCL_RUN_CONTEXT is not None
+    else config.get("bclconvert_bootstrap_run_id", _derive_bclconvert_run_id(BCL_SAMPLE_SHEET))
 )
-BCL_ROOT = f"{BCL_OUTPUT_ROOT}/{BCL_RUN_ID}"
-BCL_FASTQ_DIR = f"{BCL_ROOT}/fastq"
+BCL_ROOT = (
+    f"{BCL_OUTPUT_ROOT}/bclconvert"
+    if BCL_RUN_CONTEXT is not None
+    else f"{BCL_OUTPUT_ROOT}/{BCL_RUN_ID}"
+)
+BCL_FASTQ_DIR = f"{BCL_ROOT}/fastqs" if BCL_RUN_CONTEXT is not None else f"{BCL_ROOT}/fastq"
 BCL_REPORT_DIR = f"{BCL_FASTQ_DIR}/Reports"
 BCL_TABLE_DIR = f"{BCL_ROOT}/tables"
 BCL_METRIC_DIR = f"{BCL_ROOT}/metrics"
-BCL_REPORT_OUT_DIR = f"{BCL_ROOT}/reports"
+BCL_REPORT_OUT_DIR = BCL_ROOT if BCL_RUN_CONTEXT is not None else f"{BCL_ROOT}/reports"
 BCL_LOG_DIR = f"{BCL_ROOT}/logs"
-BCL_MQC_DIR = f"{MDIR}other_reports"
+BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_data" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"
 BCL_MQC_LOG_DIR = f"{BCL_MQC_DIR}/logs"
 
 BCL_VALIDATE_OK = f"{BCL_LOG_DIR}/validated.ok"
@@ -78,7 +102,11 @@ BCL_WARNINGS = f"{BCL_LOG_DIR}/bclconvert_validate_inputs.warnings.log"
 BCL_DONE = f"{BCL_LOG_DIR}/bclconvert.done"
 BCL_FASTQS_COMPLETE = f"{BCL_ROOT}/fastqs.complete"
 BCL_BOOTSTRAP_COMPLETE = f"{BCL_ROOT}/bclconvert.bootstrap.complete"
-BCL_MQC_COMPLETE = f"{BCL_MQC_DIR}/bclconvert_metrics_mqc.done"
+BCL_MQC_COMPLETE = (
+    f"{BCL_ROOT}/bclconvert_metrics_mqc.done"
+    if BCL_RUN_CONTEXT is not None
+    else f"{BCL_MQC_DIR}/bclconvert_metrics_mqc.done"
+)
 
 BCL_METRICS_ENV = "../envs/bclconvert_metrics_v0.1.yaml"
 MULTIQC_ENV = (
@@ -324,14 +352,14 @@ rule multiqc_bclconvert:
         fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
         mqc_exports=BCL_MQC_COMPLETE,
     output:
-        html=f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
+        html=f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
     threads:
         1
     conda:
         MULTIQC_ENV
     params:
         multiqc_cfg=MULTIQC_CONFIG,
-        multiqc_filename="bclconvert.multiqc.html",
+        multiqc_filename="multiqc_report.html" if BCL_RUN_CONTEXT is not None else "bclconvert.multiqc.html",
     log:
         f"{BCL_LOG_DIR}/multiqc_bclconvert.log",
     shell:
@@ -368,7 +396,7 @@ rule produce_bclconvert_metrics:  # TARGET: gather BCL Convert metrics into geno
 
 rule produce_bclconvert_multiqc:  # TARGET: gather BCL Convert metrics and build a focused MultiQC report
     input:
-        f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
+        f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
 
 
 rule produce_bclconvert_fastqs_and_metrics:
@@ -382,7 +410,7 @@ rule produce_bclconvert_fastqs_and_metrics:
         f"{BCL_METRIC_DIR}/fastq_manifest.tsv",
         f"{BCL_METRIC_DIR}/rollup.json",
         BCL_MQC_COMPLETE,
-        f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
+        f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
     output:
         touch(BCL_BOOTSTRAP_COMPLETE),
     shell:

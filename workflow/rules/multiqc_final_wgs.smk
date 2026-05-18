@@ -19,12 +19,13 @@ def _sequence_qc_native_inputs(wildcards):
     paths = []
     if qc_tool_enabled("fastqc"):
         paths.extend(
-            expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SAMPS)
+            expand(
+                MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done",
+                sample=FASTQ_QC_SAMPS,
+            )
         )
     if qc_tool_enabled("seqfu"):
         paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
-    if qc_tool_enabled("kat", long_running=True):
-        paths.extend(expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SAMPS))
     if qc_tool_enabled("fastv", long_running=True):
         paths.extend(
             expand(
@@ -32,7 +33,7 @@ def _sequence_qc_native_inputs(wildcards):
                     MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json",
                     MDIR + "{sample}/seqqc/fastv/{sample}.fastv.html",
                 ],
-                sample=SAMPS,
+                sample=FASTQ_QC_SAMPS,
             )
         )
     return paths
@@ -59,12 +60,14 @@ def _alignment_component_inputs(wildcards):
         )
     if qc_tool_enabled("relatedness"):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
+        paths.extend(_relatedness_native_inputs(wildcards))
     return paths
 
 
 def _alignment_qc_native_inputs(wildcards):
     paths = []
     qddups = qc_alignment_dedupers()
+    contam_ddups = qc_contamination_dedupers()
     alnrs = QC_CRAM_ALIGNERS
     paths.append(MDIR + "other_reports/alignstats_combo_mqc.tsv")
     paths.append(MDIR + "other_reports/norm_cov_evenness_combo_mqc.tsv")
@@ -81,25 +84,7 @@ def _alignment_qc_native_inputs(wildcards):
     paths.extend(
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
-        )
-    )
-    paths.extend(
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
-        )
-    )
-    paths.extend(
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
             sample=SSAMPS,
             alnr=alnrs,
             ddup=qddups,
@@ -129,7 +114,7 @@ def _alignment_qc_native_inputs(wildcards):
                 + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
-                ddup=qddups,
+                ddup=contam_ddups,
                 vb2panel=VERIFYBAMID2_PANELS,
             )
         )
@@ -140,9 +125,32 @@ def _alignment_qc_native_inputs(wildcards):
                 + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
                 sample=SSAMPS,
                 alnr=alnrs,
-                ddup=qddups,
+                ddup=contam_ddups,
             )
         )
+    return paths
+
+
+def _relatedness_native_inputs(wildcards):
+    paths = []
+    qddups = qc_alignment_dedupers()
+    alnrs = QC_CRAM_ALIGNERS
+    paths.extend(
+        expand(
+            MDIR
+            + "other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.samples.tsv",
+            alnr=alnrs,
+            ddup=qddups,
+        )
+    )
+    paths.extend(
+        expand(
+            MDIR
+            + "other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.pairs.tsv",
+            alnr=alnrs,
+            ddup=qddups,
+        )
+    )
     return paths
 
 
@@ -158,8 +166,6 @@ def _variant_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")
     if qc_tool_enabled("vep", long_running=True):
         paths.append(MDIR + "other_reports/vep_annotation_mqc.tsv")
-    if qc_tool_enabled("snpeff", long_running=True):
-        paths.append(MDIR + "other_reports/snpeff_annotation_mqc.tsv")
     if HTD_CALLERS:
         paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
     if len(CONCORDANCE_SAMPLES.keys()) > 0 and pairs:
@@ -171,6 +177,11 @@ def _sv_component_inputs(wildcards):
     paths = []
     if "tiddit" in sv_CALLERS:
         paths.append(MDIR + "other_reports/tiddit_sv_mqc.tsv")
+    if (
+        config.get("truvari_sv_benchmark", {}).get("truthsets")
+        and set(sv_CALLERS) & {"dysgu", "manta", "tiddit"}
+    ):
+        paths.append(MDIR + "other_reports/giab_sv_concordance_mqc.tsv")
     return paths
 
 
@@ -178,11 +189,27 @@ def _final_component_inputs(wildcards):
     return _variant_component_inputs(wildcards)
 
 
+def _multiqc_stage_component_inputs(wildcards):
+    stage = wildcards.report_stage
+    if stage == "seq_data":
+        return _seq_data_component_inputs(wildcards)
+    if stage == "alignment":
+        return _alignment_component_inputs(wildcards)
+    if stage == "variants":
+        return _variant_component_inputs(wildcards)
+    if stage == "final":
+        return _final_component_inputs(wildcards) + [
+            MDIR + "other_reports/rules_benchmark_data_mqc.tsv"
+        ]
+    raise ValueError(f"Unknown MultiQC report stage: {stage}")
+
+
 localrules:
     collect_rules_benchmark_data,
     collect_rules_benchmark_data_singleton,
     sequence_qc_outputs_custom_data,
     alignment_qc_outputs_custom_data,
+    stage_multiqc_inputs,
     aggregate_report_components,
     produce_multiqc_input_data,
     produce_multiqc_cram,
@@ -280,9 +307,38 @@ rule aggregate_report_components:
         "mkdir -p $(dirname {output}); touch {output};"
 
 
+rule stage_multiqc_inputs:
+    input:
+        _multiqc_stage_component_inputs
+    output:
+        done=touch(MDIR + "reports/multiqc_inputs/{report_stage}/.stage.done"),
+        manifest=MDIR + "reports/multiqc_inputs/{report_stage}/manifest.tsv",
+    log:
+        MDIR + "reports/logs/{report_stage}_multiqc_input_staging.log"
+    params:
+        input_root=MDIR,
+        stage_dir=MDIR + "reports/multiqc_inputs/{report_stage}",
+        cluster_sample="stage_multiqc_inputs",
+    container: None
+    conda:
+        "../envs/vanilla_v0.1.yaml"
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {log:q})
+        python workflow/scripts/stage_multiqc_inputs.py \
+          --input-root {params.input_root:q} \
+          --output-dir {params.stage_dir:q} \
+          --manifest {output.manifest:q} \
+          {input:q} > {log:q} 2>&1
+        """
+
+
 rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
     input:
-        _seq_data_component_inputs
+        stage_done=MDIR + "reports/multiqc_inputs/seq_data/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/seq_data/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         f"{MDIR}reports/DAY_seq_data_multiqc.html",
     benchmark:
@@ -298,6 +354,8 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="multiqc_seq_data",
+        stage_dir=MDIR + "reports/multiqc_inputs/seq_data",
+        data_json=MDIR + "reports/DAY_seq_data_multiqc_data/multiqc_data.json",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
@@ -306,7 +364,9 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f \
+          $module_excludes \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
           --ignore "*/other_reports/logs/*" \
@@ -316,13 +376,18 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
           -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
-          {MDIR} > {log:q} 2>&1
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
         """
 
 
 rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
     input:
-        _alignment_component_inputs
+        stage_done=MDIR + "reports/multiqc_inputs/alignment/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/alignment/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         f"{MDIR}reports/DAY_alignment_multiqc.html",
     benchmark:
@@ -338,6 +403,8 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="multiqc_alignment",
+        stage_dir=MDIR + "reports/multiqc_inputs/alignment",
+        data_json=MDIR + "reports/DAY_alignment_multiqc_data/multiqc_data.json",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
@@ -346,7 +413,9 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f \
+          $module_excludes \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
           --ignore "*/other_reports/logs/*" \
@@ -356,13 +425,18 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
           -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
-          {MDIR} > {log:q} 2>&1
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
         """
 
 
 rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC report
     input:
-        _variant_component_inputs
+        stage_done=MDIR + "reports/multiqc_inputs/variants/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/variants/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         f"{MDIR}reports/DAY_variants_multiqc.html",
     benchmark:
@@ -378,6 +452,8 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="multiqc_variants",
+        stage_dir=MDIR + "reports/multiqc_inputs/variants",
+        data_json=MDIR + "reports/DAY_variants_multiqc_data/multiqc_data.json",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
@@ -386,7 +462,9 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f \
+          $module_excludes \
           --config ./config/external_tools/multiqc_config.yaml \
           --custom-css-file ./config/external_tools/multiqc.css \
           --ignore "*/other_reports/logs/*" \
@@ -396,7 +474,10 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
           -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
-          {MDIR} > {log:q} 2>&1
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
         """
 
 
@@ -404,8 +485,12 @@ rule multiqc_final_wgs:  # TARGET: the big report
     input:
         components=f"{MDIR}logs/report_components_aggregated.done",
         benchmark=f"{MDIR}other_reports/rules_benchmark_data_mqc.tsv",
+        stage_done=MDIR + "reports/multiqc_inputs/final/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/final/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
     output:
         html=f"{MDIR}reports/DAY_final_multiqc.html",
+        html_original=f"{MDIR}reports/DAY_final_multiqc.original.html",
         header=f"{MDIR}reports/multiqc_header.yaml",
     benchmark:
         f"{MDIR}benchmarks/DAY_all.final_multiqc.bench.tsv"
@@ -422,6 +507,8 @@ rule multiqc_final_wgs:  # TARGET: the big report
         cluster_sample="multiqc_final",
         cemail=config["day_contact_email"],
         rtitle=RPT_TITLE,
+        stage_dir=MDIR + "reports/multiqc_inputs/final",
+        data_json=MDIR + "reports/DAY_final_multiqc_data/multiqc_data.json",
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a.log",
     container:
@@ -459,21 +546,27 @@ report_header_info:
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
         perl -pi -e "s/REGSUB_MRKDUPCOST/$MRKDUP_AVG_MINUTES min, costing \\\$dbill$MRKDUP_AVG_COST/g;" {output.header:q} >> {log:q} 2>&1;
 
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
         multiqc -f  \
+        $module_excludes \
         --config {output.header:q} \
         --config ./config/external_tools/multiqc_config.yaml  \
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*/other_reports/logs/*" \
         --ignore "other_reports/logs/*" \
         --ignore "*_mqc.log" \
-        --ignore "*/norm_cov_eveness/*" \
-        --ignore "*sort_metrics/*" \
         --template default \
         --filename {output.html:q} \
         -i '{params.rtitle} Multiqc Report ' \
         -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
-        {MDIR} >> {log:q} 2>&1;
-        ls -lt {output.html:q} {output.header:q} >> {log:q} 2>&1;
+        {params.stage_dir:q} >> {log:q} 2>&1;
+        python workflow/scripts/force_multiqc_dark_mode.py \
+          --html {output.html:q} \
+          --backup {output.html_original:q} >> {log:q} 2>&1;
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1;
+        ls -lt {output.html:q} {output.html_original:q} {output.header:q} >> {log:q} 2>&1;
         """
 
 

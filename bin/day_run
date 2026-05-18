@@ -27,6 +27,21 @@ if [[ ! -d "$DAY_PROFILE_DIR" ]]; then
     exit 3
 fi
 
+profile_env_script="$DAY_PROFILE_DIR/templates/profile_env.bash"
+if [[ -f "$DAY_PROFILE_DIR/profile_env.bash" ]]; then
+    profile_env_script="$DAY_PROFILE_DIR/profile_env.bash"
+fi
+if [[ ! -f "$profile_env_script" ]]; then
+    colr "ERROR: Profile environment script not found for $DAY_PROFILE_DIR." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+    exit 3
+fi
+source "$profile_env_script"
+profile_env_ret_code=$?
+if [[ "$profile_env_ret_code" != "0" ]]; then
+    colr "ERROR: Profile environment script failed before Snakemake launch: $profile_env_script" "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+    exit "$profile_env_ret_code"
+fi
+
 if [[ -z "$DAY_GENOME_BUILD" ]]; then
     colr "ERROR: Genome build not set. Please run 'dy-g [b37|hg38]'." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
     exit 3

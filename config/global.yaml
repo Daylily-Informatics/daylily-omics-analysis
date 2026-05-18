@@ -76,9 +76,7 @@ remote_units_table: ".test_data/data/0.01x_3_wgs_HG002_hg38.units.tsv"
 sentieon_liscence_server: "localhost:8990"
 
 
-# DEORECATED
-# you would activate by adding ''' --config rule_action='{"ultraplex_iddnas":"run","kat":"run"}' ''' to the mod-run call
+# DEPRECATED
 rule_action:
     ultraplex_iddnas: "run"
-    kat: "skip"
     concordance: "run"

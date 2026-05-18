@@ -11,8 +11,12 @@ rule mosdepth:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
     output:
-        MDIR
-        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
+        summary=MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
+        global_dist=MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.global.dist.txt",
+        region_dist=MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.region.dist.txt",
     threads: config["mosdepth"]["threads"]
     resources:
         threads=config["mosdepth"]["threads"],
@@ -21,7 +25,7 @@ rule mosdepth:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.mosdepth.bench.tsv"
     log:
         a=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.log",
-        b=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}/{ddup}/{sample}.md",
+        b=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}",
     conda:
         config["mosdepth"]["env_yaml"]
     params:
@@ -35,10 +39,9 @@ rule mosdepth:
         cluster_sample=ret_sample,
     shell:
         "(rm -rf {log.b}* || echo rmlogFailedMosDepth );"
-        "mosdepth --threads {threads} --by {params.core_bed} --use-median  -n --fast-mode --mapq {params.mapq} -f {params.huref} -T {params.T} $(dirname {log.b}) {input.cram} > {log.a} 2>&1; "
-        "touch {output};"
-        "(rm  $(dirname {log.b})/*per-base* || echo 'rm perbase failed' >> {log.a} 2>&1);"
-        "ls {output};"
+        "mosdepth --threads {threads} --by {params.core_bed} --use-median  -n --fast-mode --mapq {params.mapq} -f {params.huref} -T {params.T} {log.b} {input.cram} > {log.a} 2>&1; "
+        "(rm  {log.b}*per-base* || echo 'rm perbase failed' >> {log.a} 2>&1);"
+        "ls {output.summary};"
 
 localrules:
     produce_mosdepth,
@@ -46,5 +49,4 @@ localrules:
 rule produce_mosdepth:  # TARGET:  jusg gen mosdepth
     input:
         expand(MDIR
-        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed", sample=SSAMPS, alnr=CRAM_ALIGNERS, ddup=DDUP),
-    
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt", sample=SSAMPS, alnr=CRAM_ALIGNERS, ddup=DDUP),

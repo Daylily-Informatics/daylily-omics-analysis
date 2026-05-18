@@ -107,15 +107,7 @@ def _expansionhunter_target_paths(suffix):
 
 
 def _expansionhunter_sample_sex(wildcards):
-    sex = str(
-        config["sample_info"].get(wildcards.sample, {}).get("biological_sex", "na")
-    ).strip().lower()
-    if sex not in {"male", "female"}:
-        raise WorkflowError(
-            f"ExpansionHunter requires biological sex for sample {wildcards.sample}; "
-            f"missing or unknown value '{sex}'."
-        )
-    return sex
+    return sample_sex_for_required_tool(wildcards, "ExpansionHunter")
 
 
 def _expansionhunter_validate_pair(wildcards):
@@ -145,6 +137,9 @@ rule expansionhunter_call:
     params:
         pair_ok=_expansionhunter_validate_pair,
         sex=_expansionhunter_sample_sex,
+        sex_assumption_log=lambda wildcards: sample_sex_assumption_log(
+            wildcards, "ExpansionHunter"
+        ),
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         variant_catalog=_expansionhunter_catalog_path,
         output_prefix=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh",
@@ -170,6 +165,9 @@ rule expansionhunter_call:
         set -euo pipefail
         mkdir -p $(dirname {output.json:q}) $(dirname {log:q})
         : > {log:q}
+        if [ -n {params.sex_assumption_log:q} ]; then
+            printf '%s' {params.sex_assumption_log:q} >> {log:q}
+        fi
         test {params.pair_ok:q} = ok
         test -s {input.cram:q}
         test -s {input.crai:q}

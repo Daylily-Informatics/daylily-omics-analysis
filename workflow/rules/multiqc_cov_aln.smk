@@ -70,13 +70,9 @@ rule cov_aln_qc:
         #    alnr=ALL_ALIGNERS,
         #),
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
-        MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/qmap/{sample}.{alnr}/{ddup}/{sample}.{alnr}.{ddup}.qmap.done",
         expand(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done", sample=SSAMPS,alnr=ALL_ALIGNERS, ddup=DDUP),
-        expand(
-            MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.sort.bed",
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
             sample=SSAMPS,
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
@@ -94,7 +90,6 @@ rule cov_aln_qc:
         #),
 	#        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.html", sample=SSAMPS),
         #expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SSAMPS),
-        #expand(MDIR + "{sample}/seqqc/kat/{sample}.kat.done", sample=SSAMPS),
         #expand(MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done", sample=SSAMPS),
         #MDIR+"logs/seqfu.done",
     output:

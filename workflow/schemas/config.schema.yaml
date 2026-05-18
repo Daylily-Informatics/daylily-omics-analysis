@@ -68,6 +68,44 @@ properties:
             type: string
       required:
       - files
+  truvari_sv_benchmark:
+    type: object
+    properties:
+      threads:
+        type: integer
+      mem_mb:
+        type: integer
+      partition:
+        type: string
+      env_yaml:
+        type: string
+      extra_args:
+        type: string
+      truthsets:
+        type: object
+        additionalProperties:
+          type: object
+          required:
+          - alt_id
+          - regions
+          properties:
+            alt_id:
+              type: string
+            regions:
+              type: object
+              additionalProperties:
+                type: object
+                required:
+                - truth_vcf
+                - truth_tbi
+                - truth_bed
+                properties:
+                  truth_vcf:
+                    type: string
+                  truth_tbi:
+                    type: string
+                  truth_bed:
+                    type: string
 
 required:
     - samples

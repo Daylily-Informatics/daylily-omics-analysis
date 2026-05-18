@@ -33,7 +33,15 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     common = _read("workflow/rules/common.smk")
     multiqc = _read("workflow/rules/multiqc_final_wgs.smk")
 
-    assert 'BCL_MQC_DIR = f"{MDIR}other_reports"' in rule
+    assert 'BCL_RUN_CONTEXT = run_context_for_platform("ILMN", require=False)' in rule
+    assert "BCL_TARGET_REQUESTED = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS)" in rule
+    assert 'BCL_ROOT = (' in rule
+    assert 'f"{BCL_OUTPUT_ROOT}/bclconvert"' in rule
+    assert 'f"{BCL_ROOT}/fastqs"' in rule
+    assert 'BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_data" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"' in rule
+    assert 'f"{BCL_ROOT}/bclconvert_metrics_mqc.done"' in rule
+    assert "multiqc_report.html" in rule
+    assert "generated.units.tsv" in rule
     assert "rule bclconvert_metrics_multiqc_exports:" in rule
     assert "workflow/scripts/bclconvert_metrics_to_multiqc.py" in rule
     assert "bclconvert_demux_mqc.tsv" in rule
@@ -51,6 +59,31 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "def _bclconvert_enabled_for_multiqc" in common
     assert 'qc_tool_enabled("bclconvert", default=False)' in multiqc
     assert 'MDIR + "other_reports/bclconvert_metrics_mqc.done"' in multiqc
+
+
+def test_runs_tsv_parser_contract_is_strict_and_run_scoped() -> None:
+    common = _read("workflow/rules/common.smk")
+
+    for column in (
+        "RUNID",
+        "PLATFORM",
+        "RUN_DIR",
+        "SOURCE_S3_URI",
+        "MOUNT_ID",
+        "SAMPLE_SHEET",
+        "BASECALLING_STATE",
+        "RUN_STATUS",
+        "OUTPUT_ROOT",
+        "REGION",
+        "PROFILE",
+    ):
+        assert f'"{column}"' in common
+
+    assert "RUN_CONTEXT_REQUIRED_COLUMNS" in common
+    assert "results/runs/{normalized['RUNID']}" in common
+    assert "run_context_for_platform" in common
+    assert "config/runs.tsv is missing required column" in common
+    assert "PROFILE for RUNID={normalized['RUNID']} is required for S3 mode" in common
 
 
 def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:

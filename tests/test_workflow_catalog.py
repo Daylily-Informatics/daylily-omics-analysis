@@ -50,7 +50,6 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
         "produce_manta_sv_vcf",
         "produce_tiddit_sv_vcf",
         "produce_dysgu_sv_vcf",
-        "produce_kat",
         "produce_multiqc_all",
     ]
     assert preview["argv"][:3] == ["dy-r", "produce_alignstats", "produce_snv_concordances"]

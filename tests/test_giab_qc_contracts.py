@@ -132,6 +132,39 @@ def test_peddy_rule_hard_fails_and_does_not_unconditionally_mark_done() -> None:
     )
 
 
+def test_peddy_defaults_invalid_sample_sex_to_male_and_logs_assumption() -> None:
+    text = (REPO_ROOT / "workflow" / "rules" / "peddy.smk").read_text(encoding="utf-8")
+
+    assert 'sample_sex_for_required_tool(wildcards, "Peddy")' in text
+    assert "ped_sex = 0" not in text
+    assert "ped_sex = 1" in text
+    assert "ped_sex = 2" in text
+    assert "sample_sex_assumption_log(" in text
+    assert 'printf \'%s\' {params.sex_assumption_log:q} >> "{log}"' in text
+
+
+def test_required_sample_sex_helper_preserves_raw_value_and_defaults_to_male() -> None:
+    common = (REPO_ROOT / "workflow" / "rules" / "common.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'sample_info[samp_id]["biological_sex_raw"] = raw_bsex' in common
+    assert "def sample_sex_for_required_tool(" in common
+    assert "def sample_sex_assumption_log(" in common
+    assert 'return "male"' in common
+    assert "Assuming male" in common
+
+
+def test_octopus_invalid_sample_sex_uses_shared_male_default() -> None:
+    text = (REPO_ROOT / "workflow" / "rules" / "octopus.smk").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'sample_sex_for_required_tool(wildcards, "Octopus")' in text
+    assert "X=2 Y=1" not in text
+    assert 'config["sample_info"][wildcards.sample]["biological_sex"]' not in text
+
+
 @pytest.mark.parametrize(
     "env_path",
     [
@@ -180,7 +213,7 @@ def test_contamination_target_expansion_includes_deduper_level(
     target_text = text[target_start:]
 
     assert expected in target_text
-    assert "ddup=DDUP" in target_text or "ddup=qc_alignment_dedupers()" in target_text
+    assert "ddup=DDUP" in target_text or "ddup=qc_contamination_dedupers()" in target_text
 
 
 def test_gatk_contam_env_includes_cram_compat_tools() -> None:
@@ -542,33 +575,29 @@ def test_synthetic_contamination_observed_summary(tmp_path: Path) -> None:
 
 
 def test_relatedness_classification_interface_and_manifest_validation(tmp_path: Path) -> None:
-    pd = pytest.importorskip("pandas")
-    pytest.importorskip("jinja2")
     module = _load_module(
         REPO_ROOT / "workflow" / "scripts" / "relatedness_report.py",
         "relatedness_report_under_test",
     )
     manifest_path = tmp_path / "samples.tsv"
     manifest_path.write_text(
-        "sample_id\tpath\tpath_type\tsex\tfamily_id\n"
-        "HG002\t/fsx/not-mounted/HG002.cram\tcram\tmale\ttrio\n"
-        "HG003\t/fsx/not-mounted/HG003.cram\tcram\tmale\ttrio\n"
-        "HG004\t/fsx/not-mounted/HG004.cram\tcram\tfemale\ttrio\n"
-        "NA12878\t/fsx/not-mounted/NA12878.vcf.gz\tvcf\tfemale\tceph\n",
+        "sample_id\tpath\tpath_type\tsex\tfamily_id\texternal_sample_id\n"
+        "HG002\t/fsx/not-mounted/HG002.cram\tcram\tmale\ttrio\tKID\n"
+        "HG003\t/fsx/not-mounted/HG003.cram\tcram\tmale\ttrio\tDAD\n"
+        "HG004\t/fsx/not-mounted/HG004.cram\tcram\tfemale\ttrio\tMOM\n"
+        "NA12878\t/fsx/not-mounted/NA12878.vcf.gz\tvcf\tfemale\tceph\tNA12878\n",
         encoding="utf-8",
     )
     manifest = module.load_manifest(manifest_path)
     assert list(manifest["sample_id"]) == ["HG002", "HG003", "HG004", "NA12878"]
 
-    pairs = pd.DataFrame(
-        [
-            {"sample_a": "HG002", "sample_b": "HG002", "relatedness": "0.99", "ibs0": "0"},
-            {"sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"},
-            {"sample_a": "HG003", "sample_b": "HG004", "relatedness": "0.48", "ibs0": "12"},
-            {"sample_a": "HG002", "sample_b": "NA12878", "relatedness": "0.02", "ibs0": "90"},
-            {"sample_a": "HG004", "sample_b": "NA12878", "relatedness": "0.28", "ibs0": "4"},
-        ]
-    )
+    pairs = [
+        {"sample_a": "HG002", "sample_b": "HG002", "relatedness": "0.99", "ibs0": "0"},
+        {"sample_a": "KID", "sample_b": "DAD", "relatedness": "0.50", "ibs0": "0.5"},
+        {"sample_a": "DAD", "sample_b": "MOM", "relatedness": "0.48", "ibs0": "12"},
+        {"sample_a": "HG002", "sample_b": "NA12878", "relatedness": "0.02", "ibs0": "90"},
+        {"sample_a": "MOM", "sample_b": "NA12878", "relatedness": "0.28", "ibs0": "4"},
+    ]
     expected = module.load_expected(
         [
             {"samples": ["HG002", "HG003"], "relationship": "father_child"},
@@ -589,9 +618,9 @@ def test_relatedness_classification_interface_and_manifest_validation(tmp_path: 
     assert by_pair[("HG004", "NA12878")].status == "FAIL"
     assert "expected unrelated; observed ambiguous" in by_pair[("HG004", "NA12878")].note
 
-    hash_prefixed_pairs = pd.DataFrame(
-        [{"#sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"}]
-    )
+    hash_prefixed_pairs = [
+        {"#sample_a": "HG002", "sample_b": "HG003", "relatedness": "0.50", "ibs0": "0.5"}
+    ]
     assert module.classify_pairs(hash_prefixed_pairs, manifest)[0].relationship == "parent_child"
 
 

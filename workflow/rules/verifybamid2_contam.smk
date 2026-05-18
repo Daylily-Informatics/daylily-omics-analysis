@@ -21,7 +21,6 @@ rule verifybamid2_contam:
         vb_tsv=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
         contam=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.contam.tsv",
         selfSM=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.selfSM",
-        mqc=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2_mqc.tsv",
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/logs/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.log",
     benchmark:
@@ -39,6 +38,7 @@ rule verifybamid2_contam:
         panel_label=verifybamid2_panel_label,
         snp_count=verifybamid2_panel_snp_count,
         cluster_sample=ret_sample,
+        old_mqc=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2_mqc.tsv",
     shell:
         r"""
         set -euo pipefail
@@ -47,7 +47,7 @@ rule verifybamid2_contam:
         mkdir -p "${{outdir}}" "${{outdir}}/logs"
 
         rm -f {output.vb_prefix}.selfSM {output.vb_prefix}.selfRG {output.vb_prefix}.depthSM \
-            {output.vb_tsv} {output.selfSM} {output.mqc} {output.contam}
+            {output.vb_tsv} {output.selfSM} {params.old_mqc} {output.contam}
 
         printf 'VerifyBamID2 panel\t%s\t%s SNPs\n' "{params.panel_label}" "{params.snp_count}" > {log}
 
@@ -62,7 +62,6 @@ rule verifybamid2_contam:
             >> {log} 2>&1
 
         cp {output.selfSM} {output.vb_tsv}
-        cp {output.selfSM} {output.mqc}
         touch {output.vb_prefix}
 
         awk 'NR<=2 {{print}}' {output.selfSM} > {output.contam}
@@ -78,7 +77,7 @@ rule produce_contam_estimate:  # TARGET:  jusg gen contam
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
             vb2panel=VERIFYBAMID2_PANELS,
         ),
 
@@ -89,7 +88,7 @@ rule produce_verifybamid2_panel_comparison:  # TARGET: compare selected VerifyBa
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_contamination_dedupers(),
             vb2panel=VERIFYBAMID2_PANELS,
         ),
         MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv",

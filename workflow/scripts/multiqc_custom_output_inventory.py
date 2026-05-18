@@ -48,6 +48,18 @@ def _sample_id(sample: str, aligner: str, deduper: str) -> str:
     return sample
 
 
+def _summary_id(stage: str, path: Path) -> str:
+    stem = path.name
+    for suffix in ("_mqc.tsv", ".mqc.tsv", "_mqc.csv", ".mqc.csv"):
+        if stem.endswith(suffix):
+            stem = stem[: -len(suffix)]
+            break
+    else:
+        stem = path.stem
+    stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", stem).strip("._-")
+    return f"{stage}.{stem or 'summary'}"
+
+
 def _infer_record(stage: str, path_text: str) -> dict[str, str | int]:
     path = Path(path_text)
     sample = "NA"
@@ -67,6 +79,16 @@ def _infer_record(stage: str, path_text: str) -> dict[str, str | int]:
         groups = seq_match.groupdict()
         sample = groups["sample"]
         tool = TOOL_ALIASES.get(groups["tool"], groups["tool"])
+    if sample == "NA":
+        sample_id = _summary_id(stage, path)
+        if tool == "unknown":
+            tool = path.stem
+        base_sample = ""
+        aligner = ""
+        deduper = ""
+    else:
+        sample_id = _sample_id(sample, aligner, deduper)
+        base_sample = sample
 
     try:
         stat = path.stat()
@@ -77,8 +99,8 @@ def _infer_record(stage: str, path_text: str) -> dict[str, str | int]:
         size_bytes = 0
 
     return {
-        "Sample": _sample_id(sample, aligner, deduper),
-        "base_sample": sample,
+        "Sample": sample_id,
+        "base_sample": base_sample,
         "stage": stage,
         "tool": tool,
         "aligner": aligner,

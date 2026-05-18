@@ -22,10 +22,25 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
 
     assert 'include: "rules/fastp.smk"' not in snakefile
+    assert 'include: "rules/picard.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if not line.strip().startswith("#")
+    ]
+    assert '# include: "rules/picard.smk"' in snakefile
+    assert 'include: "rules/qualimap.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if not line.strip().startswith("#")
+    ]
+    assert '# include: "rules/qualimap.smk"' in snakefile
+    assert "alignqc/picard" not in _read("workflow/rules/multiqc_final_wgs.smk")
+    assert "alignqc/picard" not in _read("workflow/rules/multiqc_cov_aln.smk")
+    assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
+    assert "alignqc/qmap" not in _read("workflow/rules/multiqc_cov_aln.smk")
     for include in (
         'include: "rules/fastv.smk"',
         'include: "rules/seqfu.smk"',
         'include: "rules/relatedness_batch.smk"',
+        'include: "rules/run_qc_reports.smk"',
+        'include: "rules/truvari_sv_benchmark.smk"',
+        'include: "rules/unmapped_metagenomics.smk"',
     ):
         assert include in snakefile
 
@@ -53,11 +68,18 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "kat", "vep", "snpeff"):
+    for tool in ("fastv", "vep"):
         assert f'"{tool}"' in common
+    assert '"snpeff"' not in common[
+        common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
+    ]
+    assert '"kat"' not in common[
+        common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
+    ]
     assert '"site_mix"' not in common[common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")]
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
+    assert "def qc_contamination_dedupers" in common
     assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
@@ -67,6 +89,8 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
+    snakefile = _read("workflow/Snakefile")
+    common = _read("workflow/rules/common.smk")
 
     for rule_name in (
         "rule produce_multiqc_input_data:",
@@ -89,15 +113,28 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "def _alignment_component_inputs" in text
     assert "def _variant_component_inputs" in text
     assert "def _sv_component_inputs" in text
+    assert "FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]" in common
+    assert common.index("SAMPS = list(get_samp_ids())") < common.index("FASTQ_QC_SAMPS =")
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
     assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
-    assert "qc_tool_enabled(\"kat\", long_running=True)" in text
+    assert "qc_tool_enabled(\"kat\"" not in text
+    assert "seqqc/kat" not in text
+    assert 'include: "rules/kat.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
+    assert '# include: "rules/kat.smk"' in snakefile
+    assert "sample=FASTQ_QC_SAMPS" in text
+    seq_inputs = text[text.index("def _sequence_qc_native_inputs") : text.index("def _alignment_component_inputs")]
+    assert "sample=SAMPS" not in seq_inputs
     assert "qc_tool_enabled(\"site_mix\")" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
-    assert "qc_tool_enabled(\"snpeff\", long_running=True)" in text
+    assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
+    assert "qc_contamination_dedupers()" in text
+    assert 'config.get("truvari_sv_benchmark", {}).get("truthsets")' in text
+    assert '{"dysgu", "manta", "tiddit"}' in text
     for expected in (
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
@@ -109,13 +146,18 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "bcftools_variant_stats_mqc.tsv",
         "rtg_vcfstats_mqc.tsv",
         "tiddit_sv_mqc.tsv",
+        "giab_sv_concordance_mqc.tsv",
         "peddy_sample_qc_mqc.tsv",
         "expansionhunter_mqc.tsv",
         "vep_annotation_mqc.tsv",
-        "snpeff_annotation_mqc.tsv",
         "rules_benchmark_data_mqc.tsv",
     ):
         assert expected in text
+    assert "snpeff_annotation_mqc.tsv" not in text
+    assert '# include: "rules/snpeff.smk"' in snakefile
+    assert 'include: "rules/snpeff.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
@@ -127,9 +169,22 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
 
     assert "bench=MDIR" not in fastp
     assert ": > {log.a};" in fastp
-    assert "{sample}.R1.fastq.gz" in fastqc
-    assert "{sample}.R2.fastq.gz" in fastqc
-    assert "{params.r1_link:q} {params.r2_link:q}" in fastqc
+    assert 'lane_suffix=".${{lane_idx}}"' in fastqc
+    assert "${{sample_name}}.R1${{lane_suffix}}.fastq.gz" in fastqc
+    assert "${{sample_name}}.R2${{lane_suffix}}.fastq.gz" in fastqc
+    assert "get_raw_fastq_qc_R1s" in fastqc
+    assert "get_raw_fastq_qc_R2s" in fastqc
+    assert "SKIP: fastqc_subsampled found no paired FASTQ inputs" in fastqc
+    assert "sample=FASTQ_QC_SAMPS" in fastqc
+    assert "fastqc_inputs=()" in fastqc
+    assert "fastqc_subsampled requires matched R1/R2 FASTQ counts" in fastqc
+    assert "expects exactly one R1 and one R2" not in fastqc
+    assert "get_raw_fastq_qc_R1s" in seqfu
+    assert "sample=FASTQ_QC_SAMPS" in seqfu
+    assert "SKIP: seqfu found no paired FASTQ inputs" in seqfu
+    assert "get_raw_fastq_qc_R1s" in fastv
+    assert "sample=FASTQ_QC_SAMPS" in fastv
+    assert "SKIP: fastv found no paired FASTQ inputs" in fastv
     assert "{input.fpqr1s}" in fastv
     assert "{input.fpqr2s}" in fastv
     assert "mkdir -p $(dirname {output});" in fastv
@@ -140,6 +195,11 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     assert 'printf "%s.R1\\\\t%s\\\\tR1\\\\t%s\\\\n"' in seqfu
     assert 'printf "%s.R2\\\\t%s\\\\tR2\\\\t%s\\\\n"' in seqfu
     assert "\n  - fastp\n" not in multiqc
+    assert "\n  - giab_sv_concordance\n" in multiqc
+    assert "giab_sv_concordance:" in multiqc
+    assert "other_reports/giab_sv_concordance_mqc.tsv" in multiqc
+    catalog = _read("docs/catalog_of_tools.md")
+    assert "Native MultiQC SeqFu parsing is the intended replacement path once validated" in catalog
 
 
 def test_fastp_is_not_pulled_by_staged_multiqc_targets() -> None:
@@ -190,6 +250,9 @@ def test_multiqc_ignores_other_report_logs_and_custom_logs_avoid_mqc_suffix() ->
     assert text.count("multiqc --version") >= 4
     assert "docker://multiqc/multiqc:v1.35" in text
     assert "daylilyinformatics/daylily_multiqc:0.2" not in text
+    assert "workflow/scripts/force_multiqc_dark_mode.py" in text
+    assert "DAY_final_multiqc.original.html" in text
+    assert "--backup {output.html_original:q}" in text
     assert "sequence_qc_outputs_custom_data.log" in text
     assert "alignment_qc_outputs_custom_data.log" in text
     assert "sequence_qc_outputs_mqc.log" not in text
@@ -217,11 +280,14 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
         "QC_CRAM_ALIGNERS",
-        "qc_alignment_dedupers()",
-            "workflow/scripts/compile_contamination_mqc.py",
-        ):
-            assert expected in site_mix
+        "qc_contamination_dedupers()",
+        "workflow/scripts/compile_contamination_mqc.py",
+    ):
+        assert expected in site_mix
     assert '"Sample",' in contamination_script
+    assert '"base_sample",' in contamination_script
+    assert '"sample_id": sample_id' not in contamination_script
+    assert '"sample_id": sample' in contamination_script
 
     for expected in (
         "rule relatedness_batch_manifest:",
@@ -244,7 +310,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     ]
     assert "--genome-build" not in extract_rule
     assert "-o {params.prefix:q}" not in extract_rule
-    assert "--out-dir {params.out_dir:q}" in extract_rule
+    assert '--out-dir "$tmp_dir"' in extract_rule
     assert "--sample-prefix" not in extract_rule
     assert "setuptools" in report_env["dependencies"]
 
@@ -263,7 +329,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     rtg = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
-    snpeff = _read("workflow/rules/snpeff.smk")
+    snakefile = _read("workflow/Snakefile")
     tiddit = _read("workflow/rules/tiddit.smk")
     slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
 
@@ -319,9 +385,12 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
     assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
     assert "vep_annotation_mqc.tsv" in vep
+    assert "summary_glob" in vep
     assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
-    assert "bgzip -c > {output.annovcf}" in snpeff
-    assert "snpeff_annotation_mqc.tsv" in snpeff
+    assert '# include: "rules/snpeff.smk"' in snakefile
+    assert 'include: "rules/snpeff.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
 
 
 def test_multiqc_config_custom_content_entries() -> None:
@@ -346,21 +415,38 @@ def test_multiqc_config_custom_content_entries() -> None:
         "tiddit_sv",
         "peddy_sample_qc",
         "vep_annotation",
-        "snpeff_annotation",
         "htd_calls",
         "expansionhunter",
     ):
         assert key in config["custom_data"]
         assert key in config["sp"]
+        assert "parent_id" in config["custom_data"][key]
+        assert "parent_name" in config["custom_data"][key]
 
-    excludes = set(config["exclude_modules"])
-    assert "fastp" not in excludes
-    assert "vep" not in excludes
-    assert "snpeff" not in excludes
-    assert "peddy" not in excludes
-    assert "somalier" not in excludes
-    assert "verifyBAMID" in excludes
-    assert "sexdetermine" in excludes
+    assert "snpeff_annotation" not in config["custom_data"]
+    assert "snpeff_annotation" not in config["sp"]
+    assert config["exclude_modules"] == []
+    exclude_file = REPO_ROOT / "config/multiqc_module_exclude.txt"
+    assert exclude_file.exists()
+    assert [
+        line.strip()
+        for line in exclude_file.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ] == []
+
+    parents = {
+        custom["parent_name"]
+        for custom in config["custom_data"].values()
+        if "parent_name" in custom
+    }
+    assert "Input, demux, read QC, trimming" in parents
+    assert "Alignment, BAM/CRAM, dedup, coverage" in parents
+    assert "Variant, genotype, benchmark, annotation" in parents
+    assert "Proteomics, workflow, misc" in parents
+    section_order = config["report_section_order"]
+    assert section_order["fastqc"]["order"] < section_order["samtools"]["order"]
+    assert section_order["samtools"]["order"] < section_order["peddy"]["order"]
+    assert section_order["peddy"]["order"] < section_order["bcftools"]["order"]
 
 
 def test_multiqc_sample_name_cleanup_contract() -> None:
@@ -375,8 +461,9 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert ".snv.sort" in trim
     assert ".idxstat.tsv" in trim
     assert ".idxstat" in trim
-    assert ".mosdepth.summary.sort.bed" in trim
-    assert ".mosdepth.summary.sort" in trim
+    assert ".mosdepth.summary.txt" in trim
+    assert ".mosdepth.global.dist.txt" in trim
+    assert ".mosdepth.region.dist.txt" in trim
     assert ".bcfstats.tsv" in trim
     for picard_suffix in (
         ".alignment_summary_metrics.txt",
@@ -387,6 +474,23 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
         ".gc_bias.detail_metrics.txt",
     ):
         assert picard_suffix in trim
+    assert ".rtg.vcfstats.txt" in trim
+    assert ".verifybamid.selfSM" in trim
+    assert ".peddy.sex_check.csv" in trim
+    assert ".peddy.het_check.csv" in trim
+    assert ".peddy.ped_check.csv" in trim
+    assert ".legacy_compat.bam" in trim
+    filename_modules = set(config["use_filename_as_sample_name"])
+    for module in (
+        "samtools",
+        "picard",
+        "mosdepth",
+        "verifybamid",
+        "bcftools",
+    ):
+        assert module in filename_modules
+    for module in ("goleft_indexcov", "peddy", "somalier"):
+        assert module not in filename_modules
     assert config["sample_names_replace_regex"] is True
     assert config["sample_names_replace"][r"\.md\.(chr[0-9XYM]+)$"] == r".\1"
     assert config["sample_names_replace"][r"\.metrics$"] == ""
@@ -400,12 +504,44 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
 
     module_order = config["module_order"]
     assert len(module_order) == len(set(module_order))
+    assert all(entry == entry.strip() for entry in module_order)
     assert "peddy" in module_order
     assert "somalier" in module_order
+    assert "vep" in module_order
     assert "peddy_sample_qc" in module_order
     assert "relatedness" in module_order
     assert "verifyBAMID" not in module_order
     assert "verifybamid2_panel_comparison" in module_order
+
+
+def test_multiqc_reports_scan_only_staged_inputs() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    assert "rule stage_multiqc_inputs:" in text
+    assert "workflow/scripts/stage_multiqc_inputs.py" in text
+    assert "workflow/scripts/validate_multiqc_sample_ids.py" in text
+    assert "reports/multiqc_inputs/seq_data" in text
+    assert "reports/multiqc_inputs/alignment" in text
+    assert "reports/multiqc_inputs/variants" in text
+    assert "reports/multiqc_inputs/final" in text
+    assert "--input-root {params.input_root:q}" in text
+    for rule_name, stage in (
+        ("rule multiqc_seq_data:", "seq_data"),
+        ("rule multiqc_alignment:", "alignment"),
+        ("rule multiqc_variants:", "variants"),
+        ("rule multiqc_final_wgs:", "final"),
+    ):
+        body = text[text.index(rule_name) :]
+        next_rule = body.find("\n\nrule ", 1)
+        if next_rule != -1:
+            body = body[:next_rule]
+        assert f'stage_dir=MDIR + "reports/multiqc_inputs/{stage}"' in body
+        assert 'module_exclude_config="config/multiqc_module_exclude.txt"' in body
+        assert "multiqc_module_exclude_args.py" in body
+        assert "$module_excludes" in body
+        assert "{params.stage_dir:q}" in body
+        assert "{MDIR} > {log:q}" not in body
+        assert "{MDIR} >> {log:q}" not in body
 
 
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
@@ -416,19 +552,35 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
     rtg_vcfstats = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
-    snpeff = _read("workflow/rules/snpeff.smk")
 
     assert "def day_stage_sample_id(sample, *components)" in common
     assert "_stage_sample_id(sample, aligner, deduper)" in contamination_script
+    assert "qc_contamination_dedupers()" in contamination
+    assert '"base_sample": sample' in contamination_script
+    assert '"sample_id": sample,' in contamination_script
     assert "compile_contamination_mqc.py" in contamination
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in bcftools
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in rtg_vcfstats
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in peddy
     assert "day_stage_sample_id(sample, aligner, deduper, caller)" in vep
-    assert "day_stage_sample_id(sample, aligner, deduper, caller)" in snpeff
     assert "marker = f\".{alnr}.{ddup}.{caller}.\"" in bcftools
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
+
+
+def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> None:
+    verifybamid2 = _read("workflow/rules/verifybamid2_contam.smk")
+    gatk = _read("workflow/rules/gatk_contam.smk")
+    multiqc_final = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    assert "qc_contamination_dedupers()" in verifybamid2
+    assert "qc_contamination_dedupers()" in gatk
+    assert "vb2_mqc.tsv" not in verifybamid2.split("output:", 1)[1].split("log:", 1)[0]
+    assert "gatk_mqc.tsv" not in gatk.split("output:", 1)[1].split("log:", 1)[0]
+    assert "{params.old_mqc}" in verifybamid2
+    assert "{params.old_mqc}" in gatk
+    assert '--ignore "*vb2_mqc.tsv"' not in multiqc_final
+    assert '--ignore "*gatk_mqc.tsv"' not in multiqc_final
 
 
 def test_multiqc_runtime_policy_documented() -> None:
@@ -451,6 +603,17 @@ def test_multiqc_runtime_policy_documented() -> None:
         "runtime_gate_minutes: 45",
         'enable_tools=["fastv"]',
         "site_mix genotype-free contamination",
+        "reports/multiqc_inputs/<stage>/",
+        "Duplicate `(module, Sample)` pairs fail during staging",
+        "`<sample>.<aligner>.<deduper>.<snv_caller>`",
+        "`<sample>.<aligner>.<deduper>.<sv_caller>`",
+        "Peddy CSVs and VerifyBamID `.selfSM` files are rewritten",
+        "`parent_id` / `parent_name` grouping",
         "QC gap:",
     ):
         assert expected in doc
+
+    catalog = _read("docs/catalog_of_tools.md")
+    assert "stage-scoped sample identity" in catalog
+    assert "stage_multiqc_inputs.py" in catalog
+    assert "validate_multiqc_sample_ids.py" in catalog

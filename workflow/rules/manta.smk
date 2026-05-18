@@ -18,8 +18,8 @@ rule manta_get_centos_env:
 rule manta:
     """https://github.com/Illumina/manta"""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        bam=rules.legacy_cram_compat_bam.output.bam,
+        bai=rules.legacy_cram_compat_bam.output.bai,
     output:
         vcf=f"{MDIR}" + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.vcf",
     threads: config["manta"]["threads"]
@@ -30,6 +30,8 @@ rule manta:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/logs/{sample}.{alnr}.manta.log",
     resources:
         vcpu=config["manta"]["threads"],
+        threads=config["manta"]["threads"],
+        mem_mb=config["manta"].get("mem_mb", 128000),
         partition=config["manta"]["partition"],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -58,7 +60,7 @@ rule manta:
         mkdir -p {params.work_dir}
 
         MANTA_OK=true
-        configManta.py --bam {input.cram} --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
+        configManta.py --bam {input.bam} --reference {params.huref} --runDir {params.work_dir} >> {log} 2>&1 || {{
             echo "ERROR: configManta.py failed" >> {log}
             MANTA_OK=false
         }}

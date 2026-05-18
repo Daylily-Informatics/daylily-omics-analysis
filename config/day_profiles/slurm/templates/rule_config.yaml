@@ -455,9 +455,16 @@ manta_sort_and_index:
 
 manta:
     threads: 128
+    mem_mb: 128000
     env_yaml: "../envs/manta_v0.1.yaml"
     numactl: "none"
     ld_preload: "  "
+    partition: "i192,i192mem,i128"
+
+legacy_cram_compat_bam:
+    threads: 32
+    mem_mb: 64000
+    env_yaml: "../envs/samtools_v0.1.yaml"
     partition: "i192,i192mem,i128"
 
 mosdepth:
@@ -977,6 +984,7 @@ picard:
 qualimap:
     threads: 32
     java_mem_size: "150000M"
+    mem_mb: 160000
     env_yaml: "../envs/qualimap_v0.1.yaml"
     glances: " "
     numactl: "none"
