@@ -52,6 +52,17 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+day_current_user() {
+    local current_user="${USER:-}"
+    if [[ -z "$current_user" ]]; then
+        current_user="$(id -un 2>/dev/null || true)"
+    fi
+    if [[ -z "$current_user" ]]; then
+        return 1
+    fi
+    printf "%s\n" "$current_user"
+}
+
 # Ensure AWS CLI is installed
 if ! command_exists aws; then
     echo "Error: AWS CLI is not installed. Please install it first."
@@ -142,9 +153,9 @@ fi
 
 # Skip project check if the flag is provided
 if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
-    CURRENT_USER="${USER:-}"
+    CURRENT_USER="$(day_current_user)"
     if [[ -z "$CURRENT_USER" ]]; then
-        echo "Error: USER is not set; cannot validate project budget authorization."
+        echo "Error: USER is not set and id -un failed; cannot validate project budget authorization."
         return 3
     fi
 
@@ -272,11 +283,12 @@ else
 fi
 
 # Set environment variables
-DAY_USER="${USER:-}"
+DAY_USER="$(day_current_user)"
 if [[ -z "$DAY_USER" ]]; then
-    echo "Error: USER is not set; cannot initialize APPTAINER_HOME."
+    echo "Error: USER is not set and id -un failed; cannot initialize APPTAINER_HOME."
     return 3
 fi
+export USER="${USER:-$DAY_USER}"
 export APPTAINER_HOME="/fsx/resources/environments/containers/$DAY_USER/$(hostname)/"
 export DAY_BIOME="AWSPC"
 export DAY_ROOT="$PWD"

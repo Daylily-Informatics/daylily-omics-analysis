@@ -127,6 +127,10 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert "bc -l" not in dyoainit
     assert "DEFAULTING TO PROJECT=daylily-global" not in dyoainit
 
+    assert "day_current_user()" in dyoainit
+    assert "id -un" in dyoainit
+    assert 'DAY_USER="$(day_current_user)"' in dyoainit
+    assert 'export USER="${USER:-$DAY_USER}"' in dyoainit
     assert "${BASH_SOURCE[0]:-}" in dyoainit
     assert "${2:-}" in dyoainit
     assert "${USER:-}" in dyoainit

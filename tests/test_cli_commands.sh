@@ -262,6 +262,15 @@ test_day_activate_defaults_missing_day_project_to_global() {
   test_result "day-activate defaults missing DAY_PROJECT to global" $?
 }
 
+# Test 28: dyoainit can resolve the user when SSM omits USER
+test_dyoainit_resolves_user_with_id_un() {
+  grep -q 'day_current_user()' dyoainit &&
+    grep -q 'id -un' dyoainit &&
+    grep -q 'DAY_USER="$(day_current_user)"' dyoainit &&
+    grep -q 'export USER="${USER:-$DAY_USER}"' dyoainit
+  test_result "dyoainit resolves missing USER from id -un" $?
+}
+
 # Main test execution
 main() {
   echo "=========================================="
@@ -297,6 +306,7 @@ main() {
   test_dycli_md_version_docs
   test_day_activate_reinitializes_dyoainit
   test_day_activate_defaults_missing_day_project_to_global
+  test_dyoainit_resolves_user_with_id_un
   
   echo ""
   echo "=========================================="
