@@ -227,7 +227,11 @@ def _variant_component_inputs(wildcards):
     paths.extend(_sv_component_inputs(wildcards))
     if qc_tool_enabled("peddy"):
         paths.extend(["logs/peddy_gathered.done", MDIR + "other_reports/peddy_sample_qc_mqc.tsv"])
-    if qc_tool_enabled("expansionhunter") and set(ALIGNERS) & EXPANSIONHUNTER_ALIGNERS:
+    if (
+        qc_tool_enabled("expansionhunter")
+        and set(ALIGNERS) & EXPANSIONHUNTER_ALIGNERS
+        and expansionhunter_report_targets_available()
+    ):
         paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")
     if qc_tool_enabled("vep", long_running=True):
         paths.append(MDIR + "other_reports/vep_annotation_mqc.tsv")

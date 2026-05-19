@@ -130,6 +130,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"site_mix\")" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
+    assert "expansionhunter_report_targets_available()" in text
     assert "QC_CRAM_ALIGNERS" in text
     assert "qc_alignment_dedupers()" in text
     assert "qc_contamination_dedupers()" in text

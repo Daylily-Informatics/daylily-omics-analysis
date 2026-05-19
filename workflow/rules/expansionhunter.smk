@@ -1,5 +1,6 @@
 import csv
 import os
+import sys
 
 from snakemake.exceptions import WorkflowError
 
@@ -8,6 +9,7 @@ EXPANSIONHUNTER_CFG = config["expansionhunter"]
 EXPANSIONHUNTER_ALIGNERS = {"sent", "sentcg", "ug"}
 EXPANSIONHUNTER_DEDUP_ALIGNERS = {"sent", "sentcg"}
 EXPANSIONHUNTER_CATALOG_KEY = "disease_loci_hg38_stranger_json"
+EXPANSIONHUNTER_SEX_GATE_WARNINGS = set()
 
 
 def _expansionhunter_selected_aligners():
@@ -51,16 +53,46 @@ def _expansionhunter_target_samples():
     return qc_eligible_sample_ids(SSAMPS)
 
 
-def _expansionhunter_require_non_control_sample_sex(sample):
-    if is_control_sample(sample):
-        return "ok"
+def _expansionhunter_sample_sex_values(sample):
     info = sample_metadata(sample)
     sex = str(info.get("biological_sex", "") or "").strip().lower()
-    if sex in VALID_REQUIRED_SAMPLE_SEXES:
-        return "ok"
     raw_sex = str(info.get("biological_sex_raw", sex) or "").strip()
     if raw_sex == "":
         raw_sex = "<empty>"
+    return sex, raw_sex
+
+
+def _expansionhunter_missing_required_sex(sample):
+    if is_control_sample(sample):
+        return None
+    sex, raw_sex = _expansionhunter_sample_sex_values(sample)
+    if sex in VALID_REQUIRED_SAMPLE_SEXES:
+        return None
+    return raw_sex
+
+
+def _expansionhunter_warn_missing_required_sex(sample):
+    raw_sex = _expansionhunter_missing_required_sex(sample)
+    if raw_sex is None:
+        return
+    key = (sample, raw_sex)
+    if key in EXPANSIONHUNTER_SEX_GATE_WARNINGS:
+        return
+    EXPANSIONHUNTER_SEX_GATE_WARNINGS.add(key)
+    print(
+        "WARNING: ExpansionHunter skipped sample "
+        f"{sample} while building optional report targets because "
+        "BIOLOGICAL_SEX must be male/female; observed "
+        f"biological_sex={raw_sex!r}. Set BIOLOGICAL_SEX=male/female "
+        "or mark true controls with is_negative_control=true or sample_type=NTC.",
+        file=sys.stderr,
+    )
+
+
+def _expansionhunter_require_non_control_sample_sex(sample):
+    raw_sex = _expansionhunter_missing_required_sex(sample)
+    if raw_sex is None:
+        return "ok"
     raise WorkflowError(
         "ExpansionHunter requires BIOLOGICAL_SEX=male/female before DAG "
         f"construction for non-control sample {sample}; observed "
@@ -69,36 +101,35 @@ def _expansionhunter_require_non_control_sample_sex(sample):
     )
 
 
-def _expansionhunter_catalog_path(wildcards=None):
-    try:
-        return config["supporting_files"]["files"]["strchive"][EXPANSIONHUNTER_CATALOG_KEY]["name"]
-    except KeyError as exc:
-        raise WorkflowError(
-            "ExpansionHunter requires supporting_files.files.strchive."
-            f"{EXPANSIONHUNTER_CATALOG_KEY}.name for this genome build."
-        ) from exc
-
-
-def _expansionhunter_target_paths(suffix):
+def _expansionhunter_target_paths(suffix, require=True, warn_on_skip=False):
     selected = _expansionhunter_selected_aligners()
     if not selected:
-        raise WorkflowError(
-            "produce_expansionhunter requires at least one of aligners=['sent','sentcg','ug']."
-        )
+        if require:
+            raise WorkflowError(
+                "produce_expansionhunter requires at least one of aligners=['sent','sentcg','ug']."
+            )
+        return []
 
     paths = []
     non_na_dedupers = sorted(d for d in DDUP if d != "na")
     for alnr in selected:
         if alnr in EXPANSIONHUNTER_DEDUP_ALIGNERS:
             if not non_na_dedupers:
-                raise WorkflowError(
-                    f"ExpansionHunter for {alnr} requires a non-na deduper; set dedupers=['dmd'] or another real deduper."
-                )
+                if require:
+                    raise WorkflowError(
+                        f"ExpansionHunter for {alnr} requires a non-na deduper; set dedupers=['dmd'] or another real deduper."
+                    )
+                continue
             for ddup in non_na_dedupers:
                 for sample in _expansionhunter_target_samples():
                     if not _expansionhunter_sample_supports_aligner(sample, alnr):
                         continue
-                    _expansionhunter_require_non_control_sample_sex(sample)
+                    if require:
+                        _expansionhunter_require_non_control_sample_sex(sample)
+                    elif _expansionhunter_missing_required_sex(sample) is not None:
+                        if warn_on_skip:
+                            _expansionhunter_warn_missing_required_sex(sample)
+                        continue
                     paths.extend(
                         expand(
                             MDIR
@@ -113,7 +144,12 @@ def _expansionhunter_target_paths(suffix):
             for sample in _expansionhunter_target_samples():
                 if not _expansionhunter_sample_supports_aligner(sample, alnr):
                     continue
-                _expansionhunter_require_non_control_sample_sex(sample)
+                if require:
+                    _expansionhunter_require_non_control_sample_sex(sample)
+                elif _expansionhunter_missing_required_sex(sample) is not None:
+                    if warn_on_skip:
+                        _expansionhunter_warn_missing_required_sex(sample)
+                    continue
                 paths.extend(
                     expand(
                         MDIR
@@ -123,11 +159,30 @@ def _expansionhunter_target_paths(suffix):
                     )
                 )
     if not paths:
-        raise WorkflowError(
-            "ExpansionHunter found no manifest-compatible sample/aligner pairs for "
-            f"aligners={selected}. Check SEQ_VENDOR, SEQ_PLATFORM, and ULTIMA_CRAM_ALIGNER."
-        )
+        if require:
+            raise WorkflowError(
+                "ExpansionHunter found no manifest-compatible sample/aligner pairs for "
+                f"aligners={selected}. Check SEQ_VENDOR, SEQ_PLATFORM, and ULTIMA_CRAM_ALIGNER."
+            )
     return paths
+
+
+def _expansionhunter_report_targets():
+    return _expansionhunter_target_paths("tsv", require=False, warn_on_skip=True)
+
+
+def expansionhunter_report_targets_available():
+    return bool(_expansionhunter_report_targets())
+
+
+def _expansionhunter_catalog_path(wildcards=None):
+    try:
+        return config["supporting_files"]["files"]["strchive"][EXPANSIONHUNTER_CATALOG_KEY]["name"]
+    except KeyError as exc:
+        raise WorkflowError(
+            "ExpansionHunter requires supporting_files.files.strchive."
+            f"{EXPANSIONHUNTER_CATALOG_KEY}.name for this genome build."
+        ) from exc
 
 
 def _expansionhunter_sample_sex(wildcards):
@@ -266,7 +321,7 @@ localrules:
 
 rule expansionhunter_gather:
     input:
-        lambda wildcards: _expansionhunter_target_paths("tsv")
+        lambda wildcards: _expansionhunter_report_targets()
     output:
         MDIR + "other_reports/expansionhunter_mqc.tsv"
     log:

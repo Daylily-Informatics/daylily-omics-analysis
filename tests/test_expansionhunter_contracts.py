@@ -255,7 +255,9 @@ def test_expansionhunter_rule_routes_supported_short_read_platforms() -> None:
     assert "wildcards.alnr == \"ug\"" in rule_text
     assert "wildcards.ddup != \"na\"" in rule_text
     assert "_expansionhunter_sample_supports_aligner" in rule_text
-    assert "lambda wildcards: _expansionhunter_target_paths(\"tsv\")" in rule_text
+    assert "lambda wildcards: _expansionhunter_report_targets()" in rule_text
+    assert "_expansionhunter_target_paths(\"tsv\", require=False, warn_on_skip=True)" in rule_text
+    assert "WARNING: ExpansionHunter skipped sample " in rule_text
     assert "SEQ_VENDOR" in rule_text
     assert "SEQ_PLATFORM" in rule_text
     assert "ULTIMA_CRAM_ALIGNER" in rule_text
