@@ -197,6 +197,7 @@ config["_run_context_run_ids"] = sorted(RUN_CONTEXT_BY_RUNID)
 
 MULTIQC_QC_LONG_RUNNING_TOOLS = {
     "fastv",
+    "unmapped_metagenomics",
     "vep",
 }
 
@@ -368,6 +369,10 @@ def qc_alignment_dedupers():
 
 def qc_contamination_dedupers():
     return sorted(set(DDUP))
+
+
+def qc_variant_dedupers():
+    return sorted(ddup for ddup in set(DDUP) if ddup != "na")
 
 
 BOOTSTRAP_UNIT_COLUMNS = [
@@ -1604,15 +1609,118 @@ config["sample_info"] = sample_info
 def _truthy(x):
     return str(x or "").strip().lower() in {"true", "t", "1", "yes", "y"}
 
+
+POSITIVE_CONTROL_SAMPLE_TYPE_TOKENS = {
+    "pos_control",
+    "poscontrol",
+    "positive_control",
+    "positivecontrol",
+    "control_positive",
+}
+
+NEGATIVE_CONTROL_SAMPLE_TYPE_TOKENS = {
+    "neg_control",
+    "negcontrol",
+    "negative_control",
+    "negativecontrol",
+    "control_negative",
+    "ntc",
+    "no_template",
+    "no_template_control",
+    "notemplatecontrol",
+}
+
+CONTROL_SAMPLE_TYPE_TOKENS = (
+    POSITIVE_CONTROL_SAMPLE_TYPE_TOKENS | NEGATIVE_CONTROL_SAMPLE_TYPE_TOKENS
+)
+
+
+def _metadata_sample_id(wildcards_or_sample):
+    return str(getattr(wildcards_or_sample, "sample", wildcards_or_sample))
+
+
+def sample_metadata(sample):
+    sample_id = _metadata_sample_id(sample)
+    info = config.get("sample_info", {}).get(sample_id)
+    if info is None:
+        raise WorkflowError(f"Missing sample_info metadata for sample {sample_id}.")
+    return info
+
+
+def _sample_type_token(info):
+    return re.sub(
+        r"[^a-z0-9]+",
+        "_",
+        str(info.get("sample_type", "") or "").strip().lower(),
+    ).strip("_")
+
+
+def is_positive_control_sample(sample):
+    info = sample_metadata(sample)
+    return _truthy(info.get("is_positive_control")) or (
+        _sample_type_token(info) in POSITIVE_CONTROL_SAMPLE_TYPE_TOKENS
+    )
+
+
+def is_negative_control_or_ntc_sample(sample):
+    info = sample_metadata(sample)
+    return _truthy(info.get("is_negative_control")) or (
+        _sample_type_token(info) in NEGATIVE_CONTROL_SAMPLE_TYPE_TOKENS
+    )
+
+
+def is_control_sample(sample):
+    info = sample_metadata(sample)
+    return (
+        is_positive_control_sample(sample)
+        or is_negative_control_or_ntc_sample(sample)
+        or _sample_type_token(info) in CONTROL_SAMPLE_TYPE_TOKENS
+    )
+
+
+def qc_eligible_sample_ids(sample_ids=None):
+    if sample_ids is None:
+        sample_ids = globals().get("SSAMPS", [])
+    return [
+        str(sample)
+        for sample in sample_ids
+        if not is_negative_control_or_ntc_sample(sample)
+    ]
+
+
+def require_qc_eligible_sample(wildcards_or_sample, tool_name):
+    sample = _metadata_sample_id(wildcards_or_sample)
+    if is_negative_control_or_ntc_sample(sample):
+        info = sample_metadata(sample)
+        raise WorkflowError(
+            f"{tool_name} excludes negative-control/NTC sample {sample}; "
+            f"is_negative_control={info.get('is_negative_control')!r}, "
+            f"is_positive_control={info.get('is_positive_control')!r}, "
+            f"sample_type={info.get('sample_type')!r}."
+        )
+    return "ok"
+
+
 POS_CONTROL_SAMPLES = sorted(
     s for s, info in sample_info.items()
-    if _truthy(info.get("is_positive_control"))
+    if is_positive_control_sample(s)
 )
 
 NEG_CONTROL_SAMPLES = sorted(
     s for s, info in sample_info.items()
-    if _truthy(info.get("is_negative_control"))
+    if is_negative_control_or_ntc_sample(s)
 )
+
+_conflicting_control_samples = sorted(
+    s
+    for s in sample_info
+    if is_positive_control_sample(s) and is_negative_control_or_ntc_sample(s)
+)
+if _conflicting_control_samples:
+    raise WorkflowError(
+        "Sample metadata marks sample(s) as both positive control and "
+        "negative-control/NTC: " + ", ".join(_conflicting_control_samples)
+    )
 
 # If you want the concordance control path for just the positive controls:
 POS_CONTROL_PATHS = {
@@ -1796,6 +1904,8 @@ for sample in samples["sample"].unique():
     row = samples[samples["sample"] == sample]
     ss = first_val(row, "analysis_unit_uid")
     SSAMPS.setdefault(ss, []).append(sample)
+
+QC_ELIGIBLE_SAMPLES = qc_eligible_sample_ids(SSAMPS)
 
 
 # Tumor-normal pairs

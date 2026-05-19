@@ -1,5 +1,7 @@
 import os
 
+from snakemake.exceptions import WorkflowError
+
 # This rule set gathers staged QC outputs and produces the public MultiQC
 # reports.  Runtime-gated tools are still available as first-class rules, but
 # they are kept out of routine MultiQC targets unless explicitly enabled.
@@ -42,6 +44,7 @@ def _sequence_qc_native_inputs(wildcards):
 def _alignment_component_inputs(wildcards):
     paths = list(_seq_data_component_inputs(wildcards))
     paths.extend(_alignment_qc_native_inputs(wildcards))
+    paths.extend(_unmapped_metagenomics_component_inputs(wildcards))
     paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
     if (
         qc_tool_enabled("verifybamid2")
@@ -61,6 +64,68 @@ def _alignment_component_inputs(wildcards):
     if qc_tool_enabled("relatedness"):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
         paths.extend(_relatedness_native_inputs(wildcards))
+    return paths
+
+
+def _unmapped_metagenomics_enabled_for_multiqc():
+    return qc_tool_enabled(
+        "unmapped_metagenomics", long_running=True, default=False
+    )
+
+
+def _validate_unmapped_metagenomics_multiqc_config():
+    cfg = config.get("unmapped_metagenomics")
+    if not isinstance(cfg, dict):
+        raise WorkflowError(
+            "Final MultiQC includes unmapped metagenomics only when explicitly "
+            "enabled with multiqc_qc.enable_tools=['unmapped_metagenomics'] "
+            "and configured with unmapped_metagenomics.kraken2_db, threads, "
+            "mem_mb, and partition."
+        )
+    missing = [
+        key
+        for key in ("kraken2_db", "threads", "mem_mb", "partition")
+        if str(cfg.get(key, "")).strip() in {"", "None", "none", "na", "NA"}
+    ]
+    if missing:
+        raise WorkflowError(
+            "Final MultiQC unmapped metagenomics is enabled but missing "
+            "explicit config value(s): "
+            + ", ".join(f"unmapped_metagenomics.{key}" for key in missing)
+        )
+    read_limit = str(cfg.get("read_limit", "all")).strip()
+    if read_limit != "all":
+        raise WorkflowError(
+            "Final MultiQC unmapped metagenomics requires "
+            "unmapped_metagenomics.read_limit='all'."
+        )
+
+
+def _unmapped_metagenomics_component_inputs(wildcards):
+    if not _unmapped_metagenomics_enabled_for_multiqc():
+        return []
+    _validate_unmapped_metagenomics_multiqc_config()
+    aligners = sorted(ALL_ALIGNERS)
+    dedupers = qc_contamination_dedupers()
+    if not aligners:
+        raise WorkflowError(
+            "Final MultiQC unmapped metagenomics requires at least one active aligner."
+        )
+    if not dedupers:
+        raise WorkflowError(
+            "Final MultiQC unmapped metagenomics requires at least one real deduper."
+        )
+    paths = [MDIR + "other_reports/unmapped_metagenomics_mqc.tsv"]
+    paths.extend(
+        expand(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
+            + "{sample}.{alnr}.{ddup}.kraken2.quick.report.txt",
+            sample=SSAMPS,
+            alnr=aligners,
+            ddup=dedupers,
+        )
+    )
     return paths
 
 
@@ -133,7 +198,7 @@ def _alignment_qc_native_inputs(wildcards):
 
 def _relatedness_native_inputs(wildcards):
     paths = []
-    qddups = qc_alignment_dedupers()
+    qddups = qc_variant_dedupers()
     alnrs = QC_CRAM_ALIGNERS
     paths.extend(
         expand(
@@ -218,6 +283,7 @@ localrules:
     produce_multiqc_sample_qc,
     produce_multiqc_variant_annotation,
     produce_multiqc_all,
+    produce_multiqc_stage_final,
     produce_multiqc_seq_data,
     produce_multiqc_alignment,
     produce_multiqc_variants,
@@ -603,6 +669,11 @@ rule produce_multiqc_variant_annotation:  # TARGET: canonical variant annotation
 rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
     input:
         MDIR + "reports/DAY_final_multiqc.html"
+
+
+rule produce_multiqc_stage_final:  # TARGET: stage final MultiQC input tree
+    input:
+        MDIR + "reports/multiqc_inputs/final/.stage.done"
 
 
 rule produce_multiqc_seq_data:  # DEPRECATED TARGET: use produce_multiqc_input_data

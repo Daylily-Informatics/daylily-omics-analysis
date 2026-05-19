@@ -79,6 +79,8 @@ module_order:
   - verifybamid2_panel_comparison
   - site_mix_contam
   - site_mix_donor
+  - kraken
+  - unmapped_metagenomics
   - relatedness
   - bcftools_variant_stats
   - rtg_vcfstats
@@ -136,6 +138,10 @@ report_section_order:
     order: 3030
   site_mix_donor:
     order: 3040
+  kraken:
+    order: 3050
+  unmapped_metagenomics:
+    order: 3060
   peddy:
     order: 3100
   peddy_sample_qc:
@@ -410,6 +416,16 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'site_mix_donor'
+  unmapped_metagenomics:
+    id: 'unmapped_metagenomics'
+    section_name: 'Unmapped-read Metagenomics'
+    parent_id: 'dayoa_sample_contamination_metagenomics'
+    parent_name: 'Sample identity, contamination, metagenomics'
+    description: 'Kraken2 --quick classification summary for primary pass-QC human-unmapped reads'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'unmapped_metagenomics'
   relatedness:
     id: 'relatedness'
     section_name: 'Batch Relatedness'
@@ -541,6 +557,8 @@ sp:
     fn: "other_reports/site_mix_contam_mqc.tsv"
   site_mix_donor:
     fn: "other_reports/site_mix_donor_mqc.tsv"
+  unmapped_metagenomics:
+    fn: "other_reports/unmapped_metagenomics_mqc.tsv"
   relatedness:
     fn: "other_reports/relatedness_mqc.tsv"
   bcftools_variant_stats:

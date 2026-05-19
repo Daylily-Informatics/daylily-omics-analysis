@@ -179,7 +179,7 @@ MultiQC by default:
 | --- | --- | --- |
 | FastV | Microbial/viral k-mer screening can be resource-heavy and depends on external k-mer resources. | `enable_long_running=true` or `enable_tools=["fastv"]` |
 | VEP | Annotation can exceed the routine QC budget and depends on large external caches. | `enable_long_running=true` or `enable_tools=["vep"]` |
-| Unmapped-read metagenomics | Kraken2 classification depends on an explicit external database and can be expensive. | `produce_unmapped_metagenomics_quick` with `unmapped_metagenomics.kraken2_db`, `threads`, `mem_mb`, `partition`, and `max_reads` |
+| Unmapped-read metagenomics | Kraken2 classification depends on an explicit external database and can be expensive. | Standalone `produce_unmapped_metagenomics_quick`, or final staged MultiQC with `enable_tools=["unmapped_metagenomics"]` plus `unmapped_metagenomics.kraken2_db`, `threads`, `mem_mb`, `partition`, and optional `read_limit: all`; optional `memory_mapping: true` is required to add Kraken2 `--memory-mapping` |
 
 site_mix was promoted to routine default after at-sanity validation showed the
 GATK pileup plus estimator path completed under the 30-minute service

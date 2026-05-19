@@ -551,6 +551,18 @@ def stage_mosdepth_summary(stager: Stager, source: Path) -> None:
         )
 
 
+def stage_kraken2_report(stager: Stager, source: Path) -> None:
+    parts = parse_alignment_parts(source)
+    stager.copy_file(
+        source,
+        Path("native/kraken") / f"{parts.stage_sample}.kraken2.quick.report.txt",
+        parts,
+        module="kraken",
+        input_kind="kraken2_report",
+        group_id=str(source),
+    )
+
+
 def stage_goleft_done(stager: Stager, source: Path) -> None:
     parts = parse_alignment_parts(source)
     goleft_dir = source.parent / "goleft"
@@ -711,6 +723,11 @@ def stage_known_input(stager: Stager, source: Path) -> None:
         stage_qualimap_done(stager, source)
     elif name.endswith(".mosdepth.summary.txt"):
         stage_mosdepth_summary(stager, source)
+    elif (
+        name.endswith(".kraken2.quick.report.txt")
+        and "/unmapped_metagenomics/" in source.as_posix()
+    ):
+        stage_kraken2_report(stager, source)
     elif name == "goleft.done":
         stage_goleft_done(stager, source)
     elif name.endswith(".vb2.tsv"):

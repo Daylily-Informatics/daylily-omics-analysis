@@ -4,12 +4,14 @@
 # This script must be sourced, not executed directly.
 
 # Ensure the script is sourced
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ "${BASH_SOURCE[0]:-}" == "${0:-}" ]]; then
     echo "Error: This script must be sourced, not executed directly."
     echo "Usage: source $0 [--project <project_name>] [--skip-project-check]"
-    return 3
+    exit 3
 fi
 
+region=""
+PROJECT="${PROJECT:-}"
 
 # Set default contact email if not already set
 export DAY_CONTACT_EMAIL="${DAY_CONTACT_EMAIL:-john@daylilyinformatics.com}"
@@ -17,7 +19,7 @@ export DAY_CONTACT_EMAIL="${DAY_CONTACT_EMAIL:-john@daylilyinformatics.com}"
 # Source AWS ParallelCluster configuration to get the region
 if [[ -f "/etc/parallelcluster/cfnconfig" ]]; then
     source "/etc/parallelcluster/cfnconfig"
-    region="$cfn_region"
+    region="${cfn_region:-}"
 else
     echo "Error: AWS ParallelCluster config not found at /etc/parallelcluster/cfnconfig"
 fi
@@ -25,7 +27,7 @@ fi
 # Check if region is set
 if [[ -z "$region" ]]; then
     echo "Error: cfn_region is not set or is empty."
-
+    return 3
 fi
 
 # Function to display usage
@@ -68,6 +70,10 @@ DEACTIVATE=false
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --project)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --project requires a project name."
+                return 3
+            fi
             PROJECT="$2"
             shift 2
             ;;
@@ -107,10 +113,14 @@ fi
 if [[ -z "$PROJECT" ]]; then
     if [[ -f "/opt/parallelcluster/shared/cluster-config.yaml" ]]; then
         PROJECT=$(awk '/Key: aws-parallelcluster-project/ {getline; print $2}' /opt/parallelcluster/shared/cluster-config.yaml)
+        if [[ -z "$PROJECT" ]]; then
+            echo "Error: Project tag aws-parallelcluster-project was not found in /opt/parallelcluster/shared/cluster-config.yaml"
+            return 3
+        fi
         echo "Notice: --project not set. Using default project name: $PROJECT"
     else
         echo "Error: Cluster config file not found at /opt/parallelcluster/shared/cluster-config.yaml"
-
+        return 3
     fi
 fi
 
@@ -132,6 +142,12 @@ fi
 
 # Skip project check if the flag is provided
 if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
+    CURRENT_USER="${USER:-}"
+    if [[ -z "$CURRENT_USER" ]]; then
+        echo "Error: USER is not set; cannot validate project budget authorization."
+        return 3
+    fi
+
     # Path to the budget file
     budget_file="/fsx/data/budget_tags/pcluster-project-budget-tags.tsv"
 
@@ -142,14 +158,11 @@ if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
     fi
 
     # Validate the project for the current user
-    USER_PROJECTS=$(awk -F'\t' -v user="$USER" '$2 ~ user {print $1}' "$budget_file" | tr '\n' ',' | sed 's/,$//')
+    USER_PROJECTS=$(awk -F'\t' -v user="$CURRENT_USER" '$2 ~ user {print $1}' "$budget_file" | tr '\n' ',' | sed 's/,$//')
     if [[ ! ",$USER_PROJECTS," =~ ",$PROJECT," ]]; then
-        echo "Error: Project '$PROJECT' is not valid for user '$USER'."
-        echo "Valid projects for '$USER': $USER_PROJECTS"
-        PROJECT="daylily-global"
-        echo ""
-        echo "DEFAULTING TO PROJECT=daylily-global"
-        echo ""
+        echo "Error: Project '$PROJECT' is not valid for user '$CURRENT_USER'."
+        echo "Valid projects for '$CURRENT_USER': $USER_PROJECTS"
+        return 3
     fi
 else
     echo "Skipping project validation as --skip-project-check was passed."
@@ -164,59 +177,107 @@ create_budget() {
 
 }
 
-# Query AWS budgets
-BUDGETS=$(aws budgets describe-budgets --account-id "$AWS_ACCOUNT_ID" --region "$region" 2>/dev/null)
+is_nonnegative_number() {
+    [[ "$1" =~ ^[0-9]+([.][0-9]+)?$ ]]
+}
 
-if [[ -z "$BUDGETS" && "$SKIP_PROJECT_CHECK" != "true" ]]; then
-    echo "Error: Unable to retrieve any budgets from AWS. Please check your AWS permissions or configuration."
+export TOTAL_BUDGET="NA"
+export USED_BUDGET="NA"
+export PERCENT_USED="NA"
 
-fi
-
-# Check if the specified project budget exists
-MATCHING_BUDGET=$(echo "$BUDGETS" | jq -r ".Budgets[] | select(.BudgetName==\"$PROJECT\")")
-
-if [[ -z "$MATCHING_BUDGET" && "$SKIP_PROJECT_CHECK" != "true" ]]; then
-    echo "No matching AWS budget found for project '$PROJECT' in region '$region'."
-    echo "Available AWS Budgets (specify with the --project flag):"
-    echo "$BUDGETS" | jq -r '.Budgets[].BudgetName'
-
-    read -p "Would you like to create a new budget? (y/n): " RESPONSE
-    if [[ "$RESPONSE" =~ ^[Yy]$ ]]; then
-        create_budget
-    else
-        echo "Exiting without creating a budget."
+if [[ "$SKIP_PROJECT_CHECK" == true ]]; then
+    echo ""
+    echo "________________________________________________________"
+    echo "AWS Budget lookup skipped for project '$PROJECT' in region '$region'."
+    echo "  Total: $TOTAL_BUDGET"
+    echo "  Used: $USED_BUDGET"
+    echo "  Percent Used: $PERCENT_USED"
+    echo "________________________________________________________"
+else
+    if ! command_exists jq; then
+        echo "Error: jq is required to parse AWS budget JSON."
         return 3
+    fi
+
+    # Query AWS budgets
+    BUDGETS=$(aws budgets describe-budgets --account-id "$AWS_ACCOUNT_ID" --region "$region" 2>/dev/null)
+    budgets_ret=$?
+
+    if [[ "$budgets_ret" -ne 0 || -z "$BUDGETS" ]]; then
+        echo "Error: Unable to retrieve AWS budgets. Please check your AWS permissions or configuration."
+        return 3
+    fi
+
+    if ! echo "$BUDGETS" | jq -e '.Budgets | type == "array"' >/dev/null 2>&1; then
+        echo "Error: AWS budget response was missing a Budgets array."
+        return 3
+    fi
+
+    # Check if the specified project budget exists
+    MATCHING_BUDGET=$(echo "$BUDGETS" | jq -c --arg project "$PROJECT" '[.Budgets[] | select(.BudgetName==$project)] | if length == 1 then .[0] else empty end')
+
+    if [[ -z "$MATCHING_BUDGET" ]]; then
+        echo "No matching AWS budget found for project '$PROJECT' in region '$region'."
+        echo "Available AWS Budgets (specify with the --project flag):"
+        echo "$BUDGETS" | jq -r '.Budgets[].BudgetName'
+
+        read -p "Would you like to create a new budget? (y/n): " RESPONSE
+        if [[ "$RESPONSE" =~ ^[Yy]$ ]]; then
+            create_budget
+        else
+            echo "Exiting without creating a budget."
+        fi
+        return 3
+    fi
+
+    # Extract budget details
+    TOTAL_BUDGET=$(echo "$MATCHING_BUDGET" | jq -r ".BudgetLimit.Amount // empty")
+    USED_BUDGET=$(echo "$MATCHING_BUDGET" | jq -r ".CalculatedSpend.ActualSpend.Amount // empty")
+
+    if ! is_nonnegative_number "$TOTAL_BUDGET" || ! is_nonnegative_number "$USED_BUDGET"; then
+        echo "Error: AWS budget response did not include numeric BudgetLimit.Amount and CalculatedSpend.ActualSpend.Amount values for project '$PROJECT'."
+        return 3
+    fi
+
+    if ! awk -v total="$TOTAL_BUDGET" 'BEGIN { exit (total > 0 ? 0 : 1) }'; then
+        echo "Error: AWS budget total for project '$PROJECT' must be greater than zero."
+        return 3
+    fi
+
+    # Calculate usage percentage
+    PERCENT_USED=$(awk -v used="$USED_BUDGET" -v total="$TOTAL_BUDGET" 'BEGIN { printf "%.2f", (used / total) * 100 }')
+    percent_ret=$?
+    if [[ "$percent_ret" -ne 0 || -z "$PERCENT_USED" ]]; then
+        echo "Error: Unable to calculate budget usage percentage for project '$PROJECT'."
+        return 3
+    fi
+
+    export TOTAL_BUDGET
+    export USED_BUDGET
+    export PERCENT_USED
+
+    # Display budget information
+    echo ""
+    echo "________________________________________________________"
+    echo "AWS Budget for project '$PROJECT' in region '$region':"
+    echo "  Total: $TOTAL_BUDGET USD"
+    echo "  Used: $USED_BUDGET USD"
+    echo "  Percent Used: $PERCENT_USED%"
+    echo "________________________________________________________"
+
+    # Check if the budget is exhausted
+    if awk -v pct="$PERCENT_USED" 'BEGIN { exit (pct >= 100 ? 0 : 1) }'; then
+        echo "Warning: Budget for project '$PROJECT' is exhausted!"
     fi
 fi
 
-# Extract budget details
-export TOTAL_BUDGET=$(echo "$MATCHING_BUDGET" | jq -r ".BudgetLimit.Amount")
-export USED_BUDGET=$(echo "$MATCHING_BUDGET" | jq -r ".CalculatedSpend.ActualSpend.Amount")
-
-if [[ (-z "$TOTAL_BUDGET" || -z "$USED_BUDGET") && "$SKIP_PROJECT_CHECK" != "true" ]]; then
-    echo "Error: Unable to calculate budget details for project '$PROJECT'."
+# Set environment variables
+DAY_USER="${USER:-}"
+if [[ -z "$DAY_USER" ]]; then
+    echo "Error: USER is not set; cannot initialize APPTAINER_HOME."
     return 3
 fi
-
-# Calculate usage percentage
-export PERCENT_USED=$(awk "BEGIN {print ($USED_BUDGET / $TOTAL_BUDGET) * 100}")
-
-# Display budget information
-echo ""
-echo "________________________________________________________"
-echo "AWS Budget for project '$PROJECT' in region '$region':"
-echo "  Total: $TOTAL_BUDGET USD"
-echo "  Used: $USED_BUDGET USD"
-echo "  Percent Used: $PERCENT_USED%"
-echo "________________________________________________________"
-
-# Check if the budget is exhausted
-if (( $(echo "$PERCENT_USED >= 100" | bc -l) )); then
-    echo "Warning: Budget for project '$PROJECT' is exhausted!"
-fi
-
-# Set environment variables
-export APPTAINER_HOME="/fsx/resources/environments/containers/$USER/$(hostname)/"
+export APPTAINER_HOME="/fsx/resources/environments/containers/$DAY_USER/$(hostname)/"
 export DAY_BIOME="AWSPC"
 export DAY_ROOT="$PWD"
 
@@ -231,7 +292,7 @@ export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
 
 # Backup original PATH and PS1 if not already set
 export ORIG_PATH="${ORIG_PATH:-$PATH}"
-export ORIG_PS1="${ORIG_PS1:-$PS1}"
+export ORIG_PS1="${ORIG_PS1:-${PS1:-}}"
 
 # Source color themes
 if [[ -f "config/cli/colr_themes.sh" ]]; then
@@ -241,7 +302,7 @@ else
 fi
 
 # Warn if shell is not bash
-if [[ "$SHELL" != *"bash"* ]]; then
+if [[ "${SHELL:-}" != *"bash"* ]]; then
     echo "Warning: This script has only been tested with bash."
     sleep 10
 fi
@@ -271,7 +332,7 @@ alias dy-g="source bin/day_set_genome_build"
 
 
 # Display help if requested
-if [[ "$1" =~ ^(-h|--help|help)$ ]]; then
+if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
     if [[ -f "docs/markdown/cli_help_brief.md" ]]; then
         hlp=$(cat docs/markdown/cli_help_brief.md)
         if command_exists colr; then

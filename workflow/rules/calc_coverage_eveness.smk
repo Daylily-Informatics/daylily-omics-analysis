@@ -16,6 +16,7 @@ rule calc_coverage_evenness:
     output:
         # tsv=MDIR  + "{sample}/align/{alnr}/{ddup}/norm_cov_eveness/{sample}.{alnr}.{ddup}.norm_cov_eveness.mqc.tsv",
         mos_pre=MDIR   + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md",
+        mqc=MDIR   + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md.norm_cov_eveness.mqc.tsv",
     container: None
     conda:
         "../envs/mosdepth_v0.1.yaml"
@@ -45,13 +46,13 @@ rule calc_coverage_evenness:
         mkdir -p $( dirname {output.mos_pre} )/logs;
         touch {output.mos_pre};
         touch {log};
-        echo "Sample\tbase_sample\tCHRM\tmeanRawCov\tmedianRawCov\tstdevRawCov\tRawCovCoefofvar\tNCmean\tNCmedian\tstdevNC\tNCcoefofvar\tpctEQ0\tpctLT5\tpctLT10\taligner\tdeduper" > {output.mos_pre}.norm_cov_eveness.mqc.tsv;
+        echo "Sample\tbase_sample\tCHRM\tmeanRawCov\tmedianRawCov\tstdevRawCov\tRawCovCoefofvar\tNCmean\tNCmedian\tstdevNC\tNCcoefofvar\tpctEQ0\tpctLT5\tpctLT10\taligner\tdeduper" > {output.mqc};
         for i in {params.l}1..22{params.r};
         do
             echo "Processing {params.cluster_sample} Chrm:{params.chrm}$i";                            
             mosdepth -x  -Q 1 -T 0 -m -f {params.huref}  --by 50 -c {params.chrm}$i --threads 20 {output.mos_pre}.{params.chrm}$i {input.cram};
             touch {output.mos_pre}.{params.chrm}$i.regions.bed.gz;
-            Rscript workflow/scripts/calc_norm_cov_sd.R {output.mos_pre}.{params.chrm}$i.regions.bed.gz "{params.base_sample}" "{params.stage_sample}.{params.chrm}$i" {params.chrm}$i {wildcards.alnr} {wildcards.ddup} | sed 's/\\"//g;' >> {output.mos_pre}.norm_cov_eveness.mqc.tsv ;
+            Rscript workflow/scripts/calc_norm_cov_sd.R {output.mos_pre}.{params.chrm}$i.regions.bed.gz "{params.base_sample}" "{params.stage_sample}.{params.chrm}$i" {params.chrm}$i {wildcards.alnr} {wildcards.ddup} | sed 's/\\"//g;' >> {output.mqc} ;
         done;
         ls {output};
         rm $(dirname {output.mos_pre})/*per-base* || echo 'rm perbase failed';
@@ -63,20 +64,24 @@ localrules:
 
 rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out sambamba for mosdepth
     input:
-        expand(MDIR       + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md", sample=SSAMPS, alnr=ALL_ALIGNERS, ddup=DDUP)
+        mqc=expand(MDIR       + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md.norm_cov_eveness.mqc.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS, ddup=DDUP)
     container: None
     threads: 8
     output:
         mqc=MDIR+"other_reports/norm_cov_evenness_combo_mqc.tsv",
     shell:
         """
+        set -euo pipefail;
         mkdir -p $(dirname {output});
-        single_file=$( find results | grep norm_cov_eveness.mqc.tsv | head -n 1);
-        if [[ "$single_file" == "" ]]; then
+        coverage_files=({input.mqc:q});
+        if [[ "${#coverage_files[@]}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc};
         else
-            head -n 1 $single_file > {output.mqc};
-            find results | grep .norm_cov_eveness.mqc.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
+            first_file="${coverage_files[0]}";
+            head -n 1 "$first_file" > {output.mqc};
+            for source_path in "${coverage_files[@]}"; do
+                tail -n +2 "$source_path" >> {output.mqc};
+            done;
         fi;
-        ls {input};
+        printf '%s\n' "${coverage_files[@]}";
         """

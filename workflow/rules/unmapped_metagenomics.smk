@@ -1,4 +1,4 @@
-"""Quick metagenomic screen of pass-QC reads unmapped to the human reference."""
+"""Fast metagenomic screen of pass-QC reads unmapped to the human reference."""
 
 from snakemake.exceptions import WorkflowError
 
@@ -13,7 +13,7 @@ def _unmapped_metagenomics_config():
             "unmapped_metagenomics.threads, "
             "unmapped_metagenomics.mem_mb, "
             "unmapped_metagenomics.partition, and "
-            "unmapped_metagenomics.max_reads values."
+            "unmapped_metagenomics.read_limit='all' values."
         )
     return cfg
 
@@ -38,6 +38,21 @@ def _unmapped_metagenomics_positive_int(key, *, minimum=1):
     return value
 
 
+def _unmapped_metagenomics_bool(key, *, default):
+    cfg = _unmapped_metagenomics_config()
+    value = cfg.get(key, default)
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise WorkflowError(
+        f"unmapped_metagenomics.{key} must be true or false; saw {value!r}."
+    )
+
+
 def unmapped_metagenomics_threads(wildcards):
     return _unmapped_metagenomics_positive_int("threads", minimum=16)
 
@@ -50,8 +65,21 @@ def unmapped_metagenomics_partition(wildcards):
     return str(_unmapped_metagenomics_required("partition"))
 
 
-def unmapped_metagenomics_max_reads(wildcards):
-    return _unmapped_metagenomics_positive_int("max_reads", minimum=1)
+def unmapped_metagenomics_read_limit(wildcards):
+    cfg = _unmapped_metagenomics_config()
+    value = cfg.get("read_limit", "all")
+    if str(value).strip() != "all":
+        raise WorkflowError(
+            "unmapped_metagenomics.read_limit must be 'all'; capped "
+            "unmapped-read Kraken2 screening is no longer supported."
+        )
+    return "all"
+
+
+def unmapped_metagenomics_memory_mapping_flag(wildcards):
+    if _unmapped_metagenomics_bool("memory_mapping", default=False):
+        return "--memory-mapping"
+    return ""
 
 
 def unmapped_metagenomics_kraken2_db(wildcards):
@@ -79,7 +107,7 @@ def unmapped_metagenomics_alignment_index(wildcards):
 
 def unmapped_metagenomics_stage_mqcs(wildcards):
     aligners = sorted(ALL_ALIGNERS)
-    dedupers = qc_alignment_dedupers()
+    dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
             "produce_unmapped_metagenomics_quick requires at least one active "
@@ -102,7 +130,7 @@ def unmapped_metagenomics_stage_mqcs(wildcards):
 
 def unmapped_metagenomics_kraken_reports(wildcards):
     aligners = sorted(ALL_ALIGNERS)
-    dedupers = qc_alignment_dedupers()
+    dedupers = qc_contamination_dedupers()
     if not aligners or not dedupers:
         return []
     return expand(
@@ -140,7 +168,7 @@ rule unmapped_metagenomics_kraken2_quick:
         + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_mqc.tsv",
     wildcard_constraints:
         alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
-        ddup="|".join(qc_alignment_dedupers()) if qc_alignment_dedupers() else r"(?!x)x",
+        ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
     threads: unmapped_metagenomics_threads
     resources:
         threads=unmapped_metagenomics_threads,
@@ -154,7 +182,8 @@ rule unmapped_metagenomics_kraken2_quick:
         cluster_sample=ret_sample,
         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         kraken2_db=unmapped_metagenomics_kraken2_db,
-        max_reads=unmapped_metagenomics_max_reads,
+        read_limit=unmapped_metagenomics_read_limit,
+        memory_mapping_flag=unmapped_metagenomics_memory_mapping_flag,
         fastq_threads=unmapped_metagenomics_fastq_threads,
         sample_id=lambda wildcards: day_stage_sample_id(
             wildcards.sample, wildcards.alnr, wildcards.ddup
@@ -174,7 +203,7 @@ rule unmapped_metagenomics_kraken2_quick:
         test -s {input.alignment:q} || (echo "ERROR: missing alignment input: {input.alignment:q}" | tee -a {log:q}; exit 1)
         test -s {input.index:q} || (echo "ERROR: missing alignment index input: {input.index:q}" | tee -a {log:q}; exit 1)
         test -d {params.kraken2_db:q} || (echo "ERROR: unmapped_metagenomics.kraken2_db is not a directory: {params.kraken2_db:q}" | tee -a {log:q}; exit 1)
-        test {params.max_reads:q} -gt 0 || (echo "ERROR: unmapped_metagenomics.max_reads must be positive for quick runs." | tee -a {log:q}; exit 1)
+        test {params.read_limit:q} = all || (echo "ERROR: unmapped_metagenomics.read_limit must be 'all' for full-unmapped mode." | tee -a {log:q}; exit 1)
 
         samtools quickcheck -v {input.alignment:q} >> {log:q} 2>&1
         samtools view \
@@ -185,11 +214,12 @@ rule unmapped_metagenomics_kraken2_quick:
             -F 0xB00 \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
-          | awk -v max_reads={params.max_reads:q} 'NR > max_reads * 4 {{ exit }} {{ print }}' \
           | gzip -c > {output.fastq:q}
         test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
 
         kraken2 \
+            --quick \
+            {params.memory_mapping_flag} \
             --db {params.kraken2_db:q} \
             --threads {threads} \
             --gzip-compressed \
@@ -205,7 +235,7 @@ rule unmapped_metagenomics_kraken2_quick:
             --aligner {wildcards.alnr:q} \
             --deduper {wildcards.ddup:q} \
             --database {params.kraken2_db:q} \
-            --max-reads {params.max_reads:q} \
+            --read-limit {params.read_limit:q} \
             --unmapped-fastq {output.fastq:q} \
             --kraken-report {output.report:q} \
             --kraken-output {output.kraken:q} \

@@ -5,7 +5,7 @@ channels:
   - r
   - defaults
 dependencies:
-  - mosdepth=0.3.2
+  - mosdepth=0.3.14
   - r-base
   - r-r.utils
   - r-data.table

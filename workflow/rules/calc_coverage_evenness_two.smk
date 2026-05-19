@@ -31,20 +31,24 @@ localrules:
 
 rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
     input:
-            expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/{sample}.{alnr}.{ddup}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS, ddup=DDUP)
+            metrics=expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/{sample}.{alnr}.{ddup}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS, ddup=DDUP)
     container: None
     threads: 8
     output:
         mqc=MDIR+"other_reports/coverage_evenness_two_combo_mqc.tsv",
     shell:
         """
+        set -euo pipefail;
         mkdir -p $(dirname {output});
-        single_file=$( find results | grep coverage_evenness_two.tsv | head -n 1);
-        if [[ "$single_file" == "" ]]; then
+        metrics_files=({input.metrics:q});
+        if [[ "${#metrics_files[@]}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc};
         else
-            head -n 1 $single_file > {output.mqc};
-            find results | grep .coverage_evenness_two.tsv | parallel -j 1 'tail -n +2 {{}} >> {output.mqc}';
+            first_file="${metrics_files[0]}";
+            head -n 1 "$first_file" > {output.mqc};
+            for source_path in "${metrics_files[@]}"; do
+                tail -n +2 "$source_path" >> {output.mqc};
+            done;
         fi;
-        ls {input};
+        printf '%s\n' "${metrics_files[@]}";
         """

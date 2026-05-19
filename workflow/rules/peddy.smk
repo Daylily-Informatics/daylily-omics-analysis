@@ -11,6 +11,7 @@ import csv
 
 # ped file:  "family_id individual_id paternal_id maternal_id bio_sex phenotype"
 def gen_ped_file(wildcards):
+    require_qc_eligible_sample(wildcards, "Peddy")
     bio_sex = sample_sex_for_required_tool(wildcards, "Peddy")
     if bio_sex == "female":
         ped_sex = 2
@@ -105,8 +106,8 @@ rule peddy_sample_qc_gather:
     input:
         [
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
-            for sample in SSAMPS
-            for ddup in DDUP
+            for sample in QC_ELIGIBLE_SAMPLES
+            for ddup in qc_variant_dedupers()
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
         ],
     output:
@@ -160,8 +161,8 @@ rule produce_peddy:  # TARGET: just produce peddy results
     input:
         [
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
-            for sample in SSAMPS
-            for ddup in DDUP
+            for sample in QC_ELIGIBLE_SAMPLES
+            for ddup in qc_variant_dedupers()
             for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
         ],
         MDIR + "other_reports/peddy_sample_qc_mqc.tsv",

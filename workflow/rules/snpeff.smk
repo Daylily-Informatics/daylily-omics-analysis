@@ -94,7 +94,7 @@ rule snpeff_annotation_gather:
                 )
 
 
-rule produce_snpeff:  # TARGET: just produce snpeff results
+rule produce_snpeff:  # DISABLED: SnpEff is dormant until revalidated
     input:
         [
             MDIR

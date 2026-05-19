@@ -47,6 +47,28 @@ def _expansionhunter_sample_supports_aligner(sample, alnr):
     return False
 
 
+def _expansionhunter_target_samples():
+    return qc_eligible_sample_ids(SSAMPS)
+
+
+def _expansionhunter_require_non_control_sample_sex(sample):
+    if is_control_sample(sample):
+        return "ok"
+    info = sample_metadata(sample)
+    sex = str(info.get("biological_sex", "") or "").strip().lower()
+    if sex in VALID_REQUIRED_SAMPLE_SEXES:
+        return "ok"
+    raw_sex = str(info.get("biological_sex_raw", sex) or "").strip()
+    if raw_sex == "":
+        raw_sex = "<empty>"
+    raise WorkflowError(
+        "ExpansionHunter requires BIOLOGICAL_SEX=male/female before DAG "
+        f"construction for non-control sample {sample}; observed "
+        f"biological_sex={raw_sex!r}. Mark true NTC/negative controls with "
+        "is_negative_control=true or sample_type=NTC to exclude them."
+    )
+
+
 def _expansionhunter_catalog_path(wildcards=None):
     try:
         return config["supporting_files"]["files"]["strchive"][EXPANSIONHUNTER_CATALOG_KEY]["name"]
@@ -73,9 +95,10 @@ def _expansionhunter_target_paths(suffix):
                     f"ExpansionHunter for {alnr} requires a non-na deduper; set dedupers=['dmd'] or another real deduper."
                 )
             for ddup in non_na_dedupers:
-                for sample in SSAMPS:
+                for sample in _expansionhunter_target_samples():
                     if not _expansionhunter_sample_supports_aligner(sample, alnr):
                         continue
+                    _expansionhunter_require_non_control_sample_sex(sample)
                     paths.extend(
                         expand(
                             MDIR
@@ -87,9 +110,10 @@ def _expansionhunter_target_paths(suffix):
                         )
                     )
         elif alnr == "ug":
-            for sample in SSAMPS:
+            for sample in _expansionhunter_target_samples():
                 if not _expansionhunter_sample_supports_aligner(sample, alnr):
                     continue
+                _expansionhunter_require_non_control_sample_sex(sample)
                 paths.extend(
                     expand(
                         MDIR
@@ -107,10 +131,13 @@ def _expansionhunter_target_paths(suffix):
 
 
 def _expansionhunter_sample_sex(wildcards):
+    _expansionhunter_require_non_control_sample_sex(wildcards.sample)
     return sample_sex_for_required_tool(wildcards, "ExpansionHunter")
 
 
 def _expansionhunter_validate_pair(wildcards):
+    require_qc_eligible_sample(wildcards, "ExpansionHunter")
+    _expansionhunter_require_non_control_sample_sex(wildcards.sample)
     if wildcards.alnr not in EXPANSIONHUNTER_ALIGNERS:
         raise WorkflowError(
             f"ExpansionHunter supports alnr sent, sentcg, or ug; found {wildcards.alnr}."

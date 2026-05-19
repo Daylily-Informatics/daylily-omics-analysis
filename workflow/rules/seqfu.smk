@@ -73,27 +73,33 @@ rule compile_seqfu:
         mdir=MDIR,
     shell:
         """mkdir -p {MDIR}other_reports $(dirname {output.d});
-        single_file=$( find {params.mdir} -name '*seqfuR1.mqc.tsv' | head -n 1);
-        if [[ "$single_file" == "" ]]; then
+        mapfile -t r1_files < <(find {params.mdir} -name '*seqfuR1.mqc.tsv' -print | sort);
+        if [[ "${#r1_files[@]}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc1};
         else
-            head -n 35 $single_file > {output.mqc1};
-            find {params.mdir} -name '*seqfuR1.mqc.tsv' -exec sh -c 'tail -n 1 "$1" >> "$2"' sh {{}} {output.mqc1} \\;;
+            single_file="${r1_files[0]}";
+            head -n 35 "$single_file" > {output.mqc1};
+            for source_path in "${r1_files[@]}"; do
+                tail -n 1 "$source_path" >> {output.mqc1};
+            done;
         fi;
 
-        single_file2=$( find {params.mdir} -name '*seqfuR2.mqc.tsv'  | head -n 1);
-        if [[ "$single_file2" == "" ]]; then
+        mapfile -t r2_files < <(find {params.mdir} -name '*seqfuR2.mqc.tsv' -print | sort);
+        if [[ "${#r2_files[@]}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc2};
         else
-            head -n 35 $single_file2 > {output.mqc2};
-            find {params.mdir} -name '*seqfuR2.mqc.tsv' -exec sh -c 'tail -n 1 "$1" >> "$2"' sh {{}} {output.mqc2} \\;;
+            single_file2="${r2_files[0]}";
+            head -n 35 "$single_file2" > {output.mqc2};
+            for source_path in "${r2_files[@]}"; do
+                tail -n 1 "$source_path" >> {output.mqc2};
+            done;
         fi;
         printf "Sample\\tbase_sample\\tread\\tsource_path\\n" > {output.mqc};
-        find {params.mdir} -name '*seqfuR1.mqc.tsv' | sort | while IFS= read -r source_path; do
+        for source_path in "${r1_files[@]}"; do
             base_sample=$(basename "$source_path" .seqfuR1.mqc.tsv);
             printf "%s.R1\\t%s\\tR1\\t%s\\n" "$base_sample" "$base_sample" "$source_path" >> {output.mqc};
         done;
-        find {params.mdir} -name '*seqfuR2.mqc.tsv' | sort | while IFS= read -r source_path; do
+        for source_path in "${r2_files[@]}"; do
             base_sample=$(basename "$source_path" .seqfuR2.mqc.tsv);
             printf "%s.R2\\t%s\\tR2\\t%s\\n" "$base_sample" "$base_sample" "$source_path" >> {output.mqc};
         done;

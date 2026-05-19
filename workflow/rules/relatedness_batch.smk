@@ -5,11 +5,12 @@ from pathlib import Path
 
 RELATEDNESS_CFG = config["relatedness"]
 RELATEDNESS_REPORT_ROOT = MDIR + "other_reports/relatedness"
+RELATEDNESS_SAMPLES = qc_eligible_sample_ids(SSAMPS)
 
 
 def _relatedness_sample_rows():
     rows = []
-    for sample in SSAMPS:
+    for sample in RELATEDNESS_SAMPLES:
         sample_info = config.get("sample_info", {}).get(sample, {})
         rows.append(
             {
@@ -29,7 +30,7 @@ def _relatedness_sample_rows():
 
 def _relatedness_manifest_inputs(wildcards):
     paths = []
-    for sample in SSAMPS:
+    for sample in RELATEDNESS_SAMPLES:
         paths.append(
             MDIR
             + f"{sample}/align/{wildcards.alnr}/{wildcards.ddup}/{sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
@@ -45,7 +46,7 @@ def _relatedness_extract_paths(wildcards):
     return expand(
         MDIR
         + "other_reports/relatedness/{alnr}/{ddup}/somalier/extract/{sample}.somalier",
-        sample=SSAMPS,
+        sample=RELATEDNESS_SAMPLES,
         alnr=[wildcards.alnr],
         ddup=[wildcards.ddup],
     )
@@ -100,6 +101,9 @@ rule relatedness_batch_somalier_extract:
         sites=RELATEDNESS_CFG["somalier_sites_vcf"],
         ref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         out_dir=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/extract",
+        sample_ok=lambda wildcards: require_qc_eligible_sample(
+            wildcards, "Somalier relatedness"
+        ),
         cluster_sample=ret_sample,
     log:
         RELATEDNESS_REPORT_ROOT
@@ -110,6 +114,7 @@ rule relatedness_batch_somalier_extract:
         r"""
         set -euo pipefail
         mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        test {params.sample_ok:q} = ok
         rm -f {output:q}
         tmp_dir="$(mktemp -d "$(dirname {output:q})/.somalier_extract.XXXXXX")"
         cleanup() {{
@@ -143,7 +148,7 @@ rule relatedness_batch_somalier_relate:
         html=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort.html",
     params:
         prefix=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/cohort",
-        sample_count=lambda wildcards: len(SSAMPS),
+        sample_count=lambda wildcards: len(RELATEDNESS_SAMPLES),
         cluster_sample="relatedness_batch",
     threads: RELATEDNESS_CFG["threads"]
     resources:
@@ -157,6 +162,7 @@ rule relatedness_batch_somalier_relate:
         r"""
         set -euo pipefail
         mkdir -p $(dirname {output.pairs:q}) $(dirname {log:q})
+        rm -f {output.samples:q} {output.pairs:q} {output.groups:q} {output.html:q}
         if [ {params.sample_count} -lt 2 ]; then
             printf "sample_a\tsample_b\trelatedness\tibs0\n" > {output.pairs:q}
             printf "sample_id\tgroup\n" > {output.samples:q}
@@ -165,10 +171,12 @@ rule relatedness_batch_somalier_relate:
         else
             somalier relate {input:q} -o {params.prefix:q} > {log:q} 2>&1
         fi
-        test -s {output.pairs:q}
-        test -s {output.groups:q}
-        test -s {output.samples:q}
-        test -s {output.html:q}
+        for expected_output in {output.pairs:q} {output.groups:q} {output.samples:q} {output.html:q}; do
+            if [[ ! -s "$expected_output" ]]; then
+                printf 'ERROR: somalier relate did not create declared cohort output: %s\n' "$expected_output" >> {log:q}
+                exit 1
+            fi
+        done
         """
 
 
@@ -197,7 +205,7 @@ rule relatedness_batch_gather:
         expand(
             RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_summary.tsv",
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            ddup=qc_variant_dedupers(),
         )
     output:
         MDIR + "other_reports/relatedness_mqc.tsv"

@@ -7,22 +7,28 @@ import json
 import os
 
 
-def _contam_qc_paths(tool, suffix):
+def _site_mix_qc_samples():
+    return qc_eligible_sample_ids(SSAMPS)
+
+
+def _contam_qc_paths(tool, suffix, sample_ids=None):
+    if sample_ids is None:
+        sample_ids = SSAMPS
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/contam/"
         + tool
         + "/{sample}.{alnr}.{ddup}."
         + suffix,
-        sample=SSAMPS,
+        sample=sample_ids,
         alnr=QC_CRAM_ALIGNERS,
         ddup=qc_contamination_dedupers(),
     )
 
 
-def _enabled_contam_qc_paths(enabled_tool, tool, suffix):
+def _enabled_contam_qc_paths(enabled_tool, tool, suffix, sample_ids=None):
     if qc_tool_enabled(enabled_tool):
-        return _contam_qc_paths(tool, suffix)
+        return _contam_qc_paths(tool, suffix, sample_ids=sample_ids)
     return []
 
 
@@ -180,6 +186,9 @@ rule site_mix_contam:
         stage_sample=lambda wildcards: _contam_stage_sample_id(
             wildcards.sample, wildcards.alnr, wildcards.ddup
         ),
+        sample_ok=lambda wildcards: require_qc_eligible_sample(
+            wildcards, "site_mix_contam"
+        ),
         candidate_manifest = config["site_mix_contam"]["candidate_manifest"],
         min_depth = config["site_mix_contam"]["min_depth"],
         max_depth = config["site_mix_contam"]["max_depth"],
@@ -192,6 +201,7 @@ rule site_mix_contam:
 
         outdir="$(dirname {output.tsv})"
         mkdir -p "${{outdir}}" "${{outdir}}/logs"
+        test {params.sample_ok:q} = ok
 
         if [[ -n "{params.candidate_manifest}" ]]; then
             echo "ERROR: site_mix_contam production rule uses GATK pileup tables and does not support candidate_manifest donor attribution. Use the estimator CLI BAM/CRAM mode for donor attribution." >&2
@@ -227,10 +237,13 @@ rule contamination_mqc_gather:
         vb2_bench=lambda wildcards: _enabled_verifybamid2_benchmarks(),
         gatk=lambda wildcards: _enabled_contam_qc_paths("gatk_contam", "gatk", "gatk.tsv"),
         site_mix=lambda wildcards: _enabled_contam_qc_paths(
-            "site_mix", "site_mix", "site_mix.tsv"
+            "site_mix", "site_mix", "site_mix.tsv", sample_ids=_site_mix_qc_samples()
         ),
         site_mix_donors=lambda wildcards: _enabled_contam_qc_paths(
-            "site_mix", "site_mix", "site_mix_donors.tsv"
+            "site_mix",
+            "site_mix",
+            "site_mix_donors.tsv",
+            sample_ids=_site_mix_qc_samples(),
         ),
     output:
         contamination=MDIR + "other_reports/contamination_mqc.tsv",
@@ -266,7 +279,7 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
     input:
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix.tsv",
-            sample=SSAMPS,
+            sample=_site_mix_qc_samples(),
             alnr=QC_CRAM_ALIGNERS,
             ddup=qc_contamination_dedupers(),
         ),

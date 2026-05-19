@@ -298,7 +298,7 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "rule produce_relatedness:",
         "relatedness_mqc.tsv",
         "QC_CRAM_ALIGNERS",
-        "qc_alignment_dedupers()",
+        "qc_variant_dedupers()",
     ):
         assert expected in relatedness
 

@@ -16,7 +16,7 @@ FIELDNAMES = [
     "deduper",
     "classifier",
     "database",
-    "max_reads",
+    "read_limit",
     "input_fastq",
     "input_fastq_reads",
     "kraken_report",
@@ -136,8 +136,8 @@ def _percent(numerator: int, denominator: int) -> str:
 def _build_row(args: argparse.Namespace) -> dict[str, str | int]:
     if str(args.database).strip() in {"", "na", "NA", "None"}:
         raise ValueError("--database must be an explicit Kraken2 database path")
-    if int(args.max_reads) <= 0:
-        raise ValueError("--max-reads must be a positive integer for quick runs")
+    if str(args.read_limit).strip() != "all":
+        raise ValueError("--read-limit must be 'all' for full-unmapped mode")
 
     fastq = Path(args.unmapped_fastq)
     report = Path(args.kraken_report)
@@ -155,7 +155,7 @@ def _build_row(args: argparse.Namespace) -> dict[str, str | int]:
         "deduper": args.deduper,
         "classifier": "kraken2",
         "database": args.database,
-        "max_reads": str(args.max_reads),
+        "read_limit": "all",
         "input_fastq": str(fastq),
         "input_fastq_reads": str(fastq_reads),
         "kraken_report": str(report),
@@ -180,7 +180,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--aligner", required=True)
     parser.add_argument("--deduper", required=True)
     parser.add_argument("--database", required=True)
-    parser.add_argument("--max-reads", required=True, type=int)
+    parser.add_argument("--read-limit", required=True)
     parser.add_argument("--unmapped-fastq", required=True)
     parser.add_argument("--kraken-report", required=True)
     parser.add_argument("--kraken-output", required=True)

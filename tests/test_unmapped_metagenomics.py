@@ -4,7 +4,9 @@ import csv
 import gzip
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 
+import pytest
 import yaml
 
 
@@ -51,18 +53,23 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_kraken2() -> 
         "-f 4",
         "-F 0xB00",
         "samtools fastq",
-        "awk -v max_reads={params.max_reads:q}",
         "kraken2",
+        "--quick",
         "--db {params.kraken2_db:q}",
         "--threads {threads}",
         "--gzip-compressed",
         "--report {output.report:q}",
+        "{params.memory_mapping_flag}",
         "workflow/scripts/summarize_unmapped_metagenomics.py",
+        "--read-limit {params.read_limit:q}",
     ):
         assert expected in rules
 
+    assert "awk -v max_reads" not in rules
+    assert "--max-reads" not in rules
+    assert "max_reads" not in rules
     assert "test -d {params.kraken2_db:q}" in rules
-    assert "unmapped_metagenomics.max_reads must be positive" in rules
+    assert "unmapped_metagenomics.read_limit must be 'all'" in rules
 
 
 def test_unmapped_metagenomics_requires_explicit_config_and_high_threads() -> None:
@@ -74,8 +81,22 @@ def test_unmapped_metagenomics_requires_explicit_config_and_high_threads() -> No
         "unmapped_metagenomics.threads",
         "unmapped_metagenomics.mem_mb",
         "unmapped_metagenomics.partition",
-        "unmapped_metagenomics.max_reads",
+        "unmapped_metagenomics.read_limit='all'",
         'minimum=16',
+    ):
+        assert expected in rules
+
+
+def test_unmapped_metagenomics_memory_mapping_requires_explicit_true() -> None:
+    rules = _read("workflow/rules/unmapped_metagenomics.smk")
+
+    for expected in (
+        "value = cfg.get(key, default)",
+        'if normalized == "true":',
+        'if normalized == "false":',
+        'return "--memory-mapping"',
+        "_unmapped_metagenomics_bool(\"memory_mapping\", default=False)",
+        "must be true or false; saw",
     ):
         assert expected in rules
 
@@ -96,11 +117,52 @@ def test_unmapped_metagenomics_summary_and_focused_multiqc_wiring() -> None:
         assert expected in rules
 
 
+def test_unmapped_metagenomics_final_multiqc_is_explicitly_gated() -> None:
+    common = _read("workflow/rules/common.smk")
+    final = _read("workflow/rules/multiqc_final_wgs.smk")
+    staging = _read("workflow/scripts/stage_multiqc_inputs.py")
+    config = _read("config/external_tools/multiqc_config.yaml")
+
+    assert '"unmapped_metagenomics"' in common[
+        common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
+    ]
+    assert (
+        'qc_tool_enabled(\n'
+        '        "unmapped_metagenomics", long_running=True, default=False\n'
+        "    )"
+    ) in final
+    assert "_validate_unmapped_metagenomics_multiqc_config()" in final
+    assert "other_reports/unmapped_metagenomics_mqc.tsv" in final
+    assert ".kraken2.quick.report.txt" in final
+    assert "dedupers = qc_contamination_dedupers()" in final
+    assert "enable_tools=['unmapped_metagenomics']" in final
+
+    assert "def stage_kraken2_report" in staging
+    assert "native/kraken" in staging
+    assert "kraken2_report" in staging
+
+    assert "\n  - kraken\n" in config
+    assert "\n  - unmapped_metagenomics\n" in config
+    assert "unmapped_metagenomics:" in config
+    assert "other_reports/unmapped_metagenomics_mqc.tsv" in config
+
+
 def test_unmapped_metagenomics_env_has_kraken2_and_samtools() -> None:
     env = yaml.safe_load(_read("workflow/envs/unmapped_metagenomics_v0.1.yaml"))
 
     deps = {str(dep).split("=")[0] for dep in env["dependencies"]}
     assert {"kraken2", "samtools", "python"} <= deps
+
+
+def test_summarize_unmapped_metagenomics_rejects_capped_read_limit() -> None:
+    module = _load_summary_module()
+
+    assert "read_limit" in module.FIELDNAMES
+    assert "max_reads" not in module.FIELDNAMES
+    with pytest.raises(ValueError, match="--read-limit must be 'all'"):
+        module._build_row(
+            SimpleNamespace(database="/refs/kraken2", read_limit="100000")
+        )
 
 
 def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) -> None:
@@ -152,8 +214,8 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
                 "dmd",
                 "--database",
                 "/refs/kraken2",
-                "--max-reads",
-                "100000",
+                "--read-limit",
+                "all",
                 "--unmapped-fastq",
                 str(fastq),
                 "--kraken-report",
@@ -178,7 +240,7 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
             "deduper": "dmd",
             "classifier": "kraken2",
             "database": "/refs/kraken2",
-            "max_reads": "100000",
+            "read_limit": "all",
             "input_fastq": str(fastq),
             "input_fastq_reads": "4",
             "kraken_report": str(report),

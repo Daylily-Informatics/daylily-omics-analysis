@@ -38,10 +38,16 @@ rule mosdepth:
         else config["mosdepth"]["depth_bins"],
         cluster_sample=ret_sample,
     shell:
-        "(rm -rf {log.b}* || echo rmlogFailedMosDepth );"
-        "mosdepth --threads {threads} --by {params.core_bed} --use-median  -n --fast-mode --mapq {params.mapq} -f {params.huref} -T {params.T} {log.b} {input.cram} > {log.a} 2>&1; "
-        "(rm  {log.b}*per-base* || echo 'rm perbase failed' >> {log.a} 2>&1);"
-        "ls {output.summary};"
+        r"""
+        set -euo pipefail
+        mkdir -p "$(dirname {output.summary:q})"
+        rm -f {log.a:q} {output.summary:q} {output.global_dist:q} {output.region_dist:q}
+        mosdepth --threads {threads} --by {params.core_bed:q} --use-median -n --fast-mode --mapq {params.mapq} -f {params.huref:q} -T {params.T:q} {log.b:q} {input.cram:q} > {log.a:q} 2>&1
+        rm -f {log.b:q}.per-base.bed.gz {log.b:q}.per-base.bed.gz.csi
+        test -s {output.summary:q} || (printf 'ERROR: mosdepth summary output is missing or empty: %s\n' {output.summary:q} | tee -a {log.a:q} >&2; exit 1)
+        test -s {output.global_dist:q} || (printf 'ERROR: mosdepth global_dist output is missing or empty: %s\n' {output.global_dist:q} | tee -a {log.a:q} >&2; exit 1)
+        test -s {output.region_dist:q} || (printf 'ERROR: mosdepth region_dist output is missing or empty: %s\n' {output.region_dist:q} | tee -a {log.a:q} >&2; exit 1)
+        """
 
 localrules:
     produce_mosdepth,
@@ -49,4 +55,8 @@ localrules:
 rule produce_mosdepth:  # TARGET:  jusg gen mosdepth
     input:
         expand(MDIR
-        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt", sample=SSAMPS, alnr=CRAM_ALIGNERS, ddup=DDUP),
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
+        expand(MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.global.dist.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
+        expand(MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.region.dist.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
