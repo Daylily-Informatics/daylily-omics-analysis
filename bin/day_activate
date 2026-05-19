@@ -6,7 +6,7 @@ gbuild="$2" # genome build code [hg38|b37]
 remote_call="$3" # remote call flag
 
 echo "Requesting profile: $dayp"
-DP="${DAY_PROJECT:-unset}"
+DP="${DAY_PROJECT:-global}"
 
 if [[ -z "$dayp" ]]; then
     echo "ERROR: No profile specified, please specify [slurm|local] ([hg38|b37])"
