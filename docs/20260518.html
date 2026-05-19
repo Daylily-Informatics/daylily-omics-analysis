@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sequencing Analysis State - 2026-05-18</title>
+<style>
+:root { color-scheme: dark; --ink:#e7f8ff; --muted:#96a9b7; --line:#213242; --line-hot:#1f9d8a; --panel:#0c151b; --panel-2:#101b22; --accent:#24f0c7; --accent-2:#ff4fd8; --accent-3:#ffd166; --issue:#ff6b6b; --ok:#7df59b; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, rgba(36,240,199,.045) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255,79,216,.035) 1px, transparent 1px),
+    linear-gradient(180deg, #05080b 0%, #081017 44%, #0b0f13 100%);
+  background-size: 42px 42px, 42px 42px, auto;
+}
+main {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 42px 30px 64px;
+}
+h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: 0;
+  color: #f3fbff;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(36,240,199,.28);
+}
+h1 + p {
+  max-width: 880px;
+  padding: 12px 14px;
+  border: 1px solid rgba(36,240,199,.22);
+  border-left: 4px solid var(--accent);
+  background: rgba(12,21,27,.86);
+  color: #b8c7d3;
+}
+h2 {
+  margin: 40px 0 14px;
+  padding: 18px 0 0;
+  border-top: 1px solid rgba(36,240,199,.4);
+  font-size: 22px;
+  color: #ffffff;
+}
+h2::before {
+  content: "// ";
+  color: var(--accent);
+}
+h3 {
+  margin: 26px 0 10px;
+  font-size: 18px;
+  color: var(--accent);
+}
+h4 {
+  margin: 20px 0 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(36,240,199,.24);
+  border-left: 3px solid var(--accent-2);
+  background: linear-gradient(90deg, rgba(255,79,216,.12), rgba(12,21,27,.72) 42%, rgba(36,240,199,.08));
+  font-size: 16px;
+}
+p {
+  margin: 8px 0 14px;
+  color: var(--muted);
+}
+ul {
+  margin: 8px 0 20px;
+  padding-left: 22px;
+}
+li {
+  margin: 5px 0;
+}
+li::marker {
+  color: var(--accent);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 26px;
+  table-layout: auto;
+  background: rgba(8,16,23,.92);
+  box-shadow: 0 0 0 1px rgba(36,240,199,.12), 0 18px 44px rgba(0,0,0,.24);
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 9px 11px;
+  vertical-align: top;
+}
+th {
+  background: #101d25;
+  color: #ddfbff;
+  text-align: left;
+  font-weight: 700;
+  border-bottom-color: rgba(36,240,199,.45);
+}
+tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.018);
+}
+tbody tr:hover td {
+  background: rgba(36,240,199,.055);
+}
+code {
+  padding: 2px 6px;
+  border: 1px solid rgba(36,240,199,.24);
+  border-radius: 4px;
+  background: rgba(36,240,199,.08);
+  color: #a9fff0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+a {
+  color: #73d7ff;
+  overflow-wrap: anywhere;
+  text-decoration-color: rgba(115,215,255,.42);
+}
+a:hover {
+  color: #ffffff;
+  text-decoration-color: var(--accent);
+}
+strong {
+  color: var(--issue);
+  text-shadow: 0 0 12px rgba(255,107,107,.2);
+}
+@media (max-width: 760px) {
+  main { padding: 26px 16px 44px; }
+  h1 { font-size: 25px; }
+  table { display:block; overflow-x:auto; white-space:nowrap; }
+}
+</style>
+</head>
+<body><main>
+<h1>Sequencing Analysis State - 2026-05-18</h1>
+<p>CloudFront report URLs below use the shared LSMC QC Basic Auth credentials. Username: <code>lsmc-qc-curious</code>. The password was shared separately and is not stored in this document.</p>
+<h2>Sequencing Run QC</h2>
+<h3>Run QC Reports</h3>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Status</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Illumina run QC, all runs</td>
+<td>In development</td>
+<td>https://dlqovrcm5y71h.cloudfront.net/analysis_results/jem-scratch/run_qc_illumina_all/illumina_runs.multiqc.html</td>
+</tr>
+<tr>
+<td>ONT run QC, all runs</td>
+<td>In development</td>
+<td>https://dlqovrcm5y71h.cloudfront.net/analysis_results/ubuntu/run_qc_ont_all/ont_runs.multiqc.html</td>
+</tr>
+<tr>
+<td>Ultima run QC, all runs</td>
+<td>No public tool yet</td>
+<td>Pending</td>
+</tr>
+</tbody>
+</table>
+<h3>Run State Summary</h3>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th style="text-align:right"><code>&lt;transferring&gt;</code></th>
+<th style="text-align:right"><code>&lt;in progress&gt;</code></th>
+<th style="text-align:right"><code>&lt;demuxed&gt;</code></th>
+<th style="text-align:right"><code>&lt;Aligned&gt;</code></th>
+<th style="text-align:right"><code>&lt;QC complete&gt;</code></th>
+<th style="text-align:right"><code>&lt;Exception&gt;</code></th>
+<th style="text-align:right">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ultima</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">5</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">10</td>
+</tr>
+<tr>
+<td>Illumina</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">1</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">2</td>
+<td style="text-align:right">5</td>
+</tr>
+<tr>
+<td>ONT</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">3</td>
+<td style="text-align:right">0</td>
+<td style="text-align:right">3</td>
+</tr>
+</tbody>
+</table>
+<h3>Illumina Source Run QC</h3>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>Raw sequence data S3 URI</th>
+<th>Demux summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LH01106_06MAR2026_PhiX_140pm_A</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260306_LH01106_0001_A23KV7KLT4/</code></td>
+<td>Demux stats are present and show <code>100.0000%</code> called reads with <code>0</code> undetermined reads. No BCLConvert quality metrics or fastq-list report artifacts were found in the checked S3 paths.</td>
+</tr>
+<tr>
+<td><code>LH01106_06MAR2026_PhiX_140pm_B</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260306_LH01106_0002_B23KV37LT4/</code></td>
+<td>Demux stats are present and show <code>100.0000%</code> called reads with <code>0</code> undetermined reads. No BCLConvert quality metrics or fastq-list report artifacts were found in the checked S3 paths.</td>
+</tr>
+<tr>
+<td><code>20260324_ILMN_training_instr_val</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260324_LH01106_0003_B23KV2VLT4/</code></td>
+<td>A SampleSheet and <code>CopyComplete.txt</code> are present, but no demux stats, BCLConvert quality metrics, or fastq-list artifacts were found in the checked S3 paths.</td>
+</tr>
+<tr>
+<td><code>20260407_ILMN_training_instr_val_2</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260407_LH01106_0004_A23K5LJLT4/</code></td>
+<td>A SampleSheet and <code>CopyComplete.txt</code> are present, but no demux stats, BCLConvert quality metrics, or fastq-list artifacts were found in the checked S3 paths.</td>
+</tr>
+<tr>
+<td><code>20260507_23andMe_run-1</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260507_LH01106_0005_A23K3JVLT4/</code></td>
+<td>BCLConvert report artifacts exist for <code>96</code> samples across <code>8</code> lanes with <code>93.3175%</code> Q30. No <code>Demultiplex_Stats.csv</code> or unknown-barcode demux stats were found in the checked S3 paths.</td>
+</tr>
+<tr>
+<td><code>20260512_ILMN_Altair_Run_1</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260512_LH01106_0006_A23K3H2LT4/</code></td>
+<td>Demux completed and is usable: <code>85.6783%</code> called reads, <code>14.3217%</code> undetermined reads, all <code>41</code> SampleSheet samples nonzero, and <code>92.9441%</code> Q30. The largest top-unknown barcode entry is small relative to total reads.</td>
+</tr>
+<tr>
+<td><code>20260512_ILMN_Altair_Run_2</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260512_LH01106_0007_B23K5JKLT4/</code></td>
+<td>Demux artifacts are present, but demux effectively failed: only <code>8</code> called reads total, with <code>33,436,817,267</code> reads undetermined, despite <code>93.3194%</code> Q30. The top 8,000 unknown barcode pairs did not match this run's SampleSheet expected pairs or individual index sequences in the prior check.</td>
+</tr>
+<tr>
+<td><code>20260514_23andMe_run-2</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/raw/lsmc/ssf-hq/LH01106/2026/20260514_LH01106_0008_A23TVNWLT4/</code></td>
+<td>Transfer marker <code>OOW.done</code> is present in the raw S3 prefix, but no demux stats, BCLConvert quality metrics, or fastq-list artifacts were found there. This appears to be raw source data only in the checked prefix.</td>
+</tr>
+<tr>
+<td><code>20260514_ILMN_Altair_Run_3</code></td>
+<td><code>s3://lsmc-ssf-sequencing-data/raw/lsmc/ssf-hq/LH01106/2026/20260514_LH01106_0009_B23TVLGLT4/</code></td>
+<td>Demux artifacts are present and look usable: <code>87.0563%</code> called reads, <code>12.9437%</code> undetermined reads, all <code>41</code> SampleSheet samples nonzero, and <code>94.3353%</code> Q30. Caveat: the raw S3 prefix currently has <code>OOW.err</code>, so the S3 transfer state is not clean even though demux CSVs are present.</td>
+</tr>
+</tbody>
+</table>
+<h2>Run Analysis</h2>
+<h3>Ultima</h3>
+<h4><code>504632-20260326_2146</code> <code>&lt;demuxed&gt;</code></h4>
+<ul>
+<li>Run Name: <code>504632-20260326_2146</code> <code>&lt;demuxed&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN504632/2026/504632-20260326_2146/</code></li>
+<li>Results S3: pending; no DayOA analysis result directory was found in the checked analysis prefixes.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h4><code>505069-20260326_1848</code> <code>&lt;demuxed&gt;</code></h4>
+<ul>
+<li>Run Name: <code>505069-20260326_1848</code> <code>&lt;demuxed&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN505069/2026/505069-20260326_1848/</code></li>
+<li>Results S3: pending; no DayOA analysis result directory was found in the checked analysis prefixes.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h4><code>504970-20260331_1722</code> <code>&lt;Aligned&gt;</code></h4>
+<ul>
+<li>Run Name: <code>504970-20260331_1722</code> <code>&lt;Aligned&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN504970/2026/504970-20260331_1722/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-504970-20260331-1722-20260425T091209Z/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-504970-20260331-1722-20260425T091209Z/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_gs_mqc.tsv</code></li>
+<li>MultiQC report: pending; no <code>DAY_final_multiqc.html</code> was found in the checked results report directory.</li>
+</ul>
+<h4><code>505064-20260331_2020</code> <code>&lt;Aligned&gt;</code></h4>
+<ul>
+<li>Run Name: <code>505064-20260331_2020</code> <code>&lt;Aligned&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN505064/2026/505064-20260331_2020/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-505064-20260331-2020-20260425T090724Z/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-505064-20260331-2020-20260425T090724Z/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_gs_mqc.tsv</code></li>
+<li>MultiQC report: pending; no <code>DAY_final_multiqc.html</code> was found in the checked results report directory.</li>
+</ul>
+<h4><code>505451-20260402_1931</code> <code>&lt;demuxed&gt;</code></h4>
+<ul>
+<li>Run Name: <code>505451-20260402_1931</code> <code>&lt;demuxed&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN505451/2026/505451-20260402_1931/</code></li>
+<li>Results S3: pending; no DayOA analysis result directory was found in the checked analysis prefixes.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h4><code>505799-20260403_1500</code> <code>&lt;demuxed&gt;</code></h4>
+<ul>
+<li>Run Name: <code>505799-20260403_1500</code> <code>&lt;demuxed&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN505799/2026/505799-20260403_1500/</code></li>
+<li>Results S3: pending; no DayOA analysis result directory was found in the checked analysis prefixes.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h4><code>504352-20260404_1215</code> <code>&lt;demuxed&gt;</code></h4>
+<ul>
+<li>Run Name: <code>504352-20260404_1215</code> <code>&lt;demuxed&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN504352/2026/504352-20260404_1215/</code></li>
+<li>Results S3: pending; no DayOA analysis result directory was found in the checked analysis prefixes.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h4><code>602220-20260417_2047</code> <code>&lt;Aligned&gt;</code></h4>
+<ul>
+<li>Run Name: <code>602220-20260417_2047</code> <code>&lt;Aligned&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN602220/2026/602220-20260417_2047/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-602220-20260417-2047-20260425T091209Z/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-602220-20260417-2047-20260425T091209Z/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_gs_mqc.tsv</code></li>
+<li>MultiQC report: pending; no <code>DAY_final_multiqc.html</code> was found in the checked results report directory.</li>
+</ul>
+<h4><code>602221-20260417_2346</code> <code>&lt;Exception&gt;</code></h4>
+<ul>
+<li>Run Name: <code>602221-20260417_2346</code> <code>&lt;Exception&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN602221/2026/602221-20260417_2346/</code></li>
+<li><strong>Source-data issue:</strong> current dashboard inventory reports S3 has <code>1,977,460,351,578</code> bytes versus <code>2,123,313,589,081</code> bytes on SeqNAS, so treat this source prefix as partial until reconciled.</li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-602221-20260417-2346-20260425T090724Z/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260421T065118Z/analysis_results/ubuntu/prod-alignstats-602221-20260417-2346-20260425T090724Z/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_gs_mqc.tsv</code></li>
+<li>MultiQC report: pending; no <code>DAY_final_multiqc.html</code> was found in the checked results report directory.</li>
+</ul>
+<h4><code>602202-20260512_1805</code> <code>&lt;QC complete&gt;</code></h4>
+<ul>
+<li>Run Name: <code>602202-20260512_1805</code> <code>&lt;QC complete&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/RUN602202/2026/602202-20260512_1805/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260515T103052Z/analysis_results/ubuntu/ultima_602202_20260512_1805_ksink105_20260517T190121Z/daylily-omics-analysis/results/day/hg38/</code></li>
+<li>Alignstats data: https://dlqovrcm5y71h.cloudfront.net/ultima_602202_20260512_1805_ksink105_20260517T190121Z/daylily-omics-analysis/results/day/hg38/other_reports/alignstats_gs_mqc.tsv</li>
+<li>MultiQC report: https://dlqovrcm5y71h.cloudfront.net/ultima_602202_20260512_1805_ksink105_20260517T190121Z/daylily-omics-analysis/results/day/hg38/reports/DAY_final_multiqc.html</li>
+</ul>
+<h3>Illumina</h3>
+<h4><code>20260507_23andMe_run-1</code> (<code>0005</code>) <code>&lt;demuxed&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260507_23andMe_run-1</code> <code>&lt;demuxed&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260507_LH01106_0005_A23K3JVLT4/</code></li>
+<li>SampleSheet check: root <code>SampleSheet.csv</code> has <code>RunName=20260507_23andMe_run-1</code>, which agrees with this section title for the <code>20260507_LH01106_0005_A23K3JVLT4</code> source directory.</li>
+<li>Demux note: BCLConvert report artifacts exist with <code>93.3175%</code> Q30, but no demux stats file was found in the checked S3 paths.</li>
+<li>Results S3: pending; combined-FQ-by-lane run in process.</li>
+<li>Alignstats data: pending; combined-FQ-by-lane run in process.</li>
+<li>MultiQC report: pending; combined-FQ-by-lane run in process.</li>
+</ul>
+<h4><code>20260512_ILMN_Altair_Run_1</code> (<code>0006</code>) <code>&lt;Aligned&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260512_ILMN_Altair_Run_1</code> <code>&lt;Aligned&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260512_LH01106_0006_A23K3H2LT4/</code></li>
+<li>SampleSheet check: root <code>SampleSheet.csv</code> has <code>RunName=20260512_ILMN_Altair_Run_1</code>, which agrees with this section title for the <code>20260512_LH01106_0006_A23K3H2LT4</code> source directory.</li>
+<li>Demux note: Demux completed and is usable: <code>85.6783%</code> called reads, <code>14.3217%</code> undetermined reads, all <code>41</code> samples nonzero, and <code>92.9441%</code> Q30.</li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260515T103052Z/analysis_results/ubuntu/ilmn_0006_align_dedup_alignstats_20260517T185626Z/daylily-omics-analysis/results/day/hg38/</code></li>
+<li>Alignstats data: https://dlqovrcm5y71h.cloudfront.net/ilmn_0006_align_dedup_alignstats_20260517T185626Z/daylily-omics-analysis/results/day/hg38/other_reports/alignstats_combo_mqc.tsv</li>
+<li>MultiQC report: pending; combined-FQ-by-lane run in process.</li>
+</ul>
+<h4><code>20260512_ILMN_Altair_Run_2</code> (<code>0007</code>) <code>&lt;Exception&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260512_ILMN_Altair_Run_2</code> <code>&lt;Exception&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/LH01106/2026/20260512_LH01106_0007_B23K5JKLT4/</code></li>
+<li>SampleSheet check: root <code>SampleSheet.csv</code> has <code>RunName=20260512_ILMN_Altair_Run_2</code>, which agrees with this section title for the <code>20260512_LH01106_0007_B23K5JKLT4</code> source directory.</li>
+<li>Demux note: Demux artifacts are present, but demux effectively failed: only <code>8</code> called reads total and almost all reads undetermined despite good sequencing quality. The observed unknown index population does not match the SampleSheet.</li>
+<li>Results S3: pending because of the index/demux issue.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h4><code>20260514_23andMe_run-2</code> (<code>0008</code>) <code>&lt;in progress&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260514_23andMe_run-2</code> <code>&lt;in progress&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/raw/lsmc/ssf-hq/LH01106/2026/20260514_LH01106_0008_A23TVNWLT4/</code></li>
+<li>SampleSheet check: root <code>SampleSheet.csv</code> has <code>RunName=20260514_23andMe_run-2</code>, which agrees with this section title for the <code>20260514_LH01106_0008_A23TVNWLT4</code> source directory.</li>
+<li>Demux note: The raw S3 prefix has <code>OOW.done</code>, but no demux stats or BCLConvert report CSVs were found in the checked raw prefix.</li>
+<li>Results S3: in progress.</li>
+<li>Alignstats data: in progress.</li>
+<li>MultiQC report: in progress.</li>
+</ul>
+<h4><code>20260514_ILMN_Altair_Run_3</code> (<code>0009</code>) <code>&lt;Exception&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260514_ILMN_Altair_Run_3</code> <code>&lt;Exception&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/raw/lsmc/ssf-hq/LH01106/2026/20260514_LH01106_0009_B23TVLGLT4/</code></li>
+<li>SampleSheet check: root <code>SampleSheet.csv</code> has <code>RunName=20260514_ILMN_Altair_Run_3</code>, which agrees with this section title for the <code>20260514_LH01106_0009_B23TVLGLT4</code> source directory.</li>
+<li>Demux note: Demux artifacts are present and look usable: <code>87.0563%</code> called reads, <code>12.9437%</code> undetermined reads, all <code>41</code> samples nonzero, and <code>94.3353%</code> Q30. The raw S3 prefix currently has <code>OOW.err</code>, so the transfer state should be treated as incomplete or failed until that marker is resolved.</li>
+<li>Results S3: pending.</li>
+<li>Alignstats data: pending.</li>
+<li>MultiQC report: pending.</li>
+</ul>
+<h3>ONT</h3>
+<h4><code>20260424_ONT_100ul</code> <code>&lt;QC complete&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260424_ONT_100ul</code> <code>&lt;QC complete&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/pca100/2026/20260424_ONT_100ul/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260503T104054Z/analysis_results/ubuntu/pca100_ont_at_sanity_20260504/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260503T104054Z/analysis_results/ubuntu/pca100_ont_at_sanity_20260504/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_combo_mqc.tsv</code></li>
+<li>MultiQC report: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260503T104054Z/analysis_results/ubuntu/pca100_ont_at_sanity_20260504/daylily-omics-analysis/results/day/hg38_broad/reports/DAY_final_multiqc.html</code></li>
+<li>Analysis note: this April ONT result directory includes both <code>20260424_ONT_100ul</code> and <code>20260427_ONT_300ul</code>.</li>
+</ul>
+<h4><code>20260427_ONT_300ul</code> <code>&lt;QC complete&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260427_ONT_300ul</code> <code>&lt;QC complete&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/pca100/2026/20260427_ONT_300ul/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260503T104054Z/analysis_results/ubuntu/pca100_ont_at_sanity_20260504/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260503T104054Z/analysis_results/ubuntu/pca100_ont_at_sanity_20260504/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_combo_mqc.tsv</code></li>
+<li>MultiQC report: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260503T104054Z/analysis_results/ubuntu/pca100_ont_at_sanity_20260504/daylily-omics-analysis/results/day/hg38_broad/reports/DAY_final_multiqc.html</code></li>
+<li>Analysis note: this April ONT result directory includes both <code>20260424_ONT_100ul</code> and <code>20260427_ONT_300ul</code>.</li>
+</ul>
+<h4><code>20260513_ONT_HG003</code> <code>&lt;QC complete&gt;</code></h4>
+<ul>
+<li>Run Name: <code>20260513_ONT_HG003</code> <code>&lt;QC complete&gt;</code></li>
+<li>Raw data S3: <code>s3://lsmc-ssf-sequencing-data/basecalls/lsmc/ssf-hq/pca100/2026/20260513_ONT_HG003/</code></li>
+<li>Results S3: <code>s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260515T103052Z/analysis_results/ubuntu/pca100_ont_hg003_20260513_kitchen_bc17_unclassified_dryrun2/daylily-omics-analysis/results/day/hg38_broad/</code></li>
+<li>Alignstats data: https://dlqovrcm5y71h.cloudfront.net/pca100_ont_hg003_20260513_kitchen_bc17_unclassified_dryrun2/daylily-omics-analysis/results/day/hg38_broad/other_reports/alignstats_combo_mqc.tsv</li>
+<li>MultiQC report: https://dlqovrcm5y71h.cloudfront.net/pca100_ont_hg003_20260513_kitchen_bc17_unclassified_dryrun2/daylily-omics-analysis/results/day/hg38_broad/reports/DAY_final_multiqc.html</li>
+</ul>
+<h2>Sample Analysis</h2>
+<h3>Hybrid ILMN+ONT</h3>
+<h4>HG003</h4>
+<p><code>&lt;coming soon&gt;</code></p>
+
+</main></body>
+</html>
