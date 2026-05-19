@@ -6,6 +6,7 @@ __pycache__/
 dist/
 daylily_omics_analysis.egg-info/
 build/
+dags/
 
 day_stats.json
 DYMEMBERS
