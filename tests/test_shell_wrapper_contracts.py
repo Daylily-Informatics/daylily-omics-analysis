@@ -20,8 +20,19 @@ def test_gather_rules_do_not_use_sigpipe_prone_find_head_pipelines() -> None:
         "workflow/rules/seqfu.smk",
         "workflow/rules/calc_coverage_eveness.smk",
         "workflow/rules/calc_coverage_evenness_two.smk",
+        "bin/util/benchmarks/collect_day_benchmark_data.sh",
     ):
         assert not bad_find_to_head.search(_read(path)), path
+
+
+def test_benchmark_collector_avoids_full_results_tree_scan() -> None:
+    collector = _read("bin/util/benchmarks/collect_day_benchmark_data.sh")
+
+    assert "fd -p -L" not in collector
+    assert "parallel -j" not in collector
+    assert "ls -1" not in collector
+    assert "head -n 1 \"${bench_files[0]}\"" in collector
+    assert 'find "$bench_dir" -maxdepth 1 -type f -name "*.bench.tsv" -print0' in collector
 
 
 def test_coverage_gathers_are_declared_input_driven() -> None:
