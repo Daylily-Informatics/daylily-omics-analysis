@@ -52,6 +52,25 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+cluster_config_tag_value() {
+    local tag_key="$1"
+    local config_file="${2:-/opt/parallelcluster/shared/cluster-config.yaml}"
+    if [[ ! -f "$config_file" ]]; then
+        return 1
+    fi
+    awk -v tag_key="$tag_key" '
+        $1 == "-" && $2 == "Key:" && $3 == tag_key {
+            getline
+            if ($1 == "Value:") {
+                print $2
+                found = 1
+                exit
+            }
+        }
+        END { exit(found ? 0 : 1) }
+    ' "$config_file"
+}
+
 day_current_user() {
     local current_user="${USER:-}"
     if [[ -z "$current_user" ]]; then
@@ -121,11 +140,16 @@ fi
 
 
 # Set default project name if not provided
+cluster_config_file="/opt/parallelcluster/shared/cluster-config.yaml"
+BUDGET_ENFORCEMENT=""
+if [[ -f "$cluster_config_file" ]]; then
+    BUDGET_ENFORCEMENT="$(cluster_config_tag_value "aws-parallelcluster-enforce-budget" "$cluster_config_file" || true)"
+fi
 if [[ -z "$PROJECT" ]]; then
-    if [[ -f "/opt/parallelcluster/shared/cluster-config.yaml" ]]; then
-        PROJECT=$(awk '/Key: aws-parallelcluster-project/ {getline; print $2}' /opt/parallelcluster/shared/cluster-config.yaml)
+    if [[ -f "$cluster_config_file" ]]; then
+        PROJECT="$(cluster_config_tag_value "aws-parallelcluster-project" "$cluster_config_file" || true)"
         if [[ -z "$PROJECT" ]]; then
-            echo "Error: Project tag aws-parallelcluster-project was not found in /opt/parallelcluster/shared/cluster-config.yaml"
+            echo "Error: Project tag aws-parallelcluster-project was not found in $cluster_config_file"
             return 3
         fi
         echo "Notice: --project not set. Using default project name: $PROJECT"
@@ -135,6 +159,11 @@ if [[ -z "$PROJECT" ]]; then
     fi
 fi
 
+if [[ "$BUDGET_ENFORCEMENT" == "skip" && "$SKIP_PROJECT_CHECK" == false ]]; then
+    echo "Notice: Cluster config sets aws-parallelcluster-enforce-budget=skip; skipping project validation."
+    SKIP_PROJECT_CHECK=true
+fi
+
 # Display the parsed values
 echo "Project: $PROJECT"
 echo "Skip Project Check: $SKIP_PROJECT_CHECK"
@@ -142,14 +171,7 @@ echo "Skip Project Check: $SKIP_PROJECT_CHECK"
 # Export environment variables
 export DAY_PROJECT="$PROJECT"
 export DAY_AWS_REGION="$region"
-
-
-# Get AWS Account ID
-export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-if [[ -z "$AWS_ACCOUNT_ID" ]]; then
-    echo "Error: Unable to retrieve AWS Account ID."
-    return 3
-fi
+export AWS_ACCOUNT_ID="NA"
 
 # Skip project check if the flag is provided
 if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
@@ -205,6 +227,13 @@ if [[ "$SKIP_PROJECT_CHECK" == true ]]; then
     echo "  Percent Used: $PERCENT_USED"
     echo "________________________________________________________"
 else
+    # Get AWS Account ID
+    export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+    if [[ -z "$AWS_ACCOUNT_ID" ]]; then
+        echo "Error: Unable to retrieve AWS Account ID."
+        return 3
+    fi
+
     if ! command_exists jq; then
         echo "Error: jq is required to parse AWS budget JSON."
         return 3
