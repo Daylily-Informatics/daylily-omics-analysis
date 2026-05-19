@@ -39,6 +39,36 @@ def test_coverage_gathers_are_declared_input_driven() -> None:
     assert "parallel -j" not in coverage_two
 
 
+def test_report_gather_shell_arrays_escape_snakemake_braces() -> None:
+    seqfu = _read("workflow/rules/seqfu.smk")
+    coverage_one = _read("workflow/rules/calc_coverage_eveness.smk")
+    coverage_two = _read("workflow/rules/calc_coverage_evenness_two.smk")
+
+    for expected in (
+        "${{#r1_files[@]}}",
+        "${{r1_files[0]}}",
+        "${{r1_files[@]}}",
+        "${{#r2_files[@]}}",
+        "${{r2_files[0]}}",
+        "${{r2_files[@]}}",
+    ):
+        assert expected in seqfu
+
+    for expected in (
+        "${{#coverage_files[@]}}",
+        "${{coverage_files[0]}}",
+        "${{coverage_files[@]}}",
+    ):
+        assert expected in coverage_one
+
+    for expected in (
+        "${{#metrics_files[@]}}",
+        "${{metrics_files[0]}}",
+        "${{metrics_files[@]}}",
+    ):
+        assert expected in coverage_two
+
+
 def test_day_run_preserves_nonzero_workflow_exit_after_failure_marker() -> None:
     day_run = _read("bin/day_run")
     non_dry_run_block = day_run.split('if [[ "$_is_dry_run" == "true" ]]; then', 1)[1]

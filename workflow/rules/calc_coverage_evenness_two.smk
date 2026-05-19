@@ -41,14 +41,14 @@ rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
         set -euo pipefail;
         mkdir -p $(dirname {output});
         metrics_files=({input.metrics:q});
-        if [[ "${#metrics_files[@]}" -eq 0 ]]; then
+        if [[ "${{#metrics_files[@]}}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc};
         else
-            first_file="${metrics_files[0]}";
+            first_file="${{metrics_files[0]}}";
             head -n 1 "$first_file" > {output.mqc};
-            for source_path in "${metrics_files[@]}"; do
+            for source_path in "${{metrics_files[@]}}"; do
                 tail -n +2 "$source_path" >> {output.mqc};
             done;
         fi;
-        printf '%s\n' "${metrics_files[@]}";
+        printf '%s\n' "${{metrics_files[@]}}";
         """

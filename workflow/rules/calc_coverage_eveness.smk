@@ -74,14 +74,14 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
         set -euo pipefail;
         mkdir -p $(dirname {output});
         coverage_files=({input.mqc:q});
-        if [[ "${#coverage_files[@]}" -eq 0 ]]; then
+        if [[ "${{#coverage_files[@]}}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc};
         else
-            first_file="${coverage_files[0]}";
+            first_file="${{coverage_files[0]}}";
             head -n 1 "$first_file" > {output.mqc};
-            for source_path in "${coverage_files[@]}"; do
+            for source_path in "${{coverage_files[@]}}"; do
                 tail -n +2 "$source_path" >> {output.mqc};
             done;
         fi;
-        printf '%s\n' "${coverage_files[@]}";
+        printf '%s\n' "${{coverage_files[@]}}";
         """

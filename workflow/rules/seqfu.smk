@@ -74,32 +74,32 @@ rule compile_seqfu:
     shell:
         """mkdir -p {MDIR}other_reports $(dirname {output.d});
         mapfile -t r1_files < <(find {params.mdir} -name '*seqfuR1.mqc.tsv' -print | sort);
-        if [[ "${#r1_files[@]}" -eq 0 ]]; then
+        if [[ "${{#r1_files[@]}}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc1};
         else
-            single_file="${r1_files[0]}";
+            single_file="${{r1_files[0]}}";
             head -n 35 "$single_file" > {output.mqc1};
-            for source_path in "${r1_files[@]}"; do
+            for source_path in "${{r1_files[@]}}"; do
                 tail -n 1 "$source_path" >> {output.mqc1};
             done;
         fi;
 
         mapfile -t r2_files < <(find {params.mdir} -name '*seqfuR2.mqc.tsv' -print | sort);
-        if [[ "${#r2_files[@]}" -eq 0 ]]; then
+        if [[ "${{#r2_files[@]}}" -eq 0 ]]; then
             echo "NO DATA FOUND" > {output.mqc2};
         else
-            single_file2="${r2_files[0]}";
+            single_file2="${{r2_files[0]}}";
             head -n 35 "$single_file2" > {output.mqc2};
-            for source_path in "${r2_files[@]}"; do
+            for source_path in "${{r2_files[@]}}"; do
                 tail -n 1 "$source_path" >> {output.mqc2};
             done;
         fi;
         printf "Sample\\tbase_sample\\tread\\tsource_path\\n" > {output.mqc};
-        for source_path in "${r1_files[@]}"; do
+        for source_path in "${{r1_files[@]}}"; do
             base_sample=$(basename "$source_path" .seqfuR1.mqc.tsv);
             printf "%s.R1\\t%s\\tR1\\t%s\\n" "$base_sample" "$base_sample" "$source_path" >> {output.mqc};
         done;
-        for source_path in "${r2_files[@]}"; do
+        for source_path in "${{r2_files[@]}}"; do
             base_sample=$(basename "$source_path" .seqfuR2.mqc.tsv);
             printf "%s.R2\\t%s\\tR2\\t%s\\n" "$base_sample" "$base_sample" "$source_path" >> {output.mqc};
         done;
