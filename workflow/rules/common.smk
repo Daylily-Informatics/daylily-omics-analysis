@@ -1071,6 +1071,8 @@ sample_records = load_tsv_as_str(samples_table_path)
 sample_records.columns = [c.upper() for c in sample_records.columns]
 
 sample_records = normalize_boolish(sample_records)
+if "COMMENT" not in sample_records.columns:
+    sample_records["COMMENT"] = ""
 
 if sample_records.empty:
     raise WorkflowError("The samples table is empty. Please provide at least one sample entry.")
@@ -1086,6 +1088,8 @@ if unit_records is None:
     bootstrap_unit_context = True
 
 unit_records.columns = [c.upper() for c in unit_records.columns]
+if "COMMENT" not in unit_records.columns:
+    unit_records["COMMENT"] = ""
 
 validate(sample_records, schema="../schemas/samples.schema.yaml")
 validate(unit_records, schema="../schemas/units.schema.yaml")
@@ -1121,12 +1125,16 @@ for opt_col in [
     "SEQ_VENDOR",
     "AMPLIFICATION_TYPE",
     "ALIGNED_REF_UID",
+    "COMMENT",
 ]:
     if opt_col not in unit_records.columns:
         unit_records[opt_col] = ""
 
 if "SAMPLEID" not in sample_records.columns:
     raise WorkflowError("The samples table must contain a 'SAMPLEID' column.")
+
+sample_records_for_mqc = sample_records.copy()
+unit_records_for_mqc = unit_records.copy()
 
 # Drop duplicate metadata columns from the samples table before merging with
 # the units table. The units table should be authoritative for run-level

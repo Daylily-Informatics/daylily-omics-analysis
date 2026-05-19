@@ -31,6 +31,8 @@ properties:
         type: string
     TRUTH_DATA_DIR:
         type: string
+    COMMENT:
+        type: string
 required:
     - SAMPLEID
     - SAMPLESOURCE

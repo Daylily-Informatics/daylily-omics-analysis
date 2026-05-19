@@ -72,6 +72,7 @@ module_order:
   - somalier
   - vcftools
   - custom_content
+  - input_sample_libraries
   - sequence_qc_outputs
   - alignment_qc_outputs
   - expansionhunter
@@ -100,6 +101,8 @@ report_section_order:
     order: 1000
   seqfu:
     order: 1100
+  input_sample_libraries:
+    order: 1150
   sequence_qc_outputs:
     order: 1200
   bclconvert_demux:
@@ -306,6 +309,16 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'seqfu'
+  input_sample_libraries:
+    id: 'input_sample_libraries'
+    section_name: 'Input Sample Libraries'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Loaded samples.tsv and units.tsv rows joined by sample, with the composed Snakemake analysis unit identifier'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'input_sample_libraries'
   sequence_qc_outputs:
     id: 'sequence_qc_outputs'
     section_name: 'Sequence QC Output Inventory'
@@ -535,6 +548,8 @@ sp:
     fn: "other_reports/expansionhunter_mqc.tsv"
   seqfu:
     fn: "other_reports/seqfu_mqc.tsv"
+  input_sample_libraries:
+    fn: "other_reports/input_sample_libraries_mqc.tsv"
   sequence_qc_outputs:
     fn: "other_reports/sequence_qc_outputs_mqc.tsv"
   bclconvert_demux:

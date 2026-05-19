@@ -27,6 +27,7 @@ One row per biological sample. Important columns include:
 - `SAMPLE_TYPE`
 - `EXTERNAL_SAMPLE_ID`
 - `TRUTH_DATA_DIR`
+- `COMMENT` (optional free-text operator note)
 
 The schema source is `workflow/schemas/samples.schema.yaml`.
 
@@ -45,6 +46,7 @@ One row per sequencing unit or analysis unit. Important columns include:
 - FASTQ columns such as `ILMN_R1_PATH` and `ILMN_R2_PATH`
 - platform-specific CRAM/BAM columns such as `ONT_BAM`, `UG_R1_PATH`, `ROCHE_BAM`
 - `SUBSAMPLE_PCT`
+- `COMMENT` (optional free-text run/lane/library note)
 
 The schema source is `workflow/schemas/units.schema.yaml`.
 

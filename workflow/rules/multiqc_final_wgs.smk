@@ -13,6 +13,7 @@ def _seq_data_component_inputs(wildcards):
     paths = _sequence_qc_native_inputs(wildcards)
     if qc_tool_enabled("bclconvert", default=False):
         paths.append(MDIR + "other_reports/bclconvert_metrics_mqc.done")
+    paths.append(MDIR + "other_reports/input_sample_libraries_mqc.tsv")
     paths.append(MDIR + "other_reports/sequence_qc_outputs_mqc.tsv")
     return paths
 
@@ -273,9 +274,17 @@ def _multiqc_stage_component_inputs(wildcards):
     raise ValueError(f"Unknown MultiQC report stage: {stage}")
 
 
+def _input_sample_libraries_sources(wildcards):
+    paths = [samples_table_path]
+    if os.path.exists(units_table_path):
+        paths.append(units_table_path)
+    return paths
+
+
 localrules:
     collect_rules_benchmark_data,
     collect_rules_benchmark_data_singleton,
+    input_sample_libraries_custom_data,
     sequence_qc_outputs_custom_data,
     alignment_qc_outputs_custom_data,
     stage_multiqc_inputs,
@@ -327,6 +336,41 @@ rule collect_rules_benchmark_data_singleton:  # TARGET: collect benchmarks
         "bin/util/benchmarks/collect_day_benchmark_data.sh {params.ref_code} > {log};"
         "python bin/util/benchmarks/split_bench_rule_col.py {params.working_file} {output} > {log};"
         "sed -i -E 's/\t$/\tNA/' {output};"
+
+
+rule input_sample_libraries_custom_data:
+    input:
+        _input_sample_libraries_sources
+    output:
+        MDIR + "other_reports/input_sample_libraries_mqc.tsv"
+    log:
+        MDIR + "other_reports/logs/input_sample_libraries_custom_data.log"
+    params:
+        cluster_sample="input_sample_libraries",
+    container: None
+    run:
+        from pathlib import Path
+        import os
+        import sys
+
+        scripts_dir = os.path.abspath(os.path.join("workflow", "scripts"))
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        from input_sample_libraries_mqc import write_input_sample_libraries_mqc
+
+        Path(log[0]).parent.mkdir(parents=True, exist_ok=True)
+        fieldnames, rows = write_input_sample_libraries_mqc(
+            output[0],
+            metadata=metadata,
+            sample_records=sample_records_for_mqc,
+            unit_records=unit_records_for_mqc,
+            added_by_snakemake=bootstrap_unit_context,
+        )
+        with open(log[0], "w", encoding="utf-8") as handle:
+            handle.write(
+                f"wrote {len(rows)} input sample library rows "
+                f"with {len(fieldnames)} columns to {output[0]}\n"
+            )
 
 
 rule sequence_qc_outputs_custom_data:

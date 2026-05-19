@@ -78,6 +78,7 @@ workflow inputs apply and they are not listed in `multiqc_qc.disable_tools`:
 | --- | --- | --- |
 | FastQC | Sequence QC | per-sample FastQC outputs and completion markers |
 | SeqFu | Sequence QC | `other_reports/seqfu_mqc.tsv` |
+| Input sample libraries | Sequence QC | `other_reports/input_sample_libraries_mqc.tsv` |
 | Sequence QC output inventory | Sequence QC | `other_reports/sequence_qc_outputs_mqc.tsv` |
 | alignstats | Alignment QC | `other_reports/alignstats_combo_mqc.tsv` |
 | samtools metrics | Alignment QC | gathered samtools metrics marker and metrics files |

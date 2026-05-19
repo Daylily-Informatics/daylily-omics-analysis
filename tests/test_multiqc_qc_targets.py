@@ -137,6 +137,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert 'config.get("truvari_sv_benchmark", {}).get("truthsets")' in text
     assert '{"dysgu", "manta", "tiddit"}' in text
     for expected in (
+        "input_sample_libraries_mqc.tsv",
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
         "contamination_mqc.tsv",
@@ -196,6 +197,8 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     assert 'printf "%s.R1\\\\t%s\\\\tR1\\\\t%s\\\\n"' in seqfu
     assert 'printf "%s.R2\\\\t%s\\\\tR2\\\\t%s\\\\n"' in seqfu
     assert "\n  - fastp\n" not in multiqc
+    assert "\n  - input_sample_libraries\n" in multiqc
+    assert "other_reports/input_sample_libraries_mqc.tsv" in multiqc
     assert "\n  - giab_sv_concordance\n" in multiqc
     assert "giab_sv_concordance:" in multiqc
     assert "other_reports/giab_sv_concordance_mqc.tsv" in multiqc
@@ -219,9 +222,11 @@ def test_multiqc_custom_output_inventory_rules_exist() -> None:
     for expected in (
         "def _sequence_qc_native_inputs",
         "def _alignment_qc_native_inputs",
+        "rule input_sample_libraries_custom_data:",
         "rule sequence_qc_outputs_custom_data:",
         "rule alignment_qc_outputs_custom_data:",
         "workflow/scripts/multiqc_custom_output_inventory.py",
+        "input_sample_libraries_mqc.tsv",
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
     ):
