@@ -6,15 +6,11 @@ gbuild="$2" # genome build code [hg38|b37]
 remote_call="$3" # remote call flag
 
 echo "Requesting profile: $dayp"
-DP="${DAY_PROJECT:-}"
+DP="${DAY_PROJECT:-unset}"
 
 if [[ -z "$dayp" ]]; then
     echo "ERROR: No profile specified, please specify [slurm|local] ([hg38|b37])"
     return 1
-fi
-if [[ -z "$DP" ]]; then
-    echo "ERROR: DAY_PROJECT is not set. Run 'source ./dyoainit' before day-activate."
-    return 2
 fi
 
 # Attempt to deactivate any existing environment

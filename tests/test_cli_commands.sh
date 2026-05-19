@@ -255,10 +255,11 @@ test_day_activate_reinitializes_dyoainit() {
   test_result "day-activate reinitializes dyoainit instead of deactivating it" $?
 }
 
-# Test 27: day-activate fails explicitly when DAY_PROJECT is missing
-test_day_activate_requires_day_project() {
-  grep -q 'DAY_PROJECT is not set' bin/day_activate
-  test_result "day-activate requires DAY_PROJECT" $?
+# Test 27: day-activate uses an explicit DAY_PROJECT sentinel when missing
+test_day_activate_defaults_missing_day_project_to_unset() {
+  grep -q 'DP="${DAY_PROJECT:-unset}"' bin/day_activate &&
+    ! grep -q 'DAY_PROJECT is not set' bin/day_activate
+  test_result "day-activate defaults missing DAY_PROJECT to unset" $?
 }
 
 # Main test execution
@@ -295,7 +296,7 @@ main() {
   test_dycli_md_monitor_docs
   test_dycli_md_version_docs
   test_day_activate_reinitializes_dyoainit
-  test_day_activate_requires_day_project
+  test_day_activate_defaults_missing_day_project_to_unset
   
   echo ""
   echo "=========================================="
