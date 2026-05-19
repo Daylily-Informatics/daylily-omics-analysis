@@ -248,6 +248,19 @@ test_dycli_md_version_docs() {
   test_result "dycli.md documents day-run --version" $?
 }
 
+# Test 26: day-activate reinitializes the sourced dyoainit environment
+test_day_activate_reinitializes_dyoainit() {
+  grep -q 'source ./dyoainit --project "$DP" --skip-project-check' bin/day_activate &&
+    ! grep -q 'dyoainit --project $DP --deactivate' bin/day_activate
+  test_result "day-activate reinitializes dyoainit instead of deactivating it" $?
+}
+
+# Test 27: day-activate fails explicitly when DAY_PROJECT is missing
+test_day_activate_requires_day_project() {
+  grep -q 'DAY_PROJECT is not set' bin/day_activate
+  test_result "day-activate requires DAY_PROJECT" $?
+}
+
 # Main test execution
 main() {
   echo "=========================================="
@@ -281,6 +294,8 @@ main() {
   test_agents_md_ssm_docs
   test_dycli_md_monitor_docs
   test_dycli_md_version_docs
+  test_day_activate_reinitializes_dyoainit
+  test_day_activate_requires_day_project
   
   echo ""
   echo "=========================================="
