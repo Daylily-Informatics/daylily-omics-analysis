@@ -165,8 +165,16 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert 'export TOTAL_BUDGET="NA"' in dyoainit
     assert 'export USED_BUDGET="NA"' in dyoainit
     assert 'export PERCENT_USED="NA"' in dyoainit
+    assert 'export AWS_ACCOUNT_ID="NA"' in dyoainit
     assert "bc -l" not in dyoainit
     assert "DEFAULTING TO PROJECT=daylily-global" not in dyoainit
+
+    assert "cluster_config_tag_value()" in dyoainit
+    assert "aws-parallelcluster-enforce-budget" in dyoainit
+    assert "Notice: Cluster config sets aws-parallelcluster-enforce-budget=skip" in dyoainit
+    assert dyoainit.index('if [[ "$SKIP_PROJECT_CHECK" == true ]]; then') < dyoainit.index(
+        "aws sts get-caller-identity"
+    )
 
     assert "day_current_user()" in dyoainit
     assert "id -un" in dyoainit
