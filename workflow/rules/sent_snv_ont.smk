@@ -90,7 +90,56 @@ rule sent_snv_ont:
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+        capture_sentdont_tmp() {{
+            rc=$?
+            set +e
+            capture_root="/fsx/analysis_results/johnm/hg003a_ont_snv_alignstats_1018_191_retain_tmp_v4/ont_tmp_capture"
+            node="$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo unknown)"
+            utc="$(date -u +%Y%m%dT%H%M%SZ)"
+            pid="$$"
+            dest="${{capture_root}}/${{node}}_${{utc}}_${{pid}}"
+            mkdir -p "$dest"
+            {{
+                echo "capture_utc=$utc"
+                echo "node=$node"
+                echo "exit_code=$rc"
+                echo "pid=$pid"
+                echo "pwd=$PWD"
+                echo "TMPDIR=${{TMPDIR:-}}"
+                echo "SENTIEON_TMPDIR=${{SENTIEON_TMPDIR:-}}"
+                echo '--- df -h /dev/shm ---'
+                df -h /dev/shm || true
+                echo '--- df -ih /dev/shm ---'
+                df -ih /dev/shm || true
+                echo '--- mount /dev/shm ---'
+                mount | grep ' /dev/shm ' || true
+                echo '--- free -h ---'
+                free -h || true
+                echo '--- process sample ---'
+                ps -eo pid,ppid,user,stat,etime,pcpu,pmem,args | egrep 'sentieon|DNAscope|dnascope|sentdont|snakemake|slurm|python' || true
+                echo '--- du -sh /dev/shm/* ---'
+                du -sh /dev/shm/* 2>/dev/null || true
+                echo '--- find /dev/shm maxdepth 3 ---'
+                find /dev/shm -maxdepth 3 -xdev -printf '%M %u %g %s %TY-%Tm-%TdT%TH:%TM:%TS %p\n' 2>/dev/null | sort | tail -500 || true
+                if [ -n "${{TMPDIR:-}}" ]; then
+                    echo '--- find TMPDIR maxdepth 5 ---'
+                    find "$TMPDIR" -maxdepth 5 -xdev -printf '%M %u %g %s %TY-%Tm-%TdT%TH:%TM:%TS %p\n' 2>/dev/null | sort | tail -1000 || true
+                fi
+                if [ -n "${{SENTIEON_TMPDIR:-}}" ] && [ "${{SENTIEON_TMPDIR:-}}" != "${{TMPDIR:-}}" ]; then
+                    echo '--- find SENTIEON_TMPDIR maxdepth 5 ---'
+                    find "$SENTIEON_TMPDIR" -maxdepth 5 -xdev -printf '%M %u %g %s %TY-%Tm-%TdT%TH:%TM:%TS %p\n' 2>/dev/null | sort | tail -1000 || true
+                fi
+            }} > "$dest/summary.txt" 2>&1
+            for path in "${{TMPDIR:-}}" "${{SENTIEON_TMPDIR:-}}"; do
+                if [ -n "$path" ] && [ -e "$path" ]; then
+                    base="$(basename "$path")"
+                    parent="$(dirname "$path")"
+                    tar -C "$parent" -czf "$dest/${{base}}.tgz" "$base" >> "$dest/tar.log" 2>&1 || true
+                fi
+            done
+            exit "$rc"
+        }}
+        trap capture_sentdont_tmp EXIT;
 
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set." >> {log} 2>&1;
@@ -139,7 +188,7 @@ rule sent_snv_ont:
 
         echo "sentieon-cli dnascope-longread starting: model={params.model} tech=ONT" >> {log} 2>&1;
         set +e;
-        sentieon-cli dnascope-longread \
+        sentieon-cli dnascope-longread --retain_tmpdir \
             -r {params.huref} \
             -i {input.cram} \
             -m "{params.model}" \
