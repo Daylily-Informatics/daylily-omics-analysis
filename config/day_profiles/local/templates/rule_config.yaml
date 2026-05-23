@@ -924,6 +924,7 @@ sentdont:
     dna_scope_apply_model: "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle"
     mem_mb: 200000
     pop_vcf: ""
+    keep_tmp_dirs: false
 
 sentdontr:
     threads: 8

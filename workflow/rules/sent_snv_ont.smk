@@ -81,6 +81,7 @@ rule sent_snv_ont:
         cluster_sample=ret_sample,
         haploid_bed=get_haploid_bed_arg,
         diploid_bed=get_diploid_bed_arg,
+        keep_tmp_dirs=config["sentdont"]["keep_tmp_dirs"],
     shell:
         """
         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
@@ -90,7 +91,7 @@ rule sent_snv_ont:
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
+        trap 'status=$?; keep_tmp="{params.keep_tmp_dirs}"; if [ "$keep_tmp" = "True" ] || [ "$keep_tmp" = "true" ] || [ "$keep_tmp" = "1" ]; then echo "Retaining sentdont TMPDIR because sentdont.keep_tmp_dirs=true: $TMPDIR" >> {log} 2>&1; df -h /dev/shm >> {log} 2>&1 || true; else rm -rf "$TMPDIR" 2>/dev/null || true; fi; trap - EXIT; exit "$status"' EXIT;
 
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set." >> {log} 2>&1;
@@ -138,6 +139,7 @@ rule sent_snv_ont:
         cli_out="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sentdont";
 
         echo "sentieon-cli dnascope-longread starting: model={params.model} tech=ONT" >> {log} 2>&1;
+        echo "sentieon-cli dnascope-longread retain_tmpdir enabled; TMPDIR=$TMPDIR" >> {log} 2>&1;
         set +e;
         sentieon-cli dnascope-longread \
             -r {params.huref} \
@@ -146,6 +148,7 @@ rule sent_snv_ont:
             -d "{params.pop_vcf}" \
             -t {threads} \
             --tech ONT \
+            --retain_tmpdir \
             {params.diploid_bed} {params.haploid_bed} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
 

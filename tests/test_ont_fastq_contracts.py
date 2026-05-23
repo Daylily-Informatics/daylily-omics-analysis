@@ -52,7 +52,15 @@ def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     assert 'ALIGNERS_ONT = ["ont", "sentmm2ont"]' in rule
     assert "sentieon-cli dnascope-longread" in rule
     assert "--tech ONT" in rule
+    assert "--retain_tmpdir" in rule
+    assert 'keep_tmp_dirs=config["sentdont"]["keep_tmp_dirs"]' in rule
+    assert "Retaining sentdont TMPDIR because sentdont.keep_tmp_dirs=true" in rule
+    assert "Preserving sentdont TMPDIR after failure" not in rule
     assert "svvcfgz=MDIR" in rule
     assert ".sentdont.sv.vcf.gz" in rule
     assert "SENTDONT_CNV_SUPPORTED = False" in rule
     assert "produce_sentdont_cnv" not in rule
+
+    for profile in ("local", "slurm"):
+        cfg = _rule_config(profile)
+        assert cfg["sentdont"]["keep_tmp_dirs"] is False

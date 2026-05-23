@@ -53,3 +53,13 @@ def test_active_snakemake_files_do_not_assign_reserved_module_directive() -> Non
             offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {match.group(0).strip()}")
 
     assert not offenders, "Reserved Snakemake directive assignment found:\n" + "\n".join(offenders)
+
+
+def test_hybrid_rules_use_stdlib_importlib_resources() -> None:
+    offenders: list[str] = []
+    for path in sorted((WORKFLOW_ROOT / "rules").glob("*hybrid*modular*.smk")):
+        text = path.read_text(encoding="utf-8")
+        if "importlib_resources" in text:
+            offenders.append(str(path.relative_to(REPO_ROOT)))
+
+    assert not offenders, "Undeclared importlib_resources backport used:\n" + "\n".join(offenders)

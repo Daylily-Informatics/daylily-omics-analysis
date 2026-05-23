@@ -921,6 +921,7 @@ sentdont:
     mem_mb: 300000
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
+    keep_tmp_dirs: false
 
 sentD:
     threads: 192

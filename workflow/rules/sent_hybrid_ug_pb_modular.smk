@@ -188,7 +188,7 @@ rule sentdhupm_hybrid_select:
         echo "Starting hybrid_select pipeline at $(date)" >> {log}
 
         # Find hybrid_select.py script
-        HYBRID_SELECT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
+        HYBRID_SELECT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
 
         # Pipeline: hybrid_select.py -> bcftools view -> bcftools query -> bedtools slop
         # This replicates sentieon-cli's cmd_pyexec_hybrid_select() function
@@ -794,7 +794,7 @@ rule sentdhupm_anno:
 
         echo "Starting hybrid annotation at $(date)" >> {log}
 
-        HYBRID_ANNO=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
+        HYBRID_ANNO=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
 
         sentieon pyexec "$HYBRID_ANNO" \
             -v {input.vcf} \
@@ -850,7 +850,7 @@ rule sentdhupm_transfer:
         # If pop_vcf is set and non-empty, do annotation transfer; otherwise just copy
         # Note: pop_vcf is a sites-only VCF (no samples) - don't try to reheader it
         if [ -n "{params.pop_vcf}" ] && [ -f "{params.pop_vcf}" ]; then
-            TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
+            TRIM_SCRIPT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
             echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
 

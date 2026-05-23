@@ -480,11 +480,11 @@ rule sentdhiom_hybrid_select:
             echo "DEBUG python -V:"
             python -V || true
             echo "DEBUG python import probe:"
-            python -c "import os, sys; print('DEBUG sys.executable=' + sys.executable); print('DEBUG sys.prefix=' + sys.prefix); print('DEBUG sys.path=' + repr(sys.path)); print('DEBUG env_CONDA_PREFIX=' + str(os.environ.get('CONDA_PREFIX'))); import importlib_resources; print('DEBUG importlib_resources_file=' + str(getattr(importlib_resources, '__file__', None))); from importlib_resources import files; print('DEBUG hybrid_select=' + str(files('sentieon_cli.scripts').joinpath('hybrid_select.py')))" || true
+            python -c "import os, sys; print('DEBUG sys.executable=' + sys.executable); print('DEBUG sys.prefix=' + sys.prefix); print('DEBUG sys.path=' + repr(sys.path)); print('DEBUG env_CONDA_PREFIX=' + str(os.environ.get('CONDA_PREFIX'))); import importlib.resources as resources; print('DEBUG importlib.resources_file=' + str(getattr(resources, '__file__', None))); from importlib.resources import files; print('DEBUG hybrid_select=' + str(files('sentieon_cli.scripts').joinpath('hybrid_select.py')))" || true
         ) >> {log} 2>&1
 
         # Find hybrid_select.py script
-        HYBRID_SELECT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
+        HYBRID_SELECT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
 
         # Pipeline: hybrid_select.py -> bcftools view -> bcftools query -> bedtools slop
         # This replicates sentieon-cli's cmd_pyexec_hybrid_select() function
@@ -1175,7 +1175,7 @@ rule sentdhiom_anno:
         echo "Starting hybrid annotation at $(date)" >> {log}
 
         # Find hybrid_anno.py script
-        HYBRID_ANNO=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
+        HYBRID_ANNO=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
 
         sentieon pyexec "$HYBRID_ANNO" \
             -v {input.vcf} \
@@ -1242,7 +1242,7 @@ rule sentdhiom_transfer:
             exit 1
         fi
 
-        TRIM_SCRIPT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
+        TRIM_SCRIPT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
         echo "Transferring annotations from pop_vcf: {params.pop_vcf}" >> {log}
 
