@@ -466,6 +466,23 @@ rule sentdhiom_hybrid_select:
 
         echo "Starting hybrid_select pipeline at $(date)" >> {log}
 
+        (
+            echo "DEBUG hybrid_select env at $(date)"
+            echo "DEBUG pwd=$PWD"
+            echo "DEBUG PATH=$PATH"
+            echo "DEBUG CONDA_PREFIX=$(printenv CONDA_PREFIX || true)"
+            echo "DEBUG PYTHONPATH=$(printenv PYTHONPATH || true)"
+            echo "DEBUG LD_LIBRARY_PATH=$(printenv LD_LIBRARY_PATH || true)"
+            echo "DEBUG command -v python=$(command -v python || true)"
+            echo "DEBUG which python=$(which python || true)"
+            echo "DEBUG which -a python:"
+            which -a python || true
+            echo "DEBUG python -V:"
+            python -V || true
+            echo "DEBUG python import probe:"
+            python -c "import os, sys; print('DEBUG sys.executable=' + sys.executable); print('DEBUG sys.prefix=' + sys.prefix); print('DEBUG sys.path=' + repr(sys.path)); print('DEBUG env_CONDA_PREFIX=' + str(os.environ.get('CONDA_PREFIX'))); import importlib_resources; print('DEBUG importlib_resources_file=' + str(getattr(importlib_resources, '__file__', None))); from importlib_resources import files; print('DEBUG hybrid_select=' + str(files('sentieon_cli.scripts').joinpath('hybrid_select.py')))" || true
+        ) >> {log} 2>&1
+
         # Find hybrid_select.py script
         HYBRID_SELECT=$(python -c "from importlib_resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
 
