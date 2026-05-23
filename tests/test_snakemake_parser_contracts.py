@@ -10,6 +10,9 @@ SNAKEFILE = WORKFLOW_ROOT / "Snakefile"
 
 INCLUDE_RE = re.compile(r'^\s*include:\s*[rRuUbBfF]*["\']([^"\']+)["\']')
 RESERVED_ASSIGNMENT_RE = re.compile(r"^\s*(module)\s*=", re.MULTILINE)
+BARE_SENTIEON_CLI_PYTHON_LOOKUP_RE = re.compile(
+    r"\bpython\s+-c\s+[\"'][^\"'\n]*sentieon_cli\.scripts"
+)
 
 
 def _resolve_include(current_file: Path, include_path: str) -> Path:
@@ -63,3 +66,17 @@ def test_hybrid_rules_use_stdlib_importlib_resources() -> None:
             offenders.append(str(path.relative_to(REPO_ROOT)))
 
     assert not offenders, "Undeclared importlib_resources backport used:\n" + "\n".join(offenders)
+
+
+def test_sentdhiomr_resolves_sentieon_cli_scripts_with_rule_env_python() -> None:
+    offenders: list[str] = []
+    path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ilmn_ont_modular.refactored.smk"
+    text = path.read_text(encoding="utf-8")
+    for match in BARE_SENTIEON_CLI_PYTHON_LOOKUP_RE.finditer(text):
+        line_no = text.count("\n", 0, match.start()) + 1
+        offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {match.group(0)}")
+
+    assert not offenders, (
+        "sentdhiomr Sentieon CLI helper lookups must use $CONDA_PREFIX/bin/python:\n"
+        + "\n".join(offenders)
+    )
