@@ -83,8 +83,8 @@ For manual debugging, use this order:
 | `produce_sentdpb_snv_vcf` | PacBio Sentieon SNV calling. |
 | `produce_sentdug_snv_vcf` | Ultima Genomics SNV calling. |
 | `produce_cgt7p_snv_vcf` | Complete Genomics/MGI Sentieon DNAscope via `sentcg`. |
-| `produce_sentdhiom_snv_vcf` | Modular Illumina+ONT hybrid workflow. |
-| `produce_sentdhuom_snv_vcf` | Modular Ultima+ONT hybrid workflow. |
+| `produce_sentdhiomr_snv_vcf` | Refactored Illumina+ONT hybrid workflow. |
+| `produce_sentdhuomr_snv_vcf` | Refactored Ultima+ONT hybrid workflow. |
 | `produce_dmd_dedup_cram`, `produce_smd_dedup_cram`, `produce_na_dedup_cram` | Canonical dedup selector targets; legacy `dppl` normalizes to `dmd`. |
 | `produce_all_align`, `produce_all_dedup_cram`, `produce_all_snv_vcf`, `produce_all_sv_vcf` | Run every registered selector in that stage, subject to manifest/platform compatibility. |
 | `produce_manta_sv_vcf`, `produce_tiddit_sv_vcf`, `produce_dysgu_sv_vcf` | Structural variant workflows. |

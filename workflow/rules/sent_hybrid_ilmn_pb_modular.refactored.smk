@@ -53,17 +53,17 @@ rule sentdhipmr_sr_align:
         crai=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram.crai",
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
     output:
-        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_aligned.bam",
-        bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_aligned.bam.bai",
+        bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_aligned.bam",
+        bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_aligned.bam.bai",
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHIPMR)
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_align.log",
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.sr_align.log",
     threads: config['sentdhipmr']['threads']
     conda:
         "../envs/sentieon_v0.3.yaml"
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipmr.{dchrm}.sr_align.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipmr.sr_align.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhipmr']['threads'],
@@ -181,10 +181,10 @@ rule sentdhipmr_sr_align:
 # ---------------------------------------------------------------------------
 rule sentdhipmr_sr_markdup:
     input:
-        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_aligned.bam"
+        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_aligned.bam"
     output:
-        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_dedup.bam",
-        bai = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_dedup.bam.bai"
+        bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_dedup.bam",
+        bai = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_dedup.bam.bai"
     params:
         huref = config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         use_threads = config["sentdhipmr"]["use_threads"],
@@ -192,7 +192,7 @@ rule sentdhipmr_sr_markdup:
         cluster_sample=ret_sample,
     threads: config['sentdhipmr']['threads']
     benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipmr.{dchrm}.sr_markdup.bench.tsv"
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhipmr.sr_markdup.bench.tsv"
     resources:
         partition="i192mem,i192bigmem",
         threads=config['sentdhipmr']['threads'],
@@ -201,7 +201,7 @@ rule sentdhipmr_sr_markdup:
     conda:
         "../envs/sentieon_v0.3.yaml"
     log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.sr_markdup.log"
+        MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.sr_markdup.log"
     shell:
         """
         set -euo pipefail;
@@ -269,8 +269,8 @@ rule sentdhipmr_sr_markdup:
 rule sentdhipmr_pass1:
     """First-pass combined variant calling (DNAscope) on LR+SR"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_dedup.bam",
-        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_dedup.bam.bai",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_dedup.bam",
+        sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_dedup.bam.bai",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
         lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram.crai",
     output:
@@ -293,7 +293,8 @@ rule sentdhipmr_pass1:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhipmr"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
+        diploid_bed=get_diploid_bed_path,
+        schrm_mod=get_dchrm_day,
         use_threads=config["sentdhipmr"]["use_threads"],
         cluster_sample=ret_sample,
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
@@ -318,6 +319,13 @@ rule sentdhipmr_pass1:
 
         echo "Starting Pass 1 DNAscope at $(date)" >> {log}
 
+        scoped_diploid_bed="$TMPDIR/scoped_diploid.bed"
+        python workflow/scripts/make_scoped_diploid_bed.py \
+            --regions "{params.schrm_mod}" \
+            --diploid-bed "{params.diploid_bed}" \
+            --fai "{params.huref}.fai" \
+            --output "$scoped_diploid_bed" >> {log} 2>&1
+
         # Build --replace_rg args: LR reads get LR:1 tag (critical for hybrid.model
         # to distinguish long reads from short reads, especially for indel calling).
         # SR reads get SM-only replacement to unify sample names. Matches CLI behavior.
@@ -330,7 +338,7 @@ rule sentdhipmr_pass1:
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
-            {params.diploid_bed} \
+            --interval "$scoped_diploid_bed" \
             --algo DNAscope \
             -d {params.pop_vcf} \
             --model {params.model}/hybrid.model \
@@ -411,7 +419,7 @@ rule sentdhipmr_hybrid_select:
 rule sentdhipmr_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_aligned.bam",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_aligned.bam",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
@@ -432,6 +440,8 @@ rule sentdhipmr_mapq0_bed:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhipmr"]["dna_scope_snv_model"],
+        diploid_bed=get_diploid_bed_path,
+        schrm_mod=get_dchrm_day,
         use_threads=config["sentdhipmr"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
@@ -447,6 +457,13 @@ rule sentdhipmr_mapq0_bed:
 
         echo "Starting MAPQ0 detection at $(date)" >> {log}
 
+        scoped_diploid_bed="$TMPDIR/scoped_diploid.bed"
+        python workflow/scripts/make_scoped_diploid_bed.py \
+            --regions "{params.schrm_mod}" \
+            --diploid-bed "{params.diploid_bed}" \
+            --fai "{params.huref}.fai" \
+            --output "$scoped_diploid_bed" >> {log} 2>&1
+
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model
         LR_RG_ARGS=""
         for rgid in $(samtools view -H {input.lr_cram} | grep '^@RG' | sed 's/.*ID:\([^\\t]*\).*/\\1/'); do
@@ -457,6 +474,7 @@ rule sentdhipmr_mapq0_bed:
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
+            --interval "$scoped_diploid_bed" \
             --algo HybridStage2 \
             --model {params.model}/HybridStage2_region.model \
             --all_bed {output.bed} >> {log} 2>&1
@@ -567,6 +585,8 @@ rule sentdhipmr_stage1:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhipmr"]["dna_scope_snv_model"],
+        diploid_bed=get_diploid_bed_path,
+        schrm_mod=get_dchrm_day,
         use_threads=config["sentdhipmr"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
@@ -590,6 +610,13 @@ rule sentdhipmr_stage1:
 
         echo "Starting Stage 1 at $(date)" >> {log}
 
+        scoped_diploid_bed="$TMPDIR/scoped_diploid.bed"
+        python workflow/scripts/make_scoped_diploid_bed.py \
+            --regions "{params.schrm_mod}" \
+            --diploid-bed "{params.diploid_bed}" \
+            --fai "{params.huref}.fai" \
+            --output "$scoped_diploid_bed" >> {log} 2>&1
+
         # Use cluster_sample for consistent @RG SM tag across entire pipeline
         # This matches the pattern used in sentieon_bwa_sort and other alignment rules
         epocsec=$(date +%s)
@@ -606,10 +633,10 @@ rule sentdhipmr_stage1:
             samtools view -H {input.lr_cram} | grep -E '^@(HD|SQ|RG)' | samtools view -bo {output.hap_bam} -
             samtools index {output.hap_bam}
 
-            # Only run insertion detection (no interval restriction)
+            # Only run insertion detection in the requested shard interval
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                -i {input.lr_cram} \
+                -i {input.lr_cram} --interval "$scoped_diploid_bed" \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -643,7 +670,7 @@ rule sentdhipmr_stage1:
             # Insertion detection driver command
             INS_CMD="sentieon driver -r {params.huref} -t {params.use_threads} \
                 --temp_dir $TMPDIR \
-                -i {input.lr_cram} \
+                -i {input.lr_cram} --interval {input.diff_bed} \
                 --algo HybridStage1 \
                 --model {params.model}/HybridStage1_ins.model \
                 --fa_file {output.ins_fa} \
@@ -744,7 +771,7 @@ rule sentdhipmr_stage2:
 rule sentdhipmr_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
-        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/sr_aligned.bam",
+        sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/tmp/sr_aligned.bam",
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.sentmm2.cram",
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
@@ -1169,7 +1196,8 @@ rule sentdhipmr_model_apply:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhipmr"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
+        diploid_bed=get_diploid_bed_path,
+        schrm_mod=get_dchrm_day,
         use_threads=config["sentdhipmr"]["use_threads_medium"],
         cluster_sample=ret_sample,
     shell:
@@ -1185,9 +1213,16 @@ rule sentdhipmr_model_apply:
 
         echo "Starting DNAModelApply at $(date)" >> {log}
 
+        scoped_diploid_bed="$TMPDIR/scoped_diploid.bed"
+        python workflow/scripts/make_scoped_diploid_bed.py \
+            --regions "{params.schrm_mod}" \
+            --diploid-bed "{params.diploid_bed}" \
+            --fai "{params.huref}.fai" \
+            --output "$scoped_diploid_bed" >> {log} 2>&1
+
         sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
-            {params.diploid_bed} \
+            --interval "$scoped_diploid_bed" \
             --algo DNAModelApply \
             --model {params.model}/hybrid.model \
             --vcf {input.vcf} \

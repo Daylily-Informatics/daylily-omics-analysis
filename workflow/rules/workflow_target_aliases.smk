@@ -124,16 +124,6 @@ localrules:
     produce_sentdpb_snv_vcf,
     produce_sentdont_snv_vcf,
     produce_sentdug_snv_vcf,
-    produce_sentdhio_snv_vcf,
-    produce_sentdhuo_snv_vcf,
-    produce_sentdhip_snv_vcf,
-    produce_sentdhup_snv_vcf,
-    produce_sentdhiom_snv_vcf,
-    produce_sentdhuom_snv_vcf,
-    produce_sentdhipm_snv_vcf,
-    produce_sentdhupm_snv_vcf,
-    produce_sentdhrom_snv_vcf,
-    produce_sentdhrpm_snv_vcf,
     produce_sentdhiomr_snv_vcf,
     produce_sentdhipmr_snv_vcf,
     produce_sentdhuomr_snv_vcf,
@@ -301,96 +291,6 @@ rule produce_sentdug_snv_vcf:  # TARGET: canonical Ultima Sentieon SNV selector
         lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdug_snv_vcf")
     output:
         _workflow_target_alias_marker("produce_sentdug_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhio_snv_vcf:  # TARGET: canonical Illumina+ONT hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhio_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhio_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhuo_snv_vcf:  # TARGET: canonical Ultima+ONT hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhuo_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhuo_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhip_snv_vcf:  # TARGET: canonical Illumina+PacBio hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhip_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhip_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhup_snv_vcf:  # TARGET: canonical Ultima+PacBio hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhup_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhup_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhiom_snv_vcf:  # TARGET: canonical modular Illumina+ONT hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhiom_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhiom_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhuom_snv_vcf:  # TARGET: canonical modular Ultima+ONT hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhuom_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhuom_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhipm_snv_vcf:  # TARGET: canonical modular Illumina+PacBio hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhipm_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhipm_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhupm_snv_vcf:  # TARGET: canonical modular Ultima+PacBio hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhupm_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhupm_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhrom_snv_vcf:  # TARGET: canonical modular Roche+ONT hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhrom_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhrom_snv_vcf")
-    shell:
-        "mkdir -p $(dirname {output:q}); touch {output:q};"
-
-
-rule produce_sentdhrpm_snv_vcf:  # TARGET: canonical modular Roche+PacBio hybrid SNV selector
-    input:
-        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_sentdhrpm_snv_vcf")
-    output:
-        _workflow_target_alias_marker("produce_sentdhrpm_snv_vcf")
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 

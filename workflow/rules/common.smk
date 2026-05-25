@@ -2249,6 +2249,14 @@ def get_diploid_bed_interval_arg(wildcards):
     return f' --interval {config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]} '
 
 
+def get_diploid_bed_path(wildcards):
+    """Return the sample-sex diploid BED path without adding a caller flag."""
+    sex = _resolve_sample_sex(wildcards)
+    if sex == "male":
+        return config["supporting_files"]["files"]["huref"]["male_diploid"]["name"]
+    return config["supporting_files"]["files"]["huref"]["female_diploid"]["name"]
+
+
 def get_haploid_bed_arg(wildcards):
     sex = _resolve_sample_sex(wildcards)
     if sex == "male":

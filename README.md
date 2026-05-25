@@ -91,8 +91,8 @@ Common flags passed through `dy-r`:
 | `produce_sentdpb_snv_vcf` | PacBio Sentieon SNV calling. |
 | `produce_sentdug_snv_vcf` | Ultima Genomics SNV calling, usually on `hg38_broad`. |
 | `produce_cgt7p_snv_vcf` | Complete Genomics/MGI Sentieon DNAscope path using `sentcg` and `cgt7p`. |
-| `produce_sentdhiom_snv_vcf` | Modular Illumina+ONT hybrid Sentieon workflow. |
-| `produce_sentdhuom_snv_vcf` | Modular Ultima+ONT hybrid Sentieon workflow. |
+| `produce_sentdhiomr_snv_vcf` | Refactored Illumina+ONT hybrid Sentieon workflow. |
+| `produce_sentdhuomr_snv_vcf` | Refactored Ultima+ONT hybrid Sentieon workflow. |
 | `produce_dmd_dedup_cram`, `produce_smd_dedup_cram`, `produce_na_dedup_cram` | Canonical dedup selector targets; `dppl` is accepted only as a deprecated alias for `dmd`. |
 | `produce_all_align`, `produce_all_dedup_cram`, `produce_all_snv_vcf`, `produce_all_sv_vcf` | Run every registered selector in that stage, subject to manifest/platform compatibility. |
 | `produce_bclconvert_fastqs`, `produce_bclconvert_metrics`, `produce_bclconvert_multiqc`, `produce_bclconvert_fastqs_and_metrics` | Illumina BCL Convert bootstrap, generated units, demux metrics, and MultiQC-ready BCL metric tables. |

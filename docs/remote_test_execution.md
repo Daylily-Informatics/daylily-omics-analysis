@@ -84,7 +84,7 @@ Only inspect or control jobs for the workset under test. Do not cancel unrelated
 | ONT | `produce_sentmm2ont_align produce_na_dedup_cram produce_sentdont_snv_vcf produce_alignstats produce_snv_concordances` |
 | PacBio | `produce_sentmm2_align produce_na_dedup_cram produce_sentdpb_snv_vcf produce_alignstats produce_snv_concordances` |
 | Ultima | `produce_na_dedup_cram produce_sentdug_snv_vcf produce_alignstats produce_snv_concordances` |
-| Hybrid Illumina+ONT modular | `produce_sentdhiom_snv_vcf produce_sentdhiom_sv produce_alignstats produce_snv_concordances` |
-| Hybrid Ultima+ONT modular | `produce_sentdhuom_snv_vcf produce_alignstats produce_snv_concordances` |
+| Hybrid Illumina+ONT refactored modular | `produce_sentdhiomr_snv_vcf produce_sentdhiomr_sv produce_alignstats produce_snv_concordances` |
+| Hybrid Ultima+ONT refactored modular | `produce_sentdhuomr_snv_vcf produce_alignstats produce_snv_concordances` |
 
 Dry-run first with `-n`.

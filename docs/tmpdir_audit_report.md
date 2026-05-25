@@ -182,7 +182,7 @@ trap "rm -rf \"$TMPDIR\" || echo '$TMPDIR rm fails' >> {log} 2>&1" EXIT;
 export SENTIEON_TMPDIR=$TMPDIR;
 ```
 
-### ⚠️ `workflow/rules/sent_hybrid_ilmn_ont.smk` (ILMN+ONT hybrid)
+### ⚠️ `workflow/rules/to-deprecate/sent_hybrid_ilmn_ont.smk` (ILMN+ONT hybrid)
 - **TMPDIR pattern:** ⚠️ `/dev/shm/sentdontr_tmp_$timestamp` (wrong prefix)
 - **SENTIEON_TMPDIR:** ❌ NOT exported
 - **Trap command:** ✅ Present
@@ -202,7 +202,7 @@ export TMPDIR=/dev/shm/sentdhio_tmp_$timestamp;
 export SENTIEON_TMPDIR=$TMPDIR;
 ```
 
-### ⚠️ `workflow/rules/sent_hybrid_ug_ont.smk` (Ultima+ONT hybrid)
+### ⚠️ `workflow/rules/to-deprecate/sent_hybrid_ug_ont.smk` (Ultima+ONT hybrid)
 - **TMPDIR pattern:** ⚠️ `/dev/shm/sentdontr_tmp_$timestamp` (wrong prefix)
 - **SENTIEON_TMPDIR:** ❌ NOT exported
 - **Trap command:** ✅ Present
@@ -275,5 +275,5 @@ export SENTIEON_TMPDIR=$TMPDIR;
 3. `workflow/rules/sent_snv_ont.smk` - Add `export SENTIEON_TMPDIR` (after line 62)
 4. `workflow/rules/sent_snv_pb.smk` - Change to /dev/shm + add SENTIEON_TMPDIR (line 57)
 5. `workflow/rules/sent_snv_ontr.smk` - Add `export SENTIEON_TMPDIR` (after line 53)
-6. `workflow/rules/sent_hybrid_ilmn_ont.smk` - Fix prefix + add SENTIEON_TMPDIR (line 55)
-7. `workflow/rules/sent_hybrid_ug_ont.smk` - Fix prefix + add SENTIEON_TMPDIR (line 55)
+6. `workflow/rules/to-deprecate/sent_hybrid_ilmn_ont.smk` - Fix prefix + add SENTIEON_TMPDIR (line 55)
+7. `workflow/rules/to-deprecate/sent_hybrid_ug_ont.smk` - Fix prefix + add SENTIEON_TMPDIR (line 55)
