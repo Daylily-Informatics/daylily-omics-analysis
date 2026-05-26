@@ -326,10 +326,11 @@ rule illumina_run_qc_interop_summary:
         mkdir -p $(dirname {output.summary:q}) $(dirname {log:q})
         : > {log:q}
         test -d {params.interop_dir:q}
-        command -v interop_summary >> {log:q} 2>&1
-        command -v interop_index-summary >> {log:q} 2>&1
-        interop_summary {params.source_run:q} --csv=1 > {output.summary:q} 2>> {log:q}
-        interop_index-summary {params.source_run:q} --csv=1 > {output.index_summary:q} 2>> {log:q}
+        python workflow/scripts/write_interop_summary_csv.py \
+          --run-folder {params.source_run:q} \
+          --summary-out {output.summary:q} \
+          --index-summary-out {output.index_summary:q} \
+          >> {log:q} 2>&1
         test -s {output.summary:q}
         test -s {output.index_summary:q}
         """
@@ -357,9 +358,10 @@ rule illumina_run_qc_checkqc_json:
         : > {log:q}
         test -s {params.source_run:q}/RunInfo.xml
         command -v checkqc >> {log:q} 2>&1
-        if [ -n {params.config_file:q} ]; then
-            test -s {params.config_file:q}
-            checkqc --config_file {params.config_file:q} --json {params.source_run:q} > {output.json:q} 2>> {log:q}
+        checkqc_config={params.config_file:q}
+        if [ -n "$checkqc_config" ]; then
+            test -s "$checkqc_config"
+            checkqc --config "$checkqc_config" --json {params.source_run:q} > {output.json:q} 2>> {log:q}
         else
             checkqc --json {params.source_run:q} > {output.json:q} 2>> {log:q}
         fi

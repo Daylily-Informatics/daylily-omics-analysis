@@ -495,11 +495,17 @@ config = config  # noqa   ### Just needed to quiet linters
 cluster_config = cluster_config  # noqa   ### Just needed to quiet linters
 
 BCL_BOOTSTRAP_TARGETS = {
+    "bclconvert_generate_units_tsv",
+    "bclconvert_metrics_multiqc_exports",
+    "bclconvert_metrics_summary",
+    "bclconvert_validate_inputs",
+    "multiqc_bclconvert",
     "produce_bclconvert_fastqs",
     "produce_bclconvert_metrics",
     "produce_bclconvert_multiqc",
     "produce_bclconvert_fastqs_and_metrics",
     "produce_illumina_run_qc_and_bclconvert",
+    "run_bclconvert",
 }
 
 

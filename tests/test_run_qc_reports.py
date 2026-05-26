@@ -95,9 +95,10 @@ def test_checkqc_interop_and_placeholder_contracts_fail_loudly() -> None:
     rules = _read("workflow/rules/run_qc_reports.smk")
     summarizer = _read("workflow/scripts/summarize_run_qc_report.py")
 
-    assert "interop_summary {params.source_run:q} --csv=1" in rules
-    assert "interop_index-summary {params.source_run:q} --csv=1" in rules
+    assert "workflow/scripts/write_interop_summary_csv.py" in rules
+    assert "--index-summary-out {output.index_summary:q}" in rules
     assert "checkqc --json {params.source_run:q}" in rules
+    assert "checkqc --config \"$checkqc_config\" --json" in rules
     assert "-m checkqc" in rules
     assert "-m interop" in rules
     assert "run_qc.ont.metrics_path" in summarizer
@@ -156,6 +157,7 @@ def test_read_fate_river_is_generalized_and_explicit() -> None:
 def test_run_qc_scripts_compile() -> None:
     for path in (
         "workflow/scripts/summarize_run_qc_report.py",
+        "workflow/scripts/write_interop_summary_csv.py",
         "bin/build_illumina_read_fate_river.py",
     ):
         py_compile.compile(str(REPO_ROOT / path), doraise=True)
