@@ -594,7 +594,7 @@ sentdhio:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -619,7 +619,7 @@ sentdhuo:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -643,7 +643,7 @@ sentdhip:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
@@ -663,7 +663,7 @@ sentdhup:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
@@ -682,7 +682,7 @@ sentdhipm:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -707,7 +707,7 @@ sentdhupm:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -732,7 +732,7 @@ sentdhrom:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.model.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -756,7 +756,7 @@ sentdhrpm:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -782,7 +782,7 @@ sentdhiomr:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaONT2.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -796,8 +796,8 @@ sentdhiomr:
     keep_sr_alignment: false
     keep_tmp_dirs: false
     # SegDup caller config (segdup-caller CLI) — uses standard DNAscope bundles
-    segdup_sr_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle"
-    segdup_lr_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
+    segdup_sr_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle"
+    segdup_lr_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
     segdup_genes: "CFH,CYP11B1,CYP2D6,GBA,NCF1,PMS2,SMN1,STRC,HBA"  # all supported genes; RCCX excluded (RCCX1_RCCX2.dat still missing in segdup-caller v0.4.0)
     # Mitochondrial calling pipeline config — paths under hg38_broad to match genome build
     mt_fasta: "/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.fasta"
@@ -818,7 +818,7 @@ sentdhipmr:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridIlluminaPacBio1.1.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -843,7 +843,7 @@ sentdhupmr:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaPacBio1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -868,7 +868,7 @@ sentdhuomr:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/HybridUltimaONT1.1.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     mem_mb_medium: 75000
@@ -891,7 +891,7 @@ sentdug:
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle/dnascope.model"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltima1.1.bundle/dnascope.model"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
@@ -909,8 +909,8 @@ sentdpb:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
-    dna_scope_apply_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
+    dna_scope_apply_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.1.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
@@ -928,8 +928,8 @@ sentdont:
     bench_repeat: 0
     numactl: " "
     partition: "i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
-    dna_scope_apply_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
+    dna_scope_apply_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 300000
     max_mem: "140G"
@@ -947,7 +947,7 @@ sentD:
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
 
@@ -963,7 +963,7 @@ cgt7p:
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem,i192bigmem"
-    dna_scope_snv_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/dnascope.model"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/dnascope.model"
     max_mem: "100G"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     mem_mb: 200000
@@ -1059,7 +1059,7 @@ sentieon_dnascope:
     partition: "i192,i192mem"
 
 sentieon:
-    driver_path: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
+    driver_path: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
     threads: 192
     bwa_threads: 96
     benchmark_runs: 0
@@ -1073,11 +1073,11 @@ sentieon:
     igz: "  igzip -cd -T 32 "
     sort_thread_mem: "4G"
     mbuffer: " | mbuffer -m 128G -q -s 2M  "  #" mbuffer -m 2G -q -s 1M "
-    bwa_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
+    bwa_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""  # " --constraint 'm7gb768|r7gb1536' "
 
 sentieon_cgt7p:
-    driver_path: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
+    driver_path: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon"
     threads: 192
     bwa_threads: 96
     benchmark_runs: 0
@@ -1091,7 +1091,7 @@ sentieon_cgt7p:
     igz: "  igzip -cd -T 32 "
     sort_thread_mem: "4G"
     mbuffer: " | mbuffer -m 128G -q -s 2M  "
-    bwa_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/bwa.model"
+    bwa_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/bwa.model"
     read_group_platform: "DNBSEQ"
     constraint: ""
 
@@ -1103,9 +1103,9 @@ sent_aln_sort_snv:
     partition: "i192mem"
     constraint: ""
     bench_repeat: 0
-    hapl: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
-    gbz: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
-    model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    hapl: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
+    gbz: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
@@ -1120,7 +1120,7 @@ sentieon_pangenome_sr:
     bench_repeat: 0
     gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
-    model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
@@ -1135,7 +1135,7 @@ sentieon_pangenome_ug:
     bench_repeat: 0
     gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
-    model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltimaPangenomeRealignWGS1.0.bundle/SentieonUltimaPangenomeRealignWGS1.0.bundle"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltimaPangenomeRealignWGS1.0.bundle/SentieonUltimaPangenomeRealignWGS1.0.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
@@ -1154,7 +1154,7 @@ sentieon_gatk:
     mem_mb: 300000
     igz:   " igzip -cd -T 2 "
     mbuffer: " | mbuffer -m 1G -q -s 128k "
-    bwa_model: "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
+    bwa_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model"
     constraint: ""
     hg38_sentieon_gatk_chrms: "1-12,13-24"
     hg38_broad_sentieon_gatk_chrms: "1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24"

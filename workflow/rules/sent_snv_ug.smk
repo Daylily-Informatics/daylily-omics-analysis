@@ -97,7 +97,7 @@ rule sent_snv_ug:
             echo "libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX (searched lib, lib64, lib/x86_64-linux-gnu).";
             exit 3;
         fi
-        LD_PRELOAD=$LD_PRELOAD /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
+        LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
             -r {params.huref} \
             -i {input.cram} \
             --interval {params.schrm_mod} \
@@ -107,7 +107,7 @@ rule sent_snv_ug:
             --emit_mode variant \
             {output.gvcf} >> {log} 2>&1;
 
-        LD_PRELOAD=$LD_PRELOAD /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
+        LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {params.use_threads} \
             -r {params.huref} \
             --algo DNAModelApply \
             --model {params.model} \

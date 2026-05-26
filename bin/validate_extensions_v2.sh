@@ -26,7 +26,7 @@ check_file() {
     fi
 }
 
-BDIR="/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles"
+BDIR="/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles"
 check_file "$BDIR/HybridIlluminaONT2.0.bundle" "HybridIlluminaONT2.0.bundle (main hybrid model)"
 check_file "$BDIR/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
 check_file "$BDIR/DNAscopeONT2.2.bundle" "SegDup LR model"

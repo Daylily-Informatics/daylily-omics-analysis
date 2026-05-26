@@ -57,7 +57,7 @@ rule sentdhip_snv:
         diploid_bed=get_diploid_bed_arg,
     shell:
         """
-        export PATH=$PATH:/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/fsx/tmp/sentdhip_tmp_$timestamp;
