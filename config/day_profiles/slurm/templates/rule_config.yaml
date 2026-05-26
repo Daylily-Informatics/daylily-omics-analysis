@@ -124,7 +124,7 @@ bclconvert:
     extra_args: ""
     threads: 192
     mem_mb: 180000
-    partition: "i192,i192mem"
+    partition: "i192mem"
     tmpdir: "/dev/shm"
     staging_mode: "output_dev_shm"
     scratch_root: "/dev/shm/dayoa_bclconvert"
