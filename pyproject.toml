@@ -5,3 +5,10 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 tag_regex = "^(?P<version>\\d+\\.\\d+\\.\\d+(?:[A-Za-z0-9.+-]*)?)$"
 local_scheme = "no-local-version"
+
+[tool.coverage.run]
+source = ["daylily_omics_analysis"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

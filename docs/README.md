@@ -1,60 +1,42 @@
-# Daylily Omics Documentation
+# DayOA Documentation Index
 
-This directory holds the canonical documentation for the current `daylily-omics-analysis` codebase. Prefer these docs for new runs and developer work.
+**Start with the ecosystem boundary.** `daylily-ephemeral-cluster` is the critical cluster, FSx, SSM, reference, and staging companion for this repo. Ursa and Bloom are also key Daylily services. DayOA is the execution plane only: it consumes prepared `samples.tsv` and `units.tsv`, runs Snakemake 7 workflows, and emits evidence for Dewey/QEO/R2.
 
-The production contract is that this repository runs inside a `daylily-ephemeral-cluster` workset clone, with Daylily omics/reference data mounted under `/fsx/references`, `/fsx/control_data`, `/fsx/runtime_assets`, and `/fsx/staging`. Use the [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) `daylily-ec` CLI for cluster access, read staging, and `samples.tsv` / `units.tsv` creation or delivery. Local execution is for fixture smoke tests, docs validation, and workflow development.
+## Current Documentation
 
-## Current Operator Docs
+| Area | Document |
+|---|---|
+| Operator entry point | [`../README.md`](../README.md) |
+| Tool and pipeline inventory | [`catalog_of_tools.md`](catalog_of_tools.md) |
+| MultiQC operations | [`ops/multiqc_qc_targets.md`](ops/multiqc_qc_targets.md) |
+| CLI notes | [`ops/dycli.md`](ops/dycli.md) |
+| QEO reconnaissance | [`qeo/QEO_DAYOA_RECON.md`](qeo/QEO_DAYOA_RECON.md) |
+| QEO integration | [`qeo/QEO_DAYOA_INTEGRATION.md`](qeo/QEO_DAYOA_INTEGRATION.md) |
+| Snakemake registration | [`qeo/QEO_SNAKEMAKE7_REGISTRATION.md`](qeo/QEO_SNAKEMAKE7_REGISTRATION.md) |
+| MultiQC artifact model | [`qeo/QEO_MULTIQC_ARTIFACT_MODEL.md`](qeo/QEO_MULTIQC_ARTIFACT_MODEL.md) |
+| Golden corpus test plan | [`qeo/QEO_GOLDEN_CORPUS_TEST_PLAN.md`](qeo/QEO_GOLDEN_CORPUS_TEST_PLAN.md) |
+| Example MultiQC reports | [`examples/multiqc/README.md`](examples/multiqc/README.md) |
+| Ultima run QC contracts | [`specs/ultima_run_qc_requirements.md`](specs/ultima_run_qc_requirements.md), [`workflows/ultima_run_qc.md`](workflows/ultima_run_qc.md) |
 
-| Document | Use |
-| --- | --- |
-| [`quickest_start.md`](quickest_start.md) | Minimal local smoke-test checklist. |
-| [`first_ephemeral_cluster_analysis.md`](first_ephemeral_cluster_analysis.md) | First Slurm-backed analysis on a prepared headnode. |
-| [`ops/dycli.md`](ops/dycli.md) | Daylily CLI command behavior. |
-| [`ops/config.md`](ops/config.md) | Profiles, sample/unit tables, config precedence, and scratch behavior. |
-| [`ops/dir_and_file_scheme.md`](ops/dir_and_file_scheme.md) | Current output and log layout. |
-| [`remote_test_execution.md`](remote_test_execution.md) | Persistent tmux execution and monitoring pattern. |
+Legacy material moved to [`../quarantine/legacy-docs/`](../quarantine/legacy-docs/). The active `docs/plans/` tree remains in place because those files are durable execution ledgers.
 
-## Current Workflow Docs
+## Documentation Flow
 
-| Document | Use |
-| --- | --- |
-| [`workflows/complete_genomics_sentieon.md`](workflows/complete_genomics_sentieon.md) | Complete Genomics/MGI `sentcg -> smd -> cgt7p`. |
-| [`workflows/bclconvert_bootstrap.md`](workflows/bclconvert_bootstrap.md) | Illumina BCL Convert bootstrap, generated units, demux metrics, and MultiQC custom-data exports. |
-| [`workflows/ensemble_vcf.md`](workflows/ensemble_vcf.md) | Ensemble VCF notes. |
-| [`README_sentieon_pangenome_shortreads.md`](README_sentieon_pangenome_shortreads.md) | Sentieon pangenome short-read notes. |
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#111827","primaryTextColor":"#ffffff","primaryBorderColor":"#f97316","lineColor":"#38bdf8","secondaryColor":"#0f766e","tertiaryColor":"#581c87","fontFamily":"Inter,Arial,sans-serif"}}}%%
+flowchart LR
+  Readme["README<br/>operator overview"] --> Ops["ops<br/>runtime contracts"]
+  Ops --> Catalog["catalog<br/>tool inventory"]
+  Ops --> QEO["qeo<br/>artifact registration"]
+  Catalog --> Examples["examples<br/>worked reports"]
+  QEO --> Plans["docs/plans<br/>execution ledgers"]
+```
 
-## Developer Docs
+## Rules For Future Docs
 
-| Document | Use |
-| --- | --- |
-| [`ops/tests.md`](ops/tests.md) | Validation commands and test inventory. |
-| [`ops/workflow_catalog.md`](ops/workflow_catalog.md) | Packaged workflow catalog API. |
-| [`ops/analysis_manifest.md`](ops/analysis_manifest.md) | Legacy manifest conversion notes. |
-| [`catalog_of_tools.md`](catalog_of_tools.md) | Code-sourced catalog of available tool integrations, evidence, outputs, tests, and dormant status. |
+- Keep top-of-page boundaries explicit: DayOA executes; Dewey registers; QEO observes; R2 interprets and releases.
+- Use worked examples with exact commands and exact expected artifacts.
+- Mark cluster-dependent examples as requiring a working `daylily-ec`/SSM headnode unless they have been verified live.
+- Prefer Mermaid diagrams where they clarify ownership, DAG shape, artifact identity, or replay semantics.
+- Do not document fallback behavior. Missing config, missing files, or malformed identity should fail hard.
 
-## Historical Notes
-
-Several top-level Markdown files are preserved as records of specific debugging or launch efforts. They are not canonical operator docs:
-
-- `addQCplan.md`
-- `addqc_plan.md`
-- `dhiomr_report.md`
-- `ENSEMBLE_INTEGRATION_SUMMARY.md`
-- `expansion_hunter_plan.md`
-- `expansion_hunter_plan_v2.md`
-- `run_cg.md`
-- `gotimeplan.md`
-- `hyb_runbook.md`
-- `hybrun.md`
-- `ugdata.md`
-- `RTG_CONCORDANCE_REFACTOR.md`
-- `FAIL_REPORT.md`
-- `TELEMETRY_FILE_PROMPT.md`
-- `sentieon_hybrid_ILMN_ONT_MODULAR_PATCHES.md`
-- `sentieon_hybrid_ILMN_ONT_MODULAR_PATCHES_READGROUP_FIXES.md`
-- `tmpdir_audit_report.md` is a dated audit report; re-check the current rules before treating its statuses as current.
-
-Some historical notes contain literal command transcripts from older runs. Do not reuse those blocks verbatim when they conflict with current access rules, especially the `daylily-ec`/SSM-only headnode path and the rule that `source dyoainit`, `dy-a`, and `dy-r` should run as separate shell commands.
-
-When a historical note conflicts with the canonical docs, use the canonical docs and then verify against the current code.
