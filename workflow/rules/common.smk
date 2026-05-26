@@ -1499,6 +1499,9 @@ for _, row in samples.iterrows():
     ex_id         = str(row.get("EX", ""))
     lane_id       = str(row.get("LANE", ""))
     merge_single  = str(row.get("MERGE_SINGLE", "single")).strip().lower()
+    is_bcl_bootstrap_sample = bootstrap_unit_context and str(samp_id) == str(
+        config["bclconvert_bootstrap_run_id"]
+    )
 
     # Uniqueness / unsupported mode checks (kept from your original intent)
     if samp_id in sample_info and merge_single == "single":
@@ -1518,13 +1521,13 @@ for _, row in samples.iterrows():
         x = str(x)
         return ("." in x) or ("_" in x)
 
-    if any(_bad_token(t) for t in (sq_id, ru_id, ex_id, lane_id)):
+    if not is_bcl_bootstrap_sample and any(_bad_token(t) for t in (sq_id, ru_id, ex_id, lane_id)):
         raise WorkflowError(
             f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: SQ/RU/EX/LANE may not contain '.' or '_' per current constraints."
         )
 
     # Prevent 'sample_lane' collisions and sample-in-lane name leakage (legacy behavior)
-    if sample_lane in sample_lane_seen or ("." in sample):
+    if not is_bcl_bootstrap_sample and (sample_lane in sample_lane_seen or ("." in sample)):
         raise WorkflowError(
             f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: 'sample_lane' must be unique; "
             f"'sample' must not contain a '.' and must not duplicate 'sample_lane'."
