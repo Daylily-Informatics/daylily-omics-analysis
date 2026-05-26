@@ -130,10 +130,10 @@ bclconvert:
     scratch_root: "/dev/shm/dayoa_bclconvert"
     scratch_size_multiplier: 4
     retain_scratch: false
-    parallel_tiles: 16
-    conversion_threads: 64
-    compression_threads: 96
-    decompression_threads: 16
+    parallel_tiles: 8
+    conversion_threads: 8
+    compression_threads: 12
+    decompression_threads: 4
     fastq_gzip_compression_level: 1
     shared_thread_odirect_output: false
 

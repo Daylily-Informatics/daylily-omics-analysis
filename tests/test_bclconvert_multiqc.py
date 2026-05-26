@@ -149,10 +149,10 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["threads"] == 192
     assert slurm_bcl["mem_mb"] == 180000
     assert slurm_bcl["staging_mode"] == "output_dev_shm"
-    assert slurm_bcl["parallel_tiles"] == 16
-    assert slurm_bcl["conversion_threads"] == 64
-    assert slurm_bcl["compression_threads"] == 96
-    assert slurm_bcl["decompression_threads"] == 16
+    assert slurm_bcl["parallel_tiles"] == 8
+    assert slurm_bcl["conversion_threads"] == 8
+    assert slurm_bcl["compression_threads"] == 12
+    assert slurm_bcl["decompression_threads"] == 4
 
 
 def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(
