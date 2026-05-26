@@ -98,6 +98,7 @@ def test_interop_and_placeholder_contracts_fail_loudly() -> None:
     assert "workflow/scripts/write_interop_summary_csv.py" in rules
     assert "workflow/scripts/write_illumina_run_qc_json.py" in rules
     assert "workflow/scripts/illumina_run_qc_to_multiqc.py" in rules
+    assert 'RUNQC_ILMN_MQC_DIR = RUNQC_ILMN_ROOT + "/multiqc_inputs"' in rules
     assert "--index-summary-out {output.index_summary:q}" in rules
     assert '"$CONDA_PREFIX/bin/python" workflow/scripts/write_interop_summary_csv.py' in rules
     assert "CONDA_PREFIX is required for illumina_run_qc_json" in rules

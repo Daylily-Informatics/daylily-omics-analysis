@@ -39,7 +39,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert 'BCL_ROOT = (' in rule
     assert 'f"{BCL_OUTPUT_ROOT}/bclconvert"' in rule
     assert 'f"{BCL_ROOT}/fastqs"' in rule
-    assert 'BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_data" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"' in rule
+    assert 'BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_inputs" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"' in rule
     assert 'f"{BCL_ROOT}/bclconvert_metrics_mqc.done"' in rule
     assert "multiqc_report.html" in rule
     assert "generated.units.tsv" in rule

@@ -94,7 +94,7 @@ BCL_METRIC_DIR = f"{BCL_ROOT}/metrics"
 BCL_REPORT_OUT_DIR = BCL_ROOT if BCL_RUN_CONTEXT is not None else f"{BCL_ROOT}/reports"
 BCL_LOG_DIR = f"{BCL_ROOT}/logs"
 BCL_BENCH_DIR = f"{BCL_ROOT}/benchmarks"
-BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_data" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"
+BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_inputs" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"
 BCL_MQC_LOG_DIR = f"{BCL_MQC_DIR}/logs"
 
 BCL_VALIDATE_OK = f"{BCL_LOG_DIR}/validated.ok"
