@@ -557,6 +557,7 @@ assert "BCL_RUNTIME_VERSION = \"4.0.3\"" in text
 assert "container:\n        f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
 assert "BCL_STAGING_MODE" in text
 assert "Unsupported bclconvert.staging_mode" in text
+assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in text
 assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in text
 assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in text
 assert "--bcl-num-conversion-threads {params.conversion_threads}" in text

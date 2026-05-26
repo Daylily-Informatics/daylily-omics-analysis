@@ -294,6 +294,27 @@ rule run_bclconvert:
         case "$staging_mode" in
             direct)
                 ;;
+            output_dev_shm)
+                mkdir -p "$scratch_root"
+                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
+                scratch_output_dir="$scratch_dir/fastqs"
+                mkdir -p "$scratch_output_dir"
+                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
+                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
+                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
+                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                echo "scratch_dir: $scratch_dir" >> {log:q}
+                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
+                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
+                echo "scratch_required_bytes: $required_bytes" >> {log:q}
+                echo "scratch_available_bytes: $available_bytes" >> {log:q}
+                if [ "$available_bytes" -lt "$required_bytes" ]; then
+                    echo "Insufficient scratch for bclconvert.staging_mode=output_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
+                    exit 2
+                fi
+                effective_output_dir="$scratch_output_dir"
+                df -h "$scratch_root" >> {log:q} 2>&1 || true
+                ;;
             dev_shm)
                 mkdir -p "$scratch_root"
                 scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
@@ -337,8 +358,9 @@ rule run_bclconvert:
           --bcl-num-decompression-threads {params.decompression_threads}
           --shared-thread-odirect-output {params.shared_thread_odirect_output}
         )
-        if [ -n {params.force:q} ]; then
-            bcl_flags+=({params.force})
+        force_arg={params.force:q}
+        if [ -n "$force_arg" ]; then
+            bcl_flags+=("$force_arg")
         fi
 
         printf 'bcl-convert command:' >> {log:q}
@@ -346,7 +368,7 @@ rule run_bclconvert:
         printf '\n' >> {log:q}
         bcl-convert "${{bcl_flags[@]}}" >> {log:q} 2>&1
 
-        if [ "$staging_mode" = "dev_shm" ]; then
+        if [ "$staging_mode" = "dev_shm" ] || [ "$staging_mode" = "output_dev_shm" ]; then
             echo "Copying BCLConvert outputs from scratch to result tree: $(date -Is)" >> {log:q}
             cp -a "$effective_output_dir"/. {BCL_FASTQ_DIR:q}/
             df -h "$scratch_root" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true

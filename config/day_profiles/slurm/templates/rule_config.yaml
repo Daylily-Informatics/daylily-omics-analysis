@@ -126,14 +126,14 @@ bclconvert:
     mem_mb: 180000
     partition: "i192,i192mem"
     tmpdir: "/dev/shm"
-    staging_mode: "dev_shm"
+    staging_mode: "output_dev_shm"
     scratch_root: "/dev/shm/dayoa_bclconvert"
     scratch_size_multiplier: 4
     retain_scratch: false
-    parallel_tiles: 8
-    conversion_threads: 8
-    compression_threads: 12
-    decompression_threads: 4
+    parallel_tiles: 16
+    conversion_threads: 64
+    compression_threads: 96
+    decompression_threads: 16
     fastq_gzip_compression_level: 1
     shared_thread_odirect_output: false
 

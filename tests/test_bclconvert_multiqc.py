@@ -47,6 +47,8 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "bcl_extra_args={params.extra_args:q}" in rule
     assert "BCL_STAGING_MODE" in rule
     assert "staging_mode={params.staging_mode:q}" in rule
+    assert "output_dev_shm" in rule
+    assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in rule
     assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in rule
     assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in rule
     assert "--bcl-num-conversion-threads {params.conversion_threads}" in rule
@@ -146,11 +148,11 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     slurm_bcl = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")["bclconvert"]
     assert slurm_bcl["threads"] == 192
     assert slurm_bcl["mem_mb"] == 180000
-    assert slurm_bcl["staging_mode"] == "dev_shm"
-    assert slurm_bcl["parallel_tiles"] == 8
-    assert slurm_bcl["conversion_threads"] == 8
-    assert slurm_bcl["compression_threads"] == 12
-    assert slurm_bcl["decompression_threads"] == 4
+    assert slurm_bcl["staging_mode"] == "output_dev_shm"
+    assert slurm_bcl["parallel_tiles"] == 16
+    assert slurm_bcl["conversion_threads"] == 64
+    assert slurm_bcl["compression_threads"] == 96
+    assert slurm_bcl["decompression_threads"] == 16
 
 
 def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(

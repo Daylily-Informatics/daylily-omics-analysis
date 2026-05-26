@@ -79,13 +79,13 @@ No symlink is needed in `results/day/<genome_build>/`; the workflow writes the M
 
 The Slurm profile runs `run_bclconvert` as a 192-vCPU job and maps those CPUs to native BCL Convert sharding knobs:
 
-- `--bcl-num-parallel-tiles 8`
-- `--bcl-num-conversion-threads 8`
-- `--bcl-num-compression-threads 12`
-- `--bcl-num-decompression-threads 4`
+- `--bcl-num-parallel-tiles 16`
+- `--bcl-num-conversion-threads 64`
+- `--bcl-num-compression-threads 96`
+- `--bcl-num-decompression-threads 16`
 - `--fastq-gzip-compression-level 1`
 
-The same rule can stage the input run directory and BCL Convert output directory on `/dev/shm` with `bclconvert.staging_mode: "dev_shm"`. This mode copies the mounted run directory to node-local shared memory, writes demultiplexed output there, then copies completed outputs back to the result tree. It checks `/dev/shm` capacity before copying and fails hard if the requested scratch mode cannot fit; it does not silently fall back to direct FSx output. Scratch is removed at rule exit unless `bclconvert.retain_scratch: true` is set explicitly for debugging.
+The Slurm profile uses `bclconvert.staging_mode: "output_dev_shm"` by default. This keeps the mounted run directory as the read source, writes BCL Convert output and `TMPDIR` to node-local `/dev/shm`, then copies completed outputs back to the result tree. This avoids trying to copy DRA-mounted run directories whose sparse or apparent size can be much larger than their block usage. The stricter `dev_shm` mode is still available when a run directory is genuinely small enough to copy into memory. Both scratch modes check `/dev/shm` capacity and fail hard if the requested scratch mode cannot fit; neither mode silently falls back to direct FSx output. Scratch is removed at rule exit unless `bclconvert.retain_scratch: true` is set explicitly for debugging.
 
 ## Example Commands
 
