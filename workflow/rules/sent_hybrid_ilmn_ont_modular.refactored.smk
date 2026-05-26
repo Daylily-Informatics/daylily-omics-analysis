@@ -706,6 +706,8 @@ rule sentdhiomr_stage1:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
+        diploid_bed=get_diploid_bed_path,
+        schrm_mod=get_dchrm_day,
         use_threads=config["sentdhiomr"]["use_threads"],
         cluster_sample=ret_sample,
     shell:
@@ -720,6 +722,13 @@ rule sentdhiomr_stage1:
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
         echo "Starting Stage1 at $(date)" >> {log}
+
+        scoped_diploid_bed="$TMPDIR/scoped_diploid.bed"
+        python workflow/scripts/make_scoped_diploid_bed.py \
+            --regions "{params.schrm_mod}" \
+            --diploid-bed "{params.diploid_bed}" \
+            --fai "{params.huref}.fai" \
+            --output "$scoped_diploid_bed" >> {log} 2>&1
 
         # Build LR replace args (matches sentieon-cli RgInfo for LR inputs)
         RGIDS=$(samtools view -H {input.lr_cram} | awk '
@@ -745,60 +754,127 @@ rule sentdhiomr_stage1:
         #   (sequential execution ensures set -euo pipefail catches driver failures;
         #    process substitution <(...) silently swallows failures)
 
-        # 1. Haplotype assembly driver → stdout to temp file, side-outputs written directly
-        echo "Starting HAP driver at $(date)" >> {log}
-        sentieon driver \
-            $LR_RG_ARGS --input {input.lr_cram} \
-            --reference {params.huref} \
-            --thread_count {params.use_threads} \
-            --interval {input.diff_bed} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1.model \
-            --hap_bam {output.hap_bam} \
-            --hap_bed {output.hap_bed} \
-            --hap_vcf {output.hap_vcf} \
-            - 2>> {log} > "$TMPDIR/hap_stdout.sam"
-        echo "HAP driver finished at $(date)" >> {log}
+        if [ ! -s {input.diff_bed} ]; then
+            echo "WARNING: merged_diff.bed is empty - no haplotype regions to process" >> {log}
+            echo "Creating empty hap_bam with clean header plus empty hap_bed and hap_vcf" >> {log}
+            touch {output.hap_bed} {output.hap_vcf}
+            samtools view -H {input.lr_cram} \
+            | grep -E '^@(HD|SQ|RG)' \
+            | samtools view -bo {output.hap_bam} - 2>> {log}
+            samtools index {output.hap_bam} >> {log} 2>&1
 
-        # 2. Insertion detection driver → stdout to temp file, side-outputs written directly
-        echo "Starting INS driver at $(date)" >> {log}
-        sentieon driver \
-            $LR_RG_ARGS --input {input.lr_cram} \
-            --reference {params.huref} \
-            --thread_count {params.use_threads} \
-            --interval {input.diff_bed} \
-            --algo HybridStage1 \
-            --model {params.model}/HybridStage1_ins.model \
-            --fa_file {output.ins_fa} \
-            --bed_file {output.ins_bed} \
-            - 2>> {log} > "$TMPDIR/ins_stdout.sam"
-        echo "INS driver finished at $(date)" >> {log}
+            echo "Starting INS driver for scoped shard at $(date)" >> {log}
+            sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --interval "$scoped_diploid_bed" \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1_ins.model \
+                --fa_file {output.ins_fa} \
+                --bed_file {output.ins_bed} \
+                - 2>> {log} > "$TMPDIR/ins_stdout.sam"
+            echo "INS driver finished at $(date)" >> {log}
 
-        # 3. Cat both driver outputs → bwa mem → util sort
-        cat "$TMPDIR/hap_stdout.sam" "$TMPDIR/ins_stdout.sam" \
-        | sentieon bwa mem \
-            -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
-            -t {params.use_threads} \
-            -x {params.model}/HybridStage1_bwa.model \
-            {params.huref} \
-            - 2>> {log} \
-        | sentieon util sort \
-            -i - \
-            -t {params.use_threads} \
-            -o {output.bam} \
-            --sam2bam >> {log} 2>&1
+            cat "$TMPDIR/ins_stdout.sam" \
+            | sentieon bwa mem \
+                -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
+                -t {params.use_threads} \
+                -x {params.model}/HybridStage1_bwa.model \
+                {params.huref} \
+                - 2>> {log} \
+            | sentieon util sort \
+                -i - \
+                -t {params.use_threads} \
+                -o {output.bam} \
+                --sam2bam >> {log} 2>&1
 
-        # 4. Validate all expected outputs exist and are non-empty
-        sync
-        for f in {output.hap_bam} {output.hap_bed} {output.hap_vcf} {output.ins_fa} {output.ins_bed} {output.bam}; do
+            for f in {output.ins_fa} {output.ins_bed}; do
+                if [[ ! -e "$f" ]]; then
+                    echo "No insertion output produced for empty merged_diff shard; creating empty expected file: $f" >> {log}
+                    : > "$f"
+                fi
+            done
+
+            samtools quickcheck {output.hap_bam} >> {log} 2>&1 || \
+                (echo "ERROR: stage1_hap.bam failed integrity check - file may be truncated" >> {log} && exit 1)
+            samtools quickcheck {output.bam} >> {log} 2>&1 || \
+                (echo "ERROR: hybrid_stage1.bam failed integrity check - file may be truncated" >> {log} && exit 1)
+        else
+            echo "Processing $(wc -l < {input.diff_bed}) regions from merged_diff.bed" >> {log}
+
+            # 1. Haplotype assembly driver → stdout to temp file, side-outputs written directly
+            echo "Starting HAP driver at $(date)" >> {log}
+            sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --interval {input.diff_bed} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1.model \
+                --hap_bam {output.hap_bam} \
+                --hap_bed {output.hap_bed} \
+                --hap_vcf {output.hap_vcf} \
+                - 2>> {log} > "$TMPDIR/hap_stdout.sam"
+            echo "HAP driver finished at $(date)" >> {log}
+
+            # 2. Insertion detection driver → stdout to temp file, side-outputs written directly
+            echo "Starting INS driver at $(date)" >> {log}
+            sentieon driver \
+                $LR_RG_ARGS --input {input.lr_cram} \
+                --reference {params.huref} \
+                --thread_count {params.use_threads} \
+                --interval {input.diff_bed} \
+                --algo HybridStage1 \
+                --model {params.model}/HybridStage1_ins.model \
+                --fa_file {output.ins_fa} \
+                --bed_file {output.ins_bed} \
+                - 2>> {log} > "$TMPDIR/ins_stdout.sam"
+            echo "INS driver finished at $(date)" >> {log}
+
+            # 3. Cat both driver outputs → bwa mem → util sort
+            cat "$TMPDIR/hap_stdout.sam" "$TMPDIR/ins_stdout.sam" \
+            | sentieon bwa mem \
+                -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
+                -t {params.use_threads} \
+                -x {params.model}/HybridStage1_bwa.model \
+                {params.huref} \
+                - 2>> {log} \
+            | sentieon util sort \
+                -i - \
+                -t {params.use_threads} \
+                -o {output.bam} \
+                --sam2bam >> {log} 2>&1
+
+            # 4. Validate all expected outputs exist and are non-empty
+            sync
+            for f in {output.hap_bam} {output.hap_bed} {output.hap_vcf} {output.ins_fa} {output.ins_bed} {output.bam}; do
+                if [[ ! -s "$f" ]]; then
+                    echo "ERROR: Missing or empty output: $f" >> {log}
+                    exit 1
+                fi
+            done
+
+            # 5. Index hap BAM for downstream rules
+            samtools index {output.hap_bam} >> {log} 2>&1
+        fi
+
+        # All stage1 BAMs must be readable before downstream rules consume them.
+        samtools quickcheck {output.hap_bam} {output.bam} >> {log} 2>&1 || \
+            (echo "ERROR: Stage1 BAM integrity check failed" >> {log} && exit 1)
+
+        for f in {output.hap_bam} {output.bam}; do
             if [[ ! -s "$f" ]]; then
                 echo "ERROR: Missing or empty output: $f" >> {log}
                 exit 1
             fi
         done
-
-        # 5. Index hap BAM for downstream rules
-        samtools index {output.hap_bam} >> {log} 2>&1
+        for f in {output.hap_bed} {output.hap_vcf} {output.ins_fa} {output.ins_bed}; do
+            if [[ ! -e "$f" ]]; then
+                echo "ERROR: Missing output: $f" >> {log}
+                exit 1
+            fi
+        done
 
         echo "Stage1 completed at $(date)" >> {log}
         """

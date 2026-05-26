@@ -80,3 +80,23 @@ def test_sentdhiomr_resolves_sentieon_cli_scripts_with_rule_env_python() -> None
         "sentdhiomr Sentieon CLI helper lookups must use $CONDA_PREFIX/bin/python:\n"
         + "\n".join(offenders)
     )
+
+
+def test_sentdhiomr_stage1_handles_empty_merged_diff_beds() -> None:
+    path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ilmn_ont_modular.refactored.smk"
+    text = path.read_text(encoding="utf-8")
+
+    required_fragments = [
+        "if [ ! -s {input.diff_bed} ]; then",
+        "WARNING: merged_diff.bed is empty - no haplotype regions to process",
+        "touch {output.hap_bed} {output.hap_vcf}",
+        "--interval \"$scoped_diploid_bed\"",
+        "No insertion output produced for empty merged_diff shard",
+        "samtools quickcheck {output.hap_bam} {output.bam}",
+    ]
+    missing = [fragment for fragment in required_fragments if fragment not in text]
+
+    assert not missing, (
+        "sentdhiomr_stage1 must tolerate valid empty merged_diff.bed shards:\n"
+        + "\n".join(missing)
+    )
