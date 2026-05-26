@@ -311,8 +311,11 @@ test_valid_fixture_parses() {
 
   if run_parser "$FIXTURE_SHEET" "$FIXTURE_SAMPLES" "$normalized" "$rows" "$stderr"; then
     exit_code=0
-    cmp -s "$FIXTURE_SHEET" "$normalized" || exit_code=1
+    grep -q "SoftwareVersion,4.0.3" "$normalized" || exit_code=1
+    ! grep -q "GenerateFastqcMetrics" "$normalized" || exit_code=1
     grep -q "WARNING: sample sheet SoftwareVersion 4.3.16 is newer than pinned runtime 4.0.3" "$stderr" || exit_code=1
+    grep -q "INFO: normalized sample sheet SoftwareVersion from 4.3.16 to pinned runtime 4.0.3" "$stderr" || exit_code=1
+    grep -q "INFO: stripped unsupported BCLConvert setting GenerateFastqcMetrics from normalized sample sheet" "$stderr" || exit_code=1
     [[ $(wc -l < "$rows") -eq 9 ]] || exit_code=1
   else
     exit_code=$?
@@ -552,7 +555,32 @@ import sys
 
 path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
-assert "container:\n        \"docker://nfcore/bclconvert:4.0.3\"" in text
+assert "BCL_RUNTIME_VERSION = \"4.0.3\"" in text
+assert "BCL_CONTAINER_URI = f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
+assert "BCL_STAGING_MODE" in text
+assert "Unsupported bclconvert.staging_mode" in text
+assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in text
+assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in text
+assert "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm" in text
+assert "Copying mounted BCL files with sharded cp" in text
+assert "mounted_stage_lanes" in text
+assert "mounted_stage_jobs" in text
+assert "mounted_stage_cycle_dirs" in text
+assert "mounted_stage_regular_files" in text
+assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in text
+assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in text
+assert "aws s3 sync" in text
+assert "aws sts get-caller-identity" in text
+assert "s3_stage_credential_mode: compute_instance_role" in text
+assert "singularity exec {params.container_uri:q} bcl-convert" in text
+assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in text
+assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in text
+assert "--bcl-num-conversion-threads \"$conversion_threads\"" in text
+assert "--bcl-num-compression-threads \"$compression_threads\"" in text
+assert "--bcl-num-decompression-threads \"$decompression_threads\"" in text
+assert "--fastq-gzip-compression-level {params.fastq_gzip_compression_level}" in text
+assert "-m fastqc" not in text
+assert "{BCL_FASTQ_DIR:q}" not in text[text.index("rule multiqc_bclconvert:"):]
 assert "script:" not in text
 assert re.search(r"(?m)^\\s*run:\\s*$", text) is None
 rule_names = [
@@ -578,8 +606,11 @@ for idx, name in enumerate(rule_names):
     block = text[start:end]
     if name not in {"produce_bclconvert_metrics", "produce_bclconvert_multiqc"}:
         assert "shell:" in block, name
-' "$RULE_FILE"
-  test_result "verify literal container directive and shell-only new rules" "$?"
+    if name not in {"produce_bclconvert_fastqs", "produce_bclconvert_metrics", "produce_bclconvert_multiqc", "produce_bclconvert_fastqs_and_metrics"}:
+        assert "log:" in block, name
+        assert "benchmark:" in block, name
+	' "$RULE_FILE"
+  test_result "verify nf-core container invocation and shell-only new rules" "$?"
 }
 
 test_bootstrap_blank_or_missing_units_gate() {

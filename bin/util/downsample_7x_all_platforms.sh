@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Common settings
 SEED=33
-REFERENCE="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
+REFERENCE="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
 JOB_DIR="/fsx/scratch/downsamples/7x_jobs"
 mkdir -p "$JOB_DIR"
 
@@ -17,7 +17,7 @@ echo "=========================================="
 # ============================================
 # 1. ONT 7x (from 60x source)
 # ============================================
-ONT_INPUT="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
+ONT_INPUT="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
 ONT_OUTPUT_DIR="/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003"
 ONT_OUTPUT="$ONT_OUTPUT_DIR/HG003_7x.cleaned.cram"
 ONT_FRACTION=$(awk "BEGIN {printf \"%.6f\", 7 / 60}" | sed 's/^0//')
@@ -56,7 +56,7 @@ chmod +x "$JOB_DIR/ont_7x.sh"
 # ============================================
 # 2. Ultima 7x (from 99x source)
 # ============================================
-UG_INPUT="/fsx/data/ug/Jan-2026-Sample-run/428437-L9353_L9354-Z0016-CATCCTGTGCGCATGAT.cram"
+UG_INPUT="/fsx/control_data/ug/Jan-2026-Sample-run/428437-L9353_L9354-Z0016-CATCCTGTGCGCATGAT.cram"
 UG_OUTPUT_DIR="/fsx/scratch/downsamples/ultima_cleaned_hg38_broad/HG003"
 UG_OUTPUT="$UG_OUTPUT_DIR/HG003_7x.cleaned.cram"
 UG_FRACTION=$(awk "BEGIN {printf \"%.6f\", 7 / 99}" | sed 's/^0//')
@@ -95,8 +95,8 @@ chmod +x "$JOB_DIR/ug_7x.sh"
 # ============================================
 # 3. ILMN 7x (from 20x fastq, fraction = 7/20 = 0.35)
 # ============================================
-ILMN_INPUT_R1="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_20x_R1.fastq.gz"
-ILMN_INPUT_R2="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_20x_R2.fastq.gz"
+ILMN_INPUT_R1="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_20x_R1.fastq.gz"
+ILMN_INPUT_R2="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_20x_R2.fastq.gz"
 ILMN_OUTPUT_DIR="/fsx/scratch/downsamples/ilmn/HG003/7x"
 ILMN_FRACTION=$(awk "BEGIN {printf \"%.4f\", 7 / 20}")
 

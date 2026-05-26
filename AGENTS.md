@@ -131,8 +131,8 @@ tmux send-keys -t take1_hiom_rerun_20260422 'cd /fsx/analysis_results/ubuntu' En
 tmux send-keys -t take1_hiom_rerun_20260422 'day-clone -t main -d take1' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'cd /fsx/analysis_results/ubuntu/take1/daylily-omics-analysis' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'mkdir -p ./config' Enter
-tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260309T122755Z/analysis_results/ubuntu/take1/daylily-omics-analysis/config/samples.tsv ./config/samples.tsv' Enter
-tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260309T122755Z/analysis_results/ubuntu/take1/daylily-omics-analysis/config/units.tsv ./config/units.tsv' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp <verified_samples_s3_uri> ./config/samples.tsv' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp <verified_units_s3_uri> ./config/units.tsv' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 "awk 'NR <= 4' ./config/units.tsv > ./config/units.tsv.tmp" Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'mv ./config/units.tsv.tmp ./config/units.tsv' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'source dyoainit' Enter
@@ -148,8 +148,8 @@ tmux send-keys -t agbt_ug_ultima_rerun_20260422 'cd /fsx/analysis_results/ubuntu
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'day-clone -t main -d agbt_ug' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'cd /fsx/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'mkdir -p ./config' Enter
-tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260216T130001Z/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis/config/samples.tsv ./config/samples.tsv' Enter
-tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp s3://lsmc-dayoa-omics-analysis-us-west-2/FSxLustre20260216T130001Z/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis/config/units.tsv ./config/units.tsv' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp <verified_samples_s3_uri> ./config/samples.tsv' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp <verified_units_s3_uri> ./config/units.tsv' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 "awk 'NR <= 4' ./config/units.tsv > ./config/units.tsv.tmp" Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'mv ./config/units.tsv.tmp ./config/units.tsv' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'source dyoainit' Enter

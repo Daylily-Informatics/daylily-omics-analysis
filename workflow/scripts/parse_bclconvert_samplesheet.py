@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import re
 import sys
 from pathlib import Path
@@ -26,6 +27,9 @@ ROW_COLUMNS = (
 )
 
 SECTION_RE = re.compile(r"^\[(?P<name>[^\]]+)\]")
+STRIPPED_BCLCONVERT_SETTINGS = {
+    "GenerateFastqcMetrics",
+}
 
 
 class SampleSheetError(RuntimeError):
@@ -207,17 +211,63 @@ def warn_if_newer(sheet_version: str, pinned_version: str) -> str | None:
     if padded_sheet > padded_pinned:
         message = (
             "WARNING: sample sheet SoftwareVersion "
-            f"{sheet_version} is newer than pinned runtime {pinned_version}",
+            f"{sheet_version} is newer than pinned runtime {pinned_version}"
         )
         print(message, file=sys.stderr)
         return message
     return None
 
 
-def write_normalized_sample_sheet(sample_sheet: str, normalized_out: str) -> None:
+def _csv_line(row: list[str]) -> str:
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="")
+    writer.writerow(row)
+    return buffer.getvalue()
+
+
+def write_normalized_sample_sheet(sample_sheet: str, normalized_out: str, runtime_version: str) -> list[str]:
     text = Path(sample_sheet).read_text(encoding="utf-8-sig")
+    target_version = (runtime_version or "").strip()
+    current_section = ""
+    messages: list[str] = []
+    normalized_lines: list[str] = []
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        match = SECTION_RE.match(stripped)
+        if match:
+            current_section = match.group("name").strip()
+            normalized_lines.append(raw_line)
+            continue
+
+        if current_section == "BCLConvert_Settings" and stripped:
+            row = next(csv.reader([raw_line]))
+            key = row[0].strip() if row else ""
+            if key in STRIPPED_BCLCONVERT_SETTINGS:
+                message = (
+                    "INFO: stripped unsupported BCLConvert setting "
+                    f"{key} from normalized sample sheet"
+                )
+                print(message, file=sys.stderr)
+                messages.append(message)
+                continue
+
+            if target_version and key == "SoftwareVersion":
+                original_version = ",".join(row[1:]).strip() if len(row) > 1 else ""
+                if original_version != target_version:
+                    raw_line = _csv_line([row[0], target_version])
+                    message = (
+                        "INFO: normalized sample sheet SoftwareVersion "
+                        f"from {original_version} to pinned runtime {target_version}"
+                    )
+                    print(message, file=sys.stderr)
+                    messages.append(message)
+
+        normalized_lines.append(raw_line)
+
     Path(normalized_out).parent.mkdir(parents=True, exist_ok=True)
-    Path(normalized_out).write_text(text, encoding="utf-8")
+    Path(normalized_out).write_text("\n".join(normalized_lines) + "\n", encoding="utf-8")
+    return messages
 
 
 def main() -> int:
@@ -251,11 +301,12 @@ def main() -> int:
         if not settings.get(field):
             fail(f"missing required BCLConvert_Settings field: {field}")
 
-    required_data_cols = {"Lane", "Sample_ID", "Index", "Index2"}
+    required_data_cols = {"Sample_ID", "Index", "Index2"}
     if not required_data_cols.issubset(set(data_header)):
         fail(
-            "BCLConvert_Data must include Lane, Sample_ID, Index, and Index2 columns"
+            "BCLConvert_Data must include Sample_ID, Index, and Index2 columns"
         )
+    has_lane_column = "Lane" in data_header
 
     warning_message = warn_if_newer(settings["SoftwareVersion"], args.runtime_version)
 
@@ -263,20 +314,21 @@ def main() -> int:
     seen_keys: set[tuple[str, str, str, str]] = set()
 
     for source_row, row in data_rows:
-        lane = (row.get("Lane") or "").strip()
+        lane = (row.get("Lane") or "").strip() if has_lane_column else "*"
         sample_id = (row.get("Sample_ID") or "").strip()
         index = (row.get("Index") or "").strip()
         index2 = (row.get("Index2") or "").strip()
         sample_project = (row.get("Sample_Project") or "").strip()
         sample_name = (row.get("Sample_Name") or "").strip()
 
-        if not lane:
+        if has_lane_column and not lane:
             fail(f"missing Lane value at line {source_row}")
-        try:
-            if int(lane) <= 0:
-                fail(f"Lane must be a positive integer at line {source_row}")
-        except ValueError as exc:
-            raise SampleSheetError(f"Lane must be an integer at line {source_row}") from exc
+        if lane != "*":
+            try:
+                if int(lane) <= 0:
+                    fail(f"Lane must be a positive integer at line {source_row}")
+            except ValueError as exc:
+                raise SampleSheetError(f"Lane must be an integer at line {source_row}") from exc
 
         if not sample_id:
             fail(f"missing Sample_ID value at line {source_row}")
@@ -295,11 +347,12 @@ def main() -> int:
             )
         seen_keys.add(key)
 
+        normalized_software_version = args.runtime_version.strip() or settings.get("SoftwareVersion", "")
         normalized_rows.append(
             {
                 "RUN_NAME": header.get("RunName", ""),
                 "INSTRUMENT_PLATFORM": header.get("InstrumentPlatform", ""),
-                "SOFTWARE_VERSION": settings.get("SoftwareVersion", ""),
+                "SOFTWARE_VERSION": normalized_software_version,
                 "OVERRIDE_CYCLES": settings.get("OverrideCycles", ""),
                 "LANE": lane,
                 "SAMPLE_ID": sample_id,
@@ -311,7 +364,7 @@ def main() -> int:
             }
         )
 
-    write_normalized_sample_sheet(args.sample_sheet, args.normalized_out)
+    rewrite_messages = write_normalized_sample_sheet(args.sample_sheet, args.normalized_out, args.runtime_version)
 
     out_path = Path(args.rows_out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -323,7 +376,8 @@ def main() -> int:
     if args.warnings_out:
         warnings_path = Path(args.warnings_out)
         warnings_path.parent.mkdir(parents=True, exist_ok=True)
-        contents = "" if warning_message is None else warning_message + "\n"
+        warning_messages = [message for message in (warning_message, *rewrite_messages) if message is not None]
+        contents = "".join(message + "\n" for message in warning_messages)
         warnings_path.write_text(contents, encoding="utf-8")
 
     return 0

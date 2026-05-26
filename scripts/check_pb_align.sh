@@ -14,5 +14,5 @@ ls -la /fsx/analysis_results/ubuntu/test-roche-solo-3x/daylily-omics-analysis/re
 
 echo ""
 echo "=== Check Roche BAM source exists ==="
-ls -la /fsx/data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam 2>/dev/null || echo "Roche BAM not found"
+ls -la /fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam 2>/dev/null || echo "Roche BAM not found"
 

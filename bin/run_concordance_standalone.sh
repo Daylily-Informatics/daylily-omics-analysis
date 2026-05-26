@@ -7,7 +7,7 @@
 export ALIGNER="ultimaA"
 export SNV_CALLER="ultimaD"
 export ALT_NAME="HG002"
-export SDF_PATH="/fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf/"
+export SDF_PATH="/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf/"
 export OUT_DIR=$PWD/manual_results/concordance/
 mkdir -p "$OUT_DIR"
 export CLUSTER_SAMPLE="HG002"

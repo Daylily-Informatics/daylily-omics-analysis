@@ -495,10 +495,17 @@ config = config  # noqa   ### Just needed to quiet linters
 cluster_config = cluster_config  # noqa   ### Just needed to quiet linters
 
 BCL_BOOTSTRAP_TARGETS = {
+    "bclconvert_generate_units_tsv",
+    "bclconvert_metrics_multiqc_exports",
+    "bclconvert_metrics_summary",
+    "bclconvert_validate_inputs",
+    "multiqc_bclconvert",
     "produce_bclconvert_fastqs",
     "produce_bclconvert_metrics",
     "produce_bclconvert_multiqc",
     "produce_bclconvert_fastqs_and_metrics",
+    "produce_illumina_run_qc_and_bclconvert",
+    "run_bclconvert",
 }
 
 
@@ -1286,6 +1293,13 @@ if metadata["analysis_unit_uid"].duplicated().any():
 metadata.apply(_validate_ont_fastq_unit, axis=1)
 
 def _select_reads(row):
+    if bootstrap_unit_context and str(row.get("analysis_unit_uid", "")) == str(
+        config["bclconvert_bootstrap_run_id"]
+    ):
+        # BCL Convert bootstrap creates FASTQs later; this synthetic row only
+        # lets run-level targets parse without requiring pre-existing reads.
+        return "na", "na"
+
     for r1, r2 in [
         ("ILMN_R1_PATH", "ILMN_R2_PATH"),
         ("PACBIO_R1_PATH", "PACBIO_R2_PATH"),
@@ -1491,6 +1505,9 @@ for _, row in samples.iterrows():
     ex_id         = str(row.get("EX", ""))
     lane_id       = str(row.get("LANE", ""))
     merge_single  = str(row.get("MERGE_SINGLE", "single")).strip().lower()
+    is_bcl_bootstrap_sample = bootstrap_unit_context and str(samp_id) == str(
+        config["bclconvert_bootstrap_run_id"]
+    )
 
     # Uniqueness / unsupported mode checks (kept from your original intent)
     if samp_id in sample_info and merge_single == "single":
@@ -1510,13 +1527,13 @@ for _, row in samples.iterrows():
         x = str(x)
         return ("." in x) or ("_" in x)
 
-    if any(_bad_token(t) for t in (sq_id, ru_id, ex_id, lane_id)):
+    if not is_bcl_bootstrap_sample and any(_bad_token(t) for t in (sq_id, ru_id, ex_id, lane_id)):
         raise WorkflowError(
             f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: SQ/RU/EX/LANE may not contain '.' or '_' per current constraints."
         )
 
     # Prevent 'sample_lane' collisions and sample-in-lane name leakage (legacy behavior)
-    if sample_lane in sample_lane_seen or ("." in sample):
+    if not is_bcl_bootstrap_sample and (sample_lane in sample_lane_seen or ("." in sample)):
         raise WorkflowError(
             f"\n\nMANIFEST ERROR {sample} ... {sample_lane}: 'sample_lane' must be unique; "
             f"'sample' must not contain a '.' and must not duplicate 'sample_lane'."

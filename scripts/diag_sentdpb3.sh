@@ -56,7 +56,7 @@ find /tmp -name "*sentdpb*" 2>/dev/null | head -5 || true
 
 echo ""
 echo "=== 8. Check the model bundle path ==="
-ls -la /fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.3.bundle/ 2>/dev/null || echo "Bundle dir not found"
+ls -la /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopePacBio2.3.bundle/ 2>/dev/null || echo "Bundle dir not found"
 
 echo ""
 echo "=== 9. rep1 gvcf details ==="

@@ -12,8 +12,8 @@
 #   ./rtg_vcfeval_standalone.sh \
 #       /path/to/sample.vcf.gz \
 #       /path/to/sample.vcf.gz.tbi \
-#       /fsx/data/.../HG002/giabHC/HG002.vcf.gz \
-#       /fsx/data/.../HG002/giabHC/HG002.bed \
+#       /fsx/references/.../HG002/giabHC/HG002.vcf.gz \
+#       /fsx/references/.../HG002/giabHC/HG002.bed \
 #       HG002 \
 #       ultimaA \
 #       ultimaD \
@@ -71,7 +71,7 @@ OUTPUT_DIR="$9"
 # =============================================================================
 # Environment defaults (matching Snakemake config)
 # =============================================================================
-: "${SDF_PATH:=/fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf}"
+: "${SDF_PATH:=/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf}"
 : "${SUB_THREADS:=7}"
 : "${TMPDIR:=/fsx/scratch}"
 

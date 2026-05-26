@@ -36,22 +36,22 @@ check_dir() {
     fi
 }
 
-check_dir "/fsx/data/cached_envs/sentieon-genomics-202503.02" "Sentieon 202503.02"
-for b in /fsx/data/cached_envs/sentieon-genomics-202503.02/share/SentieonHybridIlluminaONT*; do
+check_dir "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02" "Sentieon 202503.02"
+for b in /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/share/SentieonHybridIlluminaONT*; do
     check_file "$b" "HybridIlluminaONT: $(basename $b)"
 done
-check_file "/fsx/data/cached_envs/sentieon-genomics-202503.02/share/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
-check_file "/fsx/data/cached_envs/sentieon-genomics-202503.02/share/DNAscopeONT2.3.bundle" "SegDup LR model"
+check_file "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/share/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
+check_file "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/share/DNAscopeONT2.3.bundle" "SegDup LR model"
 
-CHRM="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM"
+CHRM="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.fasta" "chrM fasta"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.fasta.fai" "chrM fasta.fai"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta" "chrM shifted fasta"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.fai" "chrM shifted fasta.fai"
 check_file "$CHRM/ShiftBack.chain" "ShiftBack.chain"
 check_file "$CHRM/blacklist_sites.hg38.chrM.bed" "chrM blacklist BED"
-check_file "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta" "Main genome fasta"
-check_file "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta.fai" "Main genome fasta.fai"
+check_file "/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta" "Main genome fasta"
+check_file "/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta.fai" "Main genome fasta.fai"
 echo "" | tee -a "$REPORT"
 
 echo "=== SECTION 2: CLONE AND INITIALIZE ===" | tee -a "$REPORT"

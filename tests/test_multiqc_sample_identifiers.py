@@ -240,7 +240,7 @@ def test_contamination_and_tiddit_custom_tsvs_are_sample_first(tmp_path: Path) -
             sample_map_json='{"HG003":"EXT-HG003"}',
             panel_metadata_json=(
                 '{"100k":{"label":"100k","snp_count":"100000",'
-                '"svd_prefix":"/fsx/data/verifybamid/100k"}}'
+                '"svd_prefix":"/fsx/references/verifybamid/100k"}}'
             ),
             contamination_output=str(contam_out),
             vb2_comparison_output=str(vb2_out),
@@ -885,3 +885,5 @@ def test_container_profile_uses_fsx_tmp_for_image_builds_and_binds_dev_shm() -> 
         )
         assert 'export SINGULARITY_CACHEDIR="${APPTAINER_CACHEDIR}"' in profile_env
         assert 'mkdir -p "${APPTAINER_TMPDIR}" "${APPTAINER_CACHEDIR}" || return 1' in profile_env
+        assert 'if [[ "${DAYOA_OPENAI_TOKEN_FILE_ENABLE:-}" == "1" ]]; then' in profile_env
+        assert 'source "${DAY_ROOT}/bin/day_openai_env.bash" || return 1' in profile_env

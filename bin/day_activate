@@ -86,9 +86,9 @@ export SENTIEON_LICENSE=''
 if [[ ! -f "$SENTIEON_LICENSE_YAM" ]]; then
     echo "WARNING: sentieon lic file $SENTIEON_LICENSE_YAM not found."
 
-    detected_license=$(ls /fsx/data/cached_envs/*lic)
+    detected_license=$(ls /fsx/references/runtime_assets/cached_envs/*lic)
     if [[ ! -f "$detected_license" ]]; then
-        echo "WARNING: sentieon lic file not detected in '/fsx/data/cached_envs/*lic' ."
+        echo "WARNING: sentieon lic file not detected in '/fsx/references/runtime_assets/cached_envs/*lic' ."
         echo "If you try to use any of the sentieon tools, you will get an error."
         sleep 2
     else

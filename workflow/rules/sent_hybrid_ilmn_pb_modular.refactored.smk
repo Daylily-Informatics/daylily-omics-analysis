@@ -86,7 +86,7 @@ rule sentdhipmr_sr_align:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_sr_${{timestamp}}_$$";
@@ -301,7 +301,7 @@ rule sentdhipmr_pass1:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_p1_${{timestamp}}_$$";
@@ -391,12 +391,20 @@ rule sentdhipmr_hybrid_select:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         echo "Starting hybrid_select pipeline at $(date)" >> {log}
 
+        : "${{CONDA_PREFIX:?CONDA_PREFIX is required for sentdhipmr_hybrid_select}}"
+        {{
+            echo "DEBUG hybrid_select env at $(date)"
+            echo "DEBUG CONDA_PREFIX=$CONDA_PREFIX"
+            echo "DEBUG which_python=$(command -v python || true)"
+            "$CONDA_PREFIX/bin/python" -c "import os, sys; print('DEBUG sys.executable=' + sys.executable); print('DEBUG sys.prefix=' + sys.prefix); print('DEBUG env_CONDA_PREFIX=' + str(os.environ.get('CONDA_PREFIX'))); from importlib.resources import files; print('DEBUG hybrid_select=' + str(files('sentieon_cli.scripts').joinpath('hybrid_select.py')))"
+        }} >> {log} 2>&1 || true
+
         # Find hybrid_select.py script
-        HYBRID_SELECT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
+        HYBRID_SELECT=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
 
         # Pipeline: hybrid_select.py -> bcftools view -> bcftools query -> bedtools slop
         # This replicates sentieon-cli's cmd_pyexec_hybrid_select() function
@@ -447,7 +455,7 @@ rule sentdhipmr_mapq0_bed:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_mq_${{timestamp}}_$$";
@@ -592,7 +600,7 @@ rule sentdhipmr_stage1:
     shell:
         r"""
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_s1_${{timestamp}}_$$";
@@ -741,7 +749,7 @@ rule sentdhipmr_stage2:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_s2_${{timestamp}}_$$";
@@ -800,7 +808,7 @@ rule sentdhipmr_stage3:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_s3_${{timestamp}}_$$";
@@ -873,7 +881,7 @@ rule sentdhipmr_pass2:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_p2_${{timestamp}}_$$";
@@ -936,7 +944,7 @@ rule sentdhipmr_subset:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         echo "Subsetting pass-1 VCF at $(date)" >> {log}
 
@@ -1021,12 +1029,13 @@ rule sentdhipmr_anno:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         echo "Starting hybrid annotation at $(date)" >> {log}
 
         # Find hybrid_anno.py script
-        HYBRID_ANNO=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
+        : "${{CONDA_PREFIX:?CONDA_PREFIX is required for sentdhipmr_anno}}"
+        HYBRID_ANNO=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
 
         sentieon pyexec "$HYBRID_ANNO" \
             -v {input.vcf} \
@@ -1078,7 +1087,7 @@ rule sentdhipmr_transfer:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         echo "Starting annotation transfer shard {wildcards.tchrm} (regions: {params.regions}) at $(date)" >> {log}
 
@@ -1098,7 +1107,8 @@ rule sentdhipmr_transfer:
             exit 1
         fi
 
-        TRIM_SCRIPT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
+        : "${{CONDA_PREFIX:?CONDA_PREFIX is required for sentdhipmr_transfer_anno_shards}}"
+        TRIM_SCRIPT=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
         echo "Transferring annotations from pop_vcf: {params.pop_vcf} for regions: {params.regions}" >> {log}
 
@@ -1203,7 +1213,7 @@ rule sentdhipmr_model_apply:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_ma_${{timestamp}}_$$";
@@ -1262,7 +1272,7 @@ rule sentdhipmr_final_norm:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         echo "Starting final normalization at $(date)" >> {log}
 
@@ -1449,7 +1459,7 @@ rule sentdhipmr_call_svs:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/dev/shm/sentdhipmr_sv_${{timestamp}}_$$";

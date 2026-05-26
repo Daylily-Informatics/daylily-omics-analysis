@@ -11,7 +11,7 @@ For each sample, creates downsampled copies at target coverages using:
 Usage:
   python create_downsampled_datasets.py \\
       --table solo_pipeline_samples.tsv \\
-      --outdir /fsx/data/downsampled \\
+      --outdir /fsx/control_data/downsampled \\
       [--targets 0.1,0.5,1,1.5,3,5,10,15,20,30,40,50] \\
       [--reference /path/to/ref.fasta] \\
       [--threads 8] [--seed 42] [--dry-run]

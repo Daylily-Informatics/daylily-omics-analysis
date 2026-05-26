@@ -13,12 +13,12 @@
 #
 # Defaults:
 #   output_dir:       /fsx/scratch/downsamples/<platform>_cleaned/
-#   reference_fasta:  /fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta
+#   reference_fasta:  /fsx/references/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta
 #   seed:             42
 #
 # Example:
 #   sbatch --comment RnD --partition i192,i192mem ./downsample_cram_batch.sh \
-#     /fsx/data/giab/HG003/ilmn/HG003_30x.cram 30 "5,10,15"
+#     /fsx/control_data/giab/HG003/ilmn/HG003_30x.cram 30 "5,10,15"
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ set -euo pipefail
 INPUT_CRAM="${1:-}"
 INPUT_COV="${2:-}"
 TARGET_COVS="${3:-}"
-DEFAULT_REFERENCE="/fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
+DEFAULT_REFERENCE="/fsx/references/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
 SEED="${6:-42}"
 
 if [[ -z "$INPUT_CRAM" ]] || [[ -z "$INPUT_COV" ]] || [[ -z "$TARGET_COVS" ]]; then
@@ -38,7 +38,7 @@ if [[ -z "$INPUT_CRAM" ]] || [[ -z "$INPUT_COV" ]] || [[ -z "$TARGET_COVS" ]]; t
     echo "  target_coverages: Comma-separated target coverages (e.g., '5,10,15')"
     echo ""
     echo "Example:"
-    echo "  $0 /fsx/data/HG003.cram 30 '5,10,15'"
+    echo "  $0 /fsx/control_data/HG003.cram 30 '5,10,15'"
     exit 1
 fi
 

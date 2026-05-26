@@ -18,18 +18,18 @@ HYBRID = BASE / "hybrid"
 
 # HG003 samples.tsv content (same for all)
 SAMPLES_HEADER = "SAMPLEID\tSAMPLESOURCE\tSAMPLECLASS\tBIOLOGICAL_SEX\tCONCORDANCE_CONTROL_PATH\tIS_POSITIVE_CONTROL\tIS_NEGATIVE_CONTROL\tSAMPLE_TYPE\tTUM_NRM_SAMPLEID_MATCH\tEXTERNAL_SAMPLE_ID\tN_X\tN_Y\tTRUTH_DATA_DIR"
-SAMPLES_ROW = "HG003\tblood\tresearch\tmale\t/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/\ttrue\tfalse\tgdna\t\tHG003\t1\t1\t/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
+SAMPLES_ROW = "HG003\tblood\tresearch\tmale\t/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/\ttrue\tfalse\tgdna\t\tHG003\t1\t1\t/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
 
 # Units header (standard columns + Roche columns)
 UNITS_HEADER = "RUNID\tSAMPLEID\tEXPERIMENTID\tLANEID\tBARCODEID\tLIBPREP\tSEQ_VENDOR\tSEQ_PLATFORM\tILMN_R1_PATH\tILMN_R2_PATH\tPACBIO_R1_PATH\tPACBIO_R2_PATH\tONT_R1_PATH\tONT_R2_PATH\tUG_R1_PATH\tUG_R2_PATH\tSUBSAMPLE_PCT\tILMN_TRIM_READ_LENGTH\tSAMPLEUSE\tBWA_KMER\tDEEP_MODEL\tULTIMA_CRAM\tULTIMA_CRAM_ALIGNER\tULTIMA_CRAM_SNV_CALLER\tONT_CRAM\tONT_CRAM_ALIGNER\tONT_CRAM_SNV_CALLER\tPB_BAM\tPB_BAM_ALIGNER\tPB_BAM_SNV_CALLER\tROCHE_BAM\tROCHE_BAM_ALIGNER\tROCHE_BAM_SNV_CALLER\tROCHE_DOWNSAMPLE_RATIO"
 
 # Data paths
-ILMN_R1_3X = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_3x_R1.fastq.gz"
-ILMN_R2_3X = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_3x_R2.fastq.gz"
+ILMN_R1_3X = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_3x_R1.fastq.gz"
+ILMN_R2_3X = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_3x_R2.fastq.gz"
 ONT_CRAM_3X = "/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003/HG003_3x.cleaned.cram"
 UG_CRAM_3X = "/fsx/scratch/downsamples/ultima_cleaned_hg38_broad/HG003/HG003_3x.cleaned.cram"
 PB_BAM_3X = "/fsx/scratch/downsamples/pacbio/HG003/R0-HG003-D0-0-D0/3p0x/HG003_3p0x.bam"
-ROCHE_BAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam"
+ROCHE_BAM = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam"
 ROCHE_DOWNSAMPLE_3X = "0.069"
 
 def write_samples(path):

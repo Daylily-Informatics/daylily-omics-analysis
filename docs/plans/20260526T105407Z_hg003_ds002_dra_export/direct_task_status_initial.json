@@ -1,0 +1,7 @@
+{
+    "Lifecycle": "PENDING",
+    "StartTime": null,
+    "EndTime": null,
+    "FailureDetails": null,
+    "ResourceARN": "arn:aws:fsx:us-west-2:108782052779:task/task-0a76f0198b41cb9e6"
+}

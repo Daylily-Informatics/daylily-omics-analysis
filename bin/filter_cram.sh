@@ -18,4 +18,4 @@ samtools index -@ 8 "$out_cram"
 
 #grep '^>' hg38.fa | sed 's/>//' > hg38_contigs.txt
 
-#samtools view -@ 8 -T /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta -C -o 409943-NA12878-Z0025-CTCGAGATTGATGAT.filtered.cram /home/ubuntu/xroom/ug/Feb27_2025_ugsb4_data/409943-NA12878-Z0025-CTCGAGATTGATGAT.cram $(cat hg38_contigs.txt) 
+#samtools view -@ 8 -T /fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta -C -o 409943-NA12878-Z0025-CTCGAGATTGATGAT.filtered.cram /home/ubuntu/xroom/ug/Feb27_2025_ugsb4_data/409943-NA12878-Z0025-CTCGAGATTGATGAT.cram $(cat hg38_contigs.txt)

@@ -14,7 +14,7 @@ bin/day_run --list 2>/dev/null | grep -iE "roche|sbx" | head -10
 
 echo ""
 echo "=== Check if Roche BAM is pre-aligned ==="
-samtools view -H /fsx/data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam 2>/dev/null | grep "^@SQ" | head -3
+samtools view -H /fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam 2>/dev/null | grep "^@SQ" | head -3
 
 echo ""
 echo "=== Check test-ug-solo-3x tmux ==="

@@ -89,6 +89,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
+    qeo = _read("workflow/rules/qeo_registration.smk")
     snakefile = _read("workflow/Snakefile")
     common = _read("workflow/rules/common.smk")
 
@@ -160,6 +161,18 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert 'include: "rules/snpeff.smk"' not in [
         line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
     ]
+    assert 'include: "rules/qeo_registration.smk"' in snakefile
+    for expected in (
+        "rule register_multiqc_final:",
+        "rule register_analysis_artifact_set:",
+        "rule publish_qeo_ingest_event:",
+        "DAY_final_multiqc.artifact_manifest.json",
+        "DAY_final_multiqc.dewey_receipt.json",
+        "DAY_final_multiqc.qeo_manifest.json",
+        "analysis_artifact_set.qeo_ingest_manifest.json",
+        "lsmc.daylily.artifact.produced.v1.json",
+    ):
+        assert expected in qeo
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:

@@ -20,10 +20,10 @@ source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
 conda activate DAYOA
 
 # Source FASTQs
-HG002_R1="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24385_R1.fastq.gz"
-HG002_R2="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24385_R2.fastq.gz"
-HG003_R1="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24149_R1.fastq.gz"
-HG003_R2="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24149_R2.fastq.gz"
+HG002_R1="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24385_R1.fastq.gz"
+HG002_R2="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24385_R2.fastq.gz"
+HG003_R1="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24149_R1.fastq.gz"
+HG003_R2="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/NA24149_R2.fastq.gz"
 
 # Coverage data from alignstats
 HG002_COV=121.459813

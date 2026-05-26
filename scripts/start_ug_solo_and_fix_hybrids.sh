@@ -18,7 +18,7 @@ echo "Started $sess"
 
 echo ""
 echo "=== Check Roche BAM headers ==="
-samtools view -H /fsx/data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam 2>/dev/null | grep "^@SQ" | head -3 | awk '{print $1, $2}'
+samtools view -H /fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/roche/091025_webinar_data_giab_bam_bwa/HG003.bam 2>/dev/null | grep "^@SQ" | head -3 | awk '{print $1, $2}'
 
 echo ""
 echo "=== Suggested fixes for PB hybrid tests ==="

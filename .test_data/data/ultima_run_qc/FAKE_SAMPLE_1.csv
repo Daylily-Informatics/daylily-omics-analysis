@@ -1,0 +1,10 @@
+PF_Barcode_reads,1000
+PCT_PF_aligned,0.98
+PCT_PF_Q20_bases,0.93
+PCT_PF_Q30_bases,0.80
+Mean_quality,31.2
+Mean_Read_Length,150
+Median_Read_Length,149
+MAPQ >= 1,0.99
+MAPQ >= 10,0.97
+MAPQ >= 20,0.95

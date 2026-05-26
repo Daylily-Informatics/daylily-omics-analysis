@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LibraryInfo RunId="602202" Library_Pool="FAKE_POOL">
+  <Sample Id="FAKE_SAMPLE_1" Index_Label="Z0157" Index_Sequence="CATGGATAGCTGCAGAT" application_type="native" destinationTag="ultima" secondary_analysis="native_wgs" unknown_fake_field="preserve_me" />
+  <Sample Id="FAKE_SAMPLE_2" Index_Label="Z0158" Index_Sequence="TACCGATAGCTGCAGA" application_type="native" destinationTag="ultima" secondary_analysis="native_wgs" />
+</LibraryInfo>

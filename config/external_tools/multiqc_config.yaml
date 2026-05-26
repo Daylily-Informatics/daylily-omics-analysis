@@ -75,6 +75,17 @@ module_order:
   - input_sample_libraries
   - sequence_qc_outputs
   - alignment_qc_outputs
+  - ultima_run_inventory
+  - ultima_demux_summary
+  - ultima_trimmer_stats
+  - ultima_trimmer_failures
+  - ultima_flowq_summary
+  - ultima_snvq_summary
+  - ultima_unmatched
+  - ultima_coverage_summary
+  - ultima_picard_summary
+  - ultima_contamination
+  - ultima_upload_status
   - expansionhunter
   - contamination
   - verifybamid2_panel_comparison
@@ -115,6 +126,20 @@ report_section_order:
     order: 1330
   bclconvert_index_hopping:
     order: 1340
+  ultima_run_inventory:
+    order: 1400
+  ultima_demux_summary:
+    order: 1410
+  ultima_trimmer_stats:
+    order: 1420
+  ultima_trimmer_failures:
+    order: 1430
+  ultima_flowq_summary:
+    order: 1440
+  ultima_snvq_summary:
+    order: 1450
+  ultima_unmatched:
+    order: 1460
   samtools:
     order: 2000
   picard:
@@ -129,12 +154,18 @@ report_section_order:
     order: 2500
   alignstats_combo:
     order: 2600
+  ultima_coverage_summary:
+    order: 2650
+  ultima_picard_summary:
+    order: 2660
   norm_cov_evenness_combo:
     order: 2700
   verifybamid:
     order: 3000
   contamination:
     order: 3010
+  ultima_contamination:
+    order: 3015
   verifybamid2_panel_comparison:
     order: 3020
   site_mix_contam:
@@ -175,6 +206,8 @@ report_section_order:
     order: 4500
   rules_benchmark_data:
     order: 9000
+  ultima_upload_status:
+    order: 9010
 
 table_columns_visible:
   verifybamid-FREEMIX: True
@@ -379,6 +412,76 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'bclconvert_index_hopping'
+  ultima_run_inventory:
+    id: 'ultima_run_inventory'
+    section_name: 'Ultima Run Inventory'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Expected and observed Ultima run output files by run, barcode, sample, and file kind'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_run_inventory'
+  ultima_demux_summary:
+    id: 'ultima_demux_summary'
+    section_name: 'Ultima Demux / Barcode Summary'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Ultima expected versus observed barcode and sample output completeness'
+    file_format: 'tsv'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'ultima_demux_summary'
+  ultima_trimmer_stats:
+    id: 'ultima_trimmer_stats'
+    section_name: 'Ultima Trimmer Stats'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Normalized Ultima trimmer read counts by read group and segment'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_trimmer_stats'
+  ultima_trimmer_failures:
+    id: 'ultima_trimmer_failures'
+    section_name: 'Ultima Trimmer Failure Codes'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Normalized Ultima trimmer failure-code counts and percentages'
+    file_format: 'tsv'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'ultima_trimmer_failures'
+  ultima_flowq_summary:
+    id: 'ultima_flowq_summary'
+    section_name: 'Ultima FlowQ Summary'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Ultima FlowQ native quality metrics. FlowQ is not interpreted as an Illumina-equivalent Q-score.'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_flowq_summary'
+  ultima_snvq_summary:
+    id: 'ultima_snvq_summary'
+    section_name: 'Ultima SNVQ Summary'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Ultima SNVQ native quality metrics. SNVQ is not interpreted as an Illumina-equivalent Q-score.'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_snvq_summary'
+  ultima_unmatched:
+    id: 'ultima_unmatched'
+    section_name: 'Ultima Unmatched Outputs'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Ultima unmatched output file counts and sizes'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_unmatched'
   alignment_qc_outputs:
     id: 'alignment_qc_outputs'
     section_name: 'Alignment QC Output Inventory'
@@ -439,6 +542,46 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'unmapped_metagenomics'
+  ultima_coverage_summary:
+    id: 'ultima_coverage_summary'
+    section_name: 'Ultima Coverage Summary'
+    parent_id: 'dayoa_alignment_coverage'
+    parent_name: 'Alignment, BAM/CRAM, dedup, coverage'
+    description: 'Ultima coverage thresholds and MapQ bedGraph summaries'
+    file_format: 'tsv'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'ultima_coverage_summary'
+  ultima_picard_summary:
+    id: 'ultima_picard_summary'
+    section_name: 'Ultima Picard / Basic Run Metrics'
+    parent_id: 'dayoa_alignment_coverage'
+    parent_name: 'Alignment, BAM/CRAM, dedup, coverage'
+    description: 'Ultima Picard-style and basic run metrics normalized from per-sample CSV outputs'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_picard_summary'
+  ultima_contamination:
+    id: 'ultima_contamination'
+    section_name: 'Ultima Contamination / Sample Swap'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
+    description: 'Ultima operational contamination and sample-swap evidence from selfSM outputs'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_contamination'
+  ultima_upload_status:
+    id: 'ultima_upload_status'
+    section_name: 'Ultima Upload Status'
+    parent_id: 'dayoa_workflow_reporting'
+    parent_name: 'Proteomics, workflow, misc'
+    description: 'Ultima upload completion, failure, missing, and malformed marker status'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'ultima_upload_status'
   relatedness:
     id: 'relatedness'
     section_name: 'Batch Relatedness'
@@ -562,6 +705,28 @@ sp:
     fn: "other_reports/bclconvert_unknown_barcodes_mqc.tsv"
   bclconvert_index_hopping:
     fn: "other_reports/bclconvert_index_hopping_mqc.tsv"
+  ultima_run_inventory:
+    fn: "run_qc/ultima/**/ultima_run_inventory_mqc.tsv"
+  ultima_demux_summary:
+    fn: "run_qc/ultima/**/ultima_demux_summary_mqc.tsv"
+  ultima_trimmer_stats:
+    fn: "run_qc/ultima/**/ultima_trimmer_stats_mqc.tsv"
+  ultima_trimmer_failures:
+    fn: "run_qc/ultima/**/ultima_trimmer_failures_mqc.tsv"
+  ultima_flowq_summary:
+    fn: "run_qc/ultima/**/ultima_flowq_summary_mqc.tsv"
+  ultima_snvq_summary:
+    fn: "run_qc/ultima/**/ultima_snvq_summary_mqc.tsv"
+  ultima_coverage_summary:
+    fn: "run_qc/ultima/**/ultima_coverage_summary_mqc.tsv"
+  ultima_picard_summary:
+    fn: "run_qc/ultima/**/ultima_picard_summary_mqc.tsv"
+  ultima_contamination:
+    fn: "run_qc/ultima/**/ultima_contamination_mqc.tsv"
+  ultima_upload_status:
+    fn: "run_qc/ultima/**/ultima_upload_status_mqc.tsv"
+  ultima_unmatched:
+    fn: "run_qc/ultima/**/ultima_unmatched_mqc.tsv"
   alignment_qc_outputs:
     fn: "other_reports/alignment_qc_outputs_mqc.tsv"
   contamination:

@@ -11,18 +11,18 @@
 #
 # Defaults:
 #   output_cram:    /fsx/scratch/downsamples/ont_cleaned/<basename>.cleaned.cram
-#   reference_fasta: /fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta
+#   reference_fasta: /fsx/references/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta
 #
 # Example:
 #   sbatch --comment RnD --partition i192,i192mem ./fix_ont_cram_headers.sh \
-#     /fsx/data/giab/HG003/ont/R0-HG003-D0-0-D0-PCR-FREE-ONT-PROMETHION.cram
+#     /fsx/control_data/giab/HG003/ont/R0-HG003-D0-0-D0-PCR-FREE-ONT-PROMETHION.cram
 
 set -euo pipefail
 
 # Arguments with defaults
 INPUT_CRAM="${1:-}"
 DEFAULT_OUTDIR="/fsx/scratch/downsamples/ont_cleaned"
-DEFAULT_REFERENCE="/fsx/data/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
+DEFAULT_REFERENCE="/fsx/references/genomic_data/hg38_crams/Homo_sapiens_assembly38.fasta"
 
 if [[ -z "$INPUT_CRAM" ]]; then
     echo "Usage: $0 <input_cram> [output_cram] [reference_fasta]"

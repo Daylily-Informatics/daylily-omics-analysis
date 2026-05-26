@@ -68,16 +68,18 @@ def test_hybrid_rules_use_stdlib_importlib_resources() -> None:
     assert not offenders, "Undeclared importlib_resources backport used:\n" + "\n".join(offenders)
 
 
-def test_sentdhiomr_resolves_sentieon_cli_scripts_with_rule_env_python() -> None:
+def test_active_hybrid_rules_resolve_sentieon_cli_scripts_with_rule_env_python() -> None:
     offenders: list[str] = []
-    path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ilmn_ont_modular.refactored.smk"
-    text = path.read_text(encoding="utf-8")
-    for match in BARE_SENTIEON_CLI_PYTHON_LOOKUP_RE.finditer(text):
-        line_no = text.count("\n", 0, match.start()) + 1
-        offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {match.group(0)}")
+    for path in sorted(_active_snakemake_files()):
+        if "hybrid" not in path.name:
+            continue
+        text = path.read_text(encoding="utf-8")
+        for match in BARE_SENTIEON_CLI_PYTHON_LOOKUP_RE.finditer(text):
+            line_no = text.count("\n", 0, match.start()) + 1
+            offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {match.group(0)}")
 
     assert not offenders, (
-        "sentdhiomr Sentieon CLI helper lookups must use $CONDA_PREFIX/bin/python:\n"
+        "Active hybrid Sentieon CLI helper lookups must use $CONDA_PREFIX/bin/python:\n"
         + "\n".join(offenders)
     )
 

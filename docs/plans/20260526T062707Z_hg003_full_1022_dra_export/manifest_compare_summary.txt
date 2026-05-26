@@ -1,0 +1,8 @@
+fsx_files_or_symlinks=5846
+s3_file_objects=5846
+fsx_bytes=164552085144
+s3_bytes=164552085144
+missing_in_s3=0
+extra_in_s3=0
+size_mismatches=0
+zero_byte_s3_directory_markers_ignored=872

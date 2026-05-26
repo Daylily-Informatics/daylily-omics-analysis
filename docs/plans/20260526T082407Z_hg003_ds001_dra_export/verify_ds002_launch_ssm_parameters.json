@@ -1,0 +1,5 @@
+{
+  "commands": [
+    "bash -l -c 'set -euo pipefail; WORKDIR=/fsx/analysis_results/ubuntu/hg003a_altair3_hiomr_ilmn20x_ont7x_1022/daylily-omics-analysis; SESSION=hg003a_altair3_hiomr_ilmn20x_ont7x_1022_run1024; echo ts=2026-05-26T08:36:25Z; tmux capture-pane -pt  -S -120 || true; echo; test -d  && echo workdir_present=1 || echo workdir_present=0; test -f /daylily_run_1024.log && tail -80 /daylily_run_1024.log || true; echo; squeue -u ubuntu || true; echo; ps -fu ubuntu | awk '\\''/snakemake|dy-r|day_run/ && !/awk/ {print}'\\'' | head -40; echo; df -h /fsx'"
+  ]
+}

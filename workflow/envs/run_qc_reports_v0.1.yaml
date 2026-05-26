@@ -9,7 +9,12 @@ dependencies:
   - boto3
   - awscli
   - multiqc==1.35
+  - pycoqc
+  - nanoplot
+  - nanostat
+  - seqkit
+  - nanoq
+  - setuptools<81
   - pip
   - pip:
       - interop==1.9.0
-      - checkqc

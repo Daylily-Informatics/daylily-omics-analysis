@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-INPUT_DIR="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
-OUT_DIR="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007_downsampled"
+INPUT_DIR="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
+OUT_DIR="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007_downsampled"
 THREADS=16
 SEED=7
 

@@ -1,0 +1,6 @@
+{
+    "Status": "Success",
+    "ResponseCode": 0,
+    "Stdout": "DAY-EC activated.\nDAY-EC activated.\nfsx_files_or_symlinks=5793\nfsx_bytes=91132014954\nlabel=DS-004\nfsx_manifest=/fsx/analysis_results/ubuntu/hg003a_altair3_hiomr_ilmn15x_ont10x_1022/_daylily_monitor/verify/20260526T133536Z/fsx_manifest.tsv\n",
+    "Stderr": ""
+}

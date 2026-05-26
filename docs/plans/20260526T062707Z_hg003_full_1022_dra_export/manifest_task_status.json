@@ -1,0 +1,7 @@
+{
+    "Lifecycle": "SUCCEEDED",
+    "StartTime": "2026-05-25T23:41:06.264000-07:00",
+    "EndTime": "2026-05-25T23:41:43.402000-07:00",
+    "FailureDetails": null,
+    "ResourceARN": "arn:aws:fsx:us-west-2:108782052779:task/task-01bdcd0081f62ba1a"
+}

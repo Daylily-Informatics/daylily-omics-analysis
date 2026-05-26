@@ -121,9 +121,9 @@ def _illumina_rows(args: argparse.Namespace) -> list[tuple[str, str]]:
     interop_index_summary = _require_file(
         args.interop_index_summary, "interop_index_summary"
     )
-    checkqc_json = _require_file(args.checkqc_json, "checkqc_json")
-    checkqc = _read_json(checkqc_json)
-    signal_counts = _json_signal_counts(checkqc)
+    illumina_qc_json = _require_file(args.illumina_qc_json, "illumina_qc_json")
+    illumina_qc = _read_json(illumina_qc_json)
+    signal_counts = _json_signal_counts(illumina_qc)
     rows = [
         ("platform", "ILMN"),
         ("run_s3_uri", run_s3_uri),
@@ -131,7 +131,7 @@ def _illumina_rows(args: argparse.Namespace) -> list[tuple[str, str]]:
         ("interop_summary_rows", str(_count_rows(interop_summary))),
         ("interop_index_summary", str(interop_index_summary)),
         ("interop_index_summary_rows", str(_count_rows(interop_index_summary))),
-        ("checkqc_json", str(checkqc_json)),
+        ("illumina_qc_json", str(illumina_qc_json)),
     ]
     rows.extend((key, str(value)) for key, value in sorted(signal_counts.items()))
     return rows
@@ -163,7 +163,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-s3-uri", default="")
     parser.add_argument("--interop-summary", default="")
     parser.add_argument("--interop-index-summary", default="")
-    parser.add_argument("--checkqc-json", default="")
+    parser.add_argument("--illumina-qc-json", default="")
     parser.add_argument("--metrics-path", default="")
     parser.add_argument("--output-html", required=True)
     parser.add_argument("--output-tsv", required=True)
