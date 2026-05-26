@@ -537,7 +537,7 @@ rule ont_run_qc_pycoqc:
         command -v pycoQC >> {log:q} 2>&1
         mapfile -t summary_files < {input.summary_list:q}
         pycoQC \
-          -f "${summary_files[@]}" \
+          -f "${{summary_files[@]}}" \
           -o {output.html:q} \
           -j {output.json:q} \
           --report_title {params.run_id:q} \
@@ -572,7 +572,7 @@ rule ont_run_qc_nanoplot:
         command -v NanoPlot >> {log:q} 2>&1
         mapfile -t summary_files < {input.summary_list:q}
         NanoPlot \
-          --summary "${summary_files[@]}" \
+          --summary "${{summary_files[@]}}" \
           --loglength \
           --tsv_stats \
           --info_in_report \
@@ -686,17 +686,17 @@ rule ont_demux_fastq_qc:
                 exit 2
             fi
             mapfile -t fastqs < "$file_list"
-            seqkit stats --tabular "${fastqs[@]}" \
+            seqkit stats --tabular "${{fastqs[@]}}" \
               > "$sample_out/$sample.seqkit_stats.tsv" \
               2>> {log:q}
-            nanoq "${fastqs[@]}" \
+            nanoq "${{fastqs[@]}}" \
               > "$sample_out/$sample.nanoq.txt" \
               2>> {log:q}
-            NanoStat --fastq "${fastqs[@]}" \
+            NanoStat --fastq "${{fastqs[@]}}" \
               > "$sample_out/$sample.NanoStat.fastq.txt" \
               2>> {log:q}
             NanoPlot \
-              --fastq "${fastqs[@]}" \
+              --fastq "${{fastqs[@]}}" \
               --loglength \
               --tsv_stats \
               --info_in_report \
