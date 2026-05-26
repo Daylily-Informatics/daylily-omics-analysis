@@ -322,11 +322,13 @@ rule run_bclconvert:
                 scratch_run_dir="$scratch_dir/run"
                 scratch_output_dir="$scratch_dir/fastqs"
                 mkdir -p "$scratch_run_dir"
-                input_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
-                required_bytes="$((input_bytes * {params.scratch_size_multiplier} + 1073741824))"
+                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
+                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
+                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
                 available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
                 echo "scratch_dir: $scratch_dir" >> {log:q}
-                echo "scratch_input_bytes: $input_bytes" >> {log:q}
+                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
+                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
                 echo "scratch_required_bytes: $required_bytes" >> {log:q}
                 echo "scratch_available_bytes: $available_bytes" >> {log:q}
                 if [ "$available_bytes" -lt "$required_bytes" ]; then
@@ -334,7 +336,7 @@ rule run_bclconvert:
                     exit 2
                 fi
                 echo "Copying BCL run directory to scratch: $(date -Is)" >> {log:q}
-                cp -aL "$effective_run_dir"/. "$scratch_run_dir"/
+                cp -aL --sparse=always "$effective_run_dir"/. "$scratch_run_dir"/
                 effective_run_dir="$scratch_run_dir"
                 effective_output_dir="$scratch_output_dir"
                 df -h "$scratch_root" >> {log:q} 2>&1 || true
