@@ -148,7 +148,7 @@ BCL_STAGING_MODE = str(BCLCFG.get("staging_mode", "direct") or "direct").strip()
 BCL_SCRATCH_ROOT = str(BCLCFG.get("scratch_root", "/dev/shm/dayoa_bclconvert") or "/dev/shm/dayoa_bclconvert")
 BCL_SCRATCH_SIZE_MULTIPLIER = _intish(BCLCFG.get("scratch_size_multiplier", 4), 4)
 BCL_RETAIN_SCRATCH = _bool(BCLCFG.get("retain_scratch", False), False)
-BCL_MOUNTED_STAGE_JOBS = _intish(BCLCFG.get("mounted_stage_jobs", 32), 32)
+BCL_MOUNTED_STAGE_JOBS = _intish(BCLCFG.get("mounted_stage_jobs", 64), 64)
 BCL_PARALLEL_TILES = _intish(BCLCFG.get("parallel_tiles", 1), 1)
 BCL_CONVERSION_THREADS = _intish(BCLCFG.get("conversion_threads", BCL_THREADS), BCL_THREADS)
 BCL_COMPRESSION_THREADS = _intish(BCLCFG.get("compression_threads", BCL_THREADS), BCL_THREADS)
@@ -372,7 +372,6 @@ rule run_bclconvert:
                 scratch_output_dir="$scratch_dir/fastqs"
                 scratch_sync_log_dir="$scratch_dir/rsync_logs"
                 mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
-                command -v rsync >> {log:q} 2>&1
                 lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
                 if [ ! -d "$lane_root" ]; then
                     echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
@@ -416,26 +415,15 @@ rule run_bclconvert:
                 if ! {{
                     echo "Copying root-level BCL metadata"
                     find "$effective_run_dir" -maxdepth 1 -type f -print0 \
-                      | xargs -0 -r cp -aL --sparse=always -t "$scratch_run_dir"
+                      | xargs -0 -r cp -L --sparse=always -t "$scratch_run_dir"
                     find "$effective_run_dir/Data/Intensities" -maxdepth 1 -type f -print0 \
-                      | xargs -0 -r cp -aL --sparse=always -t "$scratch_run_dir/Data/Intensities"
+                      | xargs -0 -r cp -L --sparse=always -t "$scratch_run_dir/Data/Intensities"
                     echo "Skipping InterOp during BCLConvert scratch staging; run-QC rules own InterOp parsing"
                 }} > "$scratch_sync_log_dir/metadata.log" 2>&1; then
                     cat "$scratch_sync_log_dir/metadata.log" >> {log:q}
                     echo "Mounted metadata staging failed" >> {log:q}
                     exit 2
                 fi
-                for lane_id in $lane_ids; do
-                    lane_dest="$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id"
-                    mkdir -p "$lane_dest"
-                    if ! rsync -aL --sparse --whole-file --exclude='*/' \
-                      "$lane_root/$lane_id"/ "$lane_dest"/ \
-                      > "$scratch_sync_log_dir/$lane_id.top.log" 2>&1; then
-                        cat "$scratch_sync_log_dir/$lane_id.top.log" >> {log:q}
-                        echo "Mounted lane top-level file staging failed for $lane_id" >> {log:q}
-                        exit 2
-                    fi
-                done
                 cycle_list="$scratch_sync_log_dir/cycle_dirs.txt"
                 find "$lane_root" -mindepth 2 -maxdepth 2 -type d -name 'C*.1' -printf '%P\n' | sort > "$cycle_list"
                 cycle_count="$(wc -l < "$cycle_list" | tr -d ' ')"
@@ -444,20 +432,33 @@ rule run_bclconvert:
                     echo "BCL run directory has no L###/C*.1 cycle directories under $lane_root" >> {log:q}
                     exit 2
                 fi
-                if ! xargs -r -P "$mounted_stage_jobs" -I '{{}}' bash -c '
-                    set -euo pipefail
-                    rel="$1"
-                    src="$2/$rel"
-                    dst="$3/Data/Intensities/BaseCalls/$rel"
-                    mkdir -p "$dst"
-                    rsync -aL --sparse --whole-file "$src"/ "$dst"/
-                ' _ '{{}}' "$lane_root" "$scratch_run_dir" \
-                  < "$cycle_list" > "$scratch_sync_log_dir/cycles.log" 2>&1; then
-                    cat "$scratch_sync_log_dir/metadata.log" "$scratch_sync_log_dir/cycles.log" >> {log:q}
-                    echo "One or more mounted cycle rsync processes failed" >> {log:q}
+                file_list="$scratch_sync_log_dir/basecall_files.nul"
+                find "$lane_root" -mindepth 2 -type f -print0 > "$file_list"
+                file_count="$(tr -cd "\0" < "$file_list" | wc -c | tr -d " ")"
+                echo "mounted_stage_regular_files: $file_count" >> {log:q}
+                if [ "$file_count" -lt 1 ]; then
+                    echo "BCL run directory has no regular files under $lane_root" >> {log:q}
                     exit 2
                 fi
-                cat "$scratch_sync_log_dir/metadata.log" "$scratch_sync_log_dir/cycles.log" >> {log:q}
+                echo "Copying mounted BCL files with sharded cp: $(date -Is)" >> {log:q}
+                if ! xargs -0 -r -P "$mounted_stage_jobs" -n 64 bash -c '
+                    set -euo pipefail
+                    lane_root="$1"
+                    scratch_run_dir="$2"
+                    shift 2
+                    for rel in "$@"; do
+                        src="$lane_root/$rel"
+                        dst="$scratch_run_dir/Data/Intensities/BaseCalls/$(dirname "$rel")"
+                        mkdir -p "$dst"
+                        cp -L --sparse=always "$src" "$dst/"
+                    done
+                ' _ "$lane_root" "$scratch_run_dir" \
+                  < "$file_list" > "$scratch_sync_log_dir/files.log" 2>&1; then
+                    cat "$scratch_sync_log_dir/metadata.log" "$scratch_sync_log_dir/files.log" >> {log:q}
+                    echo "One or more mounted BCL file copy batches failed" >> {log:q}
+                    exit 2
+                fi
+                cat "$scratch_sync_log_dir/metadata.log" "$scratch_sync_log_dir/files.log" >> {log:q}
                 echo "Mounted scratch staging complete: $(date -Is)" >> {log:q}
                 du -sh "$scratch_run_dir" >> {log:q} 2>&1 || true
                 effective_run_dir="$scratch_run_dir"

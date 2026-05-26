@@ -51,10 +51,11 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in rule
     assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in rule
     assert "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm" in rule
-    assert "rsync -aL --sparse --whole-file" in rule
+    assert "Copying mounted BCL files with sharded cp" in rule
     assert "mounted_stage_lanes" in rule
     assert "mounted_stage_jobs" in rule
     assert "mounted_stage_cycle_dirs" in rule
+    assert "mounted_stage_regular_files" in rule
     assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in rule
     assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in rule
     assert "aws s3 sync" in rule
