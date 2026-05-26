@@ -410,12 +410,16 @@ rule run_bclconvert:
                 fi
                 echo "Staging BCL run directory from S3 to scratch: $(date -Is)" >> {log:q}
                 echo "s3_stage_lanes: $(printf "%s" "$lane_ids" | tr '\n' ' ')" >> {log:q}
-                AWS_PROFILE="$run_profile" AWS_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
+                if ! AWS_PROFILE="$run_profile" AWS_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
                   aws s3 sync "$run_uri/" "$scratch_run_dir/" \
                     --exclude "Analysis/*" \
                     --exclude "Data/Intensities/BaseCalls/L*/*" \
                     --only-show-errors \
-                    > "$scratch_sync_log_dir/root.log" 2>&1
+                    > "$scratch_sync_log_dir/root.log" 2>&1; then
+                    cat "$scratch_sync_log_dir/root.log" >> {log:q}
+                    echo "Root-level aws s3 sync failed" >> {log:q}
+                    exit 2
+                fi
                 pids=()
                 for lane_id in $lane_ids; do
                     (
