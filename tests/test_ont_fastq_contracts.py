@@ -43,7 +43,10 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
 
     for profile in ("local", "slurm"):
         cfg = _rule_config(profile)
-        assert cfg["sentmm2ont_align_sort"]["minimap2_opts"].strip() == "-ax map-ont"
+        assert (
+            cfg["sentmm2ont_align_sort"]["minimap2_opts"].strip()
+            == "-ax map-ont -Y --secondary-seq"
+        )
 
 
 def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:

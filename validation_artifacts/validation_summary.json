@@ -1,0 +1,3969 @@
+{
+  "artifact_files": [
+    "rr_manifest.tsv",
+    "bar_manifest.tsv",
+    "accuracy_metrics_by_sample.tsv",
+    "accuracy_metrics_pooled.tsv",
+    "rr_coverage_callability_by_sample.tsv",
+    "rr_boundary_verification.tsv",
+    "validation_summary.json"
+  ],
+  "counts": {
+    "accuracy_by_sample_rows": 14,
+    "accuracy_pooled_rows": 2,
+    "bar_manifest_rows": 7,
+    "boundary_rows": 0,
+    "rr_coverage_rows": 0,
+    "rr_manifest_rows": 1
+  },
+  "expected_giab_samples": [
+    "HG001",
+    "HG002",
+    "HG003",
+    "HG004",
+    "HG005",
+    "HG006",
+    "HG007"
+  ],
+  "expected_rr_chromosomes": [
+    "chr1",
+    "chr2",
+    "chr3",
+    "chr4",
+    "chr5",
+    "chr6",
+    "chr7",
+    "chr8",
+    "chr9",
+    "chr10",
+    "chr11",
+    "chr12",
+    "chr13",
+    "chr14",
+    "chr15",
+    "chr16",
+    "chr17",
+    "chr18",
+    "chr19",
+    "chr20",
+    "chr21",
+    "chr22",
+    "chrX"
+  ],
+  "observed_giab_samples": {
+    "accuracy_metrics": [],
+    "bar_manifest": [
+      "HG001",
+      "HG002",
+      "HG003",
+      "HG004",
+      "HG005",
+      "HG006",
+      "HG007"
+    ]
+  },
+  "overall_status": "FAIL",
+  "reasons": [
+    {
+      "code": "missing_giab_bar_metrics",
+      "expected_inputs": [
+        "HG001.Altair_RR_v1_x_GIAB_HC.bed",
+        "HG002.Altair_RR_v1_x_GIAB_HC.bed",
+        "HG003.Altair_RR_v1_x_GIAB_HC.bed",
+        "HG004.Altair_RR_v1_x_GIAB_HC.bed",
+        "HG005.Altair_RR_v1_x_GIAB_HC.bed",
+        "HG006.Altair_RR_v1_x_GIAB_HC.bed",
+        "HG007.Altair_RR_v1_x_GIAB_HC.bed"
+      ],
+      "sample_ids": [
+        "HG001",
+        "HG002",
+        "HG003",
+        "HG004",
+        "HG005",
+        "HG006",
+        "HG007"
+      ],
+      "severity": "HOLD"
+    },
+    {
+      "code": "missing_accuracy_metrics",
+      "sample_ids": [
+        "HG001",
+        "HG002",
+        "HG003",
+        "HG004",
+        "HG005",
+        "HG006",
+        "HG007"
+      ],
+      "severity": "HOLD"
+    },
+    {
+      "code": "invalid_accuracy_denominator",
+      "details": [
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG001",
+          "source_row": "R99-HG001-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG002",
+          "source_row": "R99-HG002-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG003",
+          "source_row": "R99-HG003-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG004",
+          "source_row": "R99-HG004-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG005",
+          "source_row": "R99-HG005-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ilmnCancerRegions",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ilmnExomev1-2",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG006",
+          "source_row": "R99-HG006-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC",
+          "reason": "invalid_accuracy_denominator:giab_hc_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_clinvar_genes",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "giabHC_x_ultima_x_clinvar",
+          "reason": "invalid_accuracy_denominator:clinvar_only_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38",
+          "reason": "invalid_accuracy_denominator:genome_denominator",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "hg38_m_giabHC",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-DEL_50",
+          "variant_class": "DEL_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-INS_50",
+          "variant_class": "INS_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-Indel_50",
+          "variant_class": "Indel_50"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPts",
+          "variant_class": "SNPts"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D20-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        },
+        {
+          "accuracy_denominator": "ultima",
+          "reason": "invalid_accuracy_denominator:non_sample_specific_bar",
+          "sample_id": "HG007",
+          "source_row": "R99-HG007-D30-0-D0-PCR-FREE-ILMN-NOVASEQ-sent-sentd-SNPtv",
+          "variant_class": "SNPtv"
+        }
+      ],
+      "severity": "FAIL"
+    },
+    {
+      "code": "rr_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG001",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG002",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG003",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG004",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG005",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG006",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "bar_manifest_status",
+      "reason": "No approved final Altair reportable range source was found; existing GIAB HC source BEDs are autosome-only and missing expected chrX. Do not substitute GIAB-intersected data as a valid reportable range.",
+      "sample_id": "HG007",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "accuracy_metrics_pooled_status",
+      "reason": "missing_giab_bar_metrics:HG001,HG002,HG003,HG004,HG005,HG006,HG007",
+      "sample_id": "",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "accuracy_metrics_pooled_status",
+      "reason": "missing_giab_bar_metrics:HG001,HG002,HG003,HG004,HG005,HG006,HG007",
+      "sample_id": "",
+      "severity": "HOLD",
+      "status": "HOLD"
+    },
+    {
+      "code": "missing_rr_coverage_callability",
+      "detail": "Full Altair RR coverage/callability TSV was not provided.",
+      "severity": "HOLD"
+    },
+    {
+      "code": "missing_rr_boundary_verification",
+      "detail": "Released VCF boundary verification TSV was not provided.",
+      "severity": "HOLD"
+    }
+  ]
+}

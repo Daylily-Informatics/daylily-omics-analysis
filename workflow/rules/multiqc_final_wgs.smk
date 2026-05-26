@@ -13,6 +13,8 @@ def _seq_data_component_inputs(wildcards):
     paths = _sequence_qc_native_inputs(wildcards)
     if qc_tool_enabled("bclconvert", default=False):
         paths.append(MDIR + "other_reports/bclconvert_metrics_mqc.done")
+    if qc_tool_enabled("illumina_run_metrics", default=False):
+        paths.append(MDIR + "other_reports/illumina_run_metrics_mqc.tsv")
     paths.append(MDIR + "other_reports/input_sample_libraries_mqc.tsv")
     paths.append(MDIR + "other_reports/sequence_qc_outputs_mqc.tsv")
     return paths
@@ -47,6 +49,8 @@ def _alignment_component_inputs(wildcards):
     paths.extend(_alignment_qc_native_inputs(wildcards))
     paths.extend(_unmapped_metagenomics_component_inputs(wildcards))
     paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
+    if qc_tool_enabled("read_dispositions", default=False):
+        paths.append(MDIR + "other_reports/read_dispositions_mqc.tsv")
     if (
         qc_tool_enabled("verifybamid2")
         or qc_tool_enabled("gatk_contam")
@@ -606,6 +610,7 @@ rule multiqc_final_wgs:  # TARGET: the big report
         html=f"{MDIR}reports/DAY_final_multiqc.html",
         html_original=f"{MDIR}reports/DAY_final_multiqc.original.html",
         header=f"{MDIR}reports/multiqc_header.yaml",
+        float_format_config=f"{MDIR}reports/multiqc_float_format_config.yaml",
     benchmark:
         f"{MDIR}benchmarks/DAY_all.final_multiqc.bench.tsv"
     threads: config["multiqc"]["threads"]
@@ -623,48 +628,46 @@ rule multiqc_final_wgs:  # TARGET: the big report
         rtitle=RPT_TITLE,
         stage_dir=MDIR + "reports/multiqc_inputs/final",
         data_json=MDIR + "reports/DAY_final_multiqc_data/multiqc_data.json",
+        samples_table=samples_table_path,
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a.log",
     container:
         "docker://multiqc/multiqc:v1.35"
     shell:
         """
-        dbill='$';
+        set -euo pipefail
         mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
         python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
         multiqc --version >> {log:q} 2>&1 || true
-        echo '''
-report_header_info:
-  - Project/Budget: "REGSUB_PROJECT"
-  - Budget @ Runtime: "REGSUB_BUDGET"
-  - Spot Instances: "REGSUB_SPOTINSTANCES"
-  - Spot Costs per hr: "REGSUB_SPOTCOST"
-  - FQ->BAM.sort avg Costs: "REGSUB_TOTALCOST"
-  - BAM mrkdup avg Cost: "REGSUB_MRKDUPCOST"
-  - Results Dir (GB): "REGSUB_TOTALSIZE"
-  ''' > {output.header:q} 2>> {log:q};
-
-        perl -pi -e "s/REGSUB_PROJECT/$DAY_PROJECT/g;"  {output.header:q} >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_BUDGET/\\\$dbill$USED_BUDGET of \\\$dbill$TOTAL_BUDGET spent ( $PERCENT_USED\%)/g;" {output.header:q} >> {log:q} 2>&1;
 
         size=$(du -hs results | cut -f1) >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_TOTALSIZE/$size/g;" {output.header:q} >> {log:q} 2>&1;
 
         source bin/proc_spot_price_logs.sh >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_SPOTCOST/median: \\\$dbill$MEDIAN_SPOT_PRICE  mean: \\\$dbill$AVERAGE_SPOT_PRICE ( avg cost per vcpu,per min: \\\$dbill$VCPU_COST_PER_MIN ) /g;"  {output.header:q} >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_SPOTINSTANCES/ $INSTANCE_TYPES_LINE /g;" {output.header:q} >> {log:q} 2>&1;
-
         source bin/proc_aligner_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_TOTALCOST/$ALNR_SUMMARY_COST/g;" {output.header:q} >> {log:q} 2>&1;
-
         source bin/proc_mrkdup_costs.sh {input.benchmark:q} $VCPU_COST_PER_MIN  >> {log:q} 2>&1;
-        perl -pi -e "s/REGSUB_MRKDUPCOST/$MRKDUP_AVG_MINUTES min, costing \\\$dbill$MRKDUP_AVG_COST/g;" {output.header:q} >> {log:q} 2>&1;
 
         module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
+        multiqc_command="multiqc -f $module_excludes --config {output.header:q} --config ./config/external_tools/multiqc_config.yaml --config {output.float_format_config:q} --custom-css-file ./config/external_tools/multiqc.css --ignore '*/other_reports/logs/*' --ignore 'other_reports/logs/*' --ignore '*_mqc.log' --template default --filename {output.html:q} -i '{params.rtitle} Multiqc Report ' -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' {params.stage_dir:q}"
+        python workflow/scripts/build_multiqc_header.py \
+          --benchmark-tsv {input.benchmark:q} \
+          --samples-tsv {params.samples_table:q} \
+          --multiqc-command "$multiqc_command" \
+          --project-budget "${{DAY_PROJECT:?DAY_PROJECT is required for final MultiQC header}}" \
+          --budget-runtime "\$${{USED_BUDGET:?USED_BUDGET is required for final MultiQC header}} of \$${{TOTAL_BUDGET:?TOTAL_BUDGET is required for final MultiQC header}} spent ( ${{PERCENT_USED:?PERCENT_USED is required for final MultiQC header}}% )" \
+          --spot-instances "${{INSTANCE_TYPES_LINE:?INSTANCE_TYPES_LINE is required for final MultiQC header}}" \
+          --spot-costs "median: \$${{MEDIAN_SPOT_PRICE:?MEDIAN_SPOT_PRICE is required for final MultiQC header}}  mean: \$${{AVERAGE_SPOT_PRICE:?AVERAGE_SPOT_PRICE is required for final MultiQC header}} ( avg cost per vcpu,per min: \$${{VCPU_COST_PER_MIN:?VCPU_COST_PER_MIN is required for final MultiQC header}} )" \
+          --aligner-costs "${{ALNR_SUMMARY_COST:?ALNR_SUMMARY_COST is required for final MultiQC header}}" \
+          --mrkdup-cost "${{MRKDUP_AVG_MINUTES:?MRKDUP_AVG_MINUTES is required for final MultiQC header}} min, costing \$${{MRKDUP_AVG_COST:?MRKDUP_AVG_COST is required for final MultiQC header}}" \
+          --results-size "$size" \
+          --output {output.header:q} >> {log:q} 2>&1;
+        python workflow/scripts/format_multiqc_float_tables.py \
+          {params.stage_dir:q} \
+          --format-config {output.float_format_config:q} >> {log:q} 2>&1;
         multiqc -f  \
         $module_excludes \
         --config {output.header:q} \
         --config ./config/external_tools/multiqc_config.yaml  \
+        --config {output.float_format_config:q} \
         --custom-css-file ./config/external_tools/multiqc.css \
         --ignore "*/other_reports/logs/*" \
         --ignore "other_reports/logs/*" \
@@ -680,7 +683,7 @@ report_header_info:
         python workflow/scripts/validate_multiqc_sample_ids.py \
           --manifest {input.stage_manifest:q} \
           --multiqc-data {params.data_json:q} >> {log:q} 2>&1;
-        ls -lt {output.html:q} {output.html_original:q} {output.header:q} >> {log:q} 2>&1;
+        ls -lt {output.html:q} {output.html_original:q} {output.header:q} {output.float_format_config:q} >> {log:q} 2>&1;
         """
 
 

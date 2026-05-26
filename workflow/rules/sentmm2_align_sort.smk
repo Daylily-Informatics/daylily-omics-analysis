@@ -114,7 +114,13 @@ rule sentmm2_align_sort:
             exit 6;
         fi
 
-        samtools fastq -@ 4 -T MM,ML {input.bam} \
+        secondary_supp_count=$(samtools view -c -f 0x900 {input.bam});
+        if [ "$secondary_supp_count" -ne 0 ]; then
+            echo "ERROR: {input.bam} contains $secondary_supp_count secondary/supplementary records before samtools fastq extraction." >> {log} 2>&1;
+            exit 8;
+        fi
+
+        samtools fastq -@ 4 -F 0x900 -T MM,ML {input.bam} \
         | LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
         {params.minimap2_opts} \
         -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \

@@ -150,7 +150,12 @@ rule sentmm2ont_align_sort:
                     cat -- {input.reads};
                 fi
             elif [[ "{params.input_kind}" == "ubam" ]]; then
-                samtools fastq -@ 4 -T MM,ML {input.reads};
+                secondary_supp_count=$(samtools view -c -f 0x900 {input.reads});
+                if [ "$secondary_supp_count" -ne 0 ]; then
+                    echo "ERROR: {input.reads} contains $secondary_supp_count secondary/supplementary records before samtools fastq extraction." >> {log} 2>&1;
+                    exit 8;
+                fi
+                samtools fastq -@ 4 -F 0x900 -T MM,ML {input.reads};
             else
                 echo "ERROR: unsupported sentmm2ont input kind: {params.input_kind}" >> {log} 2>&1;
                 exit 8;

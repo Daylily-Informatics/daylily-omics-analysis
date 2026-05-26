@@ -84,6 +84,9 @@ Common flags passed through `dy-r`:
 | Target | Typical use |
 | --- | --- |
 | `produce_alignstats` | Alignment statistics and aggregate `alignstats_combo_mqc.tsv`. |
+| `produce_alignment_preservation_audit` | Static BAM/CRAM preservation contract report for full-sample alignment, merge, dedup, and staged input paths. |
+| `produce_illumina_run_metrics` | Illumina run-folder inventory, InterOp/BCLConvert raw tables, and `illumina_run_metrics_mqc.tsv` from explicit `illumina_run_metrics` config. |
+| `produce_read_dispositions` | Read-fate report joining Illumina run metrics to `alignstats_combo_mqc.tsv`. |
 | `produce_snv_concordances` | GIAB/RTG concordance outputs where truth metadata is present. |
 | `produce_sentd_snv_vcf` | Illumina Sentieon DNAscope SNV calling. |
 | `produce_deep19_snv_vcf` | DeepVariant 1.9 SNV calling. |
@@ -99,6 +102,7 @@ Common flags passed through `dy-r`:
 | `produce_manta_sv_vcf`, `produce_tiddit_sv_vcf`, `produce_dysgu_sv_vcf` | Structural variant callers. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
 | `produce_verifybamid2_panel_comparison` | Runs selected VerifyBamID2 SNP panels from `--config verifybamid2_panels=[...]` and writes a comparison TSV. |
+| `produce_altair_validation_artifacts` | Builds the Altair audit package from controlled RR/BAR manifests, GIAB concordance, full-RR coverage/callability, and boundary checks. |
 | `produce_multiqc_input_data` | MultiQC for input sequence-data QC. |
 | `produce_multiqc_cram` | MultiQC for CRAM/alignment QC. |
 | `produce_multiqc_snv`, `produce_multiqc_sv` | MultiQC for SNV and SV QC scopes. |
@@ -151,6 +155,7 @@ When debugging, inspect logs in this order: latest `.snakemake/log` by mtime, re
 | [`docs/ops/dycli.md`](docs/ops/dycli.md) | CLI command behavior and monitoring. |
 | [`docs/ops/config.md`](docs/ops/config.md) | Profiles, config precedence, sample/unit schema notes. |
 | [`docs/ops/tests.md`](docs/ops/tests.md) | Local validation commands. |
+| [`docs/ops/altair_validation.md`](docs/ops/altair_validation.md) | Altair RR/BAR semantics, chrX policy, artifact manifests, status gates, and reproduction commands. |
 | [`docs/ops/multiqc_qc_targets.md`](docs/ops/multiqc_qc_targets.md) | Staged MultiQC targets, runtime gating, and routine vs optional QC policy. |
 | [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md) | Code-sourced catalog of Daylily tool integrations, evidence, outputs, and tests. |
 | [`docs/ops/dir_and_file_scheme.md`](docs/ops/dir_and_file_scheme.md) | Current result layout and naming conventions. |

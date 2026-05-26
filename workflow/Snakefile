@@ -244,6 +244,8 @@ onerror:
 # --------------------------
 include: "rules/alignstats.smk"
 include: "rules/alignstats_compile.smk"
+include: "rules/altair_validation.smk"
+include: "rules/alignment_preservation_audit.smk"
 include: "rules/art.smk"
 include: "rules/bcftools_vcfstat.smk"
 include: "rules/bwa_mem2a_align_sort.smk"
@@ -295,6 +297,7 @@ include: "rules/peddy.smk"
 # include: "rules/picard.smk"
 include: "rules/prep_input_sample_files.smk"
 include: "rules/bclconvert.smk"
+include: "rules/illumina_run_reports.smk"
 # Qualimap is disabled at the workflow import level. The current Qualimap build
 # is too slow and unreliable for routine service on these short-read CRAM/BAMs.
 # include: "rules/qualimap.smk"

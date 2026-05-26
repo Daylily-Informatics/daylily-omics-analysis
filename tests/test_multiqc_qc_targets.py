@@ -138,6 +138,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert '{"dysgu", "manta", "tiddit"}' in text
     for expected in (
         "input_sample_libraries_mqc.tsv",
+        "illumina_run_metrics_mqc.tsv",
+        "read_dispositions_mqc.tsv",
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
         "contamination_mqc.tsv",
@@ -410,6 +412,8 @@ def test_multiqc_config_custom_content_entries() -> None:
         "bclconvert_fastq_manifest",
         "bclconvert_unknown_barcodes",
         "bclconvert_index_hopping",
+        "illumina_run_metrics",
+        "read_dispositions",
         "alignment_qc_outputs",
         "contamination",
         "verifybamid2_panel_comparison",
@@ -516,6 +520,8 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert "vep" in module_order
     assert "peddy_sample_qc" in module_order
     assert "relatedness" in module_order
+    assert "illumina_run_metrics" in module_order
+    assert "read_dispositions" in module_order
     assert "verifyBAMID" not in module_order
     assert "verifybamid2_panel_comparison" in module_order
 
@@ -526,6 +532,8 @@ def test_multiqc_reports_scan_only_staged_inputs() -> None:
     assert "rule stage_multiqc_inputs:" in text
     assert "workflow/scripts/stage_multiqc_inputs.py" in text
     assert "workflow/scripts/validate_multiqc_sample_ids.py" in text
+    assert "workflow/scripts/build_multiqc_header.py" in text
+    assert "workflow/scripts/format_multiqc_float_tables.py" in text
     assert "reports/multiqc_inputs/seq_data" in text
     assert "reports/multiqc_inputs/alignment" in text
     assert "reports/multiqc_inputs/variants" in text
@@ -548,6 +556,12 @@ def test_multiqc_reports_scan_only_staged_inputs() -> None:
         assert "{params.stage_dir:q}" in body
         assert "{MDIR} > {log:q}" not in body
         assert "{MDIR} >> {log:q}" not in body
+
+    final_body = text[text.index("rule multiqc_final_wgs:") :]
+    final_body = final_body[: final_body.find("\n\nrule ", 1)]
+    assert "--samples-tsv {params.samples_table:q}" in final_body
+    assert "--config {output.float_format_config:q}" in final_body
+    assert "DAY_PROJECT is required for final MultiQC header" in final_body
 
 
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:

@@ -1,5 +1,3 @@
-intro_text: ""
-
 custom_logo: "resources/mqcimg/lsmc_git.jpeg"
 custom_logo_url: "https://github.com/Daylily-Informatics/daylily"
 custom_logo_title: "daylily ephemeral cluster"
@@ -73,6 +71,8 @@ module_order:
   - vcftools
   - custom_content
   - input_sample_libraries
+  - illumina_run_metrics
+  - read_dispositions
   - sequence_qc_outputs
   - alignment_qc_outputs
   - expansionhunter
@@ -103,6 +103,10 @@ report_section_order:
     order: 1100
   input_sample_libraries:
     order: 1150
+  illumina_run_metrics:
+    order: 1160
+  read_dispositions:
+    order: 1170
   sequence_qc_outputs:
     order: 1200
   bclconvert_demux:
@@ -289,6 +293,26 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'alignstats_combo'
+  illumina_run_metrics:
+    id: 'illumina_run_metrics'
+    section_name: 'Illumina Run Metrics'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Run folder, InterOp, and BCL Convert read-equivalent metrics'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'illumina_run_metrics'
+  read_dispositions:
+    id: 'read_dispositions'
+    section_name: 'Read Dispositions'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Read fate through demux, human alignment, WGS accounting, dedup, and effective aligned reads'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'read_dispositions'
   expansionhunter:
     id: 'expansionhunter'
     section_name: 'ExpansionHunter STR Report'
@@ -544,6 +568,10 @@ sp:
     fn: "other_reports/rules_benchmark_data_mqc.tsv"
   alignstats_combo:
     fn: "other_reports/alignstats_combo_mqc.tsv"
+  illumina_run_metrics:
+    fn: "other_reports/illumina_run_metrics_mqc.tsv"
+  read_dispositions:
+    fn: "other_reports/read_dispositions_mqc.tsv"
   expansionhunter:
     fn: "other_reports/expansionhunter_mqc.tsv"
   seqfu:

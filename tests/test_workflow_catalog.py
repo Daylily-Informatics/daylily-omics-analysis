@@ -22,6 +22,7 @@ def test_catalog_exposes_expected_workflows() -> None:
         "test_help",
         "germline_wgs_snv",
         "germline_wgs_snv_sv",
+        "altair_validation_package",
         "germline_wgs_kitchensink",
     ]
 

@@ -76,6 +76,9 @@ For manual debugging, use this order:
 | Target | Description |
 | --- | --- |
 | `produce_alignstats` | Alignment statistics and aggregate report. |
+| `produce_alignment_preservation_audit` | Static BAM/CRAM preservation contract report for alignment, merge, dedup, and staged inputs. |
+| `produce_illumina_run_metrics` | Illumina run-folder inventory, InterOp/BCLConvert raw tables, and MultiQC-ready run metrics. |
+| `produce_read_dispositions` | Read-fate report joining Illumina run metrics to `alignstats_combo_mqc.tsv`. |
 | `produce_snv_concordances` | GIAB/RTG concordance for available truth data. |
 | `produce_sentd_snv_vcf` | Illumina Sentieon DNAscope. |
 | `produce_deep19_snv_vcf` | DeepVariant 1.9. |
@@ -89,6 +92,7 @@ For manual debugging, use this order:
 | `produce_all_align`, `produce_all_dedup_cram`, `produce_all_snv_vcf`, `produce_all_sv_vcf` | Run every registered selector in that stage, subject to manifest/platform compatibility. |
 | `produce_manta_sv_vcf`, `produce_tiddit_sv_vcf`, `produce_dysgu_sv_vcf` | Structural variant workflows. |
 | `produce_htd_calls` | Selected HTD/special callers from `--config htd_callers=[...]`. |
+| `produce_altair_validation_artifacts` | Altair validation artifact package using controlled RR/BAR manifests and full-RR coverage/callability. |
 | `produce_multiqc_input_data` | MultiQC for input sequence-data QC. |
 | `produce_multiqc_cram` | MultiQC for CRAM/alignment QC. |
 | `produce_multiqc_snv`, `produce_multiqc_sv` | MultiQC for SNV and SV QC scopes. |

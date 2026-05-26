@@ -128,6 +128,15 @@ dy-r produce_multiqc_all \
 See [`../workflows/bclconvert_bootstrap.md`](../workflows/bclconvert_bootstrap.md)
 for the exact BCL metric sections and output files.
 
+Illumina run metrics and read-disposition sections are also explicit opt-in
+final report inputs. Enable them with
+`multiqc_qc.enable_tools=["illumina_run_metrics","read_dispositions"]`.
+`illumina_run_metrics.run_dir` is required; when that value starts with
+`s3://`, `illumina_run_metrics.aws_profile` and
+`illumina_run_metrics.aws_region` must also be set explicitly. These report
+paths contribute `other_reports/illumina_run_metrics_mqc.tsv` and
+`other_reports/read_dispositions_mqc.tsv` to the staged final report.
+
 ## Separate Run-Level QC
 
 Run-level QC is intentionally outside the final WGS MultiQC DAG because it
@@ -139,6 +148,8 @@ write under `results/runs/<runid>/run_qc/`:
 
 | Target | Inputs | Outputs |
 | --- | --- | --- |
+| `produce_illumina_run_metrics` | explicit `illumina_run_metrics.run_dir`; S3 mode also requires explicit `aws_profile` and `aws_region` | Illumina run metrics HTML/Markdown, raw metric tables, source-object inventory, and `other_reports/illumina_run_metrics_mqc.tsv` |
+| `produce_read_dispositions` | Illumina run metrics raw tables, `other_reports/alignstats_combo_mqc.tsv`, `config/samples.tsv`, and `config/units.tsv` | read-disposition HTML/Markdown, sample-lane and cohort TSVs, and `other_reports/read_dispositions_mqc.tsv` |
 | `produce_illumina_run_qc` | `config/runs.tsv` Illumina row with mounted `RUN_DIR`, or explicit `SOURCE_S3_URI`, `PROFILE`, and `REGION` for S3 mode | InterOp CSVs, CheckQC JSON, `summary.html`, `summary.tsv`, and focused InterOp/CheckQC MultiQC HTML |
 | `produce_read_fate_river` | the same Illumina run context plus `other_reports/alignstats_combo_mqc.tsv` | read-fate RIVER HTML, TSV, Markdown, and raw-metric inventory |
 | `produce_ont_run_qc` | explicit `run_qc.ont.metrics_path` and optional run URI | ONT HTML/TSV summary |

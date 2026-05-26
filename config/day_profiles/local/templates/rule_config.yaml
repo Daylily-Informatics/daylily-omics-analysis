@@ -125,6 +125,23 @@ bclconvert:
     threads: 7
     partition: "i8"
 
+altair_validation:
+    rr_manifest: ""
+    bar_manifest: ""
+    giab_concordance: ""
+    boundary_verification: ""
+    report_template_docx: ""
+    report_docx: ""
+    coverage:
+        full_rr_bed: ""
+        min_depth: 20
+        min_mapq: 20
+        depth_bins: "0,10,20"
+        callable_definition: "mosdepth DP>=20x over full Altair_RR_v1"
+    boundary:
+        released_vcfs: []
+    output_dir: "validation_artifacts"
+
 bcl2fq_by_lane:
     threads: 7
     partition: "i8"
@@ -153,7 +170,7 @@ sentmm2_align_sort:
     sort_threads: 2
     mem_mb: 50000
     sort_thread_mem: "1G"
-    minimap2_opts: " -ax map-hifi "
+    minimap2_opts: " -ax map-hifi -Y --secondary-seq "
     mbuffer: " | mbuffer -m 50M -q -s 128k "
     constraint: ""
 
@@ -165,7 +182,7 @@ sentmm2ont_align_sort:
     sort_threads: 2
     mem_mb: 50000
     sort_thread_mem: "1G"
-    minimap2_opts: " -ax map-ont "
+    minimap2_opts: " -ax map-ont -Y --secondary-seq "
     mbuffer: " | mbuffer -m 50M -q -s 128k "
     constraint: ""
 
@@ -184,6 +201,12 @@ strobe_align_sort:
     mbuffer: " | mbuffer  -m 50M -q -s 128k "
     igz: " igzip -cd -T 2 "
     constraint: "  | mbuffer -m 100M -q -s 100M "
+
+alignment_preservation_audit:
+    env_yaml: "../envs/samtools_v0.1.yaml"
+    partition: "i8"
+    threads: 1
+    mem_mb: 1000
 
 clair3:
     threads: 7
@@ -328,6 +351,11 @@ multiqc_qc:
     disable_tools: []
     include_no_dedup_alignment_qc: true
     runtime_gate_minutes: 45
+
+illumina_run_metrics:
+    run_dir: ""
+    aws_profile: ""
+    aws_region: "us-west-2"
 
 htd_callers: []
 
