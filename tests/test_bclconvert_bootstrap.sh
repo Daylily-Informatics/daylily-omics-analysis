@@ -564,6 +564,8 @@ assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in text
 assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in text
 assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in text
 assert "aws s3 sync" in text
+assert "aws sts get-caller-identity" in text
+assert "s3_stage_credential_mode: compute_instance_role" in text
 assert "singularity exec {params.container_uri:q} bcl-convert" in text
 assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in text
 assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in text

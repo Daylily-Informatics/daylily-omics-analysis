@@ -379,11 +379,11 @@ rule run_bclconvert:
                     echo "bclconvert.staging_mode=s3_dev_shm requires REGION in config/runs.tsv" >> {log:q}
                     exit 2
                 fi
-                if [ -z "$run_profile" ] || [ "$run_profile" = "default" ]; then
-                    echo "bclconvert.staging_mode=s3_dev_shm requires a non-default PROFILE in config/runs.tsv" >> {log:q}
-                    exit 2
-                fi
                 command -v aws >> {log:q} 2>&1
+                echo "s3_stage_submit_profile: $run_profile" >> {log:q}
+                echo "s3_stage_credential_mode: compute_instance_role" >> {log:q}
+                AWS_REGION="$run_region" AWS_DEFAULT_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
+                  aws sts get-caller-identity >> {log:q} 2>&1
                 input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
                 input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
                 required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
@@ -410,7 +410,7 @@ rule run_bclconvert:
                 fi
                 echo "Staging BCL run directory from S3 to scratch: $(date -Is)" >> {log:q}
                 echo "s3_stage_lanes: $(printf "%s" "$lane_ids" | tr '\n' ' ')" >> {log:q}
-                if ! AWS_PROFILE="$run_profile" AWS_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
+                if ! AWS_REGION="$run_region" AWS_DEFAULT_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
                   aws s3 sync "$run_uri/" "$scratch_run_dir/" \
                     --exclude "Analysis/*" \
                     --exclude "Data/Intensities/BaseCalls/L*/*" \
@@ -423,7 +423,7 @@ rule run_bclconvert:
                 pids=()
                 for lane_id in $lane_ids; do
                     (
-                        AWS_PROFILE="$run_profile" AWS_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
+                        AWS_REGION="$run_region" AWS_DEFAULT_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
                           aws s3 sync "$run_uri/Data/Intensities/BaseCalls/$lane_id/" "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id/" \
                             --only-show-errors
                     ) > "$scratch_sync_log_dir/$lane_id.log" 2>&1 &

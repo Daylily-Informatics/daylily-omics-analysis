@@ -53,6 +53,8 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in rule
     assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in rule
     assert "aws s3 sync" in rule
+    assert "aws sts get-caller-identity" in rule
+    assert "s3_stage_credential_mode: compute_instance_role" in rule
     assert "singularity exec {params.container_uri:q} bcl-convert" in rule
     assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in rule
     assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in rule
