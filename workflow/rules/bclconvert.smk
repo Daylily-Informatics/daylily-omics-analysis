@@ -53,6 +53,7 @@ def _derive_bclconvert_run_id(sample_sheet_path):
 
 
 BCLCFG = config.get("bclconvert", {})
+BCL_RUNTIME_VERSION = "4.0.3"
 BCL_TARGET_REQUESTED = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS)
 BCL_RUN_CONTEXT = run_context_for_platform("ILMN", require=False)
 if BCL_RUN_CONTEXT is not None and BCL_TARGET_REQUESTED:
@@ -92,6 +93,7 @@ BCL_TABLE_DIR = f"{BCL_ROOT}/tables"
 BCL_METRIC_DIR = f"{BCL_ROOT}/metrics"
 BCL_REPORT_OUT_DIR = BCL_ROOT if BCL_RUN_CONTEXT is not None else f"{BCL_ROOT}/reports"
 BCL_LOG_DIR = f"{BCL_ROOT}/logs"
+BCL_BENCH_DIR = f"{BCL_ROOT}/benchmarks"
 BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_data" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"
 BCL_MQC_LOG_DIR = f"{BCL_MQC_DIR}/logs"
 
@@ -156,13 +158,15 @@ rule bclconvert_validate_inputs:
         BCL_METRICS_ENV
     params:
         run_dir=BCL_RUN_DIR,
-        runtime_version="4.0.3",
+        runtime_version=BCL_RUNTIME_VERSION,
         keep_undetermined_fastqs="true" if BCL_KEEP_UNDETERMINED else "false",
         sampleproject_subdirectories="true" if BCL_SAMPLEPROJECT_SUBDIRS else "false",
         extra_args=BCL_EXTRA_ARGS,
         warnings_out=BCL_WARNINGS,
     log:
         f"{BCL_LOG_DIR}/bclconvert_validate_inputs.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/bclconvert_validate_inputs.bench.tsv",
     shell:
         r"""
         set -euo pipefail
@@ -208,7 +212,7 @@ rule run_bclconvert:
     threads:
         BCL_THREADS
     container:
-        "docker://nfcore/bclconvert:4.0.3"
+        f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
     params:
         run_dir=BCL_RUN_DIR,
         force="-f" if BCL_FORCE else "",
@@ -217,6 +221,8 @@ rule run_bclconvert:
         sampleproject_subdirectories="true" if BCL_SAMPLEPROJECT_SUBDIRS else "false",
     log:
         f"{BCL_LOG_DIR}/run_bclconvert.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/run_bclconvert.bench.tsv",
     shell:
         r"""
         set -euo pipefail
@@ -256,6 +262,8 @@ rule bclconvert_generate_units_tsv:
         seq_platform_override=BCL_SEQ_PLATFORM_OVERRIDE,
     log:
         f"{BCL_LOG_DIR}/bclconvert_generate_units_tsv.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/bclconvert_generate_units_tsv.bench.tsv",
     shell:
         r"""
         set -euo pipefail
@@ -289,6 +297,8 @@ rule bclconvert_metrics_summary:
         BCL_METRICS_ENV
     log:
         f"{BCL_LOG_DIR}/bclconvert_metrics_summary.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/bclconvert_metrics_summary.bench.tsv",
     shell:
         r"""
         set -euo pipefail
@@ -325,6 +335,8 @@ rule bclconvert_metrics_multiqc_exports:
         BCL_METRICS_ENV
     log:
         f"{BCL_MQC_LOG_DIR}/bclconvert_metrics_multiqc_exports.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/bclconvert_metrics_multiqc_exports.bench.tsv",
     shell:
         r"""
         set -euo pipefail
@@ -362,17 +374,21 @@ rule multiqc_bclconvert:
         multiqc_filename="multiqc_report.html" if BCL_RUN_CONTEXT is not None else "bclconvert.multiqc.html",
     log:
         f"{BCL_LOG_DIR}/multiqc_bclconvert.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/multiqc_bclconvert.bench.tsv",
     shell:
         r"""
         set -euo pipefail
         mkdir -p {BCL_REPORT_OUT_DIR:q}
         : > {log:q}
         multiqc -f \
+          -m bclconvert \
+          -m custom_content \
           --config {params.multiqc_cfg:q} \
           --template default \
           --filename {params.multiqc_filename:q} \
           --outdir {BCL_REPORT_OUT_DIR:q} \
-          {BCL_FASTQ_DIR:q} \
+          {BCL_REPORT_DIR:q} \
           {BCL_MQC_DIR:q} \
           >> {log:q} 2>&1
         test -s {output.html:q}

@@ -31,10 +31,21 @@ RUNQC_MULTIQC_ENV = (
 
 RUNQC_ILMN_TARGET_REQUESTED = bool(
     _requested_targets()
-    & {"produce_illumina_run_qc", "produce_read_fate_river", "produce_run_qc_reports"}
+    & {
+        "produce_illumina_run_qc",
+        "produce_illumina_run_qc_and_bclconvert",
+        "produce_read_fate_river",
+        "produce_run_qc_reports",
+    }
 )
 RUNQC_ONT_TARGET_REQUESTED = bool(
-    _requested_targets() & {"produce_ont_run_qc", "produce_run_qc_reports"}
+    _requested_targets()
+    & {
+        "produce_ont_run_qc",
+        "produce_ont_demux_fastq_qc",
+        "produce_ont_run_qc_and_demux_multiqc",
+        "produce_run_qc_reports",
+    }
 )
 RUNQC_UG_TARGET_REQUESTED = bool(
     _requested_targets() & {"produce_ultima_run_qc", "produce_run_qc_reports"}
@@ -90,6 +101,7 @@ RUNQC_ILMN_INTEROP_DIR = RUNQC_ILMN_SOURCE_RUN + "/InterOp"
 RUNQC_ILMN_REPORT_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_TABLE_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_LOG_DIR = RUNQC_ILMN_ROOT + "/logs"
+RUNQC_ILMN_BENCH_DIR = RUNQC_ILMN_ROOT + "/benchmarks"
 RUNQC_ILMN_REPORT_PREFIX = _runqc_safe_token(
     RUNQC_ILMN_CFG.get("report_prefix", "illumina_read_fate_river"),
     "illumina_read_fate_river",
@@ -119,6 +131,7 @@ RUNQC_ONT_RUN_S3_URI = (
 )
 RUNQC_ONT_TABLE_DIR = RUNQC_ONT_ROOT + "/tables"
 RUNQC_ONT_LOG_DIR = RUNQC_ONT_ROOT + "/logs"
+RUNQC_ONT_BENCH_DIR = RUNQC_ONT_ROOT + "/benchmarks"
 RUNQC_ONT_PYCOQC_DIR = RUNQC_ONT_ROOT + "/pycoqc"
 RUNQC_ONT_NANOPLOT_DIR = RUNQC_ONT_ROOT + "/nanoplot"
 RUNQC_ONT_SUMMARY_LIST = RUNQC_ONT_TABLE_DIR + "/sequencing_summary_files.txt"
@@ -138,6 +151,8 @@ RUNQC_ONT_METRICS_PATH = (
 RUNQC_ONT_TARGET_INPUTS = [RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done"]
 if RUNQC_ONT_CONTEXT is not None:
     RUNQC_ONT_TARGET_INPUTS.append(RUNQC_ONT_MULTIQC_HTML)
+
+RUNQC_UG_BENCH_DIR = RUNQC_UG_ROOT + "/benchmarks"
 
 
 localrules:
@@ -179,6 +194,8 @@ rule illumina_run_qc_fetch_metric_subset:
         cluster_sample="illumina_run_qc_fetch_metric_subset",
     log:
         RUNQC_ILMN_LOG_DIR + "/metric_subset_fetched.log",
+    benchmark:
+        RUNQC_ILMN_BENCH_DIR + "/metric_subset_fetched.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -299,6 +316,8 @@ rule illumina_run_qc_interop_summary:
         cluster_sample="illumina_run_qc_interop_summary",
     log:
         RUNQC_ILMN_LOG_DIR + "/interop_summary.log",
+    benchmark:
+        RUNQC_ILMN_BENCH_DIR + "/interop_summary.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -327,6 +346,8 @@ rule illumina_run_qc_checkqc_json:
         cluster_sample="illumina_run_qc_checkqc_json",
     log:
         RUNQC_ILMN_LOG_DIR + "/checkqc.log",
+    benchmark:
+        RUNQC_ILMN_BENCH_DIR + "/checkqc.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -361,6 +382,8 @@ rule illumina_run_qc_report:
         cluster_sample="illumina_run_qc_report",
     log:
         RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_report.log",
+    benchmark:
+        RUNQC_ILMN_BENCH_DIR + "/illumina_run_qc_report.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -392,6 +415,8 @@ rule illumina_run_qc_multiqc:
         cluster_sample="illumina_run_qc_multiqc",
     log:
         RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_multiqc.log",
+    benchmark:
+        RUNQC_ILMN_BENCH_DIR + "/illumina_run_qc_multiqc.bench.tsv",
     conda:
         RUNQC_MULTIQC_ENV
     shell:
@@ -428,6 +453,8 @@ rule illumina_run_qc_read_fate_river:
         cluster_sample="illumina_run_qc_read_fate_river",
     log:
         RUNQC_ILMN_LOG_DIR + "/illumina_read_fate_river.log",
+    benchmark:
+        RUNQC_ILMN_BENCH_DIR + "/illumina_read_fate_river.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -464,6 +491,8 @@ rule ont_run_qc_collect_summaries:
         cluster_sample="ont_run_qc_collect_summaries",
     log:
         RUNQC_ONT_LOG_DIR + "/collect_summaries.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/collect_summaries.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -496,6 +525,8 @@ rule ont_run_qc_pycoqc:
         cluster_sample="ont_run_qc_pycoqc",
     log:
         RUNQC_ONT_LOG_DIR + "/pycoqc.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/pycoqc.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -529,6 +560,8 @@ rule ont_run_qc_nanoplot:
         cluster_sample="ont_run_qc_nanoplot",
     log:
         RUNQC_ONT_LOG_DIR + "/nanoplot.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/nanoplot.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -562,6 +595,8 @@ rule ont_run_qc_multiqc:
         cluster_sample="ont_run_qc_multiqc",
     log:
         RUNQC_ONT_LOG_DIR + "/multiqc.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/multiqc.bench.tsv",
     conda:
         RUNQC_MULTIQC_ENV
     shell:
@@ -587,6 +622,8 @@ rule ont_demux_fastq_group_list:
         cluster_sample="ont_demux_fastq_group_list",
     log:
         RUNQC_ONT_LOG_DIR + "/demux_fastq_group_list.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/demux_fastq_group_list.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -622,6 +659,8 @@ rule ont_demux_fastq_qc:
         cluster_sample="ont_demux_fastq_qc",
     log:
         RUNQC_ONT_LOG_DIR + "/demux_fastq_qc.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/demux_fastq_qc.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -679,6 +718,8 @@ rule ont_demux_fastq_multiqc:
         cluster_sample="ont_demux_fastq_multiqc",
     log:
         RUNQC_ONT_LOG_DIR + "/demux_fastq_multiqc.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/demux_fastq_multiqc.bench.tsv",
     conda:
         RUNQC_MULTIQC_ENV
     shell:
@@ -710,6 +751,8 @@ rule ont_run_qc_report:
         cluster_sample="ont_run_qc_report",
     log:
         RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.log",
+    benchmark:
+        RUNQC_ONT_BENCH_DIR + "/ont_run_qc_report.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -737,6 +780,8 @@ rule ultima_run_qc_report:
         cluster_sample="ultima_run_qc_report",
     log:
         RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.log",
+    benchmark:
+        RUNQC_UG_BENCH_DIR + "/ultima_run_qc_report.bench.tsv",
     conda:
         RUNQC_ENV
     shell:

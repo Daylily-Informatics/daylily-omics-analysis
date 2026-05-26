@@ -39,6 +39,25 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
     assert "rule produce_ont_run_qc_and_demux_multiqc:" in rules
     assert "rule produce_run_qc_reports:" in rules
     assert "run_qc/" in rules
+    assert "RUNQC_ILMN_BENCH_DIR" in rules
+    assert "RUNQC_ONT_BENCH_DIR" in rules
+    assert "RUNQC_UG_BENCH_DIR" in rules
+    for rule_name in (
+        "illumina_run_qc_fetch_metric_subset",
+        "illumina_run_qc_interop_summary",
+        "illumina_run_qc_checkqc_json",
+        "illumina_run_qc_multiqc",
+        "ont_run_qc_collect_summaries",
+        "ont_run_qc_pycoqc",
+        "ont_run_qc_nanoplot",
+        "ont_demux_fastq_qc",
+        "ont_demux_fastq_multiqc",
+        "ultima_run_qc_report",
+    ):
+        block = rules[rules.index(f"rule {rule_name}:") :]
+        block = block.split("\nrule ", 1)[0]
+        assert "log:" in block, rule_name
+        assert "benchmark:" in block, rule_name
     assert "run_qc/" not in final_multiqc
     assert "produce_run_qc_reports" not in final_multiqc
 
@@ -57,6 +76,7 @@ def test_illumina_run_qc_contract_uses_explicit_inputs_and_metric_subset() -> No
         assert required in rules
 
     assert 'RUNQC_ILMN_MODE = _runqc_illumina_mode(RUNQC_ILMN_CONTEXT)' in rules
+    assert '"produce_illumina_run_qc_and_bclconvert"' in rules
     assert 'RUNQC_ILMN_ROOT = _runqc_root(RUNQC_ILMN_CONTEXT, "illumina")' in rules
     assert 'RUNQC_ILMN_REPORT_DIR + "/summary.html"' in rules
     assert 'RUNQC_ILMN_TABLE_DIR + "/summary.tsv"' in rules
@@ -104,6 +124,8 @@ def test_ont_mounted_run_qc_and_demux_contracts_use_rule_env_tools() -> None:
         assert required in rules
 
     assert "conda run -n" not in rules
+    assert '"produce_ont_run_qc_and_demux_multiqc"' in rules
+    assert '"produce_ont_demux_fastq_qc"' in rules
     assert "RUNQC_ONT_CONTEXT is not None" in rules
     assert "RUNQC_ONT_PYCOQC_JSON" in rules
     assert "RUNQC_ONT_DEMUX_MULTIQC_HTML" in rules

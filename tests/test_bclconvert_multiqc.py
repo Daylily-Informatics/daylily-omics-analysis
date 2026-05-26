@@ -34,6 +34,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     multiqc = _read("workflow/rules/multiqc_final_wgs.smk")
 
     assert 'BCL_RUN_CONTEXT = run_context_for_platform("ILMN", require=False)' in rule
+    assert 'BCL_RUNTIME_VERSION = "4.0.3"' in rule
     assert "BCL_TARGET_REQUESTED = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS)" in rule
     assert 'BCL_ROOT = (' in rule
     assert 'f"{BCL_OUTPUT_ROOT}/bclconvert"' in rule
@@ -42,6 +43,10 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert 'f"{BCL_ROOT}/bclconvert_metrics_mqc.done"' in rule
     assert "multiqc_report.html" in rule
     assert "generated.units.tsv" in rule
+    assert "BCL_BENCH_DIR" in rule
+    assert "-m bclconvert" in rule
+    assert "-m custom_content" in rule
+    assert "-m fastqc" not in rule
     assert "rule bclconvert_metrics_multiqc_exports:" in rule
     assert "workflow/scripts/bclconvert_metrics_to_multiqc.py" in rule
     assert "bclconvert_demux_mqc.tsv" in rule
