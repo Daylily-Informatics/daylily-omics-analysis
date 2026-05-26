@@ -371,8 +371,8 @@ rule run_bclconvert:
                 scratch_run_dir="$scratch_dir/run"
                 scratch_output_dir="$scratch_dir/fastqs"
                 scratch_sync_log_dir="$scratch_dir/rsync_logs"
-                stage_metadata_log="{params.log_dir}/mounted_metadata.log"
-                stage_files_log="{params.log_dir}/mounted_files.log"
+                stage_metadata_log="{BCL_LOG_DIR:q}/mounted_metadata.log"
+                stage_files_log="{BCL_LOG_DIR:q}/mounted_files.log"
                 mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
                 lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
                 if [ ! -d "$lane_root" ]; then
