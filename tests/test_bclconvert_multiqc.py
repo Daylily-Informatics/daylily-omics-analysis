@@ -176,6 +176,7 @@ def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lan
                 "[BCLConvert_Settings]",
                 "SoftwareVersion,4.3.16",
                 "OverrideCycles,Y151;I10;I10;Y151",
+                "GenerateFastqcMetrics,true",
                 "",
                 "[BCLConvert_Data]",
                 "Sample_ID,Index,Index2",
@@ -220,7 +221,9 @@ def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lan
 
     parsed_rows = _read_tsv(rows_tsv)
     assert {row["LANE"] for row in parsed_rows} == {"*"}
-    assert "SoftwareVersion,4.0.3" in normalized.read_text(encoding="utf-8")
+    normalized_text = normalized.read_text(encoding="utf-8")
+    assert "SoftwareVersion,4.0.3" in normalized_text
+    assert "GenerateFastqcMetrics" not in normalized_text
 
     fastq_list = tmp_path / "fastq_list.csv"
     fastq_list.write_text(

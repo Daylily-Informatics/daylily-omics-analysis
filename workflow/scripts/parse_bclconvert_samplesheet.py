@@ -27,6 +27,9 @@ ROW_COLUMNS = (
 )
 
 SECTION_RE = re.compile(r"^\[(?P<name>[^\]]+)\]")
+STRIPPED_BCLCONVERT_SETTINGS = {
+    "GenerateFastqcMetrics",
+}
 
 
 class SampleSheetError(RuntimeError):
@@ -222,11 +225,11 @@ def _csv_line(row: list[str]) -> str:
     return buffer.getvalue()
 
 
-def write_normalized_sample_sheet(sample_sheet: str, normalized_out: str, runtime_version: str) -> str | None:
+def write_normalized_sample_sheet(sample_sheet: str, normalized_out: str, runtime_version: str) -> list[str]:
     text = Path(sample_sheet).read_text(encoding="utf-8-sig")
     target_version = (runtime_version or "").strip()
     current_section = ""
-    rewrite_message: str | None = None
+    messages: list[str] = []
     normalized_lines: list[str] = []
 
     for raw_line in text.splitlines():
@@ -237,23 +240,34 @@ def write_normalized_sample_sheet(sample_sheet: str, normalized_out: str, runtim
             normalized_lines.append(raw_line)
             continue
 
-        if target_version and current_section == "BCLConvert_Settings" and stripped:
+        if current_section == "BCLConvert_Settings" and stripped:
             row = next(csv.reader([raw_line]))
-            if row and row[0].strip() == "SoftwareVersion":
+            key = row[0].strip() if row else ""
+            if key in STRIPPED_BCLCONVERT_SETTINGS:
+                message = (
+                    "INFO: stripped unsupported BCLConvert setting "
+                    f"{key} from normalized sample sheet"
+                )
+                print(message, file=sys.stderr)
+                messages.append(message)
+                continue
+
+            if target_version and key == "SoftwareVersion":
                 original_version = ",".join(row[1:]).strip() if len(row) > 1 else ""
                 if original_version != target_version:
                     raw_line = _csv_line([row[0], target_version])
-                    rewrite_message = (
+                    message = (
                         "INFO: normalized sample sheet SoftwareVersion "
                         f"from {original_version} to pinned runtime {target_version}"
                     )
-                    print(rewrite_message, file=sys.stderr)
+                    print(message, file=sys.stderr)
+                    messages.append(message)
 
         normalized_lines.append(raw_line)
 
     Path(normalized_out).parent.mkdir(parents=True, exist_ok=True)
     Path(normalized_out).write_text("\n".join(normalized_lines) + "\n", encoding="utf-8")
-    return rewrite_message
+    return messages
 
 
 def main() -> int:
@@ -350,7 +364,7 @@ def main() -> int:
             }
         )
 
-    rewrite_message = write_normalized_sample_sheet(args.sample_sheet, args.normalized_out, args.runtime_version)
+    rewrite_messages = write_normalized_sample_sheet(args.sample_sheet, args.normalized_out, args.runtime_version)
 
     out_path = Path(args.rows_out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -362,9 +376,7 @@ def main() -> int:
     if args.warnings_out:
         warnings_path = Path(args.warnings_out)
         warnings_path.parent.mkdir(parents=True, exist_ok=True)
-        warning_messages = [
-            message for message in (warning_message, rewrite_message) if message is not None
-        ]
+        warning_messages = [message for message in (warning_message, *rewrite_messages) if message is not None]
         contents = "".join(message + "\n" for message in warning_messages)
         warnings_path.write_text(contents, encoding="utf-8")
 

@@ -312,8 +312,10 @@ test_valid_fixture_parses() {
   if run_parser "$FIXTURE_SHEET" "$FIXTURE_SAMPLES" "$normalized" "$rows" "$stderr"; then
     exit_code=0
     grep -q "SoftwareVersion,4.0.3" "$normalized" || exit_code=1
+    ! grep -q "GenerateFastqcMetrics" "$normalized" || exit_code=1
     grep -q "WARNING: sample sheet SoftwareVersion 4.3.16 is newer than pinned runtime 4.0.3" "$stderr" || exit_code=1
     grep -q "INFO: normalized sample sheet SoftwareVersion from 4.3.16 to pinned runtime 4.0.3" "$stderr" || exit_code=1
+    grep -q "INFO: stripped unsupported BCLConvert setting GenerateFastqcMetrics from normalized sample sheet" "$stderr" || exit_code=1
     [[ $(wc -l < "$rows") -eq 9 ]] || exit_code=1
   else
     exit_code=$?
