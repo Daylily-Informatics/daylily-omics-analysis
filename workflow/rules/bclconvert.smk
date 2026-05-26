@@ -185,7 +185,8 @@ rule bclconvert_validate_inputs:
             echo "keep_undetermined_fastqs=false is unsupported for the bclconvert bootstrap path" >> {log:q}
             exit 2
         fi
-        if [ -n {params.extra_args:q} ]; then
+        bcl_extra_args={params.extra_args:q}
+        if [ -n "$bcl_extra_args" ]; then
             echo "bclconvert.extra_args is not supported in this shell-only bootstrap workflow" >> {log:q}
             exit 2
         fi
@@ -271,13 +272,14 @@ rule bclconvert_generate_units_tsv:
         r"""
         set -euo pipefail
         : > {log:q}
+        seq_platform_override={params.seq_platform_override:q}
         python workflow/scripts/bclconvert_fastq_list_to_units.py \
           --fastq-list {input.fastq_list:q} \
           --sample-sheet-rows {input.sample_sheet_rows:q} \
           --run-id {params.run_id:q} \
           --libprep {params.libprep:q} \
           --seq-vendor {params.seq_vendor:q} \
-          --seq-platform-override {params.seq_platform_override:q} \
+          --seq-platform-override "$seq_platform_override" \
           --units-out {output.units:q} \
           >> {log:q} 2>&1
         """

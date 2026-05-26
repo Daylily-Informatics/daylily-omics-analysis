@@ -44,6 +44,8 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "multiqc_report.html" in rule
     assert "generated.units.tsv" in rule
     assert "BCL_BENCH_DIR" in rule
+    assert "bcl_extra_args={params.extra_args:q}" in rule
+    assert '--seq-platform-override "$seq_platform_override"' in rule
     for rule_name in (
         "bclconvert_validate_inputs",
         "run_bclconvert",

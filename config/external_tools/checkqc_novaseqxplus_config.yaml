@@ -1,0 +1,34 @@
+# checkQC run-level thresholds for NovaSeq X Plus 4-flowcell 2x151 runs.
+
+parser_configurations:
+  StatsJsonParser:
+    bcl2fastq_output_path: Data/Intensities/BaseCalls
+  SamplesheetParser:
+    samplesheet_name: SampleSheet.csv
+
+default_handlers:
+  - name: UndeterminedPercentageHandler
+    warning: unknown
+    error: 9
+  - name: UnidentifiedIndexHandler
+    significance_threshold: 1
+    white_listed_indexes:
+      - .*N.*
+      - G{6,}
+
+novaseqxplus_4:
+  151:
+    handlers:
+      - name: ClusterPFHandler
+        warning: 2000
+        error: unknown
+      - name: Q30Handler
+        warning: 85
+        error: unknown
+      - name: ErrorRateHandler
+        allow_missing_error_rate: False
+        warning: 5
+        error: unknown
+      - name: ReadsPerSampleHandler
+        warning: unknown
+        error: 1500

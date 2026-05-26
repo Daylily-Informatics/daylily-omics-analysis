@@ -102,6 +102,10 @@ RUNQC_ILMN_REPORT_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_TABLE_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_LOG_DIR = RUNQC_ILMN_ROOT + "/logs"
 RUNQC_ILMN_BENCH_DIR = RUNQC_ILMN_ROOT + "/benchmarks"
+RUNQC_ILMN_CHECKQC_CONFIG = (
+    _runqc_text(RUNQC_ILMN_CFG, "checkqc_config_file")
+    or "config/external_tools/checkqc_novaseqxplus_config.yaml"
+)
 RUNQC_ILMN_REPORT_PREFIX = _runqc_safe_token(
     RUNQC_ILMN_CFG.get("report_prefix", "illumina_read_fate_river"),
     "illumina_read_fate_river",
@@ -326,7 +330,11 @@ rule illumina_run_qc_interop_summary:
         mkdir -p $(dirname {output.summary:q}) $(dirname {log:q})
         : > {log:q}
         test -d {params.interop_dir:q}
-        python workflow/scripts/write_interop_summary_csv.py \
+        if [ -z "${{CONDA_PREFIX:-}}" ]; then
+            echo "CONDA_PREFIX is required for illumina_run_qc_interop_summary" >> {log:q}
+            exit 2
+        fi
+        "$CONDA_PREFIX/bin/python" workflow/scripts/write_interop_summary_csv.py \
           --run-folder {params.source_run:q} \
           --summary-out {output.summary:q} \
           --index-summary-out {output.index_summary:q} \
@@ -343,7 +351,7 @@ rule illumina_run_qc_checkqc_json:
         json=RUNQC_ILMN_TABLE_DIR + "/checkqc.json",
     params:
         source_run=RUNQC_ILMN_SOURCE_RUN,
-        config_file=_runqc_text(RUNQC_ILMN_CFG, "checkqc_config_file"),
+        config_file=RUNQC_ILMN_CHECKQC_CONFIG,
         cluster_sample="illumina_run_qc_checkqc_json",
     log:
         RUNQC_ILMN_LOG_DIR + "/checkqc.log",

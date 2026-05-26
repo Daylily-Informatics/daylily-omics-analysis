@@ -97,6 +97,8 @@ def test_checkqc_interop_and_placeholder_contracts_fail_loudly() -> None:
 
     assert "workflow/scripts/write_interop_summary_csv.py" in rules
     assert "--index-summary-out {output.index_summary:q}" in rules
+    assert '"$CONDA_PREFIX/bin/python" workflow/scripts/write_interop_summary_csv.py' in rules
+    assert "checkqc_novaseqxplus_config.yaml" in rules
     assert "checkqc --json {params.source_run:q}" in rules
     assert "checkqc --config \"$checkqc_config\" --json" in rules
     assert "-m checkqc" in rules
@@ -161,6 +163,15 @@ def test_run_qc_scripts_compile() -> None:
         "bin/build_illumina_read_fate_river.py",
     ):
         py_compile.compile(str(REPO_ROOT / path), doraise=True)
+
+
+def test_novaseqxplus_checkqc_config_is_explicit() -> None:
+    config = _read("config/external_tools/checkqc_novaseqxplus_config.yaml")
+
+    assert "novaseqxplus_4:" in config
+    assert "151:" in config
+    assert "ClusterPFHandler" in config
+    assert "Q30Handler" in config
 
 
 def test_summarize_run_qc_report_outputs_and_missing_input_failure(tmp_path: Path) -> None:
