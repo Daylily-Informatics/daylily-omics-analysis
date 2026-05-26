@@ -981,6 +981,39 @@ rule sentdhiomr_stage3:
 
         echo "Starting Stage 3 at $(date)" >> {log}
 
+        if [ ! -s {input.bed} ]; then
+            echo "WARNING: hybrid_stage2.bed is empty - no Stage 3 realignment regions; creating empty BAM" >> {log}
+            (
+                samtools view -H {input.lr_cram} | awk -v sample="{params.cluster_sample}" '
+                    $1=="@HD" || $1=="@SQ" {{ print }}
+                    $1=="@RG" {{
+                        id="";
+                        for (i=1; i<=NF; i++) {{
+                            if ($i ~ /^ID:/) {{
+                                id=$i;
+                                sub(/^ID:/, "", id)
+                            }}
+                        }}
+                        if (id != "") print "@RG\tID:" id "\tSM:" sample "\tLR:1"
+                    }}'
+                samtools view -H {input.sr_bam} | awk -v sample="{params.cluster_sample}" '
+                    $1=="@RG" {{
+                        id="";
+                        for (i=1; i<=NF; i++) {{
+                            if ($i ~ /^ID:/) {{
+                                id=$i;
+                                sub(/^ID:/, "", id)
+                            }}
+                        }}
+                        if (id != "") print "@RG\tID:" id "\tSM:" sample
+                    }}'
+            ) | samtools view -bo {output.bam} - 2>> {log}
+            samtools quickcheck {output.bam} >> {log} 2>&1 || \
+                (echo "ERROR: empty Stage3 BAM failed integrity check" >> {log} && exit 1)
+            echo "Stage 3 completed with empty input regions at $(date)" >> {log}
+            exit 0
+        fi
+
         # NOTE: Input ONT BAM must have clean @PG headers (no broken PP chain).
         # Use bin/util/fix_ont_cram_headers.sh to pre-process if needed.
 
@@ -1043,6 +1076,7 @@ rule sentdhiomr_pass2:
         lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
         stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
+        initial_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
@@ -1079,6 +1113,14 @@ rule sentdhiomr_pass2:
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting Pass 2 DNAscope at $(date)" >> {log}
+
+        if [ ! -s {input.bed} ]; then
+            echo "WARNING: hybrid_stage2.bed is empty - no Pass 2 regions; creating empty VCF" >> {log}
+            bcftools view --threads {threads} -h {input.initial_vcf} | bgzip -c > {output.vcf}
+            tabix -f -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
+            echo "Pass 2 completed with empty input regions at $(date)" >> {log}
+            exit 0
+        fi
 
         # Build --replace_rg args: LR reads get LR:1 tag for hybrid model.
         # This also unifies SM tags across lr_cram and stage3_bam so sentieon

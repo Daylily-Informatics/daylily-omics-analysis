@@ -100,3 +100,24 @@ def test_sentdhiomr_stage1_handles_empty_merged_diff_beds() -> None:
         "sentdhiomr_stage1 must tolerate valid empty merged_diff.bed shards:\n"
         + "\n".join(missing)
     )
+
+
+def test_sentdhiomr_late_stages_handle_empty_refined_regions() -> None:
+    path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ilmn_ont_modular.refactored.smk"
+    text = path.read_text(encoding="utf-8")
+
+    required_fragments = [
+        "if [ ! -s {input.bed} ]; then",
+        "WARNING: hybrid_stage2.bed is empty - no Stage 3 realignment regions; creating empty BAM",
+        "Stage 3 completed with empty input regions",
+        "initial_vcf=MDIR + \"{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz\"",
+        "WARNING: hybrid_stage2.bed is empty - no Pass 2 regions; creating empty VCF",
+        "bcftools view --threads {threads} -h {input.initial_vcf} | bgzip -c > {output.vcf}",
+        "Pass 2 completed with empty input regions",
+    ]
+    missing = [fragment for fragment in required_fragments if fragment not in text]
+
+    assert not missing, (
+        "sentdhiomr_stage3/pass2 must tolerate valid empty refined-region shards:\n"
+        + "\n".join(missing)
+    )
