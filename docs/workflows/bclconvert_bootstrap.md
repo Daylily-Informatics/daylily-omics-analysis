@@ -73,6 +73,7 @@ No symlink is needed in `results/day/<genome_build>/`; the workflow writes the M
 | `produce_bclconvert_metrics` | Gather normalized BCL Convert metrics and write genome-build MultiQC custom-data TSVs. |
 | `produce_bclconvert_multiqc` | Gather BCL metrics and build the focused BCL Convert MultiQC HTML. |
 | `produce_bclconvert_fastqs_and_metrics` | Full bootstrap path: FASTQs, generated `units.tsv`, normalized metrics, genome-build MultiQC TSVs, and focused BCL Convert MultiQC HTML. |
+| `produce_illumina_run_qc_and_bclconvert` | Mounted run-analysis path that runs Illumina InterOp/CheckQC run QC and the full BCL Convert bootstrap demux/report chain in one output tree. |
 
 ## Example Commands
 

@@ -140,8 +140,11 @@ write under `results/runs/<runid>/run_qc/`:
 | Target | Inputs | Outputs |
 | --- | --- | --- |
 | `produce_illumina_run_qc` | `config/runs.tsv` Illumina row with mounted `RUN_DIR`, or explicit `SOURCE_S3_URI`, `PROFILE`, and `REGION` for S3 mode | InterOp CSVs, CheckQC JSON, `summary.html`, `summary.tsv`, and focused InterOp/CheckQC MultiQC HTML |
+| `produce_illumina_run_qc_and_bclconvert` | the same Illumina run context plus a valid BCL Convert SampleSheet | Illumina run QC, BCL Convert FASTQs, generated units table, BCL demux metric TSVs, and focused BCL Convert MultiQC in the same run-analysis output tree |
 | `produce_read_fate_river` | the same Illumina run context plus `other_reports/alignstats_combo_mqc.tsv` | read-fate RIVER HTML, TSV, Markdown, and raw-metric inventory |
-| `produce_ont_run_qc` | explicit `run_qc.ont.metrics_path` and optional run URI | ONT HTML/TSV summary |
+| `produce_ont_run_qc` | `config/runs.tsv` ONT row with mounted `RUN_DIR`, or explicit `run_qc.ont.metrics_path` and optional run URI | ONT PycoQC, NanoPlot, run-summary HTML/TSV, and focused ONT run MultiQC when mounted run data is supplied |
+| `produce_ont_demux_fastq_qc` | `config/runs.tsv` ONT row with mounted `RUN_DIR` containing demuxed FASTQ groups | per-barcode/status SeqKit, Nanoq, NanoStat, NanoPlot outputs and focused demux FASTQ MultiQC |
+| `produce_ont_run_qc_and_demux_multiqc` | mounted ONT run context containing sequencing summaries and demuxed FASTQs | ONT run QC plus demux FASTQ MultiQC in the same run-analysis output tree |
 | `produce_ultima_run_qc` | explicit `run_qc.ultima.metrics_path` and optional run URI | Ultima HTML/TSV summary |
 | `produce_run_qc_reports` | all explicit run-level inputs above | all run-level reports |
 

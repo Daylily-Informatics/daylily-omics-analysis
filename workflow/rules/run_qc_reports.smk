@@ -57,6 +57,20 @@ def _runqc_root(context, platform_dir):
     return f"{context['OUTPUT_ROOT_RESOLVED'].rstrip('/')}/run_qc/{platform_dir}"
 
 
+def _runqc_mounted_run_dir(context, platform_name, target_requested):
+    if context is None:
+        return ""
+    if not _filled(context.get("RUN_DIR", "")):
+        raise WorkflowError(
+            f"RUNID={context['RUNID']} must populate RUN_DIR for mounted {platform_name} run QC."
+        )
+    return context["RUN_DIR"]
+
+
+def _runqc_optional_input(path):
+    return path if _filled(path) else []
+
+
 def _runqc_illumina_mode(context):
     if context is None:
         return ""
@@ -95,6 +109,35 @@ RUNQC_ILMN_RIVER_INVENTORY = (
 
 RUNQC_ONT_ROOT = _runqc_root(RUNQC_ONT_CONTEXT, "ont")
 RUNQC_UG_ROOT = _runqc_root(RUNQC_UG_CONTEXT, "ultima")
+RUNQC_ONT_RUN_DIR = _runqc_mounted_run_dir(
+    RUNQC_ONT_CONTEXT, "ONT", RUNQC_ONT_TARGET_REQUESTED
+)
+RUNQC_ONT_RUN_S3_URI = (
+    _runqc_text(RUNQC_ONT_CFG, "run_s3_uri")
+    if RUNQC_ONT_CONTEXT is None
+    else RUNQC_ONT_CONTEXT["SOURCE_S3_URI"]
+)
+RUNQC_ONT_TABLE_DIR = RUNQC_ONT_ROOT + "/tables"
+RUNQC_ONT_LOG_DIR = RUNQC_ONT_ROOT + "/logs"
+RUNQC_ONT_PYCOQC_DIR = RUNQC_ONT_ROOT + "/pycoqc"
+RUNQC_ONT_NANOPLOT_DIR = RUNQC_ONT_ROOT + "/nanoplot"
+RUNQC_ONT_SUMMARY_LIST = RUNQC_ONT_TABLE_DIR + "/sequencing_summary_files.txt"
+RUNQC_ONT_PYCOQC_HTML = RUNQC_ONT_PYCOQC_DIR + "/pycoQC.html"
+RUNQC_ONT_PYCOQC_JSON = RUNQC_ONT_PYCOQC_DIR + "/pycoQC.json"
+RUNQC_ONT_NANOPLOT_DONE = RUNQC_ONT_NANOPLOT_DIR + "/nanoplot.done"
+RUNQC_ONT_MULTIQC_HTML = RUNQC_ONT_ROOT + "/multiqc_report.html"
+RUNQC_ONT_DEMUX_ROOT = RUNQC_ONT_ROOT + "/demux_fastq_qc"
+RUNQC_ONT_DEMUX_GROUP_LIST = RUNQC_ONT_DEMUX_ROOT + "/fastq_group_dirs.txt"
+RUNQC_ONT_DEMUX_DONE = RUNQC_ONT_DEMUX_ROOT + "/ont_demux_fastq_qc.done"
+RUNQC_ONT_DEMUX_MULTIQC_HTML = RUNQC_ONT_ROOT + "/ont_demux_fastq.multiqc.html"
+RUNQC_ONT_METRICS_PATH = (
+    RUNQC_ONT_PYCOQC_JSON
+    if RUNQC_ONT_CONTEXT is not None
+    else _runqc_text(RUNQC_ONT_CFG, "metrics_path")
+)
+RUNQC_ONT_TARGET_INPUTS = [RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done"]
+if RUNQC_ONT_CONTEXT is not None:
+    RUNQC_ONT_TARGET_INPUTS.append(RUNQC_ONT_MULTIQC_HTML)
 
 
 localrules:
@@ -104,10 +147,20 @@ localrules:
     illumina_run_qc_report,
     illumina_run_qc_multiqc,
     illumina_run_qc_read_fate_river,
+    produce_illumina_run_qc_and_bclconvert,
+    ont_run_qc_collect_summaries,
+    ont_run_qc_pycoqc,
+    ont_run_qc_nanoplot,
+    ont_run_qc_multiqc,
+    ont_demux_fastq_group_list,
+    ont_demux_fastq_qc,
+    ont_demux_fastq_multiqc,
     ont_run_qc_report,
     ultima_run_qc_report,
     produce_illumina_run_qc,
     produce_ont_run_qc,
+    produce_ont_demux_fastq_qc,
+    produce_ont_run_qc_and_demux_multiqc,
     produce_ultima_run_qc,
     produce_read_fate_river,
     produce_run_qc_reports,
@@ -396,14 +449,264 @@ rule illumina_run_qc_read_fate_river:
         """
 
 
+rule produce_illumina_run_qc_and_bclconvert:  # TARGET: mounted Illumina run QC plus BCL Convert demux and demux MultiQC
+    input:
+        RUNQC_ILMN_REPORT_DIR + "/summary.html",
+        RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
+        BCL_BOOTSTRAP_COMPLETE,
+
+
+rule ont_run_qc_collect_summaries:
+    output:
+        summary_list=RUNQC_ONT_SUMMARY_LIST,
+    params:
+        run_dir=RUNQC_ONT_RUN_DIR,
+        cluster_sample="ont_run_qc_collect_summaries",
+    log:
+        RUNQC_ONT_LOG_DIR + "/collect_summaries.log",
+    conda:
+        RUNQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.summary_list:q}) $(dirname {log:q})
+        : > {log:q}
+        if [ -z {params.run_dir:q} ]; then
+            echo "config/runs.tsv with PLATFORM=ONT and RUN_DIR is required for mounted ONT run QC" >> {log:q}
+            exit 2
+        fi
+        test -d {params.run_dir:q}
+        find {params.run_dir:q} -type f \( -name 'sequencing_summary*.txt' -o -name 'sequencing_summary*.txt.gz' \) \
+          | sort > {output.summary_list:q}
+        if [ ! -s {output.summary_list:q} ]; then
+            echo "No sequencing_summary*.txt files found under {params.run_dir}" >> {log:q}
+            exit 2
+        fi
+        """
+
+
+rule ont_run_qc_pycoqc:
+    input:
+        summary_list=RUNQC_ONT_SUMMARY_LIST,
+    output:
+        html=RUNQC_ONT_PYCOQC_HTML,
+        json=RUNQC_ONT_PYCOQC_JSON,
+    params:
+        run_id="" if RUNQC_ONT_CONTEXT is None else RUNQC_ONT_CONTEXT["RUNID"],
+        cluster_sample="ont_run_qc_pycoqc",
+    log:
+        RUNQC_ONT_LOG_DIR + "/pycoqc.log",
+    conda:
+        RUNQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {RUNQC_ONT_PYCOQC_DIR:q} $(dirname {log:q})
+        : > {log:q}
+        command -v pycoQC >> {log:q} 2>&1
+        mapfile -t summary_files < {input.summary_list:q}
+        pycoQC \
+          -f "${summary_files[@]}" \
+          -o {output.html:q} \
+          -j {output.json:q} \
+          --report_title {params.run_id:q} \
+          >> {log:q} 2>&1
+        test -s {output.html:q}
+        test -s {output.json:q}
+        """
+
+
+rule ont_run_qc_nanoplot:
+    input:
+        summary_list=RUNQC_ONT_SUMMARY_LIST,
+    output:
+        done=touch(RUNQC_ONT_NANOPLOT_DONE),
+    threads:
+        8
+    params:
+        run_id="" if RUNQC_ONT_CONTEXT is None else RUNQC_ONT_CONTEXT["RUNID"],
+        out_dir=RUNQC_ONT_NANOPLOT_DIR,
+        cluster_sample="ont_run_qc_nanoplot",
+    log:
+        RUNQC_ONT_LOG_DIR + "/nanoplot.log",
+    conda:
+        RUNQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.out_dir:q} $(dirname {log:q})
+        : > {log:q}
+        command -v NanoPlot >> {log:q} 2>&1
+        mapfile -t summary_files < {input.summary_list:q}
+        NanoPlot \
+          --summary "${summary_files[@]}" \
+          --loglength \
+          --tsv_stats \
+          --info_in_report \
+          -t {threads} \
+          -o {params.out_dir:q} \
+          -p {params.run_id:q}. \
+          >> {log:q} 2>&1
+        """
+
+
+rule ont_run_qc_multiqc:
+    input:
+        pycoqc_html=RUNQC_ONT_PYCOQC_HTML,
+        pycoqc_json=RUNQC_ONT_PYCOQC_JSON,
+        nanoplot_done=RUNQC_ONT_NANOPLOT_DONE,
+    output:
+        html=RUNQC_ONT_MULTIQC_HTML,
+    params:
+        root=RUNQC_ONT_ROOT,
+        cluster_sample="ont_run_qc_multiqc",
+    log:
+        RUNQC_ONT_LOG_DIR + "/multiqc.log",
+    conda:
+        RUNQC_MULTIQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
+        multiqc --version > {log:q} 2>&1 || true
+        multiqc -f \
+          -m pycoqc \
+          -m nanostat \
+          --filename "$(basename {output.html:q})" \
+          --outdir "$(dirname {output.html:q})" \
+          {params.root:q} >> {log:q} 2>&1
+        test -s {output.html:q}
+        """
+
+
+rule ont_demux_fastq_group_list:
+    output:
+        group_list=RUNQC_ONT_DEMUX_GROUP_LIST,
+    params:
+        run_dir=RUNQC_ONT_RUN_DIR,
+        cluster_sample="ont_demux_fastq_group_list",
+    log:
+        RUNQC_ONT_LOG_DIR + "/demux_fastq_group_list.log",
+    conda:
+        RUNQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.group_list:q}) $(dirname {log:q})
+        : > {log:q}
+        if [ -z {params.run_dir:q} ]; then
+            echo "config/runs.tsv with PLATFORM=ONT and RUN_DIR is required for ONT demux FASTQ QC" >> {log:q}
+            exit 2
+        fi
+        test -d {params.run_dir:q}
+        find {params.run_dir:q} -type f \( -name '*.fastq.gz' -o -name '*.fq.gz' \) \
+          | sed 's#/[^/]*$##' \
+          | sort -u > {output.group_list:q}
+        if [ ! -s {output.group_list:q} ]; then
+            echo "No demux FASTQ groups found under {params.run_dir}" >> {log:q}
+            exit 2
+        fi
+        """
+
+
+rule ont_demux_fastq_qc:
+    input:
+        group_list=RUNQC_ONT_DEMUX_GROUP_LIST,
+    output:
+        done=touch(RUNQC_ONT_DEMUX_DONE),
+    threads:
+        8
+    params:
+        out_root=RUNQC_ONT_DEMUX_ROOT,
+        run_id="" if RUNQC_ONT_CONTEXT is None else RUNQC_ONT_CONTEXT["RUNID"],
+        cluster_sample="ont_demux_fastq_qc",
+    log:
+        RUNQC_ONT_LOG_DIR + "/demux_fastq_qc.log",
+    conda:
+        RUNQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.out_root:q} $(dirname {log:q})
+        : > {log:q}
+        command -v seqkit >> {log:q} 2>&1
+        command -v nanoq >> {log:q} 2>&1
+        command -v NanoStat >> {log:q} 2>&1
+        command -v NanoPlot >> {log:q} 2>&1
+        while IFS= read -r fastq_dir; do
+            status="$(basename "$(dirname "$fastq_dir")")"
+            barcode="$(basename "$fastq_dir")"
+            sample="{params.run_id}-${{status}}-${{barcode}}"
+            sample_out="{params.out_root}/$sample"
+            file_list="$sample_out/$sample.fastq_files.txt"
+            mkdir -p "$sample_out/nanoplot"
+            find "$fastq_dir" -maxdepth 1 -type f \( -name '*.fastq.gz' -o -name '*.fq.gz' \) \
+              | sort > "$file_list"
+            if [ ! -s "$file_list" ]; then
+                echo "No FASTQs found for $sample under $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            mapfile -t fastqs < "$file_list"
+            seqkit stats --tabular "${fastqs[@]}" \
+              > "$sample_out/$sample.seqkit_stats.tsv" \
+              2>> {log:q}
+            nanoq "${fastqs[@]}" \
+              > "$sample_out/$sample.nanoq.txt" \
+              2>> {log:q}
+            NanoStat --fastq "${fastqs[@]}" \
+              > "$sample_out/$sample.NanoStat.fastq.txt" \
+              2>> {log:q}
+            NanoPlot \
+              --fastq "${fastqs[@]}" \
+              --loglength \
+              --tsv_stats \
+              --info_in_report \
+              -t {threads} \
+              -o "$sample_out/nanoplot" \
+              -p "$sample." \
+              >> {log:q} 2>&1
+        done < {input.group_list:q}
+        """
+
+
+rule ont_demux_fastq_multiqc:
+    input:
+        done=RUNQC_ONT_DEMUX_DONE,
+    output:
+        html=RUNQC_ONT_DEMUX_MULTIQC_HTML,
+    params:
+        root=RUNQC_ONT_DEMUX_ROOT,
+        cluster_sample="ont_demux_fastq_multiqc",
+    log:
+        RUNQC_ONT_LOG_DIR + "/demux_fastq_multiqc.log",
+    conda:
+        RUNQC_MULTIQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
+        multiqc --version > {log:q} 2>&1 || true
+        multiqc -f \
+          -m nanostat \
+          -m seqkit \
+          -m nanoq \
+          --filename "$(basename {output.html:q})" \
+          --outdir "$(dirname {output.html:q})" \
+          {params.root:q} >> {log:q} 2>&1
+        test -s {output.html:q}
+        """
+
+
 rule ont_run_qc_report:
+    input:
+        metrics=lambda wildcards: _runqc_optional_input(RUNQC_ONT_METRICS_PATH),
     output:
         html=RUNQC_ONT_ROOT + "/summary.html",
         tsv=RUNQC_ONT_ROOT + "/summary.tsv",
         done=RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done",
     params:
-        metrics_path=_runqc_text(RUNQC_ONT_CFG, "metrics_path"),
-        run_s3_uri=_runqc_text(RUNQC_ONT_CFG, "run_s3_uri"),
+        metrics_path=RUNQC_ONT_METRICS_PATH,
+        run_s3_uri=RUNQC_ONT_RUN_S3_URI,
         cluster_sample="ont_run_qc_report",
     log:
         RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.log",
@@ -458,7 +761,17 @@ rule produce_illumina_run_qc:  # TARGET: separate Illumina run-level QC report
 
 rule produce_ont_run_qc:  # TARGET: explicit ONT run-level QC placeholder report
     input:
-        RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done",
+        RUNQC_ONT_TARGET_INPUTS,
+
+
+rule produce_ont_demux_fastq_qc:  # TARGET: mounted ONT demux FASTQ QC and focused MultiQC report
+    input:
+        RUNQC_ONT_DEMUX_MULTIQC_HTML,
+
+
+rule produce_ont_run_qc_and_demux_multiqc:  # TARGET: mounted ONT run QC plus demux FASTQ MultiQC
+    input:
+        RUNQC_ONT_TARGET_INPUTS + [RUNQC_ONT_DEMUX_MULTIQC_HTML],
 
 
 rule produce_ultima_run_qc:  # TARGET: explicit Ultima run-level QC placeholder report
@@ -475,5 +788,5 @@ rule produce_run_qc_reports:  # TARGET: all run-level QC reports, separate from 
     input:
         RUNQC_ILMN_REPORT_DIR + "/summary.html",
         RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
-        RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done",
+        RUNQC_ONT_TARGET_INPUTS,
         RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.done",

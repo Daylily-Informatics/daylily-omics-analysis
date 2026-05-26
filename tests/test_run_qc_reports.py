@@ -29,6 +29,14 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
     assert "rule illumina_run_qc_interop_summary:" in rules
     assert "rule illumina_run_qc_checkqc_json:" in rules
     assert "rule illumina_run_qc_multiqc:" in rules
+    assert "rule produce_illumina_run_qc_and_bclconvert:" in rules
+    assert "rule ont_run_qc_collect_summaries:" in rules
+    assert "rule ont_run_qc_pycoqc:" in rules
+    assert "rule ont_run_qc_nanoplot:" in rules
+    assert "rule ont_demux_fastq_qc:" in rules
+    assert "rule ont_demux_fastq_multiqc:" in rules
+    assert "rule produce_ont_demux_fastq_qc:" in rules
+    assert "rule produce_ont_run_qc_and_demux_multiqc:" in rules
     assert "rule produce_run_qc_reports:" in rules
     assert "run_qc/" in rules
     assert "run_qc/" not in final_multiqc
@@ -37,6 +45,7 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
 
 def test_illumina_run_qc_contract_uses_explicit_inputs_and_metric_subset() -> None:
     rules = _read("workflow/rules/run_qc_reports.smk")
+    illumina_rules = rules[: rules.index("rule produce_illumina_run_qc_and_bclconvert:")]
 
     for required in (
         "config/runs.tsv is required for Illumina run QC",
@@ -56,7 +65,7 @@ def test_illumina_run_qc_contract_uses_explicit_inputs_and_metric_subset() -> No
     assert "aws s3 cp \"$run_uri/$rel\"" in rules
     assert "aws s3 sync" not in rules
     assert "--recursive" not in rules
-    assert "*.fastq.gz" not in rules
+    assert "*.fastq.gz" not in illumina_rules
     assert "Analysis/1/Data/BCLConvert/fastq/Reports/Quality_Metrics.csv" in rules
     assert "InterOp/QMetricsOut.bin" in rules
     assert "InterOp/SummaryRunMetricsOut.bin" in rules
@@ -75,6 +84,34 @@ def test_checkqc_interop_and_placeholder_contracts_fail_loudly() -> None:
     assert "run_qc.ultima.metrics_path" in summarizer
     assert "does not exist" in summarizer
     assert "is empty" in summarizer
+
+
+def test_ont_mounted_run_qc_and_demux_contracts_use_rule_env_tools() -> None:
+    rules = _read("workflow/rules/run_qc_reports.smk")
+    env = _read("workflow/envs/run_qc_reports_v0.1.yaml")
+
+    for required in (
+        "config/runs.tsv with PLATFORM=ONT and RUN_DIR is required for mounted ONT run QC",
+        "No sequencing_summary*.txt files found",
+        "No demux FASTQ groups found",
+        "pycoQC",
+        "NanoPlot",
+        "NanoStat",
+        "seqkit stats --tabular",
+        "nanoq",
+        "ont_demux_fastq.multiqc.html",
+    ):
+        assert required in rules
+
+    assert "conda run -n" not in rules
+    assert "RUNQC_ONT_CONTEXT is not None" in rules
+    assert "RUNQC_ONT_PYCOQC_JSON" in rules
+    assert "RUNQC_ONT_DEMUX_MULTIQC_HTML" in rules
+    assert "pycoqc" in env
+    assert "nanoplot" in env
+    assert "nanostat" in env
+    assert "seqkit" in env
+    assert "nanoq" in env
 
 
 def test_read_fate_river_is_generalized_and_explicit() -> None:
