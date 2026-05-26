@@ -50,6 +50,10 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "output_dev_shm" in rule
     assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in rule
     assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in rule
+    assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in rule
+    assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in rule
+    assert "aws s3 sync" in rule
+    assert "singularity exec {params.container_uri:q} bcl-convert" in rule
     assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in rule
     assert "--bcl-num-conversion-threads {params.conversion_threads}" in rule
     assert "--bcl-num-compression-threads {params.compression_threads}" in rule
@@ -148,7 +152,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     slurm_bcl = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")["bclconvert"]
     assert slurm_bcl["threads"] == 192
     assert slurm_bcl["mem_mb"] == 180000
-    assert slurm_bcl["staging_mode"] == "dev_shm"
+    assert slurm_bcl["staging_mode"] == "s3_dev_shm"
     assert slurm_bcl["parallel_tiles"] == 8
     assert slurm_bcl["conversion_threads"] == 8
     assert slurm_bcl["compression_threads"] == 12

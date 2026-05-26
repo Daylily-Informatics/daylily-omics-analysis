@@ -556,11 +556,15 @@ import sys
 path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 assert "BCL_RUNTIME_VERSION = \"4.0.3\"" in text
-assert "container:\n        f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
+assert "BCL_CONTAINER_URI = f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
 assert "BCL_STAGING_MODE" in text
 assert "Unsupported bclconvert.staging_mode" in text
 assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in text
 assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in text
+assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in text
+assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in text
+assert "aws s3 sync" in text
+assert "singularity exec {params.container_uri:q} bcl-convert" in text
 assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in text
 assert "--bcl-num-conversion-threads {params.conversion_threads}" in text
 assert "--bcl-num-compression-threads {params.compression_threads}" in text
@@ -597,7 +601,7 @@ for idx, name in enumerate(rule_names):
         assert "log:" in block, name
         assert "benchmark:" in block, name
 	' "$RULE_FILE"
-  test_result "verify nf-core container directive and shell-only new rules" "$?"
+  test_result "verify nf-core container invocation and shell-only new rules" "$?"
 }
 
 test_bootstrap_blank_or_missing_units_gate() {

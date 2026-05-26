@@ -126,7 +126,7 @@ bclconvert:
     mem_mb: 180000
     partition: "i192mem"
     tmpdir: "/dev/shm"
-    staging_mode: "dev_shm"
+    staging_mode: "s3_dev_shm"
     scratch_root: "/dev/shm/dayoa_bclconvert"
     scratch_size_multiplier: 4
     retain_scratch: false

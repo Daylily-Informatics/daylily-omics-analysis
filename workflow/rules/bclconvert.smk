@@ -72,6 +72,21 @@ BCL_SAMPLE_SHEET = str(
 BCL_RUN_DIR = str(
     BCL_RUN_CONTEXT["RUN_DIR"] if BCL_RUN_CONTEXT is not None else (BCLCFG.get("run_dir", "") or "")
 )
+BCL_SOURCE_S3_URI = str(
+    BCL_RUN_CONTEXT.get("SOURCE_S3_URI", "")
+    if BCL_RUN_CONTEXT is not None
+    else (BCLCFG.get("source_s3_uri", "") or "")
+)
+BCL_RUN_REGION = str(
+    BCL_RUN_CONTEXT.get("REGION", "")
+    if BCL_RUN_CONTEXT is not None
+    else (BCLCFG.get("region", "") or "")
+)
+BCL_RUN_PROFILE = str(
+    BCL_RUN_CONTEXT.get("PROFILE", "")
+    if BCL_RUN_CONTEXT is not None
+    else (BCLCFG.get("profile", "") or "")
+)
 BCL_OUTPUT_ROOT = str(
     BCL_RUN_CONTEXT["OUTPUT_ROOT_RESOLVED"]
     if BCL_RUN_CONTEXT is not None
@@ -148,6 +163,7 @@ BCL_EXTRA_ARGS = str(BCLCFG.get("extra_args", "") or "").strip()
 BCL_LIBPREP = str(BCLCFG.get("libprep", "PCR-FREE") or "PCR-FREE")
 BCL_SEQ_VENDOR = str(BCLCFG.get("seq_vendor", "ILMN") or "ILMN")
 BCL_SEQ_PLATFORM_OVERRIDE = str(BCLCFG.get("seq_platform_override", "") or "")
+BCL_CONTAINER_URI = f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
 
 
 localrules:
@@ -233,11 +249,13 @@ rule run_bclconvert:
         threads=BCL_THREADS,
         mem_mb=BCL_MEM_MB,
         tmpdir=BCL_TMPDIR,
-    container:
-        f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
     params:
         cluster_sample="run_bclconvert",
         run_dir=BCL_RUN_DIR,
+        source_s3_uri=BCL_SOURCE_S3_URI,
+        region=BCL_RUN_REGION,
+        profile=BCL_RUN_PROFILE,
+        container_uri=BCL_CONTAINER_URI,
         tmpdir=BCL_TMPDIR,
         staging_mode=BCL_STAGING_MODE,
         scratch_root=BCL_SCRATCH_ROOT,
@@ -287,10 +305,12 @@ rule run_bclconvert:
         echo "staging_mode: $staging_mode" >> {log:q}
         echo "scratch_root: $scratch_root" >> {log:q}
         echo "bcl_input_directory: $effective_run_dir" >> {log:q}
+        echo "source_s3_uri: {params.source_s3_uri}" >> {log:q}
         echo "output_directory: $effective_output_dir" >> {log:q}
         nproc >> {log:q} 2>&1 || true
         df -h "$TMPDIR" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
-        bcl-convert --version >> {log:q} 2>&1
+        command -v singularity >> {log:q} 2>&1
+        singularity exec {params.container_uri:q} bcl-convert --version >> {log:q} 2>&1
 
         case "$staging_mode" in
             direct)
@@ -341,6 +361,87 @@ rule run_bclconvert:
                 effective_output_dir="$scratch_output_dir"
                 df -h "$scratch_root" >> {log:q} 2>&1 || true
                 ;;
+            s3_dev_shm)
+                mkdir -p "$scratch_root"
+                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
+                scratch_run_dir="$scratch_dir/run"
+                scratch_output_dir="$scratch_dir/fastqs"
+                scratch_sync_log_dir="$scratch_dir/aws_sync_logs"
+                mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
+                source_s3_uri={params.source_s3_uri:q}
+                run_region={params.region:q}
+                run_profile={params.profile:q}
+                if [ -z "$source_s3_uri" ]; then
+                    echo "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI in config/runs.tsv" >> {log:q}
+                    exit 2
+                fi
+                if [ -z "$run_region" ]; then
+                    echo "bclconvert.staging_mode=s3_dev_shm requires REGION in config/runs.tsv" >> {log:q}
+                    exit 2
+                fi
+                if [ -z "$run_profile" ] || [ "$run_profile" = "default" ]; then
+                    echo "bclconvert.staging_mode=s3_dev_shm requires a non-default PROFILE in config/runs.tsv" >> {log:q}
+                    exit 2
+                fi
+                command -v aws >> {log:q} 2>&1
+                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
+                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
+                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
+                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                echo "scratch_dir: $scratch_dir" >> {log:q}
+                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
+                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
+                echo "scratch_required_bytes: $required_bytes" >> {log:q}
+                echo "scratch_available_bytes: $available_bytes" >> {log:q}
+                if [ "$available_bytes" -lt "$required_bytes" ]; then
+                    echo "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
+                    exit 2
+                fi
+                run_uri=$(printf "%s" "$source_s3_uri" | sed 's:/*$::')
+                lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
+                if [ ! -d "$lane_root" ]; then
+                    echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
+                    exit 2
+                fi
+                lane_ids=$(find "$lane_root" -mindepth 1 -maxdepth 1 -type d -name 'L[0-9][0-9][0-9]' -printf '%f\n' | sort)
+                if [ -z "$lane_ids" ]; then
+                    echo "BCL run directory has no L### lane directories under $lane_root" >> {log:q}
+                    exit 2
+                fi
+                echo "Staging BCL run directory from S3 to scratch: $(date -Is)" >> {log:q}
+                echo "s3_stage_lanes: $(printf "%s" "$lane_ids" | tr '\n' ' ')" >> {log:q}
+                AWS_PROFILE="$run_profile" AWS_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
+                  aws s3 sync "$run_uri/" "$scratch_run_dir/" \
+                    --exclude "Analysis/*" \
+                    --exclude "Data/Intensities/BaseCalls/L*/*" \
+                    --only-show-errors \
+                    > "$scratch_sync_log_dir/root.log" 2>&1
+                pids=()
+                for lane_id in $lane_ids; do
+                    (
+                        AWS_PROFILE="$run_profile" AWS_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
+                          aws s3 sync "$run_uri/Data/Intensities/BaseCalls/$lane_id/" "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id/" \
+                            --only-show-errors
+                    ) > "$scratch_sync_log_dir/$lane_id.log" 2>&1 &
+                    pids+=("$!")
+                done
+                sync_rc=0
+                for pid in "${{pids[@]}}"; do
+                    if ! wait "$pid"; then
+                        sync_rc=1
+                    fi
+                done
+                cat "$scratch_sync_log_dir"/*.log >> {log:q}
+                if [ "$sync_rc" -ne 0 ]; then
+                    echo "One or more lane-level aws s3 sync processes failed" >> {log:q}
+                    exit 2
+                fi
+                echo "S3 scratch staging complete: $(date -Is)" >> {log:q}
+                du -sh "$scratch_run_dir" >> {log:q} 2>&1 || true
+                effective_run_dir="$scratch_run_dir"
+                effective_output_dir="$scratch_output_dir"
+                df -h "$scratch_root" >> {log:q} 2>&1 || true
+                ;;
             *)
                 echo "Unsupported bclconvert.staging_mode: $staging_mode" >> {log:q}
                 exit 2
@@ -367,11 +468,11 @@ rule run_bclconvert:
         fi
 
         printf 'bcl-convert command:' >> {log:q}
-        printf ' %q' bcl-convert "${{bcl_flags[@]}}" >> {log:q}
+        printf ' %q' singularity exec {params.container_uri:q} bcl-convert "${{bcl_flags[@]}}" >> {log:q}
         printf '\n' >> {log:q}
-        bcl-convert "${{bcl_flags[@]}}" >> {log:q} 2>&1
+        singularity exec {params.container_uri:q} bcl-convert "${{bcl_flags[@]}}" >> {log:q} 2>&1
 
-        if [ "$staging_mode" = "dev_shm" ] || [ "$staging_mode" = "output_dev_shm" ]; then
+        if [ "$staging_mode" = "dev_shm" ] || [ "$staging_mode" = "s3_dev_shm" ] || [ "$staging_mode" = "output_dev_shm" ]; then
             echo "Copying BCLConvert outputs from scratch to result tree: $(date -Is)" >> {log:q}
             cp -a "$effective_output_dir"/. {BCL_FASTQ_DIR:q}/
             df -h "$scratch_root" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
