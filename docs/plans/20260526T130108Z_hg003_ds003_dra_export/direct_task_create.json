@@ -1,0 +1,13 @@
+{
+    "TaskId": "task-06b8db340be527ac2",
+    "Lifecycle": "PENDING",
+    "Paths": [
+        "/analysis_results/ubuntu/hg003a_altair3_hiomr_ilmn20x_ont5x_1022/"
+    ],
+    "Report": {
+        "Enabled": true,
+        "Path": "s3://lsmc-ssf-sequencing-data/derived/hyb-hg003/analysis_results/hg003a_altair3_hiomr_ilmn20x_ont5x_1022/_daylily_monitor/fsx-export/20260526T130320Z/export-report/",
+        "Format": "REPORT_CSV_20191124",
+        "Scope": "FAILED_FILES_ONLY"
+    }
+}

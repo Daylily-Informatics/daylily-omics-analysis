@@ -17,11 +17,8 @@ mkdir -p "$(dirname "$review_log")"
   done
   echo "-- fsx --"
   df -h /fsx
-  echo "-- active workdir sizes --"
-  du -sh \
-    "$root/hg003a_altair3_hiomr_ilmn20x_ont5x_1022" \
-    "$root/hg003a_altair3_hiomr_ilmn15x_ont10x_1022" \
-    "$root/hg003a_altair3_hiomr_ilmn15x_ont7x_1022" 2>/dev/null || true
+  echo "-- active workdirs --"
+  find "$root" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort | grep -E 'hg003a_altair3_hiomr_ilmn(20x_ont5x|15x_ont10x|15x_ont7x|15x_ont5x|10x_ont10x|7x_ont7x|7x_ont5x|5x_ont5x)_1022' || true
   echo "-- squeue summary --"
   squeue -u ubuntu -h -o '%T' | awk '{n[$1]++} END {for (s in n) print s,n[s]; if (!NR) print "EMPTY 0"}'
   echo "-- squeue head --"
