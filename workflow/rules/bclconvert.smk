@@ -409,10 +409,7 @@ rule run_bclconvert:
                       | xargs -0 -r cp -aL --sparse=always -t "$scratch_run_dir"
                     find "$effective_run_dir/Data/Intensities" -maxdepth 1 -type f -print0 \
                       | xargs -0 -r cp -aL --sparse=always -t "$scratch_run_dir/Data/Intensities"
-                    if [ -d "$effective_run_dir/InterOp" ]; then
-                        mkdir -p "$scratch_run_dir/InterOp"
-                        rsync -aL --sparse --whole-file "$effective_run_dir/InterOp"/ "$scratch_run_dir/InterOp"/
-                    fi
+                    echo "Skipping InterOp during BCLConvert scratch staging; run-QC rules own InterOp parsing"
                 }} > "$scratch_sync_log_dir/metadata.log" 2>&1; then
                     cat "$scratch_sync_log_dir/metadata.log" >> {log:q}
                     echo "Mounted metadata staging failed" >> {log:q}
