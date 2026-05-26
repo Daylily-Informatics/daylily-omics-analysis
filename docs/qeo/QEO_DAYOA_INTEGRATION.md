@@ -40,7 +40,7 @@ qeo_registration:
   mode: dewey
   dewey_url: https://dewey.example.internal
   dewey_token_env: DEWEY_BEARER_TOKEN
-  storage_root_uri: s3://lsmc-dayoa-omics-analysis-us-west-2/runs/Z-ANL-EXAMPLE/daylily-omics-analysis
+  storage_root_uri: s3://lsmc-dayoa-analysis-results-usw2/validation/Z-ANL-EXAMPLE/ubuntu/Z-ANL-EXAMPLE/daylily-omics-analysis
   analysis_euid: Z-ANL-EXAMPLE
   run_euid: Z-RUN-EXAMPLE
   workset_euid: Z-WRK-EXAMPLE
@@ -113,4 +113,3 @@ The current outbox event is `lsmc.daylily.artifact.produced.v1`:
 ```
 
 Events must not contain PHI. They carry EUIDs, checksums, counts, and artifact-set references.
-

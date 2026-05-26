@@ -38,7 +38,7 @@ Recon evidence:
 | DAYOA-QEO-008 | daylily-omics-analysis | QEO ingest manifest and outbox event contracts | SUCCESS | code | none | Agent 7 | `qeo_ingest_manifest`, `build_artifact_produced_event`, event tests | QEO must ingest refs/manifests, not crawl filesystems | Event is deterministic and excludes sample names |
 | DAYOA-QEO-009 | daylily-omics-analysis | Golden corpus and unit tests | SUCCESS | tests | none | Agent 8 | `docs/qeo/QEO_GOLDEN_CORPUS_TEST_PLAN.md`, `tests/test_qeo_registration.py` | Registration semantics need deterministic coverage | Synthetic golden fixture tests added; GIAB expansion documented |
 | DAYOA-QEO-010 | daylily-omics-analysis | Tool/pipeline inventory, worked examples, diagrams, MultiQC examples | SUCCESS | docs | none | Agent 9 | `docs/catalog_of_tools.md`, `docs/examples/multiqc/README.md`, QEO docs | Operators need complete task-oriented documentation | Tool inventory has public links, examples, and diagrams |
-| DAYOA-QEO-011 | daylily-omics-analysis | Final validation, coverage, dry-run evidence | BLOCKED | validation | live cluster not assumed | Agent 10 | pytest 199 passed; coverage 84%; shell CLI 28 passed; py_compile passed; Snakemake command missing | Must distinguish local checks from cluster-dependent checks | Local checks complete; Snakemake dry-run blocked by `zsh:1: command not found: snakemake` |
+| DAYOA-QEO-011 | daylily-omics-analysis | Final validation, coverage, dry-run evidence | BLOCKED | validation | TO DO IN DYEC | Agent 10 | pytest 199 passed; coverage 84%; shell CLI 28 passed; py_compile passed; Snakemake command missing | Must distinguish local checks from cluster-dependent checks | Local checks complete; Snakemake dry-run and live cluster validation are `TO DO IN DYEC` because they require a `daylily-ephemeral-cluster`/headnode environment with Snakemake on PATH |
 
 ## Validation Summary
 
@@ -48,7 +48,7 @@ Recon evidence:
 - Coverage: `TOTAL 560 statements, 87 missed, 84%`.
 - Shell CLI suite: `28 passed, 0 failed`.
 - Python compile: `python -m py_compile daylily_omics_analysis/qeo_registration.py workflow/scripts/register_qeo_artifacts.py` passed.
-- Snakemake parse/dry-run: blocked in the local shell because `snakemake` is not on PATH.
+- Snakemake parse/dry-run: `TO DO IN DYEC`; blocked in the local shell because `snakemake` is not on PATH.
 - Live cluster examples: not run. No AWS profile, region, cluster, or second-stage live approval was provided.
 
-All ledger rows are terminal. The local repo objective is complete except for the explicitly blocked Snakemake/cluster validation surfaces.
+All ledger rows are terminal. The local repo objective is complete except for the explicitly blocked Snakemake/cluster validation surfaces, now marked `TO DO IN DYEC`.
