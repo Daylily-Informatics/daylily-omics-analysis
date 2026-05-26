@@ -395,8 +395,16 @@ rule sentdhipmr_hybrid_select:
 
         echo "Starting hybrid_select pipeline at $(date)" >> {log}
 
+        : "${{CONDA_PREFIX:?CONDA_PREFIX is required for sentdhipmr_hybrid_select}}"
+        {{
+            echo "DEBUG hybrid_select env at $(date)"
+            echo "DEBUG CONDA_PREFIX=$CONDA_PREFIX"
+            echo "DEBUG which_python=$(command -v python || true)"
+            "$CONDA_PREFIX/bin/python" -c "import os, sys; print('DEBUG sys.executable=' + sys.executable); print('DEBUG sys.prefix=' + sys.prefix); print('DEBUG env_CONDA_PREFIX=' + str(os.environ.get('CONDA_PREFIX'))); from importlib.resources import files; print('DEBUG hybrid_select=' + str(files('sentieon_cli.scripts').joinpath('hybrid_select.py')))"
+        }} >> {log} 2>&1 || true
+
         # Find hybrid_select.py script
-        HYBRID_SELECT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
+        HYBRID_SELECT=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_select.py'))")
 
         # Pipeline: hybrid_select.py -> bcftools view -> bcftools query -> bedtools slop
         # This replicates sentieon-cli's cmd_pyexec_hybrid_select() function
@@ -1026,7 +1034,8 @@ rule sentdhipmr_anno:
         echo "Starting hybrid annotation at $(date)" >> {log}
 
         # Find hybrid_anno.py script
-        HYBRID_ANNO=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
+        : "${{CONDA_PREFIX:?CONDA_PREFIX is required for sentdhipmr_anno}}"
+        HYBRID_ANNO=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
 
         sentieon pyexec "$HYBRID_ANNO" \
             -v {input.vcf} \
@@ -1098,7 +1107,8 @@ rule sentdhipmr_transfer:
             exit 1
         fi
 
-        TRIM_SCRIPT=$(python -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
+        : "${{CONDA_PREFIX:?CONDA_PREFIX is required for sentdhipmr_transfer_anno_shards}}"
+        TRIM_SCRIPT=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
         echo "Transferring annotations from pop_vcf: {params.pop_vcf} for regions: {params.regions}" >> {log}
 
