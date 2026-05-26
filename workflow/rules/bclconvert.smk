@@ -433,7 +433,7 @@ rule run_bclconvert:
                     exit 2
                 fi
                 file_list="$scratch_sync_log_dir/basecall_files.nul"
-                find "$lane_root" -mindepth 2 -type f -print0 > "$file_list"
+                find "$lane_root" -mindepth 2 -type f -printf '%P\0' > "$file_list"
                 file_count="$(tr -cd "\0" < "$file_list" | wc -c | tr -d " ")"
                 echo "mounted_stage_regular_files: $file_count" >> {log:q}
                 if [ "$file_count" -lt 1 ]; then
