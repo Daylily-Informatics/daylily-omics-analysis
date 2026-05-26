@@ -1,9 +1,9 @@
-SAMPLEID
-Omega_XTR_1-2-200_180
-Beckman_XTR_1-2-200_180
-Omega_XTR_3-200_180
-Beckman_XTR_3-200_180
-Omega_XTR_8-200_220
-Beckman_XTR_8-200_220
-Omega_XTR_9-200_220
-Beckman_XTR_9-200_220
+SAMPLEID	SAMPLESOURCE	SAMPLECLASS	BIOLOGICAL_SEX	CONCORDANCE_CONTROL_PATH	IS_POSITIVE_CONTROL	IS_NEGATIVE_CONTROL	SAMPLE_TYPE	TUM_NRM_SAMPLEID_MATCH	EXTERNAL_SAMPLE_ID	N_X	N_Y	TRUTH_DATA_DIR
+Omega_XTR_1-2-200_180	blood	research	unknown	na	false	false	blood	na	Omega_XTR_1-2-200_180	na	na	na
+Beckman_XTR_1-2-200_180	blood	research	unknown	na	false	false	blood	na	Beckman_XTR_1-2-200_180	na	na	na
+Omega_XTR_3-200_180	blood	research	unknown	na	false	false	blood	na	Omega_XTR_3-200_180	na	na	na
+Beckman_XTR_3-200_180	blood	research	unknown	na	false	false	blood	na	Beckman_XTR_3-200_180	na	na	na
+Omega_XTR_8-200_220	blood	research	unknown	na	false	false	blood	na	Omega_XTR_8-200_220	na	na	na
+Beckman_XTR_8-200_220	blood	research	unknown	na	false	false	blood	na	Beckman_XTR_8-200_220	na	na	na
+Omega_XTR_9-200_220	blood	research	unknown	na	false	false	blood	na	Omega_XTR_9-200_220	na	na	na
+Beckman_XTR_9-200_220	blood	research	unknown	na	false	false	blood	na	Beckman_XTR_9-200_220	na	na	na
