@@ -325,7 +325,8 @@ rule run_bclconvert:
                 input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
                 input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
                 required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                scratch_parent="$(dirname "$scratch_root")"
+                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
                 echo "scratch_dir: $scratch_dir" >> {log:q}
                 echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
                 echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
@@ -347,7 +348,8 @@ rule run_bclconvert:
                 input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
                 input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
                 required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                scratch_parent="$(dirname "$scratch_root")"
+                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
                 echo "scratch_dir: $scratch_dir" >> {log:q}
                 echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
                 echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
@@ -374,7 +376,8 @@ rule run_bclconvert:
                 input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
                 input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
                 required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                scratch_parent="$(dirname "$scratch_root")"
+                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
                 echo "scratch_dir: $scratch_dir" >> {log:q}
                 echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
                 echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
@@ -474,7 +477,8 @@ rule run_bclconvert:
                 input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
                 input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
                 required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                scratch_parent="$(dirname "$scratch_root")"
+                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
                 echo "scratch_dir: $scratch_dir" >> {log:q}
                 echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
                 echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
