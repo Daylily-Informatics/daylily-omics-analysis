@@ -499,6 +499,7 @@ BCL_BOOTSTRAP_TARGETS = {
     "produce_bclconvert_metrics",
     "produce_bclconvert_multiqc",
     "produce_bclconvert_fastqs_and_metrics",
+    "produce_illumina_run_qc_and_bclconvert",
 }
 
 

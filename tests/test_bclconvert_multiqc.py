@@ -56,6 +56,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
 
     assert '"produce_bclconvert_metrics"' in common
     assert '"produce_bclconvert_multiqc"' in common
+    assert '"produce_illumina_run_qc_and_bclconvert"' in common
     assert "def _bclconvert_enabled_for_multiqc" in common
     assert 'qc_tool_enabled("bclconvert", default=False)' in multiqc
     assert 'MDIR + "other_reports/bclconvert_metrics_mqc.done"' in multiqc
