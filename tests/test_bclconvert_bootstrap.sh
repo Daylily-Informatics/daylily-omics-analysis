@@ -564,6 +564,8 @@ assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in text
 assert "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm" in text
 assert "rsync -aL --sparse --whole-file" in text
 assert "mounted_stage_lanes" in text
+assert "mounted_stage_jobs" in text
+assert "mounted_stage_cycle_dirs" in text
 assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in text
 assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in text
 assert "aws s3 sync" in text
