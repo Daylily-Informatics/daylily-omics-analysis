@@ -361,6 +361,73 @@ rule run_bclconvert:
                 effective_output_dir="$scratch_output_dir"
                 df -h "$scratch_root" >> {log:q} 2>&1 || true
                 ;;
+            mounted_dev_shm)
+                mkdir -p "$scratch_root"
+                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
+                scratch_run_dir="$scratch_dir/run"
+                scratch_output_dir="$scratch_dir/fastqs"
+                scratch_sync_log_dir="$scratch_dir/rsync_logs"
+                mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
+                command -v rsync >> {log:q} 2>&1
+                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
+                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
+                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
+                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                echo "scratch_dir: $scratch_dir" >> {log:q}
+                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
+                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
+                echo "scratch_required_bytes: $required_bytes" >> {log:q}
+                echo "scratch_available_bytes: $available_bytes" >> {log:q}
+                if [ "$available_bytes" -lt "$required_bytes" ]; then
+                    echo "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
+                    exit 2
+                fi
+                lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
+                if [ ! -d "$lane_root" ]; then
+                    echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
+                    exit 2
+                fi
+                lane_ids=$(find "$lane_root" -mindepth 1 -maxdepth 1 -type d -name 'L[0-9][0-9][0-9]' -printf '%f\n' | sort)
+                if [ -z "$lane_ids" ]; then
+                    echo "BCL run directory has no L### lane directories under $lane_root" >> {log:q}
+                    exit 2
+                fi
+                echo "Staging mounted BCL run directory to scratch: $(date -Is)" >> {log:q}
+                echo "mounted_stage_lanes: $(printf "%s" "$lane_ids" | tr '\n' ' ')" >> {log:q}
+                if ! rsync -aL --sparse --whole-file \
+                    --exclude '/Data/Intensities/BaseCalls/L*/***' \
+                    "$effective_run_dir"/ "$scratch_run_dir"/ \
+                    > "$scratch_sync_log_dir/root.log" 2>&1; then
+                    cat "$scratch_sync_log_dir/root.log" >> {log:q}
+                    echo "Root-level mounted rsync failed" >> {log:q}
+                    exit 2
+                fi
+                pids=()
+                for lane_id in $lane_ids; do
+                    mkdir -p "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id"
+                    (
+                        rsync -aL --sparse --whole-file \
+                          "$lane_root/$lane_id"/ "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id"/
+                    ) > "$scratch_sync_log_dir/$lane_id.log" 2>&1 &
+                    pids+=("$!")
+                done
+                sync_rc=0
+                for pid in "${{pids[@]}}"; do
+                    if ! wait "$pid"; then
+                        sync_rc=1
+                    fi
+                done
+                cat "$scratch_sync_log_dir"/*.log >> {log:q}
+                if [ "$sync_rc" -ne 0 ]; then
+                    echo "One or more lane-level mounted rsync processes failed" >> {log:q}
+                    exit 2
+                fi
+                echo "Mounted scratch staging complete: $(date -Is)" >> {log:q}
+                du -sh "$scratch_run_dir" >> {log:q} 2>&1 || true
+                effective_run_dir="$scratch_run_dir"
+                effective_output_dir="$scratch_output_dir"
+                df -h "$scratch_root" >> {log:q} 2>&1 || true
+                ;;
             s3_dev_shm)
                 mkdir -p "$scratch_root"
                 scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
@@ -499,7 +566,7 @@ rule run_bclconvert:
         printf '\n' >> {log:q}
         singularity exec {params.container_uri:q} bcl-convert "${{bcl_flags[@]}}" >> {log:q} 2>&1
 
-        if [ "$staging_mode" = "dev_shm" ] || [ "$staging_mode" = "s3_dev_shm" ] || [ "$staging_mode" = "output_dev_shm" ]; then
+        if [ "$staging_mode" = "dev_shm" ] || [ "$staging_mode" = "mounted_dev_shm" ] || [ "$staging_mode" = "s3_dev_shm" ] || [ "$staging_mode" = "output_dev_shm" ]; then
             echo "Copying BCLConvert outputs from scratch to result tree: $(date -Is)" >> {log:q}
             cp -a "$effective_output_dir"/. {BCL_FASTQ_DIR:q}/
             df -h "$scratch_root" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
