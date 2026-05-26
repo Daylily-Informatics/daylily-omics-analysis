@@ -54,10 +54,11 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in rule
     assert "aws s3 sync" in rule
     assert "singularity exec {params.container_uri:q} bcl-convert" in rule
-    assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in rule
-    assert "--bcl-num-conversion-threads {params.conversion_threads}" in rule
-    assert "--bcl-num-compression-threads {params.compression_threads}" in rule
-    assert "--bcl-num-decompression-threads {params.decompression_threads}" in rule
+    assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in rule
+    assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in rule
+    assert "--bcl-num-conversion-threads \"$conversion_threads\"" in rule
+    assert "--bcl-num-compression-threads \"$compression_threads\"" in rule
+    assert "--bcl-num-decompression-threads \"$decompression_threads\"" in rule
     assert "--fastq-gzip-compression-level {params.fastq_gzip_compression_level}" in rule
     assert "--shared-thread-odirect-output {params.shared_thread_odirect_output}" in rule
     assert '--seq-platform-override "$seq_platform_override"' in rule

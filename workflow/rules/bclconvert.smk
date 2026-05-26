@@ -448,6 +448,29 @@ rule run_bclconvert:
                 ;;
         esac
 
+        parallel_tiles={params.parallel_tiles}
+        conversion_threads={params.conversion_threads}
+        compression_threads={params.compression_threads}
+        decompression_threads={params.decompression_threads}
+        per_tile_threads="$((conversion_threads + compression_threads + decompression_threads))"
+        if [ "$per_tile_threads" -lt 1 ]; then
+            echo "BCLConvert per-tile thread total must be >= 1" >> {log:q}
+            exit 2
+        fi
+        max_parallel_tiles="$(({threads} / per_tile_threads))"
+        if [ "$max_parallel_tiles" -lt 1 ]; then
+            echo "BCLConvert thread allocation is too small: threads={threads} per_tile_threads=$per_tile_threads" >> {log:q}
+            exit 2
+        fi
+        if [ "$parallel_tiles" -gt "$max_parallel_tiles" ]; then
+            echo "Reducing BCLConvert parallel tiles from $parallel_tiles to $max_parallel_tiles for threads={threads}" >> {log:q}
+            parallel_tiles="$max_parallel_tiles"
+        fi
+        echo "bcl_num_parallel_tiles: $parallel_tiles" >> {log:q}
+        echo "bcl_num_conversion_threads: $conversion_threads" >> {log:q}
+        echo "bcl_num_compression_threads: $compression_threads" >> {log:q}
+        echo "bcl_num_decompression_threads: $decompression_threads" >> {log:q}
+
         bcl_flags=(
           --bcl-input-directory "$effective_run_dir"
           --output-directory "$effective_output_dir"
@@ -456,10 +479,10 @@ rule run_bclconvert:
           --first-tile-only {params.first_tile_only}
           --bcl-sampleproject-subdirectories {params.sampleproject_subdirectories}
           --fastq-gzip-compression-level {params.fastq_gzip_compression_level}
-          --bcl-num-parallel-tiles {params.parallel_tiles}
-          --bcl-num-conversion-threads {params.conversion_threads}
-          --bcl-num-compression-threads {params.compression_threads}
-          --bcl-num-decompression-threads {params.decompression_threads}
+          --bcl-num-parallel-tiles "$parallel_tiles"
+          --bcl-num-conversion-threads "$conversion_threads"
+          --bcl-num-compression-threads "$compression_threads"
+          --bcl-num-decompression-threads "$decompression_threads"
           --shared-thread-odirect-output {params.shared_thread_odirect_output}
         )
         force_arg={params.force:q}

@@ -565,10 +565,11 @@ assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in text
 assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in text
 assert "aws s3 sync" in text
 assert "singularity exec {params.container_uri:q} bcl-convert" in text
-assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in text
-assert "--bcl-num-conversion-threads {params.conversion_threads}" in text
-assert "--bcl-num-compression-threads {params.compression_threads}" in text
-assert "--bcl-num-decompression-threads {params.decompression_threads}" in text
+assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in text
+assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in text
+assert "--bcl-num-conversion-threads \"$conversion_threads\"" in text
+assert "--bcl-num-compression-threads \"$compression_threads\"" in text
+assert "--bcl-num-decompression-threads \"$decompression_threads\"" in text
 assert "--fastq-gzip-compression-level {params.fastq_gzip_compression_level}" in text
 assert "-m fastqc" not in text
 assert "{BCL_FASTQ_DIR:q}" not in text[text.index("rule multiqc_bclconvert:"):]
