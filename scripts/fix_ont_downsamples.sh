@@ -5,8 +5,8 @@
 set -euo pipefail
 
 # Correct source file
-SOURCE_BAM="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
-REF="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
+SOURCE_BAM="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
+REF="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
 OUT_DIR="/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003"
 JOBS_DIR="${OUT_DIR}/jobs"
 

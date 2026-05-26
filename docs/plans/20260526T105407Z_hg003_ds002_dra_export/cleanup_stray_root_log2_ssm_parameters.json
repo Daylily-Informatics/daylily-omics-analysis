@@ -1,0 +1,5 @@
+{
+  "commands": [
+    "bash -l -c 'set -euo pipefail; rm -f -- /fsx/analysis_results/ubuntu/daylily_run_1024.log; echo \"[2026-05-26T11:00:52Z] Removed stray root launch artifact /fsx/analysis_results/ubuntu/daylily_run_1024.log before DS-003 launch.\" | tee -a /fsx/analysis_results/johnm/review_logs/hg003_hiomr_1022_multiagent_20260526T023334Z/review.log; find /fsx/analysis_results/ubuntu -mindepth 1 -maxdepth 1 -printf '\\''%f\\n'\\'' | LC_ALL=C sort; df -h /fsx'"
+  ]
+}

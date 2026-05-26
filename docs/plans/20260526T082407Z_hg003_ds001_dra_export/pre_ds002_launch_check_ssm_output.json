@@ -1,0 +1,6 @@
+{
+    "Status": "Success",
+    "ResponseCode": 0,
+    "Stdout": "-rw-rw-r-- 1 ubuntu ubuntu  588 May 23 19:47 /fsx/analysis_results/johnm/staged_manifests/hg003_altair_ont_hiomr_matrix_20260523T141028Z/hiomr_ilmn20x_ont7x_samples.tsv\n-rw-rw-r-- 1 ubuntu ubuntu 1230 May 23 19:47 /fsx/analysis_results/johnm/staged_manifests/hg003_altair_ont_hiomr_matrix_20260523T141028Z/hiomr_ilmn20x_ont7x_units.tsv\n             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)\nFilesystem                Size  Used Avail Use% Mounted on\n10.0.1.244@tcp:/4nbz7b4v  8.8T  1.5T  7.3T  17% /fsx\n",
+    "Stderr": "error connecting to /tmp/tmux-0/default (No such file or directory)\n"
+}

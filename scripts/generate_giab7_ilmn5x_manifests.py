@@ -11,7 +11,7 @@ from pathlib import Path
 SAMPLE_IDS = ("HG001", "HG002", "HG003", "HG004", "HG005", "HG006", "HG007")
 DEFAULT_SOURCE_SAMPLES = Path(".test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv")
 DEFAULT_FASTQ_ROOT = Path(
-    "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/"
+    "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/"
     "NovaSeqX_WHGS_TruSeqPF_HG002-007"
 )
 DEFAULT_OUTPUT_DIR = Path("config")

@@ -12,12 +12,12 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFYBAMID2_HG38_100K_SVD_PREFIX = (
-    "/fsx/data/tool_specific_resources/verifybamid/hg38/100k/"
+    "/fsx/references/tool_specific_resources/verifybamid/hg38/100k/"
     "1000g.phase3.100k.b38.vcf.gz.dat"
 )
 GIAB7_IDS = ["HG001", "HG002", "HG003", "HG004", "HG005", "HG006", "HG007"]
 GIAB_30X_FASTQ_ROOT = (
-    "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/"
+    "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/"
     "NovaSeqX_WHGS_TruSeqPF_HG002-007"
 )
 GIAB_5X_SUBSAMPLE = "0.1666666667"
@@ -252,7 +252,7 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
 
 def test_gatk_contam_uses_sparse_chr_prefixed_af_sites() -> None:
     expected = (
-        "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/"
+        "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/"
         "snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz"
     )
 
@@ -302,7 +302,7 @@ def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
         assert "chr20_verbam/chr20.random1000.vcf.gz" in config_text
         assert VERIFYBAMID2_HG38_100K_SVD_PREFIX in config_text
         assert (
-            "/fsx/data/tool_specific_resources/verifybam2/"
+            "/fsx/references/tool_specific_resources/verifybam2/"
             "1000g.phase3.100k.b38.vcf.gz.dat"
             not in config_text
         )

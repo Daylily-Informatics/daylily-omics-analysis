@@ -15,9 +15,9 @@ Use the canonical deduper code `dmd` for new runs. The older CLI value `dppl` is
 - Aligner: `sent`
 - SNV caller: `sentd`
 - FASTQ root:
-  `/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/`
+  `/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/`
 - Truth/control resources:
-  `/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/<sample>/`
+  `/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/<sample>/`
 - Source sample manifest template in repo:
   `.test_data/data/giab_30x_hg38_analysis_manifest.samples.tsv`
 

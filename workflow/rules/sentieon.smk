@@ -121,14 +121,14 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
             echo "ILMN_TRIM_READ_LENGTH: trimming reads via seqkit subseq" >> {log} 2>&1;
         fi
 
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon bwa mem \
+        LD_PRELOAD=$LD_PRELOAD /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon bwa mem \
         -t {params.bwa_threads}  {params.sent_opts}  \
         -x {params.bwa_model} \
         -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
         {params.huref} \
          {params.subsample_head} <( {params.igz} -q  {input.f1} {params.trim_head} )  {params.subsample_tail}  \
          {params.subsample_head} <( {params.igz} -q  {input.f2} {params.trim_head} )  {params.subsample_tail} {params.mbuffer} \
-        | /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon  util sort \
+        | /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon  util sort \
         -t  {params.sort_threads} \
         --reference {params.huref} \
         --cram_write_options version=3.0,compressor=rans \
@@ -253,14 +253,14 @@ rule sentieon_cgt7p_bwa_sort:  # TARGET: Complete Genomics / MGI Sentieon bwa so
             echo "ILMN_TRIM_READ_LENGTH: trimming reads via seqkit subseq" >> {log} 2>&1;
         fi
 
-        LD_PRELOAD=$LD_PRELOAD /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon bwa mem \
+        LD_PRELOAD=$LD_PRELOAD /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon bwa mem \
         -t {params.bwa_threads}  {params.sent_opts}  \
         -x {params.bwa_model} \
         -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rg_platform}" \
         {params.huref} \
          {params.subsample_head} <( {params.igz} -q  {input.f1} {params.trim_head} )  {params.subsample_tail}  \
          {params.subsample_head} <( {params.igz} -q  {input.f2} {params.trim_head} )  {params.subsample_tail} {params.mbuffer} \
-        | /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon  util sort \
+        | /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon  util sort \
         -t  {params.sort_threads} \
         --reference {params.huref} \
         --cram_write_options version=3.0,compressor=rans \

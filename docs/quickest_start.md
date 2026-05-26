@@ -1,6 +1,6 @@
 # Quickest Start
 
-Use this to verify local workflow wiring without launching a Slurm fleet. This is a fixture smoke test, not the production run path. Production work should be staged and launched through `daylily-ephemeral-cluster` / `daylily-ec` on a prepared headnode with Daylily reference data mounted under `/fsx/data`.
+Use this to verify local workflow wiring without launching a Slurm fleet. This is a fixture smoke test, not the production run path. Production work should be staged and launched through `daylily-ephemeral-cluster` / `daylily-ec` on a prepared headnode with Daylily reference data mounted under `/fsx/references`, `/fsx/control_data`, `/fsx/runtime_assets`, and `/fsx/staging`.
 
 ## Prerequisites
 

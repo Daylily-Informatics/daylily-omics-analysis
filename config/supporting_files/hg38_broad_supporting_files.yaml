@@ -1,49 +1,49 @@
 ---
 supporting_files:   ## All of this structure was for an exploratory, now deprecated , system that let you declare resources from mixed sources.  It's simply paths now :-)  And if not leading with a '/', then is relative to the snakemake working dir.
-  root: /fsx/data/
+  root: /fsx/references/
   files:
     huref:
       genome_file:
         name: createme
       bed:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad.bed
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad.bed
       female_diploid:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_diploid_female.bed
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_diploid_female.bed
       female_haploid:
         name: ""
       male_diploid:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_diploid_male.bed
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_diploid_male.bed
       male_haploid:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_haploid_male.bed
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_haploid_male.bed
       core_bed:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad_core.bed
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad_core.bed
       fasta:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta
-        bed: /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad_core.bed
-        namenogz: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/broad_hg38/Homo_sapiens_assembly38.fasta
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta
+        bed: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/hg38_broad_core.bed
+        namenogz: /fsx/references/genomic_data/organism_references/H_sapiens/hg38/broad_hg38/Homo_sapiens_assembly38.fasta
       hisat2:
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/blah.createme.note
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/hg38/blah.createme.note
       rtg_tools_genome:
-        name:  /fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.sdf
+        name:  /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.sdf
     vep:
       vep_genome_build: 114_GRCh38
       vep_cache:
-        name: /fsx/data/tool_specific_resources/vep/
+        name: /fsx/references/tool_specific_resources/vep/
     gatk:
-      onekg_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_phase1.snps.high_confidence.hg38.vcf.gz
-      mills_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-      dbsnp_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz
-      af_sites: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
-      hapmap_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/hapmap_3.3.hg38.vcf.gz
-      omni_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_omni2.5.hg38.vcf.gz
-      known_indels_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.known_indels.vcf.gz
+      onekg_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_phase1.snps.high_confidence.hg38.vcf.gz
+      mills_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+      dbsnp_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz
+      af_sites: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
+      hapmap_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/hapmap_3.3.hg38.vcf.gz
+      omni_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_omni2.5.hg38.vcf.gz
+      known_indels_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.known_indels.vcf.gz
     snpeff:
       ref_build_code: GRCh38.99
     ucsc:
       simple_repeats_bed:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/ucsc/ucsc_hg38_simple_repeats.bed
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/ucsc/ucsc_hg38_simple_repeats.bed
       dbsnp152:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/ncbi/dbsnp/GCF_000001405.40.vcf.gz.tbi/GCF_000001405.40.vcf.gz
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/ncbi/dbsnp/GCF_000001405.40.vcf.gz.tbi/GCF_000001405.40.vcf.gz
       build_gaps:
         name: resources/grch38_ucsc_gaps.bed 
       problem_regions_bed:
@@ -51,7 +51,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: createme
     dbsnp:
       broad_snowman_indelvcf:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/ncbi/dbsnp/GCF_000001405.40.vcf.gz.tbi/GCF_000001405.40.vcf.gz
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/ncbi/dbsnp/GCF_000001405.40.vcf.gz.tbi/GCF_000001405.40.vcf.gz
     iddnas:
       human_iddnas:
         name: createme
@@ -61,30 +61,30 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: createme
     verifybam2:
       dat_files:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
       oneM_snps_vcf:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
       oneM_snps_bed:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
       panels:
         1k:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
+            name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
           reference_vcf:
             class: file_only
-            name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
+            name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
         100k:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/data/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
+            name: /fsx/references/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
         1m:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/data/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
+            name: /fsx/references/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
           reference_vcf:
             class: file_only
-            name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/1M_snps.sorted.vcf.gz
+            name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/1M_snps.sorted.vcf.gz
     fastv:
       microbial_kmer_collection:
         name: createme
@@ -104,7 +104,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: createme
     octopus:
       forest_model_a:
-        name: /fsx/data/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest
+        name: /fsx/references/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest
     microbial:
       reprDB:  # https://pubmed.ncbi.nlm.nih.gov/29347966/
         name: createme
@@ -114,18 +114,18 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         # https://github.com/ohlab/panDB
     giab_sv:
       v0.6_NA24385_ties_1_2:
-        name: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG001/giabHC/HG001.bed
+        name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG001/giabHC/HG001.bed
     roche:
-      gnomad_af_vcf: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/gatk/af-only-gnomad.hg38.vcf.gz
-      grch38_noalt_fasta: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta
-      rtg_sdf: /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf
+      gnomad_af_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/af-only-gnomad.hg38.vcf.gz
+      grch38_noalt_fasta: /fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta
+      rtg_sdf: /fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta.sdf
       filter_model_snv: /resources/model-germline-sbxd-multisample-snv.txt.gz
       filter_model_indel: /resources/model-germline-sbxd-multisample-indel.txt.gz
-      pangenome_gbz: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz
-      giab_truth_base: /fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1
+      pangenome_gbz: /fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz
+      giab_truth_base: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1
     popvcf:
         class: file_only
-        name: /fsx/data/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
+        name: /fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
     strchive:
       disease_loci_hg38_stranger_json:
         class: file_only

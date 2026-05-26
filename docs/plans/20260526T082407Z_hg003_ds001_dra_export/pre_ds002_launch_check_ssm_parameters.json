@@ -1,0 +1,5 @@
+{
+  "commands": [
+    "bash -l -c 'set -euo pipefail; ls -l /fsx/analysis_results/johnm/staged_manifests/hg003_altair_ont_hiomr_matrix_20260523T141028Z/hiomr_ilmn20x_ont7x_*; squeue -u ubuntu; tmux ls || true; df -h /fsx'"
+  ]
+}

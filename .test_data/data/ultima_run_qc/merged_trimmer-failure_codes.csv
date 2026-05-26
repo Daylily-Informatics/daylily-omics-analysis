@@ -1,0 +1,4 @@
+read group,code,format,segment,reason,failed read count,total read count
+Z0157,1,bases,insert,sequence was too short,4,1000
+Z0157,402,bases,insert,sequence was too long,6,1000
+Z0158,1,bases,insert,sequence was too short,20,800

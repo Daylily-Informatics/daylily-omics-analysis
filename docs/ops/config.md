@@ -1,6 +1,6 @@
 # Configuring Daylily
 
-Daylily keeps most run behavior in Snakemake profiles and manifest tables rather than hard-coding values inside rules. Production profiles are tuned for `daylily-ephemeral-cluster` headnodes and the Daylily omics/reference data mount at `/fsx/data`.
+Daylily keeps most run behavior in Snakemake profiles and manifest tables rather than hard-coding values inside rules. Production profiles are tuned for `daylily-ephemeral-cluster` headnodes and the Daylily omics/reference data mount under explicit DayOA role roots.
 
 ## Required Run Tables
 
@@ -9,7 +9,7 @@ Current runs use:
 - `config/samples.tsv`
 - `config/units.tsv`
 
-For production worksets, create or deliver these tables through `daylily-ec` staging. The tables should point at staged read data and supporting resources visible from the headnode and compute nodes, especially `/fsx/data` reference paths.
+For production worksets, create or deliver these tables through `daylily-ec` staging. The tables should point at staged read data and supporting resources visible from the headnode and compute nodes, especially `/fsx/references` reference paths.
 
 `config/analysis_manifest.csv` is legacy. See [`analysis_manifest.md`](analysis_manifest.md) only when converting older run notes.
 

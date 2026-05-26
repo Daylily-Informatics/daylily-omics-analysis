@@ -8,7 +8,7 @@ shopt -s nullglob
 SAMPLE_FILTER="${SAMPLE_FILTER:-HG00[1-7]}"
 COV_FILTER="${COV_FILTER:-*x}"   # e.g. "30x" or "*x"
 
-TRUTH_BASE="/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1"
+TRUTH_BASE="/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1"
 
 # Build the glob (no brace expansion; use [] or literals)
 VCF_GLOB="$HOME/dragen_results/mega/results_all/${SAMPLE_FILTER}_*/${SAMPLE_FILTER}_${COV_FILTER}.hard-filtered.vcf.gz"

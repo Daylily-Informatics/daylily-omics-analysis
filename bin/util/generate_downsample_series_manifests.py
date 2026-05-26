@@ -6,7 +6,7 @@ BASE_DIR = ".test_data/data/agbt_2026/downsample_series"
 HEADER = "RUNID\tSAMPLEID\tEXPERIMENTID\tLANEID\tBARCODEID\tLIBPREP\tSEQ_VENDOR\tSEQ_PLATFORM\tILMN_R1_PATH\tILMN_R2_PATH\tPACBIO_R1_PATH\tPACBIO_R2_PATH\tONT_R1_PATH\tONT_R2_PATH\tUG_R1_PATH\tUG_R2_PATH\tSUBSAMPLE_PCT\tILMN_TRIM_READ_LENGTH\tSAMPLEUSE\tBWA_KMER\tDEEP_MODEL\tULTIMA_CRAM\tULTIMA_CRAM_ALIGNER\tULTIMA_CRAM_SNV_CALLER\tONT_CRAM\tONT_CRAM_ALIGNER\tONT_CRAM_SNV_CALLER\tPB_BAM\tPB_BAM_ALIGNER\tPB_BAM_SNV_CALLER"
 
 # Base paths
-ILMN_STD = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled"
+ILMN_STD = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled"
 ILMN_SCRATCH = "/fsx/scratch/downsamples/ilmn/HG003"
 UG_BASE = "/fsx/scratch/downsamples/ultima_cleaned_hg38_broad/HG003"
 ONT_BASE = "/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003"

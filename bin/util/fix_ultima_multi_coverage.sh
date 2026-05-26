@@ -5,9 +5,9 @@
 set -euo pipefail
 
 # Configuration - HG003 full-coverage Ultima CRAM (~99x)
-INPUT_CRAM="/fsx/data/ug/Jan-2026-Sample-run/428437-L9353_L9354-Z0016-CATCCTGTGCGCATGAT.cram"
+INPUT_CRAM="/fsx/control_data/ug/Jan-2026-Sample-run/428437-L9353_L9354-Z0016-CATCCTGTGCGCATGAT.cram"
 OUTPUT_BASE="/fsx/scratch/downsamples/ultima_cleaned_hg38_broad/HG003"
-REFERENCE="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
+REFERENCE="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
 SEED=33
 INPUT_COVERAGE=99.0  # Approximate input coverage
 

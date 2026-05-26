@@ -50,7 +50,7 @@ rule sentdhuo_snv:
 	alt_samp_name=get_alt_sample_name
     shell:
         """
-        export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         export TMPDIR=/fsx/tmp/sentdhuo_tmp_$timestamp;

@@ -148,6 +148,20 @@ write under `results/runs/<runid>/run_qc/`:
 | `produce_ultima_run_qc` | explicit `run_qc.ultima.metrics_path` and optional run URI | Ultima HTML/TSV summary |
 | `produce_run_qc_reports` | all explicit run-level inputs above | all run-level reports |
 
+Ultima is being promoted from the placeholder `run_qc.ultima.metrics_path`
+summary to a parser-backed run-QC target. The planned implementation is
+specified in
+[`../specs/ultima_run_qc_requirements.md`](../specs/ultima_run_qc_requirements.md),
+[`../specs/ugrun_cli_contract.md`](../specs/ugrun_cli_contract.md),
+[`../specs/ugrun_metrics_schema.md`](../specs/ugrun_metrics_schema.md), and
+[`../specs/ugrun_multiqc_contract.md`](../specs/ugrun_multiqc_contract.md).
+The future target will consume explicit local or S3 Ultima run evidence, run
+the open-source `ugrun` parsers from `lsmc-bio/ur-qc`, and emit normalized
+TSV/JSON plus MultiQC custom-data files under
+`results/day/<build>/run_qc/ultima/<run_id>/`. These outputs remain run-level
+evidence and stay outside routine final WGS MultiQC unless an operator
+explicitly enables Ultima run QC as a required report input.
+
 Illumina S3-mode fetches copy only named metrics files; they do not use
 `aws s3 sync`, recursive S3 copies, or FASTQ paths. The AWS profile must be
 explicit and must not be `default` when S3 mode is selected. Mounted mode links

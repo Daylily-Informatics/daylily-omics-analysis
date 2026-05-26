@@ -1,0 +1,3 @@
+Sample	run_id	barcode_id	sample_id	expected_outputs	observed_outputs	missing_required_outputs
+602202.Z0157.FAKE_SAMPLE_1	602202	Z0157	FAKE_SAMPLE_1	9	9	0
+602202.Z0158.FAKE_SAMPLE_2	602202	Z0158	FAKE_SAMPLE_2	9	8	1

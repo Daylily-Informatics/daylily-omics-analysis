@@ -35,7 +35,7 @@ if [[ -z "$INPUT_BAM" || -z "$OUT_PREFIX" ]]; then
     echo "  threads         Samtools threads (default: nproc)"
     echo ""
     echo "Example:"
-    echo "  $0 /fsx/data/roche/HG001.bam /fsx/scratch/roche_fq/HG001 16"
+    echo "  $0 /fsx/control_data/roche/HG001.bam /fsx/scratch/roche_fq/HG001 16"
     exit 1
 fi
 

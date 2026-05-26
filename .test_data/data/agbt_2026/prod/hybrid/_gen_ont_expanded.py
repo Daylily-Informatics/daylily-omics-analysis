@@ -33,12 +33,12 @@ UNITS_HEADER = [
     "PB_BAM", "PB_BAM_ALIGNER", "PB_BAM_SNV_CALLER",
 ]
 
-TRUTH_HG38 = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
-TRUTH_HG38_BROAD = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38_broad/controls/giab/snv/v4.2.1/HG003/"
+TRUTH_HG38 = "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
+TRUTH_HG38_BROAD = "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38_broad/controls/giab/snv/v4.2.1/HG003/"
 
 # File path templates
-ILMN_R1 = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R1.fastq.gz"
-ILMN_R2 = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R2.fastq.gz"
+ILMN_R1 = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R1.fastq.gz"
+ILMN_R2 = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R2.fastq.gz"
 ONT_CRAM_HG38 = "/fsx/scratch/downsamples/ont_cleaned_hg38_broad/HG003/HG003_{cov}x.cleaned.cram"
 UG_CRAM_HG38_BROAD = "/fsx/scratch/downsamples/ultima_cleaned_hg38_broad/HG003/HG003_{cov}x.cleaned.cram"
 

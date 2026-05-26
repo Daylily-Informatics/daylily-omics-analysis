@@ -5,7 +5,7 @@
 set -euo pipefail
 
 OUTPUT_DIR="/fsx/scratch/downsamples/ilmn/HG003"
-REF="/fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
+REF="/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -25,7 +25,7 @@ cat > /tmp/extract_40x.sh << 'SCRIPT'
 set -euo pipefail
 source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
 conda activate SAM
-REF="/fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
+REF="/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
 CRAM="/fsx/analysis_results/ubuntu/test-hg003-40x50x/daylily-omics-analysis/results/day/hg38/I40x-HG003-X1-1-D1-PCR-FREE-ILMN-NOVASEQ/align/sent/dmd/I40x-HG003-X1-1-D1-PCR-FREE-ILMN-NOVASEQ.sent.dmd.cram"
 OUTPUT_DIR="/fsx/scratch/downsamples/ilmn/HG003"
 samtools fastq -@ 16 -n \
@@ -41,7 +41,7 @@ cat > /tmp/extract_50x.sh << 'SCRIPT'
 set -euo pipefail
 source /home/ubuntu/miniconda3/etc/profile.d/conda.sh
 conda activate SAM
-REF="/fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
+REF="/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
 CRAM="/fsx/analysis_results/ubuntu/test-hg003-40x50x/daylily-omics-analysis/results/day/hg38/I50x-HG003-X1-2-D2-PCR-FREE-ILMN-NOVASEQ/align/sent/dmd/I50x-HG003-X1-2-D2-PCR-FREE-ILMN-NOVASEQ.sent.dmd.cram"
 OUTPUT_DIR="/fsx/scratch/downsamples/ilmn/HG003"
 samtools fastq -@ 16 -n \

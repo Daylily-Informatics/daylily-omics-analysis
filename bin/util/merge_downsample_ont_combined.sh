@@ -6,9 +6,9 @@
 set -euo pipefail
 
 # Configuration
-BAM1="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
-BAM2="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87794.calls.sorted.bam"
-REFERENCE="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
+BAM1="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
+BAM2="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87794.calls.sorted.bam"
+REFERENCE="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta"
 OUTPUT_DIR="/fsx/scratch/downsamples/ont_merged_hg38_broad/HG003"
 SCRATCH_DIR="/fsx/scratch/downsamples/ont_merged_hg38_broad/HG003"
 SEED=33

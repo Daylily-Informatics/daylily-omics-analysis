@@ -79,7 +79,7 @@ def test_readme_declares_cluster_and_manifest_contract() -> None:
     readme = README_PATH.read_text(encoding="utf-8")
 
     assert "daylily-ephemeral-cluster" in readme
-    assert "/fsx/data" in readme
+    assert "/fsx/references" in readme
     assert "daylily-ec" in readme
     assert "samples.tsv" in readme
     assert "units.tsv" in readme
@@ -119,6 +119,6 @@ def test_tool_catalog_marks_known_dormant_integrations() -> None:
         row_text = " ".join(rows[tool].values()).lower()
         assert "dormant" in row_text or "not imported" in row_text
 
-    assert "/fsx/data/tool_specific_resources/vep/" in " ".join(
+    assert "/fsx/references/tool_specific_resources/vep/" in " ".join(
         rows["VEP"].values()
     )

@@ -10,7 +10,7 @@ SAMPLES_HEADER = "\t".join([
     "SAMPLE_TYPE", "TUM_NRM_SAMPLEID_MATCH", "EXTERNAL_SAMPLE_ID",
     "N_X", "N_Y", "TRUTH_DATA_DIR",
 ])
-TRUTH = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
+TRUTH = "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
 SAMPLES_ROW = "\t".join([
     "HG003", "blood", "research", "male", TRUTH,
     "true", "false", "gdna", "", "HG003", "1", "1", TRUTH,
@@ -27,8 +27,8 @@ COLS_30 = [
 ]
 ROCHE_COLS = ["ROCHE_BAM", "ROCHE_BAM_ALIGNER", "ROCHE_BAM_SNV_CALLER", "ROCHE_DOWNSAMPLE_RATIO"]
 
-DS = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
-PB = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/pacbio/HG003/R0-HG003-D0-0-D0"
+DS = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
+PB = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/pacbio/HG003/R0-HG003-D0-0-D0"
 
 ILMN_COVS = ["1x", "3x", "5x", "7x", "10x", "15x", "20x", "30x", "40x"]
 PB_COVS =   ["1x", "3x", "5x", "7x", "10x", "15x", "20x", "30x"]

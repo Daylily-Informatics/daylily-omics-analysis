@@ -50,11 +50,11 @@ SAMPLES_HEADER = [
 ]
 
 # Path templates
-ILMN_R1 = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R1.fastq.gz"
-ILMN_R2 = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R2.fastq.gz"
-ULTIMA_CRAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ug/HG003_{cov}x.cleaned.cram"
-ONT_CRAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_{cov}x.cleaned.cram"
-PB_BAM = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/pacbio/HG003/R0-HG003-D0-0-D0/{cov}p0x/HG003_{cov}p0x.bam"
+ILMN_R1 = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R1.fastq.gz"
+ILMN_R2 = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/downsampled/HG003_{cov}x_R2.fastq.gz"
+ULTIMA_CRAM = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ug/HG003_{cov}x.cleaned.cram"
+ONT_CRAM = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_{cov}x.cleaned.cram"
+PB_BAM = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/pacbio/HG003/R0-HG003-D0-0-D0/{cov}p0x/HG003_{cov}p0x.bam"
 
 def fmt_cov(c):
     """Format coverage for paths (handle 0.5 -> 0p5)."""
@@ -123,9 +123,9 @@ def write_samples_tsv(out_dir):
     os.makedirs(out_dir, exist_ok=True)
     sample_row = [
         "HG003", "blood", "research", "male",
-        "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/",
+        "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/",
         "true", "false", "gdna", "", "HG003", "1", "1",
-        "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
+        "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/"
     ]
     with open(os.path.join(out_dir, "samples.tsv"), "w") as f:
         f.write("\t".join(SAMPLES_HEADER) + "\n")

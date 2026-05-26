@@ -37,7 +37,7 @@ snakemake --profile=/fsx/analysis_results/ubuntu/take1/daylily-omics-analysis/co
   - ILMN FASTQs: `s3://lsmc-dayoa-omics-analysis-us-west-2/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007/`
   - ONT CRAMs: `s3://lsmc-dayoa-omics-analysis-us-west-2/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/`
 - Concise manifest example:
-  - `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`
+  - `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`
   - `units.tsv`: `HIOa/HG003` units with `SR20x-ONT7x`, `SR20x-ONT10x`, `SR20x-ONT15x`, `SR30x-ONT7x`, `SR30x-ONT10x`, and `SR30x-ONT15x`
 
 ### Solo Ultima Genomics Run
@@ -71,7 +71,7 @@ s3://lsmc-dayoa-omics-analysis-us-west-2/data/genomic_data/organism_reads/H_sapi
 ```
 
 - Concise manifest example:
-  - `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`
+  - `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`
   - `units.tsv`: `Ug1/HG003` at `1x`, `3x`, `5x`, `7x`, `10x`, `15x`, `20x`, `30x`, `40x`, and `50x`
   - Each Ultima unit uses `SEQ_VENDOR=UG`, `SEQ_PLATFORM=ULTIMA`, `ULTIMA_CRAM_ALIGNER=ug`, and `ULTIMA_CRAM_SNV_CALLER=ug`
 
@@ -250,7 +250,7 @@ Required handoff:
 
 Responsibility:
 - Verify or preserve the hybrid input-data prefixes exactly.
-- Confirm they correspond to `/fsx/data/...` paths used by the exported manifests.
+- Confirm they correspond to `/fsx/references/...` paths used by the exported manifests.
 - Define the hybrid post-launch checks.
 
 Required handoff:

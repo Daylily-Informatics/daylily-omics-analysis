@@ -24,9 +24,9 @@ The local and Slurm profile templates configure the MGI-specific Sentieon bundle
 
 | Config key | Value |
 | --- | --- |
-| `sentieon_cgt7p.bwa_model` | `/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/bwa.model` |
+| `sentieon_cgt7p.bwa_model` | `/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/bwa.model` |
 | `sentieon_cgt7p.read_group_platform` | `DNBSEQ` |
-| `cgt7p.dna_scope_snv_model` | `/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/dnascope.model` |
+| `cgt7p.dna_scope_snv_model` | `/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeMGIWGS2.1.bundle/dnascope.model` |
 
 The DNAscope rule uses `--pcr_indel_model none`.
 

@@ -26,20 +26,20 @@ check_file() {
     fi
 }
 
-BDIR="/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles"
+BDIR="/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles"
 check_file "$BDIR/HybridIlluminaONT2.0.bundle" "HybridIlluminaONT2.0.bundle (main hybrid model)"
 check_file "$BDIR/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
 check_file "$BDIR/DNAscopeONT2.2.bundle" "SegDup LR model"
 
-CHRM="/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/chrM"
+CHRM="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.fasta" "chrM fasta"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.fasta.fai" "chrM fasta.fai"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta" "chrM shifted fasta"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta.fai" "chrM shifted fasta.fai"
 check_file "$CHRM/ShiftBack.chain" "ShiftBack.chain"
 check_file "$CHRM/blacklist_sites.hg38.chrM.bed" "chrM blacklist BED"
-check_file "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta" "Main genome fasta"
-check_file "/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta.fai" "Main genome fasta.fai"
+check_file "/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta" "Main genome fasta"
+check_file "/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta.fai" "Main genome fasta.fai"
 log ""
 
 log "=== SECTION 2: INITIALIZE EXISTING CLONE ==="

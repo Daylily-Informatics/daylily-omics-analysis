@@ -1,6 +1,6 @@
 # First Ephemeral Cluster Analysis
 
-This guide assumes `daylily-ephemeral-cluster` has already created a ParallelCluster headnode with FSx mounted at `/fsx` and Daylily omics/reference data available under `/fsx/data`.
+This guide assumes `daylily-ephemeral-cluster` has already created a ParallelCluster headnode with FSx mounted at `/fsx` and Daylily omics/reference data available under `/fsx/references`, `/fsx/control_data`, `/fsx/runtime_assets`, and `/fsx/staging`.
 
 Connect through the supported `daylily-ec` / AWS Systems Manager path from the operator machine:
 

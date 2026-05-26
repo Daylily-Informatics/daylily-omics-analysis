@@ -13,7 +13,7 @@ diff --git a/sent_hybrid_ilmn_ont_modular.smk b/sent_hybrid_ilmn_ont_modular.smk
      shell:
          """
          set -euo pipefail
-         export PATH=$PATH:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin/
+         export PATH=$PATH:/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 @@
          echo "Starting Stage1 at $(date)" >> {log}
 @@

@@ -40,7 +40,7 @@ s3://lsmc-dayoa-omics-analysis-us-west-2/data/genomic_data/organism_reads/H_sapi
 
 Concise manifest example:
 
-- `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`.
+- `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`.
 - `units.tsv`: `HIOa/HG003` units with `SR20x-ONT7x`, `SR20x-ONT10x`, `SR20x-ONT15x`, `SR30x-ONT7x`, `SR30x-ONT10x`, and `SR30x-ONT15x`.
 
 ## Verified Solo Ultima Genomics Run: `agbt_ug`
@@ -94,7 +94,7 @@ s3://lsmc-dayoa-omics-analysis-us-west-2/data/genomic_data/organism_reads/H_sapi
 
 Concise manifest example:
 
-- `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`.
+- `samples.tsv`: one `HG003` positive-control sample with GIAB truth data under `/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG003/`.
 - `units.tsv`: `Ug1/HG003` at `1x`, `3x`, `5x`, `7x`, `10x`, `15x`, `20x`, `30x`, `40x`, and `50x`.
 - Each Ultima unit uses `SEQ_VENDOR=UG`, `SEQ_PLATFORM=ULTIMA`, `ULTIMA_CRAM_ALIGNER=ug`, and `ULTIMA_CRAM_SNV_CALLER=ug`.
 

@@ -2,7 +2,7 @@
 
 This directory holds the canonical documentation for the current `daylily-omics-analysis` codebase. Prefer these docs for new runs and developer work.
 
-The production contract is that this repository runs inside a `daylily-ephemeral-cluster` workset clone, with Daylily omics/reference data mounted under `/fsx/data`. Use the [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) `daylily-ec` CLI for cluster access, read staging, and `samples.tsv` / `units.tsv` creation or delivery. Local execution is for fixture smoke tests, docs validation, and workflow development.
+The production contract is that this repository runs inside a `daylily-ephemeral-cluster` workset clone, with Daylily omics/reference data mounted under `/fsx/references`, `/fsx/control_data`, `/fsx/runtime_assets`, and `/fsx/staging`. Use the [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster) `daylily-ec` CLI for cluster access, read staging, and `samples.tsv` / `units.tsv` creation or delivery. Local execution is for fixture smoke tests, docs validation, and workflow development.
 
 ## Current Operator Docs
 

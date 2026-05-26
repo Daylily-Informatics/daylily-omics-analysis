@@ -1,6 +1,6 @@
 # Sentieon Pangenome Short-Read Workflows
 
-These rules are current Daylily integrations for Sentieon pangenome-aware short-read and Ultima workflows. They run inside the normal `daylily-ephemeral-cluster` headnode/FSx environment and assume Daylily reference resources are mounted under `/fsx/data`.
+These rules are current Daylily integrations for Sentieon pangenome-aware short-read and Ultima workflows. They run inside the normal `daylily-ephemeral-cluster` headnode/FSx environment and assume Daylily reference resources are mounted under `/fsx/references`, `/fsx/control_data`, `/fsx/runtime_assets`, and `/fsx/staging`.
 
 ## Targets
 
@@ -23,7 +23,7 @@ The local and Slurm profile templates provide the resource keys used by the rule
 - matching `sentieon_pangenome_ug.*` keys for Ultima
 - population VCF and reference FASTA entries from `config/supporting_files/*.yaml`
 
-Production resources should be staged by the Daylily reference-data process and visible under `/fsx/data`. Use `daylily-ec` for workset staging and manifest delivery, then run these rules from the analysis clone after `source dyoainit` and `dy-a slurm <build>`.
+Production resources should be staged by the Daylily reference-data process and visible under `/fsx/references`, `/fsx/control_data`, `/fsx/runtime_assets`, and `/fsx/staging`. Use `daylily-ec` for workset staging and manifest delivery, then run these rules from the analysis clone after `source dyoainit` and `dy-a slurm <build>`.
 
 ## Example Commands
 

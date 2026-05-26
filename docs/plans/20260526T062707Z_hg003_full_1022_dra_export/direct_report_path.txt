@@ -1,0 +1,1 @@
+s3://lsmc-ssf-sequencing-data/derived/hyb-hg003/analysis_results/hg003a_altair3_hiomr_full_1022/_daylily_monitor/fsx-export/20260526T063339Z/export-report/

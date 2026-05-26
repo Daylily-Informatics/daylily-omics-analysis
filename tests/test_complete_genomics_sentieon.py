@@ -15,11 +15,11 @@ def _load_rule_config(profile: str) -> dict:
 
 def test_cgt7p_uses_mgi_model_member_paths_in_both_profiles() -> None:
     expected_dnascope_model = (
-        "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/"
+        "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/"
         "DNAscopeMGIWGS2.1.bundle/dnascope.model"
     )
     expected_bwa_model = (
-        "/fsx/data/cached_envs/sentieon-genomics-202503.02/bundles/"
+        "/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/"
         "DNAscopeMGIWGS2.1.bundle/bwa.model"
     )
 

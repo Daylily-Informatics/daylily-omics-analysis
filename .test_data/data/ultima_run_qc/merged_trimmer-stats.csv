@@ -1,0 +1,3 @@
+read group,format,segment index,segment label,is required,is trimmed,num input reads,num prefiltered reads,num failed reads,num discarded reads,num filtered reads,num trimmed reads,num failures,num matches,num matched bases
+Z0157,bases,0,insert,true,true,1000,0,10,0,990,980,10,990,148500
+Z0158,bases,0,insert,true,true,800,0,20,0,780,770,20,780,117000

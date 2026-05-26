@@ -10,7 +10,7 @@
 
 ## Agent Assignments
 - Agent 1, Orchestrator: owns branch creation, `daylily-ec` connection, remote clone, tmux launch, queue monitoring, and final evidence bundle. It never edits workflow code.
-- Agent 2, Manifest Runner: owns GIAB HG001-HG007 `samples.tsv`/`units.tsv` generation, validates `/fsx/data/.../HG00*_30x_R{1,2}.fastq.gz`, sets `SUBSAMPLE_PCT=0.1666666667`, and verifies dry-run DAG shape.
+- Agent 2, Manifest Runner: owns GIAB HG001-HG007 `samples.tsv`/`units.tsv` generation, validates `/fsx/references/.../HG00*_30x_R{1,2}.fastq.gz`, sets `SUBSAMPLE_PCT=0.1666666667`, and verifies dry-run DAG shape.
 - Agent 3, Core Pipeline Debugger: owns failures in alignment, Doppelmark/dedup, Sentieon DNAscope, concordance, alignstats, and MultiQC completion.
 - Agent 4, Peddy Debugger: owns `workflow/rules/peddy.smk`; fixes masked failures so peddy exits hard and `.done` files are created only after expected outputs exist.
 - Agent 5, Contamination Debugger: owns `workflow/rules/gatk_contam.smk` and `workflow/rules/verifybamid2_contam.smk`; fixes target expansion/path mismatches and validates GATK plus VerifyBamID2 outputs.

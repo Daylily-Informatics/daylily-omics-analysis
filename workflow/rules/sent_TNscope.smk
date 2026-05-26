@@ -169,7 +169,7 @@ rule sent_TNscope:
             extra_args=""
         fi
 
-        {params.numa} /fsx/data/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
+        {params.numa} /fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
             --tumor_sample {params.tumor_sample} \
             --normal_sample {params.normal_sample} \
             -t {threads} \

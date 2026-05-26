@@ -37,8 +37,8 @@ usage() {
     echo "Usage: source $0 [--project <project_name>] [--skip-project-check]"
     echo "If --project is not specified, the default budget for the region is used: daylily-omics-analysis-${region}."
     echo "Valid projects/budgets and authorized users:"
-    if [[ -f "/fsx/data/budget_tags/pcluster-project-budget-tags.tsv" ]]; then
-        cat "/fsx/data/budget_tags/pcluster-project-budget-tags.tsv"
+    if [[ -f "/fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv" ]]; then
+        cat "/fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv"
     else
         echo "Budget tags file not found."
     fi
@@ -182,7 +182,7 @@ if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
     fi
 
     # Path to the budget file
-    budget_file="/fsx/data/budget_tags/pcluster-project-budget-tags.tsv"
+    budget_file="/fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv"
 
     # Ensure the budget file exists
     if [[ ! -f "$budget_file" ]]; then
@@ -205,8 +205,8 @@ fi
 create_budget() {
     echo "To create a budget, please exit and run the following command:"
     echo "bash bin/create_budget.sh --help"
-    echo "Then append the new project/budget name to /fsx/data/budget_tags/pcluster-project-budget-tags.tsv."
-    echo "Note: /fsx/data is read-only; update the file via S3."
+    echo "Then append the new project/budget name to /fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv."
+    echo "Note: /fsx/runtime_assets is read-only; update the file via S3."
 
 }
 
@@ -327,8 +327,8 @@ ulimit -n 16384
 
 # Set Sentieon variables
 export SENTIEON_TMPDIR='/dev/shm/'
-#export SENTIEON_LICENSE='/fsx/data/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
-export SENTIEON_INSTALL_DIR='/fsx/data/cached_envs/sentieon-genomics-202503.02'
+#export SENTIEON_LICENSE='/fsx/runtime_assets/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
+export SENTIEON_INSTALL_DIR='/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02'
 export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
 
 # Backup original PATH and PS1 if not already set

@@ -24,8 +24,8 @@ CONTAMINATION_LEVELS_PCT = [0.1, 0.5, 1, 2, 3, 4, 5, 10, 20, 30]
 DEFAULT_PRIMARY_SAMPLE = "HG002"
 DEFAULT_DONOR_SAMPLE = "HG003"
 DEFAULT_OUT_DIR = "/fsx/scratch/dayoa_qc_contam/giab_hg002_hg003_5x_20260425"
-DEFAULT_READ_ROOT = "/fsx/data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
-DEFAULT_TRUTH_DIR = "/fsx/data/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG002/"
+DEFAULT_READ_ROOT = "/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/NovaSeqX_WHGS_TruSeqPF_HG002-007"
+DEFAULT_TRUTH_DIR = "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/snv/v4.2.1/HG002/"
 
 SAMPLES_HEADER = [
     "SAMPLEID",
