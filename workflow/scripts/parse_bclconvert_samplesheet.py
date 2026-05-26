@@ -287,11 +287,12 @@ def main() -> int:
         if not settings.get(field):
             fail(f"missing required BCLConvert_Settings field: {field}")
 
-    required_data_cols = {"Lane", "Sample_ID", "Index", "Index2"}
+    required_data_cols = {"Sample_ID", "Index", "Index2"}
     if not required_data_cols.issubset(set(data_header)):
         fail(
-            "BCLConvert_Data must include Lane, Sample_ID, Index, and Index2 columns"
+            "BCLConvert_Data must include Sample_ID, Index, and Index2 columns"
         )
+    has_lane_column = "Lane" in data_header
 
     warning_message = warn_if_newer(settings["SoftwareVersion"], args.runtime_version)
 
@@ -299,20 +300,21 @@ def main() -> int:
     seen_keys: set[tuple[str, str, str, str]] = set()
 
     for source_row, row in data_rows:
-        lane = (row.get("Lane") or "").strip()
+        lane = (row.get("Lane") or "").strip() if has_lane_column else "*"
         sample_id = (row.get("Sample_ID") or "").strip()
         index = (row.get("Index") or "").strip()
         index2 = (row.get("Index2") or "").strip()
         sample_project = (row.get("Sample_Project") or "").strip()
         sample_name = (row.get("Sample_Name") or "").strip()
 
-        if not lane:
+        if has_lane_column and not lane:
             fail(f"missing Lane value at line {source_row}")
-        try:
-            if int(lane) <= 0:
-                fail(f"Lane must be a positive integer at line {source_row}")
-        except ValueError as exc:
-            raise SampleSheetError(f"Lane must be an integer at line {source_row}") from exc
+        if lane != "*":
+            try:
+                if int(lane) <= 0:
+                    fail(f"Lane must be a positive integer at line {source_row}")
+            except ValueError as exc:
+                raise SampleSheetError(f"Lane must be an integer at line {source_row}") from exc
 
         if not sample_id:
             fail(f"missing Sample_ID value at line {source_row}")

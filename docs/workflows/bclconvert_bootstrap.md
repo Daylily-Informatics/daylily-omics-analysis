@@ -73,7 +73,19 @@ No symlink is needed in `results/day/<genome_build>/`; the workflow writes the M
 | `produce_bclconvert_metrics` | Gather normalized BCL Convert metrics and write genome-build MultiQC custom-data TSVs. |
 | `produce_bclconvert_multiqc` | Gather BCL metrics and build the focused BCL Convert MultiQC HTML. |
 | `produce_bclconvert_fastqs_and_metrics` | Full bootstrap path: FASTQs, generated `units.tsv`, normalized metrics, genome-build MultiQC TSVs, and focused BCL Convert MultiQC HTML. |
-| `produce_illumina_run_qc_and_bclconvert` | Mounted run-analysis path that runs Illumina InterOp/CheckQC run QC and the full BCL Convert bootstrap demux/report chain in one output tree. |
+| `produce_illumina_run_qc_and_bclconvert` | Mounted run-analysis path that runs Illumina InterOp run QC and the full BCL Convert bootstrap demux/report chain in one output tree. |
+
+## Performance Profile
+
+The Slurm profile runs `run_bclconvert` as a 192-vCPU job and maps those CPUs to native BCL Convert sharding knobs:
+
+- `--bcl-num-parallel-tiles 8`
+- `--bcl-num-conversion-threads 8`
+- `--bcl-num-compression-threads 12`
+- `--bcl-num-decompression-threads 4`
+- `--fastq-gzip-compression-level 1`
+
+The same rule can stage the input run directory and BCL Convert output directory on `/dev/shm` with `bclconvert.staging_mode: "dev_shm"`. This mode copies the mounted run directory to node-local shared memory, writes demultiplexed output there, then copies completed outputs back to the result tree. It checks `/dev/shm` capacity before copying and fails hard if the requested scratch mode cannot fit; it does not silently fall back to direct FSx output. Scratch is removed at rule exit unless `bclconvert.retain_scratch: true` is set explicitly for debugging.
 
 ## Example Commands
 

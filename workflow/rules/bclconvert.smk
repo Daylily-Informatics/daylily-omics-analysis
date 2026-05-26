@@ -126,6 +126,19 @@ SAMPLES_TABLE = str(
 )
 
 BCL_THREADS = _intish(BCLCFG.get("threads", 1), 1)
+BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 3000), 3000)
+BCL_PARTITION = str(BCLCFG.get("partition", "i192,i192mem") or "i192,i192mem")
+BCL_TMPDIR = str(BCLCFG.get("tmpdir", "/dev/shm") or "/dev/shm")
+BCL_STAGING_MODE = str(BCLCFG.get("staging_mode", "direct") or "direct").strip().lower()
+BCL_SCRATCH_ROOT = str(BCLCFG.get("scratch_root", "/dev/shm/dayoa_bclconvert") or "/dev/shm/dayoa_bclconvert")
+BCL_SCRATCH_SIZE_MULTIPLIER = _intish(BCLCFG.get("scratch_size_multiplier", 4), 4)
+BCL_RETAIN_SCRATCH = _bool(BCLCFG.get("retain_scratch", False), False)
+BCL_PARALLEL_TILES = _intish(BCLCFG.get("parallel_tiles", 1), 1)
+BCL_CONVERSION_THREADS = _intish(BCLCFG.get("conversion_threads", BCL_THREADS), BCL_THREADS)
+BCL_COMPRESSION_THREADS = _intish(BCLCFG.get("compression_threads", BCL_THREADS), BCL_THREADS)
+BCL_DECOMPRESSION_THREADS = _intish(BCLCFG.get("decompression_threads", max(1, BCL_THREADS // 2)), max(1, BCL_THREADS // 2))
+BCL_FASTQ_GZIP_COMPRESSION_LEVEL = _intish(BCLCFG.get("fastq_gzip_compression_level", 1), 1)
+BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCLCFG.get("shared_thread_odirect_output", False), False)
 BCL_FORCE = _bool(BCLCFG.get("force", False))
 BCL_KEEP_UNDETERMINED = _bool(BCLCFG.get("keep_undetermined_fastqs", True), True)
 BCL_SAMPLEPROJECT_SUBDIRS = _bool(BCLCFG.get("sampleproject_subdirectories", False), False)
@@ -213,11 +226,28 @@ rule run_bclconvert:
         demux_stats=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
     threads:
         BCL_THREADS
+    resources:
+        partition=BCL_PARTITION,
+        vcpu=BCL_THREADS,
+        threads=BCL_THREADS,
+        mem_mb=BCL_MEM_MB,
+        tmpdir=BCL_TMPDIR,
     container:
         f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
     params:
         cluster_sample="run_bclconvert",
         run_dir=BCL_RUN_DIR,
+        tmpdir=BCL_TMPDIR,
+        staging_mode=BCL_STAGING_MODE,
+        scratch_root=BCL_SCRATCH_ROOT,
+        scratch_size_multiplier=BCL_SCRATCH_SIZE_MULTIPLIER,
+        retain_scratch="true" if BCL_RETAIN_SCRATCH else "false",
+        parallel_tiles=BCL_PARALLEL_TILES,
+        conversion_threads=BCL_CONVERSION_THREADS,
+        compression_threads=BCL_COMPRESSION_THREADS,
+        decompression_threads=BCL_DECOMPRESSION_THREADS,
+        fastq_gzip_compression_level=BCL_FASTQ_GZIP_COMPRESSION_LEVEL,
+        shared_thread_odirect_output="true" if BCL_SHARED_THREAD_ODIRECT_OUTPUT else "false",
         force="-f" if BCL_FORCE else "",
         strict_mode="true" if BCL_STRICT_MODE else "false",
         first_tile_only="true" if BCL_FIRST_TILE_ONLY else "false",
@@ -231,18 +261,99 @@ rule run_bclconvert:
         set -euo pipefail
         mkdir -p {BCL_FASTQ_DIR:q} {BCL_LOG_DIR:q}
         : > {log:q}
+        export TMPDIR={params.tmpdir:q}
+        mkdir -p "$TMPDIR"
+
+        staging_mode={params.staging_mode:q}
+        scratch_root={params.scratch_root:q}
+        retain_scratch={params.retain_scratch:q}
+        effective_run_dir={params.run_dir:q}
+        effective_output_dir={BCL_FASTQ_DIR:q}
+        scratch_dir=""
+
+        cleanup_bclconvert_scratch() {{
+            if [ -n "$scratch_dir" ] && [ "$retain_scratch" != "true" ]; then
+                rm -rf "$scratch_dir"
+            fi
+        }}
+        trap cleanup_bclconvert_scratch EXIT
+
+        echo "run_bclconvert started: $(date -Is)" >> {log:q}
+        echo "host: $(hostname)" >> {log:q}
+        echo "threads: {threads}" >> {log:q}
+        echo "resources_mem_mb: {resources.mem_mb}" >> {log:q}
+        echo "TMPDIR: $TMPDIR" >> {log:q}
+        echo "staging_mode: $staging_mode" >> {log:q}
+        echo "scratch_root: $scratch_root" >> {log:q}
+        echo "bcl_input_directory: $effective_run_dir" >> {log:q}
+        echo "output_directory: $effective_output_dir" >> {log:q}
+        nproc >> {log:q} 2>&1 || true
+        df -h "$TMPDIR" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
         bcl-convert --version >> {log:q} 2>&1
-        bcl-convert \
-          --bcl-input-directory {params.run_dir:q} \
-          --output-directory {BCL_FASTQ_DIR:q} \
-          --sample-sheet {input.sample_sheet:q} \
-          {params.force} \
-          --strict-mode {params.strict_mode} \
-          --first-tile-only {params.first_tile_only} \
-          --bcl-sampleproject-subdirectories {params.sampleproject_subdirectories} \
-          >> {log:q} 2>&1
+
+        case "$staging_mode" in
+            direct)
+                ;;
+            dev_shm)
+                mkdir -p "$scratch_root"
+                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
+                scratch_run_dir="$scratch_dir/run"
+                scratch_output_dir="$scratch_dir/fastqs"
+                mkdir -p "$scratch_run_dir" "$scratch_output_dir"
+                input_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
+                required_bytes="$((input_bytes * {params.scratch_size_multiplier} + 1073741824))"
+                available_bytes="$(df -PB1 "$scratch_root" | awk 'NR == 2 {{print $4}}')"
+                echo "scratch_dir: $scratch_dir" >> {log:q}
+                echo "scratch_input_bytes: $input_bytes" >> {log:q}
+                echo "scratch_required_bytes: $required_bytes" >> {log:q}
+                echo "scratch_available_bytes: $available_bytes" >> {log:q}
+                if [ "$available_bytes" -lt "$required_bytes" ]; then
+                    echo "Insufficient scratch for bclconvert.staging_mode=dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
+                    exit 2
+                fi
+                echo "Copying BCL run directory to scratch: $(date -Is)" >> {log:q}
+                cp -aL "$effective_run_dir"/. "$scratch_run_dir"/
+                effective_run_dir="$scratch_run_dir"
+                effective_output_dir="$scratch_output_dir"
+                df -h "$scratch_root" >> {log:q} 2>&1 || true
+                ;;
+            *)
+                echo "Unsupported bclconvert.staging_mode: $staging_mode" >> {log:q}
+                exit 2
+                ;;
+        esac
+
+        bcl_flags=(
+          --bcl-input-directory "$effective_run_dir"
+          --output-directory "$effective_output_dir"
+          --sample-sheet {input.sample_sheet:q}
+          --strict-mode {params.strict_mode}
+          --first-tile-only {params.first_tile_only}
+          --bcl-sampleproject-subdirectories {params.sampleproject_subdirectories}
+          --fastq-gzip-compression-level {params.fastq_gzip_compression_level}
+          --bcl-num-parallel-tiles {params.parallel_tiles}
+          --bcl-num-conversion-threads {params.conversion_threads}
+          --bcl-num-compression-threads {params.compression_threads}
+          --bcl-num-decompression-threads {params.decompression_threads}
+          --shared-thread-odirect-output {params.shared_thread_odirect_output}
+        )
+        if [ -n {params.force:q} ]; then
+            bcl_flags+=({params.force})
+        fi
+
+        printf 'bcl-convert command:' >> {log:q}
+        printf ' %q' bcl-convert "${{bcl_flags[@]}}" >> {log:q}
+        printf '\n' >> {log:q}
+        bcl-convert "${{bcl_flags[@]}}" >> {log:q} 2>&1
+
+        if [ "$staging_mode" = "dev_shm" ]; then
+            echo "Copying BCLConvert outputs from scratch to result tree: $(date -Is)" >> {log:q}
+            cp -a "$effective_output_dir"/. {BCL_FASTQ_DIR:q}/
+            df -h "$scratch_root" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
+        fi
         test -s {output.fastq_list:q}
         test -s {output.demux_stats:q}
+        echo "run_bclconvert finished: $(date -Is)" >> {log:q}
         touch {output.done:q}
         """
 

@@ -100,6 +100,7 @@ RUNQC_ILMN_SOURCE_RUN = RUNQC_ILMN_ROOT + "/source_run_subset"
 RUNQC_ILMN_INTEROP_DIR = RUNQC_ILMN_SOURCE_RUN + "/InterOp"
 RUNQC_ILMN_REPORT_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_TABLE_DIR = RUNQC_ILMN_ROOT
+RUNQC_ILMN_MQC_DIR = RUNQC_ILMN_ROOT + "/multiqc_data"
 RUNQC_ILMN_LOG_DIR = RUNQC_ILMN_ROOT + "/logs"
 RUNQC_ILMN_BENCH_DIR = RUNQC_ILMN_ROOT + "/benchmarks"
 RUNQC_ILMN_REPORT_PREFIX = _runqc_safe_token(
@@ -416,11 +417,14 @@ rule illumina_run_qc_multiqc:
         interop_summary=RUNQC_ILMN_TABLE_DIR + "/interop_summary.csv",
         interop_index_summary=RUNQC_ILMN_TABLE_DIR + "/interop_index_summary.csv",
         illumina_qc_json=RUNQC_ILMN_TABLE_DIR + "/illumina_run_qc.json",
+        summary_tsv=RUNQC_ILMN_TABLE_DIR + "/summary.tsv",
         report_done=RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_report.done",
     output:
         html=RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
+        mqc_tsv=RUNQC_ILMN_MQC_DIR + "/illumina_run_qc_summary_mqc.tsv",
+        multiqc_config=RUNQC_ILMN_MQC_DIR + "/illumina_run_qc_multiqc_config.yaml",
     params:
-        root=RUNQC_ILMN_ROOT,
+        mqc_dir=RUNQC_ILMN_MQC_DIR,
         cluster_sample="illumina_run_qc_multiqc",
     log:
         RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_multiqc.log",
@@ -431,14 +435,21 @@ rule illumina_run_qc_multiqc:
     shell:
         r"""
         set -euo pipefail
-        mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
+        mkdir -p $(dirname {output.html:q}) $(dirname {log:q}) {params.mqc_dir:q}
         out={output.html:q}
         multiqc --version > {log:q} 2>&1 || true
+        python workflow/scripts/illumina_run_qc_to_multiqc.py \
+          --summary-tsv {input.summary_tsv:q} \
+          --illumina-qc-json {input.illumina_qc_json:q} \
+          --summary-out {output.mqc_tsv:q} \
+          --config-out {output.multiqc_config:q} \
+          >> {log:q} 2>&1
         multiqc -f \
-          -m interop \
+          -m custom_content \
+          --config {output.multiqc_config:q} \
           --filename "$(basename "$out")" \
           --outdir "$(dirname "$out")" \
-          {params.root:q} >> {log:q} 2>&1
+          {params.mqc_dir:q} >> {log:q} 2>&1
         test -s {output.html:q}
         """
 

@@ -45,6 +45,15 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "generated.units.tsv" in rule
     assert "BCL_BENCH_DIR" in rule
     assert "bcl_extra_args={params.extra_args:q}" in rule
+    assert "BCL_STAGING_MODE" in rule
+    assert "staging_mode={params.staging_mode:q}" in rule
+    assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in rule
+    assert "--bcl-num-parallel-tiles {params.parallel_tiles}" in rule
+    assert "--bcl-num-conversion-threads {params.conversion_threads}" in rule
+    assert "--bcl-num-compression-threads {params.compression_threads}" in rule
+    assert "--bcl-num-decompression-threads {params.decompression_threads}" in rule
+    assert "--fastq-gzip-compression-level {params.fastq_gzip_compression_level}" in rule
+    assert "--shared-thread-odirect-output {params.shared_thread_odirect_output}" in rule
     assert '--seq-platform-override "$seq_platform_override"' in rule
     for rule_name in (
         "bclconvert_validate_inputs",
@@ -130,6 +139,123 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         profile = _yaml(path)
         assert profile["multiqc"]["bclconvert"]["config_yaml"] == "config/external_tools/multiqc_config.yaml"
         assert profile["multiqc"]["bclconvert"]["env_yaml"] == "../envs/multiqc_v0.1.yaml"
+        assert profile["bclconvert"]["fastq_gzip_compression_level"] == 1
+        assert profile["bclconvert"]["scratch_size_multiplier"] == 4
+        assert profile["bclconvert"]["retain_scratch"] is False
+
+    slurm_bcl = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")["bclconvert"]
+    assert slurm_bcl["threads"] == 192
+    assert slurm_bcl["mem_mb"] == 180000
+    assert slurm_bcl["staging_mode"] == "dev_shm"
+    assert slurm_bcl["parallel_tiles"] == 8
+    assert slurm_bcl["conversion_threads"] == 8
+    assert slurm_bcl["compression_threads"] == 12
+    assert slurm_bcl["decompression_threads"] == 4
+
+
+def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(
+    tmp_path: Path,
+) -> None:
+    sample_sheet = tmp_path / "SampleSheet.csv"
+    sample_sheet.write_text(
+        "\n".join(
+            [
+                "[Header],",
+                "FileFormatVersion,2",
+                "RunName,20260514_ILMN_Altair_Run_3",
+                "InstrumentPlatform,NovaSeqXSeries",
+                "",
+                "[Reads]",
+                "Read1Cycles,151",
+                "Read2Cycles,151",
+                "Index1Cycles,10",
+                "Index2Cycles,10",
+                "",
+                "[BCLConvert_Settings]",
+                "SoftwareVersion,4.3.16",
+                "OverrideCycles,Y151;I10;I10;Y151",
+                "",
+                "[BCLConvert_Data]",
+                "Sample_ID,Index,Index2",
+                "HG003-a,GAGTAATATA,CCGACCGTGA",
+                "NTC,AATTCGACCT,AATATGCAAC",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    samples = tmp_path / "samples.tsv"
+    samples.write_text(
+        "\n".join(
+            [
+                "SAMPLEID\tSAMPLESOURCE\tSAMPLECLASS\tBIOLOGICAL_SEX\tCONCORDANCE_CONTROL_PATH\tIS_POSITIVE_CONTROL\tIS_NEGATIVE_CONTROL\tSAMPLE_TYPE\tTUM_NRM_SAMPLEID_MATCH\tEXTERNAL_SAMPLE_ID\tN_X\tN_Y\tTRUTH_DATA_DIR",
+                "HG003-a\tblood\tresearch\tunknown\tna\tfalse\tfalse\tblood\tna\tHG003-a\tna\tna\tna",
+                "NTC\tcontrol\tcontrol\tunknown\tna\tfalse\ttrue\tcontrol\tna\tNTC\tna\tna\tna",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    normalized = tmp_path / "normalized.SampleSheet.csv"
+    rows_tsv = tmp_path / "samplesheet_rows.tsv"
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "parse_bclconvert_samplesheet.py"),
+            "--sample-sheet",
+            str(sample_sheet),
+            "--samples-tsv",
+            str(samples),
+            "--normalized-out",
+            str(normalized),
+            "--rows-out",
+            str(rows_tsv),
+            "--runtime-version",
+            "4.0.3",
+        ],
+        check=True,
+    )
+
+    parsed_rows = _read_tsv(rows_tsv)
+    assert {row["LANE"] for row in parsed_rows} == {"*"}
+    assert "SoftwareVersion,4.0.3" in normalized.read_text(encoding="utf-8")
+
+    fastq_list = tmp_path / "fastq_list.csv"
+    fastq_list.write_text(
+        "\n".join(
+            [
+                "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                "RG001,HG003-a,HG003-a,1,/tmp/HG003-a_L001_R1_001.fastq.gz,/tmp/HG003-a_L001_R2_001.fastq.gz",
+                "RG002,HG003-a,HG003-a,2,/tmp/HG003-a_L002_R1_001.fastq.gz,/tmp/HG003-a_L002_R2_001.fastq.gz",
+                "RGUND,Undetermined,Undetermined,1,/tmp/Undetermined_S0_L001_R1_001.fastq.gz,/tmp/Undetermined_S0_L001_R2_001.fastq.gz",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    units = tmp_path / "generated.units.tsv"
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "bclconvert_fastq_list_to_units.py"),
+            "--fastq-list",
+            str(fastq_list),
+            "--sample-sheet-rows",
+            str(rows_tsv),
+            "--run-id",
+            "20260514_LH01106_0009_B23TVLGLT4",
+            "--units-out",
+            str(units),
+        ],
+        check=True,
+    )
+
+    unit_rows = _read_tsv(units)
+    assert [(row["SAMPLEID"], row["LANEID"]) for row in unit_rows] == [
+        ("HG003-a", "1"),
+        ("HG003-a", "2"),
+    ]
+    assert unit_rows[0]["BARCODEID"] == "GAGTAATATACCGACCGTGA"
 
 
 def test_bclconvert_metrics_to_multiqc_outputs_sample_first(tmp_path: Path) -> None:

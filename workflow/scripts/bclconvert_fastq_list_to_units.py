@@ -107,6 +107,12 @@ def build_sample_sheet_index(rows: list[dict[str, str]]) -> OrderedDict[tuple[st
         sample_id = first_nonempty(row.get("SAMPLE_ID"))
         if not lane or not sample_id:
             raise SystemExit(f"ERROR: sample sheet row is missing LANE or SAMPLE_ID: {row}")
+        if lane != "*":
+            try:
+                if int(lane) <= 0:
+                    raise ValueError
+            except ValueError:
+                raise SystemExit(f"ERROR: sample sheet row has invalid LANE {lane!r}: {row}") from None
         key = join_key(lane, sample_id)
         if key in index:
             existing = index[key]
@@ -116,6 +122,15 @@ def build_sample_sheet_index(rows: list[dict[str, str]]) -> OrderedDict[tuple[st
             )
         index[key] = row
     return index
+
+
+def match_sample_row(
+    sample_index: OrderedDict[tuple[str, str], dict[str, str]], lane: str, sample_id: str
+) -> dict[str, str] | None:
+    exact = sample_index.get(join_key(lane, sample_id))
+    if exact is not None:
+        return exact
+    return sample_index.get(join_key("*", sample_id))
 
 
 def index_combo(index1: str, index2: str) -> str:
@@ -149,8 +164,7 @@ def main() -> int:
             if not lane:
                 raise SystemExit(f"ERROR: fastq_list row is missing Lane: {row}")
 
-            key = join_key(lane, sample_id)
-            sample_row = sample_index.get(key)
+            sample_row = match_sample_row(sample_index, lane, sample_id)
             if sample_row is None:
                 raise SystemExit(
                     f"ERROR: fastq_list.csv contains known sample {sample_id!r} in lane {lane!r} "

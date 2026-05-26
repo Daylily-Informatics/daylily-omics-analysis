@@ -97,12 +97,14 @@ def test_interop_and_placeholder_contracts_fail_loudly() -> None:
 
     assert "workflow/scripts/write_interop_summary_csv.py" in rules
     assert "workflow/scripts/write_illumina_run_qc_json.py" in rules
+    assert "workflow/scripts/illumina_run_qc_to_multiqc.py" in rules
     assert "--index-summary-out {output.index_summary:q}" in rules
     assert '"$CONDA_PREFIX/bin/python" workflow/scripts/write_interop_summary_csv.py' in rules
     assert "CONDA_PREFIX is required for illumina_run_qc_json" in rules
     assert "--illumina-qc-json {input.illumina_qc_json:q}" in rules
     assert "checkqc" not in rules
-    assert "-m interop" in rules
+    assert "-m custom_content" in rules
+    assert "illumina_run_qc_summary_mqc.tsv" in rules
     assert "run_qc.ont.metrics_path" in summarizer
     assert "run_qc.ultima.metrics_path" in summarizer
     assert "does not exist" in summarizer
@@ -161,6 +163,7 @@ def test_run_qc_scripts_compile() -> None:
         "workflow/scripts/summarize_run_qc_report.py",
         "workflow/scripts/write_interop_summary_csv.py",
         "workflow/scripts/write_illumina_run_qc_json.py",
+        "workflow/scripts/illumina_run_qc_to_multiqc.py",
         "bin/build_illumina_read_fate_river.py",
     ):
         py_compile.compile(str(REPO_ROOT / path), doraise=True)
@@ -231,3 +234,55 @@ def test_summarize_run_qc_report_outputs_and_missing_input_failure(tmp_path: Pat
     )
     assert missing.returncode != 0
     assert "does not exist" in missing.stderr
+
+
+def test_illumina_run_qc_multiqc_custom_content_contract(tmp_path: Path) -> None:
+    summary = tmp_path / "summary.tsv"
+    summary.write_text(
+        "\n".join(
+            [
+                "metric\tvalue",
+                "platform\tILMN",
+                "run_s3_uri\ts3://bucket/run",
+                "interop_summary_rows\t10",
+                "interop_index_summary_rows\t5",
+                "json_error_mentions\t0",
+                "json_fail_mentions\t0",
+                "json_warning_mentions\t1",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    illumina_qc = tmp_path / "illumina_run_qc.json"
+    illumina_qc.write_text(
+        json.dumps({"run_info": {"run_id": "20260514_LH01106_0009_B23TVLGLT4"}}),
+        encoding="utf-8",
+    )
+    mqc_tsv = tmp_path / "illumina_run_qc_summary_mqc.tsv"
+    mqc_config = tmp_path / "illumina_run_qc_multiqc_config.yaml"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "illumina_run_qc_to_multiqc.py"),
+            "--summary-tsv",
+            str(summary),
+            "--illumina-qc-json",
+            str(illumina_qc),
+            "--summary-out",
+            str(mqc_tsv),
+            "--config-out",
+            str(mqc_config),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "20260514_LH01106_0009_B23TVLGLT4\tILMN\t" in mqc_tsv.read_text(
+        encoding="utf-8"
+    )
+    config_text = mqc_config.read_text(encoding="utf-8")
+    assert "illumina_run_qc_summary" in config_text
+    assert "illumina_run_qc_summary_mqc.tsv" in config_text
