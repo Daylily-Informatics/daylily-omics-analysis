@@ -373,23 +373,30 @@ rule run_bclconvert:
                 scratch_sync_log_dir="$scratch_dir/rsync_logs"
                 mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
                 command -v rsync >> {log:q} 2>&1
-                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
-                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
+                lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
+                if [ ! -d "$lane_root" ]; then
+                    echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
+                    exit 2
+                fi
+                root_file_bytes="$(find "$effective_run_dir" -maxdepth 1 -type f -printf '%s\n' | awk '{{s+=$1}} END {{print s+0}}')"
+                intensities_file_bytes="$(find "$effective_run_dir/Data/Intensities" -maxdepth 1 -type f -printf '%s\n' | awk '{{s+=$1}} END {{print s+0}}')"
+                lane_root_disk_bytes="$(du -sB1 "$lane_root" | awk '{{print $1}}')"
+                input_disk_bytes="$((root_file_bytes + intensities_file_bytes + lane_root_disk_bytes))"
+                input_apparent_bytes="$input_disk_bytes"
                 required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
                 scratch_parent="$(dirname "$scratch_root")"
                 available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
                 echo "scratch_dir: $scratch_dir" >> {log:q}
+                echo "scratch_input_basis: mounted_metadata_plus_lane_root" >> {log:q}
+                echo "scratch_root_file_bytes: $root_file_bytes" >> {log:q}
+                echo "scratch_intensities_file_bytes: $intensities_file_bytes" >> {log:q}
+                echo "scratch_lane_root_disk_bytes: $lane_root_disk_bytes" >> {log:q}
                 echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
                 echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
                 echo "scratch_required_bytes: $required_bytes" >> {log:q}
                 echo "scratch_available_bytes: $available_bytes" >> {log:q}
                 if [ "$available_bytes" -lt "$required_bytes" ]; then
                     echo "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
-                    exit 2
-                fi
-                lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
-                if [ ! -d "$lane_root" ]; then
-                    echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
                     exit 2
                 fi
                 lane_ids=$(find "$lane_root" -mindepth 1 -maxdepth 1 -type d -name 'L[0-9][0-9][0-9]' -printf '%f\n' | sort)
