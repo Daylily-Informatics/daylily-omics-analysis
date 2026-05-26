@@ -44,6 +44,17 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "multiqc_report.html" in rule
     assert "generated.units.tsv" in rule
     assert "BCL_BENCH_DIR" in rule
+    for rule_name in (
+        "bclconvert_validate_inputs",
+        "run_bclconvert",
+        "bclconvert_generate_units_tsv",
+        "bclconvert_metrics_summary",
+        "bclconvert_metrics_multiqc_exports",
+        "multiqc_bclconvert",
+    ):
+        block = rule[rule.index(f"rule {rule_name}:") :]
+        block = block.split("\nrule ", 1)[0]
+        assert 'cluster_sample="' in block, rule_name
     assert "-m bclconvert" in rule
     assert "-m custom_content" in rule
     assert "-m fastqc" not in rule

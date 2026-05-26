@@ -157,6 +157,7 @@ rule bclconvert_validate_inputs:
     conda:
         BCL_METRICS_ENV
     params:
+        cluster_sample="bclconvert_validate_inputs",
         run_dir=BCL_RUN_DIR,
         runtime_version=BCL_RUNTIME_VERSION,
         keep_undetermined_fastqs="true" if BCL_KEEP_UNDETERMINED else "false",
@@ -214,6 +215,7 @@ rule run_bclconvert:
     container:
         f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
     params:
+        cluster_sample="run_bclconvert",
         run_dir=BCL_RUN_DIR,
         force="-f" if BCL_FORCE else "",
         strict_mode="true" if BCL_STRICT_MODE else "false",
@@ -256,6 +258,7 @@ rule bclconvert_generate_units_tsv:
     conda:
         BCL_METRICS_ENV
     params:
+        cluster_sample="bclconvert_generate_units_tsv",
         run_id=BCL_RUN_ID,
         libprep=BCL_LIBPREP,
         seq_vendor=BCL_SEQ_VENDOR,
@@ -295,6 +298,8 @@ rule bclconvert_metrics_summary:
         1
     conda:
         BCL_METRICS_ENV
+    params:
+        cluster_sample="bclconvert_metrics_summary",
     log:
         f"{BCL_LOG_DIR}/bclconvert_metrics_summary.log",
     benchmark:
@@ -333,6 +338,8 @@ rule bclconvert_metrics_multiqc_exports:
         1
     conda:
         BCL_METRICS_ENV
+    params:
+        cluster_sample="bclconvert_metrics_multiqc_exports",
     log:
         f"{BCL_MQC_LOG_DIR}/bclconvert_metrics_multiqc_exports.log",
     benchmark:
@@ -370,6 +377,7 @@ rule multiqc_bclconvert:
     conda:
         MULTIQC_ENV
     params:
+        cluster_sample="multiqc_bclconvert",
         multiqc_cfg=MULTIQC_CONFIG,
         multiqc_filename="multiqc_report.html" if BCL_RUN_CONTEXT is not None else "bclconvert.multiqc.html",
     log:
