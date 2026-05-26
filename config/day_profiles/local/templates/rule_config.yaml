@@ -220,7 +220,7 @@ deepvariant:
     threads: 7
     deep_threads: 7
     env_yaml: "../envs/deepvariant_v0.1.yaml"
-    deep_cmd: " singularity run   -B /usr/bin:/usr/bin   -B ./resources:/fsx/resources -B /fsx:/fsx -B /tmp:/tmp   -B $PWD:$PWD  /fsx/resources/environments/containers/deepvariant-1.3.0.sif  OMP_PROC_BIND=close OMP_PLACES=threads OMP_PROC_BIND=TRUE OMP_DYNAMIC=TRUE OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
+    deep_cmd: " "
     ld_preload: " "
     partition: "i8"
     partition_other: "i96,i192,i192"

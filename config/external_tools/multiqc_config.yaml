@@ -93,6 +93,8 @@ module_order:
   - site_mix_donor
   - kraken
   - unmapped_metagenomics
+  - unmapped_metagenomics_ganon2
+  - unmapped_metagenomics_sourmash
   - relatedness
   - bcftools_variant_stats
   - rtg_vcfstats
@@ -176,6 +178,10 @@ report_section_order:
     order: 3050
   unmapped_metagenomics:
     order: 3060
+  unmapped_metagenomics_ganon2:
+    order: 3070
+  unmapped_metagenomics_sourmash:
+    order: 3080
   peddy:
     order: 3100
   peddy_sample_qc:
@@ -542,6 +548,26 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'unmapped_metagenomics'
+  unmapped_metagenomics_ganon2:
+    id: 'unmapped_metagenomics_ganon2'
+    section_name: 'Unmapped-read Ganon2 Metagenomics'
+    parent_id: 'dayoa_sample_contamination_metagenomics'
+    parent_name: 'Sample identity, contamination, metagenomics'
+    description: 'Ganon2 classification summary for primary pass-QC human-unmapped reads'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'unmapped_metagenomics_ganon2'
+  unmapped_metagenomics_sourmash:
+    id: 'unmapped_metagenomics_sourmash'
+    section_name: 'Unmapped-read Sourmash Gather Fingerprint'
+    parent_id: 'dayoa_sample_contamination_metagenomics'
+    parent_name: 'Sample identity, contamination, metagenomics'
+    description: 'sourmash gather secondary fingerprint summary for primary pass-QC human-unmapped reads'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'unmapped_metagenomics_sourmash'
   ultima_coverage_summary:
     id: 'ultima_coverage_summary'
     section_name: 'Ultima Coverage Summary'
@@ -739,6 +765,10 @@ sp:
     fn: "other_reports/site_mix_donor_mqc.tsv"
   unmapped_metagenomics:
     fn: "other_reports/unmapped_metagenomics_mqc.tsv"
+  unmapped_metagenomics_ganon2:
+    fn: "other_reports/unmapped_metagenomics_ganon2_mqc.tsv"
+  unmapped_metagenomics_sourmash:
+    fn: "other_reports/unmapped_metagenomics_sourmash_mqc.tsv"
   relatedness:
     fn: "other_reports/relatedness_mqc.tsv"
   bcftools_variant_stats:

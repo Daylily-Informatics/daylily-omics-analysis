@@ -134,6 +134,159 @@ def test_stage_multiqc_inputs_stages_native_kraken2_reports(tmp_path: Path) -> N
     ]
 
 
+def test_stage_multiqc_inputs_stages_ganon2_sources_from_custom_rows(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_ganon2_contracts_under_test",
+    )
+    input_root = tmp_path / "results/day/hg38"
+    ganon_dir = input_root / "HG002/align/sent/dmd/alignqc/unmapped_metagenomics"
+    report_path = ganon_dir / "HG002.sent.dmd.ganon2.quick.tre"
+    rep_path = ganon_dir / "HG002.sent.dmd.ganon2.quick.rep"
+    mqc_path = input_root / "other_reports/unmapped_metagenomics_ganon2_mqc.tsv"
+    output_dir = input_root / "reports/multiqc_inputs/final"
+    manifest = output_dir / "manifest.tsv"
+    ganon_dir.mkdir(parents=True)
+    mqc_path.parent.mkdir(parents=True)
+    report_path.write_text(
+        "root\t1\t1\troot\t0\t0\t3\t3\t75.00000\n",
+        encoding="utf-8",
+    )
+    rep_path.write_text(
+        "#total_classified\t3\n#total_unclassified\t1\n",
+        encoding="utf-8",
+    )
+    mqc_path.write_text(
+        "\t".join(
+            [
+                "Sample",
+                "base_sample",
+                "aligner",
+                "deduper",
+                "classifier",
+                "ganon2_report",
+                "ganon2_rep",
+            ]
+        )
+        + "\n"
+        + "\t".join(
+            [
+                "HG002.sent.dmd",
+                "HG002",
+                "sent",
+                "dmd",
+                "ganon2",
+                str(report_path),
+                str(rep_path),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    stager = module.Stager(input_root, output_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, mqc_path)
+    stager.finish()
+
+    staged_report = output_dir / "native/ganon2/HG002.sent.dmd.ganon2.quick.tre"
+    staged_rep = output_dir / "native/ganon2/HG002.sent.dmd.ganon2.quick.rep"
+    assert staged_report.read_text(encoding="utf-8") == report_path.read_text(
+        encoding="utf-8"
+    )
+    assert staged_rep.read_text(encoding="utf-8") == rep_path.read_text(
+        encoding="utf-8"
+    )
+    rows = _read_tsv(manifest)
+    assert {row["input_kind"] for row in rows} == {
+        "custom_mqc_row",
+        "ganon2_tree_report",
+        "ganon2_rep",
+    }
+    assert {row["module"] for row in rows} == {
+        "unmapped_metagenomics_ganon2",
+        "ganon2",
+    }
+
+
+def test_stage_multiqc_inputs_stages_sourmash_sources_from_custom_rows(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_sourmash_contracts_under_test",
+    )
+    input_root = tmp_path / "results/day/hg38"
+    sourmash_dir = input_root / "HG002/align/sent/dmd/alignqc/unmapped_metagenomics"
+    sig_path = sourmash_dir / "HG002.sent.dmd.sourmash.sig"
+    gather_path = sourmash_dir / "HG002.sent.dmd.sourmash.gather.csv"
+    mqc_path = input_root / "other_reports/unmapped_metagenomics_sourmash_mqc.tsv"
+    output_dir = input_root / "reports/multiqc_inputs/final"
+    manifest = output_dir / "manifest.tsv"
+    sourmash_dir.mkdir(parents=True)
+    mqc_path.parent.mkdir(parents=True)
+    sig_path.write_text("{\"class\":\"sourmash_signature\"}\n", encoding="utf-8")
+    gather_path.write_text(
+        "unique_intersect_bp,intersect_bp,f_unique_to_query,f_unique_weighted,"
+        "filename,name,md5,gather_result_rank,query_bp,ksize,moltype,scaled,"
+        "query_n_hashes\n",
+        encoding="utf-8",
+    )
+    mqc_path.write_text(
+        "\t".join(
+            [
+                "Sample",
+                "base_sample",
+                "aligner",
+                "deduper",
+                "classifier",
+                "sourmash_signature",
+                "sourmash_gather_csv",
+            ]
+        )
+        + "\n"
+        + "\t".join(
+            [
+                "HG002.sent.dmd",
+                "HG002",
+                "sent",
+                "dmd",
+                "sourmash_gather",
+                str(sig_path),
+                str(gather_path),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    stager = module.Stager(input_root, output_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, mqc_path)
+    stager.finish()
+
+    staged_sig = output_dir / "native/sourmash/HG002.sent.dmd.sourmash.sig"
+    staged_gather = output_dir / "native/sourmash/HG002.sent.dmd.sourmash.gather.csv"
+    assert staged_sig.read_text(encoding="utf-8") == sig_path.read_text(
+        encoding="utf-8"
+    )
+    assert staged_gather.read_text(encoding="utf-8") == gather_path.read_text(
+        encoding="utf-8"
+    )
+    rows = _read_tsv(manifest)
+    assert {row["input_kind"] for row in rows} == {
+        "custom_mqc_row",
+        "sourmash_signature",
+        "sourmash_gather_csv",
+    }
+    assert {row["module"] for row in rows} == {
+        "unmapped_metagenomics_sourmash",
+        "sourmash",
+    }
+
+
 def test_multiqc_log_guard_renames_zero_byte_and_rejects_nonempty_mqc_logs(
     tmp_path: Path,
 ) -> None:

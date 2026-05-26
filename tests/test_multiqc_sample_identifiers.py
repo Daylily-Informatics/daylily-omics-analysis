@@ -877,13 +877,20 @@ def test_container_profile_uses_fsx_tmp_for_image_builds_and_binds_dev_shm() -> 
         profile_env = _read(f"config/day_profiles/{profile}/templates/profile_env.bash")
 
         assert "-B /dev/shm:/dev/shm" in config
+        assert 'conda-prefix: "/fsx/references/runtime_assets/cached_envs/conda"' in config
+        assert (
+            'singularity-prefix: "/fsx/references/runtime_assets/cached_envs/containers"'
+            in config
+        )
         assert 'export APPTAINER_TMPDIR="/fsx/scratch/dayoa_apptainer_tmp/${dayoa_user}"' in profile_env
         assert 'export SINGULARITY_TMPDIR="${APPTAINER_TMPDIR}"' in profile_env
         assert (
-            'export APPTAINER_CACHEDIR="/fsx/resources/environments/apptainer_cache/${dayoa_user}/${dayoa_host}"'
+            'export APPTAINER_CACHEDIR="/fsx/tmp/apptainer_cache/${dayoa_user}/${dayoa_host}"'
             in profile_env
         )
         assert 'export SINGULARITY_CACHEDIR="${APPTAINER_CACHEDIR}"' in profile_env
         assert 'mkdir -p "${APPTAINER_TMPDIR}" "${APPTAINER_CACHEDIR}" || return 1' in profile_env
+        assert "/fsx/resources/environments" not in config
+        assert "/fsx/resources/environments" not in profile_env
         assert 'if [[ "${DAYOA_OPENAI_TOKEN_FILE_ENABLE:-}" == "1" ]]; then' in profile_env
         assert 'source "${DAY_ROOT}/bin/day_openai_env.bash" || return 1' in profile_env

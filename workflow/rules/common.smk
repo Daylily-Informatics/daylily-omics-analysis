@@ -197,7 +197,10 @@ config["_run_context_run_ids"] = sorted(RUN_CONTEXT_BY_RUNID)
 
 MULTIQC_QC_LONG_RUNNING_TOOLS = {
     "fastv",
+    "metagenomics",
     "unmapped_metagenomics",
+    "unmapped_metagenomics_ganon2",
+    "unmapped_metagenomics_sourmash",
     "vep",
 }
 

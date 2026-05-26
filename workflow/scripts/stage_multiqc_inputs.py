@@ -344,6 +344,14 @@ def relative_or_name(source: Path, input_root: Path) -> Path:
 def stage_native_sources_from_custom_row(
     stager: Stager, custom_source: Path, row: dict[str, str]
 ) -> None:
+    if row.get("classifier") == "sourmash_gather":
+        stage_sourmash_sources_from_custom_row(stager, custom_source, row)
+        return
+
+    if row.get("classifier") == "ganon2":
+        stage_ganon2_sources_from_custom_row(stager, custom_source, row)
+        return
+
     if row.get("annotation_tool") == "vep":
         stage_vep_summary_htmls(stager, row)
         return
@@ -394,6 +402,64 @@ def stage_native_sources_from_custom_row(
             parts,
             module="tiddit",
             input_kind="tiddit_summary",
+            group_id=custom_group,
+        )
+
+
+def stage_ganon2_sources_from_custom_row(
+    stager: Stager, custom_source: Path, row: dict[str, str]
+) -> None:
+    report_value = row.get("ganon2_report", "").strip()
+    rep_value = row.get("ganon2_rep", "").strip()
+    if not report_value:
+        raise StagingError(f"Ganon2 custom row is missing ganon2_report: {custom_source}")
+    if not rep_value:
+        raise StagingError(f"Ganon2 custom row is missing ganon2_rep: {custom_source}")
+    report = Path(report_value)
+    rep = Path(rep_value)
+    parts = parse_alignment_parts(report)
+    custom_group = f"{custom_source}:{row.get('Sample', '')}"
+    for source, suffix, input_kind in (
+        (report, ".ganon2.quick.tre", "ganon2_tree_report"),
+        (rep, ".ganon2.quick.rep", "ganon2_rep"),
+    ):
+        stager.copy_file(
+            source,
+            Path("native/ganon2") / f"{parts.stage_sample}{suffix}",
+            parts,
+            module="ganon2",
+            input_kind=input_kind,
+            group_id=custom_group,
+        )
+
+
+def stage_sourmash_sources_from_custom_row(
+    stager: Stager, custom_source: Path, row: dict[str, str]
+) -> None:
+    signature_value = row.get("sourmash_signature", "").strip()
+    gather_value = row.get("sourmash_gather_csv", "").strip()
+    if not signature_value:
+        raise StagingError(
+            f"sourmash custom row is missing sourmash_signature: {custom_source}"
+        )
+    if not gather_value:
+        raise StagingError(
+            f"sourmash custom row is missing sourmash_gather_csv: {custom_source}"
+        )
+    signature = Path(signature_value)
+    gather_csv = Path(gather_value)
+    parts = parse_alignment_parts(gather_csv)
+    custom_group = f"{custom_source}:{row.get('Sample', '')}"
+    for source, suffix, input_kind in (
+        (signature, ".sourmash.sig", "sourmash_signature"),
+        (gather_csv, ".sourmash.gather.csv", "sourmash_gather_csv"),
+    ):
+        stager.copy_file(
+            source,
+            Path("native/sourmash") / f"{parts.stage_sample}{suffix}",
+            parts,
+            module="sourmash",
+            input_kind=input_kind,
             group_id=custom_group,
         )
 

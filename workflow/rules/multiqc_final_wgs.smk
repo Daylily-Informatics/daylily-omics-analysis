@@ -46,6 +46,8 @@ def _alignment_component_inputs(wildcards):
     paths = list(_seq_data_component_inputs(wildcards))
     paths.extend(_alignment_qc_native_inputs(wildcards))
     paths.extend(_unmapped_metagenomics_component_inputs(wildcards))
+    paths.extend(_unmapped_metagenomics_ganon2_component_inputs(wildcards))
+    paths.extend(_unmapped_metagenomics_sourmash_component_inputs(wildcards))
     paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
     if (
         qc_tool_enabled("verifybamid2")
@@ -68,7 +70,13 @@ def _alignment_component_inputs(wildcards):
     return paths
 
 
+def _metagenomics_enabled_for_multiqc():
+    return qc_tool_enabled("metagenomics", long_running=True, default=False)
+
+
 def _unmapped_metagenomics_enabled_for_multiqc():
+    if _metagenomics_enabled_for_multiqc():
+        return True
     return qc_tool_enabled(
         "unmapped_metagenomics", long_running=True, default=False
     )
@@ -79,7 +87,8 @@ def _validate_unmapped_metagenomics_multiqc_config():
     if not isinstance(cfg, dict):
         raise WorkflowError(
             "Final MultiQC includes unmapped metagenomics only when explicitly "
-            "enabled with multiqc_qc.enable_tools=['unmapped_metagenomics'] "
+            "enabled with multiqc_qc.enable_tools=['metagenomics'] or "
+            "multiqc_qc.enable_tools=['unmapped_metagenomics'] "
             "and configured with unmapped_metagenomics.kraken2_db, threads, "
             "mem_mb, and partition."
         )
@@ -128,6 +137,146 @@ def _unmapped_metagenomics_component_inputs(wildcards):
         )
     )
     return paths
+
+
+def _unmapped_metagenomics_ganon2_enabled_for_multiqc():
+    if _metagenomics_enabled_for_multiqc():
+        return True
+    return qc_tool_enabled(
+        "unmapped_metagenomics_ganon2", long_running=True, default=False
+    )
+
+
+def _validate_unmapped_metagenomics_ganon2_multiqc_config():
+    cfg = config.get("unmapped_metagenomics")
+    if not isinstance(cfg, dict):
+        raise WorkflowError(
+            "Final MultiQC includes unmapped Ganon2 metagenomics only when "
+            "explicitly enabled with "
+            "multiqc_qc.enable_tools=['metagenomics'] or "
+            "multiqc_qc.enable_tools=['unmapped_metagenomics_ganon2'] and "
+            "configured with unmapped_metagenomics.ganon2_db_prefixes, threads, "
+            "mem_mb, and partition."
+        )
+    missing = [
+        key
+        for key in ("threads", "mem_mb", "partition", "read_limit")
+        if str(cfg.get(key, "")).strip() in {"", "None", "none", "na", "NA"}
+    ]
+    prefixes = _as_config_list(cfg.get("ganon2_db_prefixes", []))
+    if not prefixes or any(
+        str(prefix).strip() in {"", "None", "none", "na", "NA"} for prefix in prefixes
+    ):
+        missing.append("ganon2_db_prefixes")
+    if missing:
+        raise WorkflowError(
+            "Final MultiQC unmapped Ganon2 metagenomics is enabled but missing "
+            "explicit config value(s): "
+            + ", ".join(f"unmapped_metagenomics.{key}" for key in missing)
+        )
+    read_limit = str(cfg.get("read_limit")).strip()
+    if read_limit != "all":
+        raise WorkflowError(
+            "Final MultiQC unmapped Ganon2 metagenomics requires "
+            "unmapped_metagenomics.read_limit='all'."
+        )
+
+
+def _unmapped_metagenomics_ganon2_component_inputs(wildcards):
+    if not _unmapped_metagenomics_ganon2_enabled_for_multiqc():
+        return []
+    _validate_unmapped_metagenomics_ganon2_multiqc_config()
+    aligners = sorted(ALL_ALIGNERS)
+    dedupers = qc_contamination_dedupers()
+    if not aligners:
+        raise WorkflowError(
+            "Final MultiQC unmapped Ganon2 metagenomics requires at least one "
+            "active aligner."
+        )
+    if not dedupers:
+        raise WorkflowError(
+            "Final MultiQC unmapped Ganon2 metagenomics requires at least one "
+            "real deduper."
+        )
+    return [MDIR + "other_reports/unmapped_metagenomics_ganon2_mqc.tsv"]
+
+
+def _unmapped_metagenomics_sourmash_enabled_for_multiqc():
+    if _metagenomics_enabled_for_multiqc():
+        return True
+    return qc_tool_enabled(
+        "unmapped_metagenomics_sourmash", long_running=True, default=False
+    )
+
+
+def _validate_unmapped_metagenomics_sourmash_multiqc_config():
+    cfg = config.get("unmapped_metagenomics")
+    if not isinstance(cfg, dict):
+        raise WorkflowError(
+            "Final MultiQC includes unmapped sourmash metagenomics only when "
+            "explicitly enabled with multiqc_qc.enable_tools=['metagenomics'] "
+            "or multiqc_qc.enable_tools=['unmapped_metagenomics_sourmash'] and "
+            "configured with unmapped_metagenomics.sourmash_databases, "
+            "sourmash_ksize, sourmash_scaled, sourmash_moltype, "
+            "sourmash_threshold_bp, threads, mem_mb, partition, and read_limit."
+        )
+    missing = [
+        key
+        for key in (
+            "threads",
+            "mem_mb",
+            "partition",
+            "read_limit",
+            "sourmash_ksize",
+            "sourmash_scaled",
+            "sourmash_moltype",
+            "sourmash_threshold_bp",
+        )
+        if str(cfg.get(key, "")).strip() in {"", "None", "none", "na", "NA"}
+    ]
+    databases = _as_config_list(cfg.get("sourmash_databases", []))
+    if not databases or any(
+        str(database).strip() in {"", "None", "none", "na", "NA"}
+        for database in databases
+    ):
+        missing.append("sourmash_databases")
+    if missing:
+        raise WorkflowError(
+            "Final MultiQC unmapped sourmash metagenomics is enabled but missing "
+            "explicit config value(s): "
+            + ", ".join(f"unmapped_metagenomics.{key}" for key in missing)
+        )
+    read_limit = str(cfg.get("read_limit")).strip()
+    if read_limit != "all":
+        raise WorkflowError(
+            "Final MultiQC unmapped sourmash metagenomics requires "
+            "unmapped_metagenomics.read_limit='all'."
+        )
+    moltype = str(cfg.get("sourmash_moltype")).strip()
+    if moltype.upper() != "DNA":
+        raise WorkflowError(
+            "Final MultiQC unmapped sourmash metagenomics requires "
+            "unmapped_metagenomics.sourmash_moltype='DNA'."
+        )
+
+
+def _unmapped_metagenomics_sourmash_component_inputs(wildcards):
+    if not _unmapped_metagenomics_sourmash_enabled_for_multiqc():
+        return []
+    _validate_unmapped_metagenomics_sourmash_multiqc_config()
+    aligners = sorted(ALL_ALIGNERS)
+    dedupers = qc_contamination_dedupers()
+    if not aligners:
+        raise WorkflowError(
+            "Final MultiQC unmapped sourmash metagenomics requires at least one "
+            "active aligner."
+        )
+    if not dedupers:
+        raise WorkflowError(
+            "Final MultiQC unmapped sourmash metagenomics requires at least one "
+            "real deduper."
+        )
+    return [MDIR + "other_reports/unmapped_metagenomics_sourmash_mqc.tsv"]
 
 
 def _alignment_qc_native_inputs(wildcards):

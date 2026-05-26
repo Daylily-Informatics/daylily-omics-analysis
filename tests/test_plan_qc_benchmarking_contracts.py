@@ -41,6 +41,18 @@ def test_qc_benchmarking_docs_cover_new_report_surfaces() -> None:
         "produce_ont_run_qc",
         "produce_ultima_run_qc",
         "produce_unmapped_metagenomics_quick",
+        "produce_unmapped_metagenomics_ganon2_quick",
+        "produce_unmapped_metagenomics_sourmash_gather",
+        "produce_metagenomics",
+        "Prefer the RefSeq reference genome when available",
+        "Else prefer the RefSeq representative genome",
+        "Else prefer a GenBank representative assembly",
+        "Keep one assembly per species by default",
+        "optionally use GTDB representatives",
+        "Include all RefSeq viral genomes",
+        "Include UniVec, PhiX, common adapters",
+        "Include the exact human reference used upstream",
+        "Freeze the manifest with assembly accession",
         "giab_sv_concordance_mqc.tsv",
     ):
         assert expected in docs
@@ -50,6 +62,8 @@ def test_qc_benchmarking_docs_cover_new_report_surfaces() -> None:
         "CheckQC",
         "Illumina read-fate RIVER",
         "Kraken2 unmapped-read screen",
+        "Ganon2 unmapped-read screen",
+        "sourmash gather unmapped-read fingerprint",
         "Truvari SV benchmark",
     ):
         assert expected in catalog
