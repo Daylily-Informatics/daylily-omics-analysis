@@ -579,7 +579,7 @@ octopus:
         --sequence-error-model PCR-FREE.NOVASEQ \
         --min-forest-quality 0 \
         --model-posterior ALL \
-        --forest-model /fsx/references/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest \
+        --forest-model /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest \
     partition: "i192,i192mem"
 
 sentdhio:
@@ -1223,7 +1223,7 @@ verifybamid2_contam:
             label: "1000g_phase3_100k"
             snp_count: 100000
             svd_prefix:
-                name: /fsx/references/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
+                name: /fsx/references/runtime_assets/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
             threads: 64
             mem_mb: 64000
             partition: "i192,i192mem,i128"
@@ -1231,7 +1231,7 @@ verifybamid2_contam:
             label: "daylily_snp_subset_1M"
             snp_count: 1000000
             svd_prefix:
-                name: /fsx/references/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
+                name: /fsx/references/runtime_assets/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
             threads: 64
             mem_mb: 128000
             partition: "i192,i192mem,i128"

@@ -119,6 +119,6 @@ def test_tool_catalog_marks_known_dormant_integrations() -> None:
         row_text = " ".join(rows[tool].values()).lower()
         assert "dormant" in row_text or "not imported" in row_text
 
-    assert "/fsx/references/tool_specific_resources/vep/" in " ".join(
+    assert "/fsx/references/runtime_assets/tool_specific_resources/vep/" in " ".join(
         rows["VEP"].values()
     )

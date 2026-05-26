@@ -86,13 +86,13 @@ DayOA does not infer metagenomics databases. Operators must provide explicit pat
 
 ```yaml
 unmapped_metagenomics:
-  kraken2_db: /fsx/references/tool_specific_resources/kraken2/<kraken_db_dir>
+  kraken2_db: /fsx/references/runtime_assets/tool_specific_resources/kraken2/<kraken_db_dir>
   ganon2_db_prefixes:
-    - /fsx/references/tool_specific_resources/ganon2/dayoa_qc_refseq_representative_core
-    - /fsx/references/tool_specific_resources/ganon2/dayoa_qc_vectors_adapters_phiX
+    - /fsx/references/runtime_assets/tool_specific_resources/ganon2/dayoa_qc_refseq_representative_core
+    - /fsx/references/runtime_assets/tool_specific_resources/ganon2/dayoa_qc_vectors_adapters_phiX
   sourmash_databases:
-    - /fsx/references/tool_specific_resources/sourmash/dayoa_qc_refseq_representative_core.zip
-    - /fsx/references/tool_specific_resources/sourmash/dayoa_qc_vectors_adapters_phiX.zip
+    - /fsx/references/runtime_assets/tool_specific_resources/sourmash/dayoa_qc_refseq_representative_core.zip
+    - /fsx/references/runtime_assets/tool_specific_resources/sourmash/dayoa_qc_vectors_adapters_phiX.zip
   sourmash_ksize: 31
   sourmash_scaled: 1000
   sourmash_moltype: DNA

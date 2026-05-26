@@ -28,7 +28,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
     vep:
       vep_genome_build: 114_GRCh38
       vep_cache:
-        name: /fsx/references/tool_specific_resources/vep/
+        name: /fsx/references/runtime_assets/tool_specific_resources/vep/
     gatk:
       onekg_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/1000G_phase1.snps.high_confidence.hg38.vcf.gz
       mills_vcf: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
@@ -77,11 +77,11 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         100k:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/references/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
+            name: /fsx/references/runtime_assets/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
         1m:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/references/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
+            name: /fsx/references/runtime_assets/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b38.vcf.gz.dat
           reference_vcf:
             class: file_only
             name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/snp_subset_1M/1M_snps.sorted.vcf.gz
@@ -104,7 +104,7 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         name: createme
     octopus:
       forest_model_a:
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest
     microbial:
       reprDB:  # https://pubmed.ncbi.nlm.nih.gov/29347966/
         name: createme

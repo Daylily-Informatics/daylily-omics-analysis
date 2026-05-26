@@ -12,7 +12,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFYBAMID2_HG38_100K_SVD_PREFIX = (
-    "/fsx/references/tool_specific_resources/verifybamid/hg38/100k/"
+    "/fsx/references/runtime_assets/tool_specific_resources/verifybamid/hg38/100k/"
     "1000g.phase3.100k.b38.vcf.gz.dat"
 )
 GIAB7_IDS = ["HG001", "HG002", "HG003", "HG004", "HG005", "HG006", "HG007"]
@@ -302,7 +302,7 @@ def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
         assert "chr20_verbam/chr20.random1000.vcf.gz" in config_text
         assert VERIFYBAMID2_HG38_100K_SVD_PREFIX in config_text
         assert (
-            "/fsx/references/tool_specific_resources/verifybam2/"
+            "/fsx/references/runtime_assets/tool_specific_resources/verifybam2/"
             "1000g.phase3.100k.b38.vcf.gz.dat"
             not in config_text
         )

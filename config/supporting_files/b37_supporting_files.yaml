@@ -108,11 +108,11 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
     dbsnp:
       broad_snowman_indelvcf:
         class: file_only
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/svaba/dbsnp_indel.vcf
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/svaba/dbsnp_indel.vcf
     contam:
       ref_vcf:
         class: file_only
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/supersonic_modules/RE2666_intersect_1000g_phase1_release_v3.20101123.vcf
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/supersonic_modules/RE2666_intersect_1000g_phase1_release_v3.20101123.vcf
     iddnas:
       human_iddnas:
         class: file_only
@@ -144,48 +144,48 @@ supporting_files:   ## All of this structure was for an exploratory, now depreca
         100k:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/references/tool_specific_resources/verifybam2/1000g.phase3.100k.b37.vcf.gz.dat
+            name: /fsx/references/runtime_assets/tool_specific_resources/verifybam2/1000g.phase3.100k.b37.vcf.gz.dat
         1m:
           svd_prefix:
             class: file_no_suffix_star
-            name: /fsx/references/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b37.vcf.gz.dat
+            name: /fsx/references/runtime_assets/tool_specific_resources/verifybam2/daylily.snp_subset_1M.b37.vcf.gz.dat
           reference_vcf:
             class: file_only
             name: /fsx/references/genomic_data/organism_annotations/H_sapiens/b37/snp_vcfs/snp_subset_1M/filtered_vcfs/merged.500perchr.nosamp.sort.vcf.gz
     fastv:
       microbial_kmer_collection:
         class: file_only
-        name: /fsx/references/tool_specific_resources/fastv/microbial.kc.fasta.gz
+        name: /fsx/references/runtime_assets/tool_specific_resources/fastv/microbial.kc.fasta.gz
       influenza_kmer_collection:
         class: file_only
-        name: /fsx/references/tool_specific_resources/fastv/influenzaA.kc.fasta.gz
+        name: /fsx/references/runtime_assets/tool_specific_resources/fastv/influenzaA.kc.fasta.gz
       covid_kmer:
         class: file_only
-        name: /fsx/references/tool_specific_resources/fastv/SARS-CoV-2.kmer.fa
+        name: /fsx/references/runtime_assets/tool_specific_resources/fastv/SARS-CoV-2.kmer.fa
       covid_genomes:
         class: file_only
-        name: resopuirces/fsx/references/tool_specific_resources/fastv/SARS-CoV-2.genomes.fa
+        name: /fsx/references/runtime_assets/tool_specific_resources/fastv/SARS-CoV-2.genomes.fa
     glimpse:
       GLIMPSE_huref:
         class: file_so_suffix_start
         name: /fsx/references/genomic_data/organism_references/H_sapiens/b37/human_1kg_v37/human_1kg_v37.fasta
       GLIMPSE_noNA12878_sites:
         class: file_only
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/GLIMPSE/references/b37/reference_panel/1000GP.0.noNA12878.sites.wGT.vcf.gz
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/GLIMPSE/references/b37/reference_panel/1000GP.0.noNA12878.sites.wGT.vcf.gz
     somalier:
       genome_sites:
         class: file_only
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/somalier/sites_files/sites.GRCh37.vcf.gz
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/somalier/sites_files/sites.GRCh37.vcf.gz
     octopus:
       huref:
         class: file_only
         name: /fsx/references/genomic_data/organism_references/H_sapiens/b37/human_1kg_v37/human_1kg_v37.fasta
       forest_model_a:
         class: file_only
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/octopus/forests/germline.v0.7.4.forest
       error_model:
         class: file_only
-        name: /fsx/references/tool_specific_resources/H_sapiens/b37/octopus/octopus_err_models/novaseq.4a38e55.model
+        name: /fsx/references/runtime_assets/tool_specific_resources/H_sapiens/b37/octopus/octopus_err_models/novaseq.4a38e55.model
       skip_regions_f:
         class: file_only
         name: /fsx/references/genomic_data/organism_annotations/H_sapiens/b37/ucsc/ucsc_hg19_ucscfilter_track.bed
