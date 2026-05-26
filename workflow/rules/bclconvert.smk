@@ -426,9 +426,15 @@ rule run_bclconvert:
                     exit 2
                 fi
                 for lane_id in $lane_ids; do
-                    mkdir -p "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id"
-                    find "$lane_root/$lane_id" -maxdepth 1 -type f -print0 \
-                      | xargs -0 -r cp -aL --sparse=always -t "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id"
+                    lane_dest="$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id"
+                    mkdir -p "$lane_dest"
+                    if ! rsync -aL --sparse --whole-file --exclude='*/' \
+                      "$lane_root/$lane_id"/ "$lane_dest"/ \
+                      > "$scratch_sync_log_dir/$lane_id.top.log" 2>&1; then
+                        cat "$scratch_sync_log_dir/$lane_id.top.log" >> {log:q}
+                        echo "Mounted lane top-level file staging failed for $lane_id" >> {log:q}
+                        exit 2
+                    fi
                 done
                 cycle_list="$scratch_sync_log_dir/cycle_dirs.txt"
                 find "$lane_root" -mindepth 2 -maxdepth 2 -type d -name 'C*.1' -printf '%P\n' | sort > "$cycle_list"
