@@ -151,6 +151,7 @@ BCL_SEQ_PLATFORM_OVERRIDE = str(BCLCFG.get("seq_platform_override", "") or "")
 
 
 localrules:
+    bclconvert_validate_inputs,
     produce_bclconvert_fastqs,
     produce_bclconvert_metrics,
     produce_bclconvert_multiqc,
