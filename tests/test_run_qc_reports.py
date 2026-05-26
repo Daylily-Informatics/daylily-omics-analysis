@@ -27,7 +27,7 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
     assert 'include: "rules/run_qc_reports.smk"' in snakefile
     assert "rule illumina_run_qc_fetch_metric_subset:" in rules
     assert "rule illumina_run_qc_interop_summary:" in rules
-    assert "rule illumina_run_qc_checkqc_json:" in rules
+    assert "rule illumina_run_qc_json:" in rules
     assert "rule illumina_run_qc_multiqc:" in rules
     assert "rule produce_illumina_run_qc_and_bclconvert:" in rules
     assert "rule ont_run_qc_collect_summaries:" in rules
@@ -45,7 +45,7 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
     for rule_name in (
         "illumina_run_qc_fetch_metric_subset",
         "illumina_run_qc_interop_summary",
-        "illumina_run_qc_checkqc_json",
+        "illumina_run_qc_json",
         "illumina_run_qc_multiqc",
         "ont_run_qc_collect_summaries",
         "ont_run_qc_pycoqc",
@@ -91,17 +91,17 @@ def test_illumina_run_qc_contract_uses_explicit_inputs_and_metric_subset() -> No
     assert "InterOp/SummaryRunMetricsOut.bin" in rules
 
 
-def test_checkqc_interop_and_placeholder_contracts_fail_loudly() -> None:
+def test_interop_and_placeholder_contracts_fail_loudly() -> None:
     rules = _read("workflow/rules/run_qc_reports.smk")
     summarizer = _read("workflow/scripts/summarize_run_qc_report.py")
 
     assert "workflow/scripts/write_interop_summary_csv.py" in rules
+    assert "workflow/scripts/write_illumina_run_qc_json.py" in rules
     assert "--index-summary-out {output.index_summary:q}" in rules
     assert '"$CONDA_PREFIX/bin/python" workflow/scripts/write_interop_summary_csv.py' in rules
-    assert "checkqc_novaseqxplus_config.yaml" in rules
-    assert "checkqc --json {params.source_run:q}" in rules
-    assert "checkqc --config \"$checkqc_config\" --json" in rules
-    assert "-m checkqc" in rules
+    assert "CONDA_PREFIX is required for illumina_run_qc_json" in rules
+    assert "--illumina-qc-json {input.illumina_qc_json:q}" in rules
+    assert "checkqc" not in rules
     assert "-m interop" in rules
     assert "run_qc.ont.metrics_path" in summarizer
     assert "run_qc.ultima.metrics_path" in summarizer
@@ -160,18 +160,10 @@ def test_run_qc_scripts_compile() -> None:
     for path in (
         "workflow/scripts/summarize_run_qc_report.py",
         "workflow/scripts/write_interop_summary_csv.py",
+        "workflow/scripts/write_illumina_run_qc_json.py",
         "bin/build_illumina_read_fate_river.py",
     ):
         py_compile.compile(str(REPO_ROOT / path), doraise=True)
-
-
-def test_novaseqxplus_checkqc_config_is_explicit() -> None:
-    config = _read("config/external_tools/checkqc_novaseqxplus_config.yaml")
-
-    assert "novaseqxplus_4:" in config
-    assert "151:" in config
-    assert "ClusterPFHandler" in config
-    assert "Q30Handler" in config
 
 
 def test_summarize_run_qc_report_outputs_and_missing_input_failure(tmp_path: Path) -> None:
@@ -179,8 +171,8 @@ def test_summarize_run_qc_report_outputs_and_missing_input_failure(tmp_path: Pat
     interop.write_text("Lane,Reads\n1,10\n", encoding="utf-8")
     index = tmp_path / "interop_index_summary.csv"
     index.write_text("Lane,Index,Reads\n1,ACGT,5\n", encoding="utf-8")
-    checkqc = tmp_path / "checkqc.json"
-    checkqc.write_text(
+    illumina_qc = tmp_path / "illumina_run_qc.json"
+    illumina_qc.write_text(
         json.dumps({"instrument_and_reagent_type": "NovaSeq", "warnings": []}),
         encoding="utf-8",
     )
@@ -200,8 +192,8 @@ def test_summarize_run_qc_report_outputs_and_missing_input_failure(tmp_path: Pat
             str(interop),
             "--interop-index-summary",
             str(index),
-            "--checkqc-json",
-            str(checkqc),
+            "--illumina-qc-json",
+            str(illumina_qc),
             "--output-html",
             str(html),
             "--output-tsv",

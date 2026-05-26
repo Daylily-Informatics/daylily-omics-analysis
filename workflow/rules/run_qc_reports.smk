@@ -102,10 +102,6 @@ RUNQC_ILMN_REPORT_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_TABLE_DIR = RUNQC_ILMN_ROOT
 RUNQC_ILMN_LOG_DIR = RUNQC_ILMN_ROOT + "/logs"
 RUNQC_ILMN_BENCH_DIR = RUNQC_ILMN_ROOT + "/benchmarks"
-RUNQC_ILMN_CHECKQC_CONFIG = (
-    _runqc_text(RUNQC_ILMN_CFG, "checkqc_config_file")
-    or "config/external_tools/checkqc_novaseqxplus_config.yaml"
-)
 RUNQC_ILMN_REPORT_PREFIX = _runqc_safe_token(
     RUNQC_ILMN_CFG.get("report_prefix", "illumina_read_fate_river"),
     "illumina_read_fate_river",
@@ -162,7 +158,7 @@ RUNQC_UG_BENCH_DIR = RUNQC_UG_ROOT + "/benchmarks"
 localrules:
     illumina_run_qc_fetch_metric_subset,
     illumina_run_qc_interop_summary,
-    illumina_run_qc_checkqc_json,
+    illumina_run_qc_json,
     illumina_run_qc_report,
     illumina_run_qc_multiqc,
     illumina_run_qc_read_fate_river,
@@ -344,19 +340,20 @@ rule illumina_run_qc_interop_summary:
         """
 
 
-rule illumina_run_qc_checkqc_json:
+rule illumina_run_qc_json:
     input:
         done=RUNQC_ILMN_LOG_DIR + "/metric_subset_fetched.done",
+        interop_summary=RUNQC_ILMN_TABLE_DIR + "/interop_summary.csv",
+        interop_index_summary=RUNQC_ILMN_TABLE_DIR + "/interop_index_summary.csv",
     output:
-        json=RUNQC_ILMN_TABLE_DIR + "/checkqc.json",
+        json=RUNQC_ILMN_TABLE_DIR + "/illumina_run_qc.json",
     params:
         source_run=RUNQC_ILMN_SOURCE_RUN,
-        config_file=RUNQC_ILMN_CHECKQC_CONFIG,
-        cluster_sample="illumina_run_qc_checkqc_json",
+        cluster_sample="illumina_run_qc_json",
     log:
-        RUNQC_ILMN_LOG_DIR + "/checkqc.log",
+        RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_json.log",
     benchmark:
-        RUNQC_ILMN_BENCH_DIR + "/checkqc.bench.tsv",
+        RUNQC_ILMN_BENCH_DIR + "/illumina_run_qc_json.bench.tsv",
     conda:
         RUNQC_ENV
     shell:
@@ -365,14 +362,16 @@ rule illumina_run_qc_checkqc_json:
         mkdir -p $(dirname {output.json:q}) $(dirname {log:q})
         : > {log:q}
         test -s {params.source_run:q}/RunInfo.xml
-        command -v checkqc >> {log:q} 2>&1
-        checkqc_config={params.config_file:q}
-        if [ -n "$checkqc_config" ]; then
-            test -s "$checkqc_config"
-            checkqc --config "$checkqc_config" --json {params.source_run:q} > {output.json:q} 2>> {log:q}
-        else
-            checkqc --json {params.source_run:q} > {output.json:q} 2>> {log:q}
+        if [ -z "${{CONDA_PREFIX:-}}" ]; then
+            echo "CONDA_PREFIX is required for illumina_run_qc_json" >> {log:q}
+            exit 2
         fi
+        "$CONDA_PREFIX/bin/python" workflow/scripts/write_illumina_run_qc_json.py \
+          --run-info {params.source_run:q}/RunInfo.xml \
+          --interop-summary {input.interop_summary:q} \
+          --interop-index-summary {input.interop_index_summary:q} \
+          --output-json {output.json:q} \
+          >> {log:q} 2>&1
         python -m json.tool {output.json:q} > {output.json:q}.pretty
         mv {output.json:q}.pretty {output.json:q}
         """
@@ -382,7 +381,7 @@ rule illumina_run_qc_report:
     input:
         interop_summary=RUNQC_ILMN_TABLE_DIR + "/interop_summary.csv",
         interop_index_summary=RUNQC_ILMN_TABLE_DIR + "/interop_index_summary.csv",
-        checkqc_json=RUNQC_ILMN_TABLE_DIR + "/checkqc.json",
+        illumina_qc_json=RUNQC_ILMN_TABLE_DIR + "/illumina_run_qc.json",
     output:
         html=RUNQC_ILMN_REPORT_DIR + "/summary.html",
         tsv=RUNQC_ILMN_TABLE_DIR + "/summary.tsv",
@@ -405,7 +404,7 @@ rule illumina_run_qc_report:
           --run-s3-uri {params.run_s3_uri:q} \
           --interop-summary {input.interop_summary:q} \
           --interop-index-summary {input.interop_index_summary:q} \
-          --checkqc-json {input.checkqc_json:q} \
+          --illumina-qc-json {input.illumina_qc_json:q} \
           --output-html {output.html:q} \
           --output-tsv {output.tsv:q} \
           --done {output.done:q} > {log:q} 2>&1
@@ -416,7 +415,7 @@ rule illumina_run_qc_multiqc:
     input:
         interop_summary=RUNQC_ILMN_TABLE_DIR + "/interop_summary.csv",
         interop_index_summary=RUNQC_ILMN_TABLE_DIR + "/interop_index_summary.csv",
-        checkqc_json=RUNQC_ILMN_TABLE_DIR + "/checkqc.json",
+        illumina_qc_json=RUNQC_ILMN_TABLE_DIR + "/illumina_run_qc.json",
         report_done=RUNQC_ILMN_LOG_DIR + "/illumina_run_qc_report.done",
     output:
         html=RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
@@ -437,7 +436,6 @@ rule illumina_run_qc_multiqc:
         multiqc --version > {log:q} 2>&1 || true
         multiqc -f \
           -m interop \
-          -m checkqc \
           --filename "$(basename "$out")" \
           --outdir "$(dirname "$out")" \
           {params.root:q} >> {log:q} 2>&1
