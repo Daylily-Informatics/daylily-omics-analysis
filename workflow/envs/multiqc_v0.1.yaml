@@ -6,4 +6,4 @@ dependencies:
   - perl
   - pip
   - pip:
-      - multiqc @ https://github.com/lsmc-bio/MultiQC/archive/refs/tags/1.36.dev0-lsmc.3.zip
+      - multiqc @ https://github.com/lsmc-bio/MultiQC/archive/refs/tags/1.36.dev0-lsmc.4.zip
