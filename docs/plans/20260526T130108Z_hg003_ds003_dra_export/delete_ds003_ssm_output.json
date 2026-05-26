@@ -1,0 +1,6 @@
+{
+    "Status": "Success",
+    "ResponseCode": 0,
+    "Stdout": "DAY-EC activated.\nDAY-EC activated.\n[2026-05-26T13:30:12Z] DS-003 verified DRA export completed; deleted /fsx/analysis_results/ubuntu/hg003a_altair3_hiomr_ilmn20x_ont5x_1022.\nFilesystem                Size  Used Avail Use% Mounted on\n10.0.1.244@tcp:/4nbz7b4v  8.8T  1.8T  7.0T  21% /fsx\nremaining_children=/fsx/analysis_results/ubuntu\nhg003a_altair3_hiomr_ilmn15x_ont10x_1022\nhg003a_altair3_hiomr_ilmn15x_ont7x_1022\n",
+    "Stderr": ""
+}

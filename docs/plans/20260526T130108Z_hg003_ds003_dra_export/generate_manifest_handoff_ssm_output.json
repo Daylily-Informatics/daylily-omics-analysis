@@ -1,0 +1,6 @@
+{
+    "Status": "Failed",
+    "ResponseCode": 1,
+    "Stdout": "DAY-EC activated.\nDAY-EC activated.\n",
+    "Stderr": "upload failed: _daylily_monitor/verify/20260526T132508Zb/fsx_manifest.tsv to s3://lsmc-dayoa-omics-analysis-us-west-2/tmp/hg003_hiomr_verify/hg003a_altair3_hiomr_ilmn20x_ont5x_1022/_daylily_monitor/verify/20260526T132508Zb/fsx_manifest.tsv An error occurred (AccessDenied) when calling the PutObject operation: User: arn:aws:sts::108782052779:assumed-role/hyb-hg003-RoleHeadNode-RZFShkZkgyrT/i-03f1a49bbc4e39d4b is not authorized to perform: s3:PutObject on resource: \"arn:aws:s3:::lsmc-dayoa-omics-analysis-us-west-2/tmp/hg003_hiomr_verify/hg003a_altair3_hiomr_ilmn20x_ont5x_1022/_daylily_monitor/verify/20260526T132508Zb/fsx_manifest.tsv\" because no identity-based policy allows the s3:PutObject action\nfailed to run commands: exit status 1"
+}

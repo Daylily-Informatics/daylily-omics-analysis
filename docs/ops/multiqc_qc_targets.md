@@ -36,6 +36,43 @@ smoke run must remain out of routine staged and final targets unless
 `multiqc_qc.enable_tools`. Explicitly enabled tools are required DAG inputs;
 missing or malformed outputs should fail instead of being silently skipped.
 
+## OpenAI AI Summary Token File
+
+DayOA can load an OpenAI token from a file for MultiQC report-generation
+summaries. The helper is opt-in so routine runs do not require an OpenAI
+credential.
+
+Default token paths:
+
+| Variable | Default |
+| --- | --- |
+| `DAYOA_OPENAI_TOKEN_SOURCE` | `${HOME}/.config/openai/tok.tok` |
+| `DAYOA_OPENAI_TOKEN_TARGET` | `/home/ubuntu/.config/openai/tok.tok` |
+| `DAYOA_OPENAI_MODEL` | `gpt-5.5` |
+
+Enable the helper in the same login shell or tmux pane before `dy-r`:
+
+```bash
+export DAYOA_OPENAI_TOKEN_FILE_ENABLE=1
+```
+
+When enabled, `bin/day_openai_env.bash` copies
+`DAYOA_OPENAI_TOKEN_SOURCE` to `DAYOA_OPENAI_TOKEN_TARGET` if the paths differ,
+sets file permissions to owner-only, reads the target file, and exports:
+
+```bash
+OPENAI_API_KEY
+MULTIQC_AI_SUMMARY=1
+MULTIQC_AI_PROVIDER=openai
+MULTIQC_AI_MODEL="${DAYOA_OPENAI_MODEL}"
+APPTAINERENV_OPENAI_API_KEY
+SINGULARITYENV_OPENAI_API_KEY
+```
+
+The helper does not print the token. Missing, empty, or whitespace-containing
+token files fail before Snakemake launch. Do not commit token files or put the
+token in Snakemake config, MultiQC config, or workflow environment YAML.
+
 ## Stage-Scoped Sample Identity
 
 Final and staged WGS MultiQC reports do not scan `results/day/<build>/`

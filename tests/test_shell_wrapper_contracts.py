@@ -13,6 +13,50 @@ def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
+def test_openai_token_helper_copies_to_ubuntu_path_and_exports_env(tmp_path: Path) -> None:
+    token_source = tmp_path / "source" / ".config" / "openai" / "tok.tok"
+    token_target = tmp_path / "ubuntu" / ".config" / "openai" / "tok.tok"
+    token_source.parent.mkdir(parents=True)
+    token_source.write_text("sk-test-fake-token\n", encoding="utf-8")
+
+    command = (
+        "set -euo pipefail; "
+        f"export DAYOA_OPENAI_TOKEN_SOURCE={str(token_source)!r}; "
+        f"export DAYOA_OPENAI_TOKEN_TARGET={str(token_target)!r}; "
+        "export DAYOA_OPENAI_MODEL=gpt-5.5; "
+        f"source {str(REPO_ROOT / 'bin/day_openai_env.bash')!r}; "
+        "test \"$OPENAI_API_KEY\" = sk-test-fake-token; "
+        "test \"$MULTIQC_AI_SUMMARY\" = 1; "
+        "test \"$MULTIQC_AI_PROVIDER\" = openai; "
+        "test \"$MULTIQC_AI_MODEL\" = gpt-5.5; "
+        "test \"$APPTAINERENV_OPENAI_API_KEY\" = sk-test-fake-token; "
+        "test \"$SINGULARITYENV_OPENAI_API_KEY\" = sk-test-fake-token; "
+        f"test -f {str(token_target)!r}; "
+        f"test \"$(cat {str(token_target)!r})\" = sk-test-fake-token"
+    )
+
+    result = subprocess.run(["bash", "-lc", command], text=True, capture_output=True)
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_openai_token_helper_fails_hard_when_enabled_without_token(tmp_path: Path) -> None:
+    missing_source = tmp_path / "missing" / "tok.tok"
+    token_target = tmp_path / "ubuntu" / ".config" / "openai" / "tok.tok"
+    command = (
+        "set -euo pipefail; "
+        f"export DAYOA_OPENAI_TOKEN_SOURCE={str(missing_source)!r}; "
+        f"export DAYOA_OPENAI_TOKEN_TARGET={str(token_target)!r}; "
+        f"source {str(REPO_ROOT / 'bin/day_openai_env.bash')!r}"
+    )
+
+    result = subprocess.run(["bash", "-lc", command], text=True, capture_output=True)
+
+    assert result.returncode == 2
+    assert "OpenAI token file not found" in result.stderr
+    assert "sk-" not in result.stderr
+
+
 def test_gather_rules_do_not_use_sigpipe_prone_find_head_pipelines() -> None:
     bad_find_to_head = re.compile(r"find\b[^\n;]*\|[^\n;]*\bhead\b")
 
