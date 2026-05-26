@@ -1287,6 +1287,13 @@ if metadata["analysis_unit_uid"].duplicated().any():
 metadata.apply(_validate_ont_fastq_unit, axis=1)
 
 def _select_reads(row):
+    if bootstrap_unit_context and str(row.get("analysis_unit_uid", "")) == str(
+        config["bclconvert_bootstrap_run_id"]
+    ):
+        # BCL Convert bootstrap creates FASTQs later; this synthetic row only
+        # lets run-level targets parse without requiring pre-existing reads.
+        return "na", "na"
+
     for r1, r2 in [
         ("ILMN_R1_PATH", "ILMN_R2_PATH"),
         ("PACBIO_R1_PATH", "PACBIO_R2_PATH"),
