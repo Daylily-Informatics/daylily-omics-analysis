@@ -45,7 +45,9 @@ def write_outputs(prefix: str, ped_path: Path, sample_id: str, reason: str) -> N
     status = "insufficient_variant_data"
     ped_sex = _ped_sex(ped_path)
 
-    shutil.copyfile(ped_path, Path(f"{out_prefix}.ped"))
+    output_ped = Path(f"{out_prefix}.ped")
+    if ped_path.resolve() != output_ped.resolve():
+        shutil.copyfile(ped_path, output_ped)
     _write_csv(
         Path(f"{out_prefix}.ped_check.csv"),
         [
