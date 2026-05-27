@@ -114,18 +114,34 @@ else
     export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
     export SENTIEON_LICENSE=''
 
-    # Test if file exists
     if [[ ! -f "$SENTIEON_LICENSE_YAM" ]]; then
         echo "WARNING: sentieon lic file $SENTIEON_LICENSE_YAM not found."
 
-        detected_license=$(ls /fsx/references/runtime_assets/cached_envs/*lic)
-        if [[ ! -f "$detected_license" ]]; then
-            echo "WARNING: sentieon lic file not detected in '/fsx/references/runtime_assets/cached_envs/*lic' ."
-            echo "If you try to use any of the sentieon tools, you will get an error."
-            sleep 2
+        sentieon_license_dir="/fsx/references/runtime_assets/cached_envs"
+        sentieon_detected_license=""
+        sentieon_detected_count=0
+        sentieon_longest_filename_len=-1
+        if [[ -d "$sentieon_license_dir" ]]; then
+            while IFS= read -r -d '' sentieon_candidate; do
+                sentieon_detected_count=$((sentieon_detected_count + 1))
+                sentieon_filename="$(basename "$sentieon_candidate")"
+                if (( ${#sentieon_filename} > sentieon_longest_filename_len )); then
+                    sentieon_longest_filename_len=${#sentieon_filename}
+                    sentieon_detected_license="$sentieon_candidate"
+                fi
+            done < <(find "$sentieon_license_dir" -maxdepth 1 -type f -name '*.lic' -print0 | sort -z)
+        fi
+
+        if [[ "$sentieon_detected_count" -eq 1 ]]; then
+            export SENTIEON_LICENSE="$sentieon_detected_license"
+            echo "WARNING: SENTIEON_LICENSE was not configured with a valid file; auto assigning a detected Sentieon license: $SENTIEON_LICENSE"
+        elif [[ "$sentieon_detected_count" -gt 1 ]]; then
+            export SENTIEON_LICENSE="$sentieon_detected_license"
+            echo "WARNING: SENTIEON_LICENSE was not configured with a valid file; found $sentieon_detected_count license files under $sentieon_license_dir."
+            echo "WARNING: Auto assigning a detected Sentieon license with the longest filename: $SENTIEON_LICENSE"
         else
-            echo "Detected sentieon license file: $detected_license will be used and overrides what is in ~/.config/daylily/daylily_cli_global.yaml"
-            export SENTIEON_LICENSE=$detected_license
+            echo "WARNING: sentieon lic file not detected in '$sentieon_license_dir/*.lic'."
+            echo "If you try to use any of the sentieon tools, you will get an error."
         fi
     else
         echo "Using sentieon license file: $SENTIEON_LICENSE_YAM from ~/.config/daylily/daylily_cli_global.yaml"

@@ -78,6 +78,25 @@ command -v squeue
 
 Launch long workflow work in one persistent tmux session and send `source dyoainit`, `dy-a`, and `dy-r` as separate commands.
 
+## Sentieon License Configuration
+
+Sentieon workflows require `SENTIEON_LICENSE` to point at a valid license file on the headnode. The preferred configuration is explicit in `~/.config/daylily/daylily_cli_global.yaml`:
+
+```yaml
+daylily:
+  sentieon_lic_path: /fsx/references/runtime_assets/cached_envs/Life_Sciences_Manufacturing_Corporation_eval.lic
+```
+
+After initialization and activation, verify the resolved license before launching Sentieon targets:
+
+```bash
+source dyoainit
+dy-a slurm hg38
+test -f "$SENTIEON_LICENSE" && echo "$SENTIEON_LICENSE"
+```
+
+If the configured license path is absent, DayOA scans `/fsx/references/runtime_assets/cached_envs/*.lic`. One detected license is assigned to `SENTIEON_LICENSE` with a warning. If multiple licenses are detected, DayOA assigns the file with the longest filename and prints a clear warning that it auto assigned a detected license. If no license is detected, Sentieon tools fail until `sentieon_lic_path` or `SENTIEON_LICENSE` points to a valid file. Do not commit license files to this repository.
+
 ## Common Targets
 
 | Target | Purpose |
@@ -135,4 +154,3 @@ python -m coverage report
 ```
 
 Cluster examples are valid only after a working headnode is available through `daylily-ec`/SSM with an explicit non-default AWS profile.
-
