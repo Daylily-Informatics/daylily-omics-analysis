@@ -34,30 +34,6 @@ CONTAMINATION_FIELDS = [
     "status",
 ]
 
-VB2_FIELDS = [
-    "Sample",
-    "base_sample",
-    "sample_id",
-    "external_sample_id",
-    "aligner",
-    "deduper",
-    "panel_id",
-    "panel_label",
-    "snp_count",
-    "svd_prefix",
-    "freemix_fraction",
-    "contamination_pct",
-    "site_count",
-    "read_count",
-    "mean_depth",
-    "runtime_seconds",
-    "runtime_minutes",
-    "task_cost",
-    "source_path",
-    "benchmark_path",
-    "status",
-]
-
 DONOR_FIELDS = [
     "Sample",
     "base_sample",
@@ -106,31 +82,6 @@ def _parse_contam_path(path: str, sample_map: dict[str, str]) -> tuple[str, str,
     return sample, sample_map.get(sample, sample), aligner, deduper
 
 
-def _parse_vb2_panel_path(
-    path: str, sample_map: dict[str, str]
-) -> tuple[str, str, str, str, str]:
-    sample, external, aligner, deduper = _parse_contam_path(path, sample_map)
-    parts = list(Path(path).parts)
-    try:
-        panel = parts[parts.index("vb2") + 1]
-    except (ValueError, IndexError) as exc:
-        raise ValueError(f"Malformed panel-aware VerifyBamID2 path: {path}") from exc
-    return sample, external, aligner, deduper, panel
-
-
-def _parse_benchmark_path(path: str) -> tuple[str, str, str, str] | None:
-    name = Path(path).name
-    suffix = ".vb2.bench.tsv"
-    if not name.endswith(suffix):
-        return None
-    stem = name[: -len(suffix)]
-    try:
-        sample, aligner, deduper, panel = stem.rsplit(".", 3)
-    except ValueError:
-        return None
-    return sample, aligner, deduper, panel
-
-
 def _read_first_row(path: str) -> dict[str, str]:
     try:
         with open(path, newline="", encoding="utf-8") as handle:
@@ -138,15 +89,6 @@ def _read_first_row(path: str) -> dict[str, str]:
     except OSError:
         return {}
     return rows[0] if rows else {}
-
-
-def _benchmark_by_vb2_key(paths: list[str]) -> dict[tuple[str, str, str, str], str]:
-    benchmarks: dict[tuple[str, str, str, str], str] = {}
-    for path in paths:
-        key = _parse_benchmark_path(path)
-        if key is not None:
-            benchmarks[key] = path
-    return benchmarks
 
 
 def _write_header(path: str, fieldnames: list[str]) -> tuple[csv.DictWriter, object]:
@@ -160,81 +102,13 @@ def _write_header(path: str, fieldnames: list[str]) -> tuple[csv.DictWriter, obj
 
 def compile_reports(args: argparse.Namespace) -> None:
     sample_map = json.loads(args.sample_map_json)
-    panel_metadata = json.loads(args.panel_metadata_json)
     contam_writer, contam_handle = _write_header(
         args.contamination_output, CONTAMINATION_FIELDS
     )
     site_writer, site_handle = _write_header(args.site_mix_output, CONTAMINATION_FIELDS)
-    vb2_writer, vb2_handle = _write_header(args.vb2_comparison_output, VB2_FIELDS)
     donor_writer, donor_handle = _write_header(args.donor_output, DONOR_FIELDS)
 
     try:
-        vb2_benchmarks = _benchmark_by_vb2_key(args.vb2_bench)
-        for path in args.vb2:
-            sample, external, aligner, deduper, panel_id = _parse_vb2_panel_path(
-                path, sample_map
-            )
-            sample_id = _stage_sample_id(sample, aligner, deduper)
-            row = _read_first_row(path)
-            freemix = row.get("FREEMIX", "")
-            panel_cfg = panel_metadata.get(panel_id, {})
-            benchmark_path = vb2_benchmarks.get((sample, aligner, deduper, panel_id), "")
-            benchmark = _read_first_row(benchmark_path)
-            runtime_seconds = benchmark.get("s", "")
-            panel_label = str(panel_cfg.get("label", panel_id))
-            snp_count = str(panel_cfg.get("snp_count", row.get("#SNPS", "")))
-            svd_prefix = str(panel_cfg.get("svd_prefix", ""))
-            contam_row = {
-                "Sample": sample_id,
-                "base_sample": sample,
-                "sample_id": sample,
-                "external_sample_id": external,
-                "aligner": aligner,
-                "deduper": deduper,
-                "panel_id": panel_id,
-                "panel_label": panel_label,
-                "tool": "verifybamid2",
-                "method": "freemix",
-                "contamination_fraction": freemix,
-                "contamination_pct": _safe_pct(freemix),
-                "ci_low_fraction": "",
-                "ci_high_fraction": "",
-                "unknown_contamination_fraction": "",
-                "unknown_contamination_pct": "",
-                "site_count": row.get("#SNPS", snp_count),
-                "read_count": row.get("#READS", ""),
-                "mean_depth": row.get("AVG_DP", ""),
-                "svd_prefix": svd_prefix,
-                "source_path": path,
-                "status": "ok" if freemix not in ["", "NA"] else "no_call",
-            }
-            contam_writer.writerow(contam_row)
-            vb2_writer.writerow(
-                {
-                    "Sample": sample_id,
-                    "base_sample": sample,
-                    "sample_id": sample,
-                    "external_sample_id": external,
-                    "aligner": aligner,
-                    "deduper": deduper,
-                    "panel_id": panel_id,
-                    "panel_label": panel_label,
-                    "snp_count": snp_count,
-                    "svd_prefix": svd_prefix,
-                    "freemix_fraction": freemix,
-                    "contamination_pct": _safe_pct(freemix),
-                    "site_count": row.get("#SNPS", snp_count),
-                    "read_count": row.get("#READS", ""),
-                    "mean_depth": row.get("AVG_DP", ""),
-                    "runtime_seconds": runtime_seconds,
-                    "runtime_minutes": _seconds_to_minutes(runtime_seconds),
-                    "task_cost": benchmark.get("task_cost", ""),
-                    "source_path": path,
-                    "benchmark_path": benchmark_path,
-                    "status": contam_row["status"],
-                }
-            )
-
         for path in args.gatk:
             sample, external, aligner, deduper = _parse_contam_path(path, sample_map)
             sample_id = _stage_sample_id(sample, aligner, deduper)
@@ -329,20 +203,16 @@ def compile_reports(args: argparse.Namespace) -> None:
                         }
                     )
     finally:
-        for handle in (contam_handle, site_handle, vb2_handle, donor_handle):
+        for handle in (contam_handle, site_handle, donor_handle):
             handle.close()
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sample-map-json", required=True)
-    parser.add_argument("--panel-metadata-json", required=True)
     parser.add_argument("--contamination-output", required=True)
-    parser.add_argument("--vb2-comparison-output", required=True)
     parser.add_argument("--site-mix-output", required=True)
     parser.add_argument("--donor-output", required=True)
-    parser.add_argument("--vb2", nargs="*", default=[])
-    parser.add_argument("--vb2-bench", nargs="*", default=[])
     parser.add_argument("--gatk", nargs="*", default=[])
     parser.add_argument("--site-mix", nargs="*", default=[])
     parser.add_argument("--site-mix-donors", nargs="*", default=[])

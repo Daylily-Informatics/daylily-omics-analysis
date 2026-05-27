@@ -38,6 +38,7 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
         'include: "rules/fastv.smk"',
         'include: "rules/seqfu.smk"',
         'include: "rules/relatedness_batch.smk"',
+        'include: "rules/contam_identity.smk"',
         'include: "rules/run_qc_reports.smk"',
         'include: "rules/truvari_sv_benchmark.smk"',
         'include: "rules/unmapped_metagenomics.smk"',
@@ -62,13 +63,23 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert config["relatedness"]["somalier_sites_vcf"].endswith(
             "merged.500perchr.nosamp.sort.vcf.gz"
         )
+        assert config["contam_identity"]["primary_snv_caller"] == "sentd"
+        for section in ("ngstroublefinder", "haplocheck", "read_haps", "charr"):
+            assert section in config
+            assert config[section]["env_yaml"].startswith("../envs/")
+            assert config[section]["partition"]
+        assert config["haplocheck"]["input_modes"] == ["bam", "vcf"]
+        assert config["read_haps"]["reliable_snp_file"].endswith(
+            "high_quality_markers_deCODE_2015.txt.gz"
+        )
+        assert config["charr"]["ref_af_resource"].endswith("hg38_gnomad_ref_af.ht")
 
 
 def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "vep"):
+    for tool in ("fastv", "vep", "contam_identity"):
         assert f'"{tool}"' in common
     assert '"snpeff"' not in common[
         common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
@@ -129,6 +140,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     seq_inputs = text[text.index("def _sequence_qc_native_inputs") : text.index("def _alignment_component_inputs")]
     assert "sample=SAMPS" not in seq_inputs
     assert "qc_tool_enabled(\"site_mix\")" in text
+    assert "contam_identity_multiqc_inputs(wildcards)" in text
+    assert "_contam_identity_native_inputs(wildcards)" in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
     assert "expansionhunter_report_targets_available()" in text
@@ -142,9 +155,13 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "sequence_qc_outputs_mqc.tsv",
         "alignment_qc_outputs_mqc.tsv",
         "contamination_mqc.tsv",
-        "verifybamid2_panel_comparison_mqc.tsv",
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
+        "contam_identity_mqc.tsv",
+        "ngstroublefinder_mqc.tsv",
+        "haplocheck_mtdna_mqc.tsv",
+        "read_haps_mqc.tsv",
+        "charr_mqc.tsv",
         "relatedness_mqc.tsv",
         "bcftools_variant_stats_mqc.tsv",
         "rtg_vcfstats_mqc.tsv",
@@ -286,13 +303,14 @@ def test_multiqc_ignores_other_report_logs_and_custom_logs_avoid_mqc_suffix() ->
 def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     site_mix = _read("workflow/rules/site_mix_contam.smk")
     contamination_script = _read("workflow/scripts/compile_contamination_mqc.py")
+    contam_identity = _read("workflow/rules/contam_identity.smk")
+    identity_script = _read("workflow/scripts/compile_contam_identity_mqc.py")
     relatedness = _read("workflow/rules/relatedness_batch.smk")
     report_script = _read("workflow/scripts/relatedness_report.py")
     report_env = _yaml("workflow/envs/report.yaml")
 
     assert "rule contamination_mqc_gather:" in site_mix
     for expected in (
-        "verifybamid2",
         "gatk",
         "site_mix",
         "contamination_mqc.tsv",
@@ -307,6 +325,33 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert '"base_sample",' in contamination_script
     assert '"sample_id": sample_id' not in contamination_script
     assert '"sample_id": sample' in contamination_script
+    assert "verifybamid2" not in contamination_script.lower()
+
+    for expected in (
+        "rule ngstroublefinder_contam_identity:",
+        "rule haplocheck_bam_contam_identity:",
+        "rule haplocheck_vcf_contam_identity:",
+        "rule read_haps_contam_identity:",
+        "rule charr_contam_identity:",
+        "rule contam_identity_mqc_gather:",
+        "rule produce_global_contam_check:",
+        "contam_identity.primary_snv_caller",
+        "Haplocheck",
+        "read_haps",
+        "CHARR",
+    ):
+        assert expected in contam_identity
+    for expected in (
+        "IDENTITY_FIELDS",
+        "READ_HAPS_FIELDS",
+        "PASS_FAIL",
+        "tool_pass_fail",
+        "mtdna_contamination_proxy",
+        "ngstroublefinder",
+        "haplocheck",
+        "charr",
+    ):
+        assert expected in identity_script
 
     for expected in (
         "rule relatedness_batch_manifest:",
@@ -425,9 +470,13 @@ def test_multiqc_config_custom_content_entries() -> None:
         "bclconvert_index_hopping",
         "alignment_qc_outputs",
         "contamination",
-        "verifybamid2_panel_comparison",
         "site_mix_contam",
         "site_mix_donor",
+        "contam_identity",
+        "ngstroublefinder",
+        "haplocheck_mtdna",
+        "read_haps",
+        "charr",
         "relatedness",
         "bcftools_variant_stats",
         "rtg_vcfstats",
@@ -494,7 +543,6 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     ):
         assert picard_suffix in trim
     assert ".rtg.vcfstats.txt" in trim
-    assert ".verifybamid.selfSM" in trim
     assert ".peddy.sex_check.csv" in trim
     assert ".peddy.het_check.csv" in trim
     assert ".peddy.ped_check.csv" in trim
@@ -504,10 +552,10 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
         "samtools",
         "picard",
         "mosdepth",
-        "verifybamid",
         "bcftools",
     ):
         assert module in filename_modules
+    assert "verifybamid" not in filename_modules
     for module in ("goleft_indexcov", "peddy", "somalier"):
         assert module not in filename_modules
     assert config["sample_names_replace_regex"] is True
@@ -530,7 +578,15 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert "peddy_sample_qc" in module_order
     assert "relatedness" in module_order
     assert "verifyBAMID" not in module_order
-    assert "verifybamid2_panel_comparison" in module_order
+    assert "verifybamid2_panel_comparison" not in module_order
+    for module in (
+        "contam_identity",
+        "ngstroublefinder",
+        "haplocheck_mtdna",
+        "read_haps",
+        "charr",
+    ):
+        assert module in module_order
 
 
 def test_multiqc_reports_scan_only_staged_inputs() -> None:
@@ -591,7 +647,12 @@ def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> Non
     verifybamid2 = _read("workflow/rules/verifybamid2_contam.smk")
     gatk = _read("workflow/rules/gatk_contam.smk")
     multiqc_final = _read("workflow/rules/multiqc_final_wgs.smk")
+    snakefile = _read("workflow/Snakefile")
 
+    assert 'include: "rules/verifybamid2_contam.smk"' not in [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
+    assert '# include: "rules/verifybamid2_contam.smk"' in snakefile
     assert "qc_contamination_dedupers()" in verifybamid2
     assert "qc_contamination_dedupers()" in gatk
     assert "vb2_mqc.tsv" not in verifybamid2.split("output:", 1)[1].split("log:", 1)[0]
@@ -622,11 +683,12 @@ def test_multiqc_runtime_policy_documented() -> None:
         "runtime_gate_minutes: 45",
         'enable_tools=["fastv"]',
         "site_mix genotype-free contamination",
+        "Global contamination/identity bundle",
         "reports/multiqc_inputs/<stage>/",
         "Duplicate `(module, Sample)` pairs fail during staging",
         "`<sample>.<aligner>.<deduper>.<snv_caller>`",
         "`<sample>.<aligner>.<deduper>.<sv_caller>`",
-        "Peddy CSVs and VerifyBamID `.selfSM` files are rewritten",
+        "Peddy CSVs and Somalier native files are rewritten",
         "`parent_id` / `parent_name` grouping",
         "QC gap:",
     ):

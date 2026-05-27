@@ -203,26 +203,10 @@ def test_contamination_and_tiddit_custom_tsvs_are_sample_first(tmp_path: Path) -
     assert "workflow/scripts/compile_contamination_mqc.py" in site_mix
     assert "run:" not in site_mix[site_mix.index("rule contamination_mqc_gather:") :]
     assert 'CONTAMINATION_FIELDS = [\n    "Sample",' in contamination_script
-    assert 'VB2_FIELDS = [\n    "Sample",' in contamination_script
     assert 'DONOR_FIELDS = [\n    "Sample",' in contamination_script
     assert '"Sample": sample_id' in contamination_script
+    assert "verifybamid2" not in contamination_script.lower()
 
-    vb2_path = (
-        tmp_path
-        / "results/day/hg38/HG003/align/sent/dmd/alignqc/contam/vb2/100k/"
-        / "HG003.sent.dmd.100k.vb2.tsv"
-    )
-    vb2_path.parent.mkdir(parents=True)
-    vb2_path.write_text(
-        "FREEMIX\t#SNPS\t#READS\tAVG_DP\n0.012\t100000\t200\t2\n",
-        encoding="utf-8",
-    )
-    bench_path = (
-        tmp_path
-        / "results/day/hg38/HG003/benchmarks/HG003.sent.dmd.100k.vb2.bench.tsv"
-    )
-    bench_path.parent.mkdir(parents=True)
-    bench_path.write_text("s\ttask_cost\n600\t0.1\n", encoding="utf-8")
     gatk_path = (
         tmp_path
         / "results/day/hg38/HG003/align/sent/dmd/alignqc/contam/gatk/"
@@ -230,26 +214,29 @@ def test_contamination_and_tiddit_custom_tsvs_are_sample_first(tmp_path: Path) -
     )
     gatk_path.parent.mkdir(parents=True)
     gatk_path.write_text("FREEMIX\n0.0\n", encoding="utf-8")
+    site_mix_path = (
+        tmp_path
+        / "results/day/hg38/HG003/align/sent/dmd/alignqc/contam/site_mix/"
+        / "HG003.sent.dmd.site_mix.tsv"
+    )
+    site_mix_path.parent.mkdir(parents=True)
+    site_mix_path.write_text(
+        "method\tcontamination_fraction\tcontamination_pct\tsite_count\n"
+        "genotype_free_site_mix\t0.012\t1.2\t200\n",
+        encoding="utf-8",
+    )
     contam_out = tmp_path / "contamination_mqc.tsv"
-    vb2_out = tmp_path / "verifybamid2_panel_comparison_mqc.tsv"
     site_out = tmp_path / "site_mix_contam_mqc.tsv"
     donor_out = tmp_path / "site_mix_donor_mqc.tsv"
 
     contamination_module.compile_reports(
         SimpleNamespace(
             sample_map_json='{"HG003":"EXT-HG003"}',
-            panel_metadata_json=(
-                '{"100k":{"label":"100k","snp_count":"100000",'
-                '"svd_prefix":"/fsx/references/verifybamid/100k"}}'
-            ),
             contamination_output=str(contam_out),
-            vb2_comparison_output=str(vb2_out),
             site_mix_output=str(site_out),
             donor_output=str(donor_out),
-            vb2=[str(vb2_path)],
-            vb2_bench=[str(bench_path)],
             gatk=[str(gatk_path)],
-            site_mix=[],
+            site_mix=[str(site_mix_path)],
             site_mix_donors=[],
         )
     )
@@ -259,11 +246,11 @@ def test_contamination_and_tiddit_custom_tsvs_are_sample_first(tmp_path: Path) -
         assert rows[0]["base_sample"] == "HG003"
         assert rows[0]["sample_id"] == "HG003"
         assert rows[0]["external_sample_id"] == "EXT-HG003"
-    with vb2_out.open(newline="", encoding="utf-8") as handle:
+    with site_out.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
         assert rows[0]["Sample"] == "HG003.sent.dmd"
         assert rows[0]["base_sample"] == "HG003"
-        assert rows[0]["panel_id"] == "100k"
+        assert rows[0]["tool"] == "site_mix"
     for output in (site_out, donor_out):
         assert output.read_text(encoding="utf-8").split("\t", 1)[0] == "Sample"
 
@@ -657,14 +644,16 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     qmap_done.parent.mkdir(parents=True)
     qmap_done.write_text("done\n", encoding="utf-8")
     (qmap_done.parent / "genome_results.txt").write_text("number of reads = 1\n", encoding="utf-8")
-    vb2_tsv = (
+    haplocheck = (
         root
-        / "HG001/align/sent/dmd/alignqc/contam/vb2/100k/HG001.sent.dmd.100k.vb2.tsv"
+        / "HG001/align/sent/dmd/alignqc/contam_identity/haplocheck/bam/"
+        / "HG001.sent.dmd.haplocheck.contamination.txt"
     )
-    vb2_tsv.parent.mkdir(parents=True)
-    vb2_tsv.write_text("SEQ_ID\tFREEMIX\nHG001\t0.01\n", encoding="utf-8")
-    vb2_selfsm = vb2_tsv.with_name("HG001.sent.dmd.100k.vb2.selfSM")
-    vb2_selfsm.write_text("SEQ_ID\tFREEMIX\nHG001\t0.01\n", encoding="utf-8")
+    haplocheck.parent.mkdir(parents=True)
+    haplocheck.write_text(
+        "Sample\tContamination Status\tContamination Level\nHG001\tNO\t0\n",
+        encoding="utf-8",
+    )
 
     out_dir = root / "reports/multiqc_inputs/alignment"
     manifest = out_dir / "manifest.tsv"
@@ -674,7 +663,7 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     module.stage_known_input(stager, mosdepth)
     module.stage_known_input(stager, picard_done)
     module.stage_known_input(stager, qmap_done)
-    module.stage_known_input(stager, vb2_tsv)
+    module.stage_known_input(stager, haplocheck)
     stager.finish()
 
     assert (out_dir / "native/samtools/HG001.sent.dmd.stats.tsv").exists()
@@ -685,14 +674,13 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
         out_dir / "native/picard/HG001.sent.dmd.alignment_summary_metrics.txt"
     ).exists()
     assert (out_dir / "native/qualimap/HG001.sent.dmd/genome_results.txt").exists()
-    staged_selfsm = out_dir / "native/verifybamid/HG001.sent.dmd.100k.selfSM"
-    assert staged_selfsm.exists()
-    assert staged_selfsm.read_text(encoding="utf-8").splitlines()[1].startswith(
-        "HG001.sent.dmd.100k\t"
-    )
+    assert (
+        out_dir
+        / "native/haplocheck/HG001.sent.dmd/HG001.sent.dmd.haplocheck.contamination.txt"
+    ).exists()
     with manifest.open(newline="", encoding="utf-8") as handle:
         samples = {row["Sample"] for row in csv.DictReader(handle, delimiter="\t")}
-    assert samples == {"HG001.sent.dmd", "HG001.sent.dmd.100k"}
+    assert samples == {"HG001.sent.dmd"}
 
 
 def test_stage_multiqc_inputs_rewrites_somalier_native_files(tmp_path: Path) -> None:

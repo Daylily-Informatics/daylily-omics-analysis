@@ -232,6 +232,32 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert "${1:-}" in dyoainit
 
 
+def test_mac_local_activation_contracts() -> None:
+    dyoainit = _read("dyoainit")
+    day_activate = _read("bin/day_activate")
+    local_profile_info = _read("config/day_profiles/local/templates/profile.info")
+    local_profile_env = _read("config/day_profiles/local/templates/profile_env.bash")
+    profile_warn = _read("bin/util/profile_freshness_warn.bash")
+
+    assert "DAYOA_MAC_LOCAL=false" in dyoainit
+    assert 'region="local-mac"' in dyoainit
+    assert "macOS local mode requires the DAY-EC or DAYOA conda environment" in dyoainit
+    assert "macOS local mode requires the DAYOA conda environment" in dyoainit
+    assert "macOS local mode: using conda environment DAYOA." in dyoainit
+    assert "source config/day/day_env_installer.sh DAYOA" in dyoainit
+
+    assert 'if [[ "${DAY_BIOME:-}" == "MAC" && "$dayp" != "local" ]]; then' in day_activate
+    assert 'target_conda_env="DAYOA"' in day_activate
+    assert 'target_conda_env="DAY-EC"' not in day_activate
+    assert "macOS local mode: using DAYOA while reinitializing DayOA." in day_activate
+
+    assert "env_script:config/day_profiles/local/templates/profile_env.bash" in local_profile_info
+    assert 'if [[ "${DAY_BIOME:-}" == "MAC" ]]; then' in local_profile_env
+    assert "DAYOA_MAC_STATE_DIR" in local_profile_env
+    assert "dayoa_sed_inplace()" in profile_warn
+    assert 'sed -i.bak "$sed_expr" "$target_file"' in profile_warn
+
+
 def test_shell_wrappers_have_valid_bash_syntax() -> None:
-    for path in ("bin/day_run", "dyoainit"):
+    for path in ("bin/day_run", "bin/util/profile_freshness_warn.bash", "dyoainit"):
         subprocess.run(["bash", "-n", path], cwd=REPO_ROOT, check=True)

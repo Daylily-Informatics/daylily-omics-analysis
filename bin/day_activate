@@ -13,10 +13,24 @@ if [[ -z "$dayp" ]]; then
     return 1
 fi
 
+if [[ "${DAY_BIOME:-}" == "MAC" && "$dayp" != "local" ]]; then
+    echo "ERROR: macOS local mode only supports the local profile."
+    return 3
+fi
+
 # Attempt to deactivate any existing environment
-source bin/day_deactivate activate &> /dev/null
-echo "Attempting to deactivate existing environments & re-init with --project $DP ."
+if [[ "${DAY_BIOME:-}" == "MAC" ]]; then
+    echo "macOS local mode: using DAYOA while reinitializing DayOA."
+else
+    source bin/day_deactivate activate &> /dev/null
+    echo "Attempting to deactivate existing environments & re-init with --project $DP ."
+fi
 source ./dyoainit --project "$DP" --skip-project-check &> /dev/null
+dyoainit_ret_code=$?
+if [[ "$dyoainit_ret_code" != "0" ]]; then
+    echo "ERROR: source ./dyoainit --project $DP --skip-project-check failed with return code $dyoainit_ret_code."
+    return 4
+fi
 export DAY_PROFILE=$dayp
 
 
@@ -50,10 +64,12 @@ else
     unset DAY_REMOTE_EXE
 fi
 
-conda activate DAYOA
+target_conda_env="DAYOA"
+
+conda activate "$target_conda_env"
 conda_ret_code=$?
 if [[ "$conda_ret_code" != "0" ]]; then
-    colr "ERROR: conda activate DAYOA failed with return code $conda_ret_code."  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+    colr "ERROR: conda activate $target_conda_env failed with return code $conda_ret_code."  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
     return 4
 fi
 
@@ -64,6 +80,10 @@ if [[ "$?" == "3" ]]; then
 fi
 
 if ! which yq &>/dev/null; then
+  if [[ "${DAY_BIOME:-}" == "MAC" ]]; then
+    echo "ERROR: yq is required in the DAY-EC environment for macOS local mode."
+    return 3
+  fi
   echo "yq not found. Installing via conda in base environment..."
   conda install -c conda-forge yq -y || {
     echo "Failed to install yq."
@@ -73,43 +93,56 @@ else
   echo "yq is already installed."
 fi
 
-CONFIG_FILE=~/.config/daylily/daylily_cli_global.yaml
-git_tag=$(yq -r '.daylily.git_tag' "$CONFIG_FILE")
-export SENTIEON_TMPDIR=$(yq -r '.daylily.sentieon_tmpdir' "$CONFIG_FILE")
-export TMPDIR=$SENTIEON_TMPDIR
-export SENTIEON_LICENSE_YAM=$(yq -r '.daylily.sentieon_lic_path' "$CONFIG_FILE")
-export SENTIEON_INSTALL_DIR=$(yq -r '.daylily.sentieon_install_dir' "$CONFIG_FILE")
-export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
-export SENTIEON_LICENSE=''
-
-# Test if file exists
-if [[ ! -f "$SENTIEON_LICENSE_YAM" ]]; then
-    echo "WARNING: sentieon lic file $SENTIEON_LICENSE_YAM not found."
-
-    detected_license=$(ls /fsx/references/runtime_assets/cached_envs/*lic)
-    if [[ ! -f "$detected_license" ]]; then
-        echo "WARNING: sentieon lic file not detected in '/fsx/references/runtime_assets/cached_envs/*lic' ."
-        echo "If you try to use any of the sentieon tools, you will get an error."
-        sleep 2
-    else
-        echo "Detected sentieon license file: $detected_license will be used and overrides what is in ~/.config/daylily/daylily_cli_global.yaml"
-        export SENTIEON_LICENSE=$detected_license
+if [[ "${DAY_BIOME:-}" == "MAC" ]]; then
+    if [[ -z "${DAYOA_MAC_STATE_DIR:-}" ]]; then
+        echo "ERROR: DAYOA_MAC_STATE_DIR is not set; rerun source dyoainit from DAY-EC."
+        return 3
     fi
+    export SENTIEON_TMPDIR="$DAYOA_MAC_STATE_DIR/sentieon_tmp"
+    mkdir -p "$SENTIEON_TMPDIR" || return 3
+    export TMPDIR="$SENTIEON_TMPDIR"
+    export SENTIEON_LICENSE_YAM=""
+    export SENTIEON_INSTALL_DIR=""
+    export SENTIEON_LICENSE=""
 else
-    echo "Using sentieon license file: $SENTIEON_LICENSE_YAM from ~/.config/daylily/daylily_cli_global.yaml"
-    export SENTIEON_LICENSE=$SENTIEON_LICENSE_YAM
-fi
+    CONFIG_FILE=~/.config/daylily/daylily_cli_global.yaml
+    git_tag=$(yq -r '.daylily.git_tag' "$CONFIG_FILE")
+    export SENTIEON_TMPDIR=$(yq -r '.daylily.sentieon_tmpdir' "$CONFIG_FILE")
+    export TMPDIR=$SENTIEON_TMPDIR
+    export SENTIEON_LICENSE_YAM=$(yq -r '.daylily.sentieon_lic_path' "$CONFIG_FILE")
+    export SENTIEON_INSTALL_DIR=$(yq -r '.daylily.sentieon_install_dir' "$CONFIG_FILE")
+    export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
+    export SENTIEON_LICENSE=''
 
-if [[ ! -f ~/.config/daylily/$git_tag ]]; then
-    echo ""
-    echo "!!!!"
-    echo "!!!!"
-    echo "    WARNING: gittag:$git_tag not found touched in  ~/.config/daylily/$git_tag "
-    echo "     This might be fine if you have cloned a more recent release of daylily compared to the tagged version used to create this ephemeral cluster."
-    echo "     ... however, this is not expected. If you are running an ephemeral cluster headnode for days+, this is not the intended use of daylily, a fresh build might be called for."
-    echo "     This is checked by testing if ~/.config/daylily/$git_tag exists ."
-    echo "!!!!"
-    sleep 3
+    # Test if file exists
+    if [[ ! -f "$SENTIEON_LICENSE_YAM" ]]; then
+        echo "WARNING: sentieon lic file $SENTIEON_LICENSE_YAM not found."
+
+        detected_license=$(ls /fsx/references/runtime_assets/cached_envs/*lic)
+        if [[ ! -f "$detected_license" ]]; then
+            echo "WARNING: sentieon lic file not detected in '/fsx/references/runtime_assets/cached_envs/*lic' ."
+            echo "If you try to use any of the sentieon tools, you will get an error."
+            sleep 2
+        else
+            echo "Detected sentieon license file: $detected_license will be used and overrides what is in ~/.config/daylily/daylily_cli_global.yaml"
+            export SENTIEON_LICENSE=$detected_license
+        fi
+    else
+        echo "Using sentieon license file: $SENTIEON_LICENSE_YAM from ~/.config/daylily/daylily_cli_global.yaml"
+        export SENTIEON_LICENSE=$SENTIEON_LICENSE_YAM
+    fi
+
+    if [[ ! -f ~/.config/daylily/$git_tag ]]; then
+        echo ""
+        echo "!!!!"
+        echo "!!!!"
+        echo "    WARNING: gittag:$git_tag not found touched in  ~/.config/daylily/$git_tag "
+        echo "     This might be fine if you have cloned a more recent release of daylily compared to the tagged version used to create this ephemeral cluster."
+        echo "     ... however, this is not expected. If you are running an ephemeral cluster headnode for days+, this is not the intended use of daylily, a fresh build might be called for."
+        echo "     This is checked by testing if ~/.config/daylily/$git_tag exists ."
+        echo "!!!!"
+        sleep 3
+    fi
 fi
 
 
@@ -127,6 +160,10 @@ if [[ -f "$profile_info" ]]; then
     mgps1val=$(grep 'terminal_abbreviation' "$profile_info" | cut -d ':' -f 2)
 
     # Source the environment script
+    if [[ ! -f "$env_script" ]]; then
+        echo "ERROR: Profile environment script not found: $env_script"
+        return 1
+    fi
     source "$env_script"
     pe_ret_code=$?
     export DYPS1="$mgps1val"
@@ -137,8 +174,7 @@ fi
 
 # Check for 'colr' command
 if ! command -v colr &> /dev/null; then
-    colr "ERROR: 'colr' package is missing. Things will probably work, but not look fabulous."  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
-    sleep 2
+    echo "WARNING: 'colr' package is missing; using plain output." 1>&2
 fi
 
 # Check for errors during activation

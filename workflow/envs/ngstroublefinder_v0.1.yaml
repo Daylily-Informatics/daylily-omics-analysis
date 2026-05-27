@@ -1,0 +1,10 @@
+name: ngstroublefinder_v0.1
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - htslib
+  - pip
+  - pip:
+      - git+https://github.com/STALICLA-RnD/NGSTroubleFinder.git

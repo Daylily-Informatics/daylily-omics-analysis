@@ -775,10 +775,89 @@ def stage_somalier_cohort(stager: Stager, source: Path) -> None:
         )
 
 
+def parse_contam_identity_batch_parts(path: Path) -> StageParts:
+    parts = path_parts(path)
+    try:
+        idx = parts.index("contam_identity")
+        aligner = parts[idx + 1]
+        deduper = parts[idx + 2]
+    except (ValueError, IndexError) as exc:
+        raise StagingError(f"could not parse contam_identity batch path: {path}") from exc
+    return StageParts(sample="cohort", aligner=aligner, deduper=deduper, stage="alignment")
+
+
+def stage_ngstroublefinder_native(stager: Stager, source: Path) -> None:
+    parts = parse_contam_identity_batch_parts(source)
+    rel_name = f"{parts.aligner}.{parts.deduper}.{source.name}"
+    stager.copy_file(
+        source,
+        Path("native/ngstroublefinder") / rel_name,
+        parts,
+        module="ngstroublefinder",
+        input_kind=source.name,
+        group_id=str(source.parent),
+    )
+
+
+def stage_haplocheck_native(stager: Stager, source: Path) -> None:
+    if "/snv/" in source.as_posix():
+        parts = parse_variant_parts(source)
+    else:
+        parts = parse_alignment_parts(source)
+    stager.copy_file(
+        source,
+        Path("native/haplocheck") / parts.stage_sample / source.name,
+        parts,
+        module="haplocheck_mtdna",
+        input_kind=source.name,
+        group_id=str(source.parent),
+    )
+
+
+def stage_read_haps_native(stager: Stager, source: Path) -> None:
+    parts = parse_variant_parts(source)
+    stager.copy_file(
+        source,
+        Path("native/read_haps") / parts.stage_sample / source.name,
+        parts,
+        module="read_haps",
+        input_kind="read_haps",
+        group_id=str(source),
+    )
+
+
+def stage_charr_native(stager: Stager, source: Path) -> None:
+    parts = parse_variant_parts(source)
+    stager.copy_file(
+        source,
+        Path("native/charr") / parts.stage_sample / source.name,
+        parts,
+        module="charr",
+        input_kind="charr",
+        group_id=str(source),
+    )
+
+
 def stage_known_input(stager: Stager, source: Path) -> None:
     name = source.name
     if name.endswith("_mqc.tsv") or name.endswith(".mqc.tsv"):
         stage_custom_tsv(stager, source)
+    elif (
+        name in {"qcReport.tsv", "report.html"}
+        and "/contam_identity/" in source.as_posix()
+        and "/ngstroublefinder/" in source.as_posix()
+    ):
+        stage_ngstroublefinder_native(stager, source)
+    elif (
+        name.endswith(".haplocheck.contamination.txt")
+        or name.endswith(".haplocheck.contamination.raw.txt")
+        or name.endswith(".haplocheck.report.html")
+    ):
+        stage_haplocheck_native(stager, source)
+    elif name.endswith(".read_haps.txt") and "/contam_identity/read_haps/" in source.as_posix():
+        stage_read_haps_native(stager, source)
+    elif name.endswith(".charr.tsv") and "/contam_identity/charr/" in source.as_posix():
+        stage_charr_native(stager, source)
     elif name.endswith(".fastqc.done"):
         stage_fastqc_done(stager, source)
     elif name.endswith(".complete") and "/samtmetrics/" in source.as_posix():
@@ -796,8 +875,6 @@ def stage_known_input(stager: Stager, source: Path) -> None:
         stage_kraken2_report(stager, source)
     elif name == "goleft.done":
         stage_goleft_done(stager, source)
-    elif name.endswith(".vb2.tsv"):
-        stage_verifybamid_tsv(stager, source)
     elif name in {"cohort.samples.tsv", "cohort.pairs.tsv"} and "/somalier/" in source.as_posix():
         stage_somalier_cohort(stager, source)
     elif name.endswith(".somalier"):

@@ -1,9 +1,18 @@
 dayoa_user="$(id -un)"
 dayoa_host="${HOSTNAME:-$(hostname)}"
 
-export APPTAINER_TMPDIR="/fsx/scratch/dayoa_apptainer_tmp/${dayoa_user}"
+if [[ "${DAY_BIOME:-}" == "MAC" ]]; then
+    if [[ -z "${DAYOA_MAC_STATE_DIR:-}" ]]; then
+        echo "ERROR: DAYOA_MAC_STATE_DIR is not set for macOS local mode." >&2
+        return 1
+    fi
+    export APPTAINER_TMPDIR="${DAYOA_MAC_STATE_DIR}/apptainer_tmp/${dayoa_user}"
+    export APPTAINER_CACHEDIR="${DAYOA_MAC_STATE_DIR}/apptainer_cache/${dayoa_user}/${dayoa_host}"
+else
+    export APPTAINER_TMPDIR="/fsx/scratch/dayoa_apptainer_tmp/${dayoa_user}"
+    export APPTAINER_CACHEDIR="/fsx/tmp/apptainer_cache/${dayoa_user}/${dayoa_host}"
+fi
 export SINGULARITY_TMPDIR="${APPTAINER_TMPDIR}"
-export APPTAINER_CACHEDIR="/fsx/tmp/apptainer_cache/${dayoa_user}/${dayoa_host}"
 export SINGULARITY_CACHEDIR="${APPTAINER_CACHEDIR}"
 
 mkdir -p "${APPTAINER_TMPDIR}" "${APPTAINER_CACHEDIR}" || return 1

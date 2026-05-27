@@ -2,18 +2,27 @@
 
 profile_dir=$DAY_PROFILE_DIR
 
+dayoa_sed_inplace() {
+    local sed_expr="$1"
+    shift
+    local target_file
+    for target_file in "$@"; do
+        [[ -f "$target_file" ]] || continue
+        sed -i.bak "$sed_expr" "$target_file" || return 1
+        rm -f "$target_file.bak"
+    done
+}
 
-if [[ ! -f "$DAY_PROFILE_DIR/rule_config.yaml" && ! -f "$DAY_PROFILE_DIR/config.yaml"  && ! -f "$DAY_PROFILE_DIR/profile_env.sh" ]]; then   
+if [[ ! -f "$DAY_PROFILE_DIR/rule_config.yaml" && ! -f "$DAY_PROFILE_DIR/config.yaml"  && ! -f "$DAY_PROFILE_DIR/profile_env.bash" ]]; then
 
     colr " > >> >>> " "$DY_IB0" "$DY_IT0" "$DY_IS0" 1>&2
 
     colr "ACTIVE CONFIG FILES NOT FOUND IN $profile_dir ... copying" "$DY_IT0" "$DY_IB0" "$DY_IS1" 1>&2
 
-    profile_files=("$profile_dir/profile_env.bash" "$profile_dir/cluster.yaml" "$profile_dir/rule_config.yaml")
-    templates=("$profile_dir/templates/profile_env.bash" "$profile_dir/templates/cluster.yaml" "$profile_dir/templates/rule_config.yaml")
-
-    for i in "${!profile_files[@]}"; do
-        if [[ ! -f "${profile_files[i]}" || "${templates[i]}" -nt "${profile_files[i]}" ]]; then
+    for template_file in "$profile_dir/templates/"*.yaml "$profile_dir/templates/"*.bash; do
+        [[ -e "$template_file" ]] || continue
+        profile_file="$profile_dir/$(basename "$template_file")"
+        if [[ ! -f "$profile_file" || "$template_file" -nt "$profile_file" ]]; then
             colr "Copying template yaml files to active config files $profile_dir" "$DY_IT0" "$DY_IB0" "$DY_IS1" 1>&2
             cp "$profile_dir/templates/"*yaml "$profile_dir/" || {
                 colr "ERROR: Failed to copy template yaml files." "$DY_ET2" "$DY_EB1" "$DY_ES2" 1>&2
@@ -31,13 +40,13 @@ if [[ ! -f "$DAY_PROFILE_DIR/rule_config.yaml" && ! -f "$DAY_PROFILE_DIR/config.
 
     # Replace placeholders in config files
     re_safe_mgr=$(echo "$DAY_ROOT" | sed "s/\//\\\\\//g")
-    sed -i "s/.DAY_ROOT\/c/$re_safe_mgr\/c/g" "$profile_dir/"*yaml
+    dayoa_sed_inplace "s/.DAY_ROOT\/c/$re_safe_mgr\/c/g" "$profile_dir/"*yaml
     bn=$(basename "$profile_dir" | sed 's/-/\\-/g')
-    sed -i "s/BASENAME_REGSUB/$bn/g" "$profile_dir/"*yaml
+    dayoa_sed_inplace "s/BASENAME_REGSUB/$bn/g" "$profile_dir/"*yaml
     u="$USER"
-    sed -i "s/USER_REGSUB/$u/g" "$profile_dir/"*yaml
+    dayoa_sed_inplace "s/USER_REGSUB/$u/g" "$profile_dir/"*yaml
     hn="$HOSTNAME"
-    sed -i "s/HOSTNAME/$hn/g" "$profile_dir/"*yaml
+    dayoa_sed_inplace "s/HOSTNAME/$hn/g" "$profile_dir/"*yaml
 
 elif [[  "config/day_profiles/$DAY_PROFILE/templates/profile_env.bash" -nt  "config/day_profiles/$DAY_PROFILE/profile_env.bash" || "config/day_profiles/$DAY_PROFILE/templates/cluster.yaml" -nt "config/day_profiles/$DAY_PROFILE/cluster.yaml" || "config/day_profiles/$DAY_PROFILE/templates/config.yaml" -nt "config/day_profiles/$DAY_PROFILE/config.yaml" || "config/day_profiles/$DAY_PROFILE/templates/rule_config.yaml" -nt "config/day_profiles/$DAY_PROFILE/rule_config.yaml" || "config/day_profiles/$DAY_PROFILE/templates/profile.info" -nt "config/day_profiles/$DAY_PROFILE/config.yaml" ]]; then
 

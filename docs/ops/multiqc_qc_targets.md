@@ -38,9 +38,12 @@ Examples:
 dy-r produce_multiqc_all -p -j 20
 dy-r produce_multiqc_all -p -j 20 --config enable_tools=["fastv"]
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["metagenomics"]
+dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentd"]
 ```
 
 `enable_tools=["fastv"]` explicitly opts into long-running FASTV evidence. `site_mix genotype-free contamination`, Kraken2 unmapped metagenomics, Ganon2 unmapped metagenomics, and sourmash gather secondary fingerprinting are also controlled by explicit runtime gates and configuration. `multiqc_qc.enable_tools=["metagenomics"]` is the umbrella kitchen-sink opt-in for all three metagenomics evidence branches.
+
+Global contamination/identity bundle evidence is long-running and explicit. `multiqc_qc.enable_tools=["contam_identity"]` stages the bundle into final MultiQC when it already exists or when `produce_global_contam_check` is requested.
 
 ## Staging Contract
 
@@ -62,14 +65,15 @@ Duplicate `(module, Sample)` pairs fail during staging. Stage-scoped identifiers
 - `<sample>.<aligner>.<deduper>.<snv_caller>`
 - `<sample>.<aligner>.<deduper>.<sv_caller>`
 
-Peddy CSVs and VerifyBamID `.selfSM` files are rewritten into stable custom-content TSVs before MultiQC. MultiQC sections use `parent_id` / `parent_name` grouping to keep related evidence together.
+Peddy CSVs and Somalier native files are rewritten before MultiQC. NGSTroubleFinder, Haplocheck, read_haps, and CHARR native evidence is staged when the global contamination/identity bundle is enabled. MultiQC sections use `parent_id` / `parent_name` grouping to keep related evidence together.
 
 ## Routine And Optional QC
 
 | Area | Routine status |
 |---|---|
 | FastQC, SeqFu, alignment metrics, mosdepth, goleft, normal coverage evenness | Routine when inputs exist. |
-| VerifyBamID2, GATK contamination, site-mix | Explicitly configured sample-level QC. |
+| GATK contamination and site-mix | Explicitly configured sample-level QC. |
+| Global contamination/identity bundle | Long-running evidence-only target `produce_global_contam_check`: GATK contamination, site-mix, NGSTroubleFinder, Haplocheck, read_haps, CHARR, Peddy, and Somalier; emits `contam_identity_mqc.tsv`, `ngstroublefinder_mqc.tsv`, `haplocheck_mtdna_mqc.tsv`, `read_haps_mqc.tsv`, and `charr_mqc.tsv`. |
 | Relatedness and Peddy | Enabled when configured and parser inputs exist. |
 | GIAB SNV/SV concordance | Enabled when truthsets and valid caller pairs exist. |
 | VEP | Long-running, enabled explicitly. |
@@ -79,6 +83,81 @@ Peddy CSVs and VerifyBamID `.selfSM` files are rewritten into stable custom-cont
 | Ultima run QC | Excluded from routine final MultiQC unless a parser-backed run-QC target explicitly enables Ultima run QC. |
 
 QC gap: generated evidence can be absent because the tool was not configured, not because the sample passed or failed. Interpretive decisions belong to R2.
+
+VerifyBamID2 is retired from active Snakemake execution. Historical rule/config files may remain for provenance and old-run inspection, but `workflow/Snakefile` does not include `workflow/rules/verifybamid2_contam.smk`, and final MultiQC no longer pulls VerifyBamID2 panel comparison outputs.
+
+## Global Contamination/Identity Configuration
+
+DayOA emits evidence only. It preserves native tool fields, including read_haps `PASS_FAIL` and `REASON`, without converting them into DayOA pass/fail state.
+
+Required target:
+
+```bash
+dy-r produce_global_contam_check -p -j 20 --config snv_callers=["sentd"]
+```
+
+Minimum explicit config shape:
+
+```yaml
+contam_identity:
+  primary_snv_caller: "sentd"
+
+ngstroublefinder:
+  env_yaml: "../envs/ngstroublefinder_v0.1.yaml"
+  command: "ngsTroubleFinder"
+  threads: 16
+  mem_mb: 64000
+  partition: "i192,i192mem,i128"
+
+haplocheck:
+  env_yaml: "../envs/haplocheck_v0.1.yaml"
+  haplocheck_command: "haplocheck"
+  cloudgene_command: "cloudgene"
+  cloudgene_app: "haplocheck@1.2.2"
+  input_modes: ["bam", "vcf"]
+  threads: 8
+  mem_mb: 16000
+  partition: "i192,i192mem,i128"
+
+read_haps:
+  env_yaml: "../envs/read_haps_v0.1.yaml"
+  read_haps_command: "read_haps"
+  reliable_snp_file: /fsx/references/runtime_assets/tool_specific_resources/read_haps/high_quality_markers_deCODE_2015.txt.gz
+  extra_args: ""
+  threads: 8
+  mem_mb: 32000
+  partition: "i192,i192mem,i128"
+
+charr:
+  env_yaml: "../envs/charr_v0.1.yaml"
+  threads: 8
+  mem_mb: 128000
+  partition: "i192,i192mem,i128"
+  ref_af_resource: /fsx/references/runtime_assets/tool_specific_resources/charr/hg38_gnomad_ref_af.ht
+  ref_af_field: "ref_AF"
+  hail_reference_genome: "GRCh38"
+  autosome_contigs: "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22"
+  min_af: 0.05
+  max_af: 0.95
+  min_dp: 10
+  max_dp: 100
+  min_gq: 20
+```
+
+`contam_identity.primary_snv_caller` must be present in explicit `snv_callers`; auto-detected caller state is rejected for this bundle. Haplocheck BAM mode consumes alignment evidence. Haplocheck VCF mode, read_haps, and CHARR consume the configured primary SNV caller VCF.
+
+Tool references:
+
+| Tool | Link |
+|---|---|
+| NGSTroubleFinder | https://github.com/STALICLA-RnD/NGSTroubleFinder |
+| NGSTroubleFinder paper | https://doi.org/10.1093/nargab/lqag006 |
+| Haplocheck | https://github.com/genepi/haplocheck |
+| Haplocheck docs | https://mitoverse.readthedocs.io/haplocheck/haplocheck/ |
+| read_haps | https://github.com/DecodeGenetics/read_haps |
+| read_haps paper | https://doi.org/10.1093/bioinformatics/btaa936 |
+| Hail CHARR API | https://hail.is/docs/0.2/methods/genetics.html#hail.methods.compute_charr |
+| CHARR paper | https://doi.org/10.1016/j.ajhg.2023.10.011 |
 
 ## Metagenomics Reference Configuration
 

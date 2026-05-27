@@ -12,6 +12,11 @@ fi
 
 region=""
 PROJECT="${PROJECT:-}"
+DAYOA_PLATFORM="$(uname -s 2>/dev/null || echo unknown)"
+DAYOA_MAC_LOCAL=false
+if [[ "$DAYOA_PLATFORM" == "Darwin" ]]; then
+    DAYOA_MAC_LOCAL=true
+fi
 
 # Set default contact email if not already set
 export DAY_CONTACT_EMAIL="${DAY_CONTACT_EMAIL:-john@daylilyinformatics.com}"
@@ -20,6 +25,8 @@ export DAY_CONTACT_EMAIL="${DAY_CONTACT_EMAIL:-john@daylilyinformatics.com}"
 if [[ -f "/etc/parallelcluster/cfnconfig" ]]; then
     source "/etc/parallelcluster/cfnconfig"
     region="${cfn_region:-}"
+elif [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+    region="local-mac"
 else
     echo "Error: AWS ParallelCluster config not found at /etc/parallelcluster/cfnconfig"
 fi
@@ -127,6 +134,14 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+    if [[ "${CONDA_DEFAULT_ENV:-}" != "DAY-EC" && "${CONDA_DEFAULT_ENV:-}" != "DAYOA" ]]; then
+        echo "Error: macOS local mode requires the DAY-EC or DAYOA conda environment."
+        echo "Run: conda activate DAY-EC"
+        return 3
+    fi
+    SKIP_PROJECT_CHECK=true
+fi
 
 # Check if DEACTIVATE flag is set
 if [[ "$DEACTIVATE" == true ]]; then
@@ -146,7 +161,10 @@ if [[ -f "$cluster_config_file" ]]; then
     BUDGET_ENFORCEMENT="$(cluster_config_tag_value "aws-parallelcluster-enforce-budget" "$cluster_config_file" || true)"
 fi
 if [[ -z "$PROJECT" ]]; then
-    if [[ -f "$cluster_config_file" ]]; then
+    if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+        PROJECT="dayoa-local-mac"
+        echo "Notice: macOS local mode active. Using project name: $PROJECT"
+    elif [[ -f "$cluster_config_file" ]]; then
         PROJECT="$(cluster_config_tag_value "aws-parallelcluster-project" "$cluster_config_file" || true)"
         if [[ -z "$PROJECT" ]]; then
             echo "Error: Project tag aws-parallelcluster-project was not found in $cluster_config_file"
@@ -318,18 +336,29 @@ if [[ -z "$DAY_USER" ]]; then
     return 3
 fi
 export USER="${USER:-$DAY_USER}"
-export APPTAINER_HOME="/fsx/resources/environments/containers/$DAY_USER/$(hostname)/"
-export DAY_BIOME="AWSPC"
 export DAY_ROOT="$PWD"
+if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+    export DAY_BIOME="MAC"
+    export DAYOA_MAC_STATE_DIR="${DAYOA_MAC_STATE_DIR:-$DAY_ROOT/.dayoa-local-mac}"
+    export APPTAINER_HOME="$DAYOA_MAC_STATE_DIR/apptainer_home/$DAY_USER/$(hostname)/"
+else
+    export DAY_BIOME="AWSPC"
+    export APPTAINER_HOME="/fsx/resources/environments/containers/$DAY_USER/$(hostname)/"
+fi
 
 # Increase file descriptor limit
 ulimit -n 16384
 
 # Set Sentieon variables
-export SENTIEON_TMPDIR='/dev/shm/'
-#export SENTIEON_LICENSE='/fsx/runtime_assets/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
-export SENTIEON_INSTALL_DIR='/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02'
-export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
+if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+    export SENTIEON_TMPDIR="$DAYOA_MAC_STATE_DIR/sentieon_tmp"
+    export SENTIEON_INSTALL_DIR=""
+else
+    export SENTIEON_TMPDIR='/dev/shm/'
+    #export SENTIEON_LICENSE='/fsx/runtime_assets/cached_envs/Rare_Cancer_Research_Foundation_eval.lic'
+    export SENTIEON_INSTALL_DIR='/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02'
+    export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
+fi
 
 # Backup original PATH and PS1 if not already set
 export ORIG_PATH="${ORIG_PATH:-$PATH}"
@@ -341,9 +370,19 @@ if [[ -f "config/cli/colr_themes.sh" ]]; then
 else
     echo "Warning: Color themes file not found at config/cli/colr_themes.sh"
 fi
+if ! command_exists colr; then
+    colr() {
+        if [[ "${1:-}" == "-n" ]]; then
+            shift
+            printf "%s" "${1:-}"
+        else
+            printf "%s\n" "${1:-}"
+        fi
+    }
+fi
 
 # Warn if shell is not bash
-if [[ "${SHELL:-}" != *"bash"* ]]; then
+if [[ "${SHELL:-}" != *"bash"* && "$DAYOA_MAC_LOCAL" == false ]]; then
     echo "Warning: This script has only been tested with bash."
     sleep 10
 fi
@@ -353,7 +392,13 @@ export PATH="$PATH:$PWD/bin"
 
 # Source tab completion script
 if [[ -f "bin/tabcomp.bash" ]]; then
-    source "bin/tabcomp.bash"
+    if command_exists complete; then
+        source "bin/tabcomp.bash"
+    elif [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+        echo "Notice: Bash tab completion is not available in this shell; skipping bin/tabcomp.bash."
+    else
+        echo "Warning: Bash tab completion is not available in this shell; skipping bin/tabcomp.bash."
+    fi
 else
     echo "Warning: Tab completion script not found at bin/tabcomp.bash"
 fi
@@ -387,24 +432,37 @@ if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then
     return 0
 fi
 
-conda env list
-# Ensure the DAYOA conda environment exists; build it if missing                                                                                                                                      
-if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then                                                                                                                       
-    echo "!Conda environment 'DAYOA' not found. Building it now..."
-    echo " ... you might need to start from a new shell."
-    
-    source config/day/day_env_installer.sh DAYOA
-    if [[ "$?" != "0" ]]; then
-        echo "Error: Failed to install the DAYOA environment. - $!"
+if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
+    if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
+        echo "Error: macOS local mode requires the DAYOA conda environment."
+        echo "Install it with: conda env create -n DAYOA -f config/day/day.yaml"
         return 1
-    else
-	echo "DAYOA install success"
     fi
-fi
+    conda activate DAYOA || {
+        echo "Error: Failed to activate 'DAYOA' conda environment."
+        return 1
+    }
+    echo "macOS local mode: using conda environment DAYOA."
+else
+    conda env list
+    # Ensure the DAYOA conda environment exists; build it if missing
+    if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
+        echo "!Conda environment 'DAYOA' not found. Building it now..."
+        echo " ... you might need to start from a new shell."
 
-conda activate DAYOA || {
-    echo "Error: Failed to activate 'DAYOA' conda  environment."
-}
+        source config/day/day_env_installer.sh DAYOA
+        if [[ "$?" != "0" ]]; then
+            echo "Error: Failed to install the DAYOA environment. - $!"
+            return 1
+        else
+            echo "DAYOA install success"
+        fi
+    fi
+
+    conda activate DAYOA || {
+        echo "Error: Failed to activate 'DAYOA' conda  environment."
+    }
+fi
 
 
 # Final message

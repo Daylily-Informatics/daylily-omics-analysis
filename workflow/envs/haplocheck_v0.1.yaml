@@ -1,0 +1,11 @@
+name: haplocheck_v0.1
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - openjdk
+  - samtools
+  - bcftools
+  - curl
+  - wget
+  - unzip

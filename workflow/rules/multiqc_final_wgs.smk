@@ -49,14 +49,8 @@ def _alignment_component_inputs(wildcards):
     paths.extend(_unmapped_metagenomics_ganon2_component_inputs(wildcards))
     paths.extend(_unmapped_metagenomics_sourmash_component_inputs(wildcards))
     paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
-    if (
-        qc_tool_enabled("verifybamid2")
-        or qc_tool_enabled("gatk_contam")
-        or qc_tool_enabled("site_mix")
-    ):
+    if qc_tool_enabled("gatk_contam") or qc_tool_enabled("site_mix"):
         paths.append(MDIR + "other_reports/contamination_mqc.tsv")
-    if qc_tool_enabled("verifybamid2"):
-        paths.append(MDIR + "other_reports/verifybamid2_panel_comparison_mqc.tsv")
     if qc_tool_enabled("site_mix"):
         paths.extend(
             [
@@ -67,6 +61,11 @@ def _alignment_component_inputs(wildcards):
     if qc_tool_enabled("relatedness"):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
         paths.extend(_relatedness_native_inputs(wildcards))
+    # Contamination identity staged reports include contam_identity_mqc.tsv,
+    # ngstroublefinder_mqc.tsv, haplocheck_mtdna_mqc.tsv, read_haps_mqc.tsv,
+    # and charr_mqc.tsv.
+    paths.extend(contam_identity_multiqc_inputs(wildcards))
+    paths.extend(_contam_identity_native_inputs(wildcards))
     return paths
 
 
@@ -322,17 +321,6 @@ def _alignment_qc_native_inputs(wildcards):
             ddup=qddups,
         )
     )
-    if qc_tool_enabled("verifybamid2"):
-        paths.extend(
-            expand(
-                MDIR
-                + "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=contam_ddups,
-                vb2panel=VERIFYBAMID2_PANELS,
-            )
-        )
     if qc_tool_enabled("gatk_contam"):
         paths.extend(
             expand(

@@ -1,0 +1,10 @@
+name: read_haps_v0.1
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - boost-cpp
+  - htslib
+  - samtools
+  - zlib
+  - bzip2
