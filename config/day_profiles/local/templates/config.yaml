@@ -15,6 +15,6 @@ max-status-checks-per-second: 10
 stats: "day_stats.json"
 use-singularity: true
 singularity-args: "  -B /fsx:/fsx -B /tmp:/tmp -B $PWD/:$PWD -B /dev/fd:/dev/fd  -B /dev/shm:$PWD/resources/dev/shm -B /dev/shm:/dev/shm "
-singularity-prefix: "/fsx/references/runtime_assets/cached_envs/containers"
+singularity-prefix: "/fsx/resources/environments/containers/USER_REGSUB/HOSTNAME"
 
  
