@@ -866,7 +866,7 @@ def test_native_multiqc_modules_are_enabled_and_stage_cleaned() -> None:
     assert "alignqc/qmap" not in _read("workflow/rules/multiqc_cov_aln.smk")
 
 
-def test_container_profile_uses_fsx_tmp_for_image_builds_and_binds_dev_shm() -> None:
+def test_profile_uses_writable_conda_prefix_and_reference_container_cache() -> None:
     day_run = _read("bin/day_run")
 
     assert 'source "$profile_env_script"' in day_run
@@ -877,7 +877,10 @@ def test_container_profile_uses_fsx_tmp_for_image_builds_and_binds_dev_shm() -> 
         profile_env = _read(f"config/day_profiles/{profile}/templates/profile_env.bash")
 
         assert "-B /dev/shm:/dev/shm" in config
-        assert 'conda-prefix: "/fsx/references/runtime_assets/cached_envs/conda"' in config
+        assert (
+            'conda-prefix: "/fsx/resources/environments/conda/USER_REGSUB/HOSTNAME"'
+            in config
+        )
         assert (
             'singularity-prefix: "/fsx/references/runtime_assets/cached_envs/containers"'
             in config
@@ -890,7 +893,7 @@ def test_container_profile_uses_fsx_tmp_for_image_builds_and_binds_dev_shm() -> 
         )
         assert 'export SINGULARITY_CACHEDIR="${APPTAINER_CACHEDIR}"' in profile_env
         assert 'mkdir -p "${APPTAINER_TMPDIR}" "${APPTAINER_CACHEDIR}" || return 1' in profile_env
-        assert "/fsx/resources/environments" not in config
+        assert "/fsx/resources/environments/containers" not in config
         assert "/fsx/resources/environments" not in profile_env
         assert 'if [[ "${DAYOA_OPENAI_TOKEN_FILE_ENABLE:-}" == "1" ]]; then' in profile_env
         assert 'source "${DAY_ROOT}/bin/day_openai_env.bash" || return 1' in profile_env

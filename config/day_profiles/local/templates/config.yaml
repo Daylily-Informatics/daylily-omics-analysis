@@ -3,7 +3,7 @@ latency-wait: 5
 keep-remote: true
 use-conda: true
 conda-frontend: conda
-conda-prefix: "/fsx/references/runtime_assets/cached_envs/conda"
+conda-prefix: "/fsx/resources/environments/conda/USER_REGSUB/HOSTNAME"
 force-use-threads: true
 restart-times: 0  
 cores: 8
