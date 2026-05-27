@@ -123,6 +123,11 @@ def test_peddy_rule_hard_fails_and_does_not_unconditionally_mark_done() -> None:
     assert "masking error" not in text
     assert "pca failure which can be ignored" not in text
     assert "touch {output.done}" not in text
+    assert "peddy: no hets found for sample" in text
+    assert "write_peddy_low_data_outputs.py" in text
+    assert "ERROR: peddy exited with status" in text
+    assert "{output.prefix}peddy.ped" not in text
+    assert "{output.prefix}ped" in text
     assert 'if [[ ! -s "$expected_output" ]]' in text
     assert "{output.prefix}html" in text
     assert "{output.prefix}het_check.csv" in text

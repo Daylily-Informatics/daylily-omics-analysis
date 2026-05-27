@@ -69,12 +69,22 @@ rule peddy:
         printf 'running peddy\n' >> "{log}"
         {params.ld_preload} peddy -p {threads} --plot --prefix "{output.prefix}" --loglevel DEBUG "{input.vcfgz}" "{input.ped_f}" >> "{log}" 2>&1 || {{
             peddy_status=$?
-            printf 'ERROR: peddy exited with status %s\n' "$peddy_status" | tee -a "{log}" >&2
-            exit "$peddy_status"
+            if grep -q 'peddy: no hets found for sample' "{log}" && grep -q 'IndexError: index 0 is out of bounds for axis 0 with size 0' "{log}"; then
+                printf 'WARNING: peddy reported no usable heterozygous variants; writing explicit low-data QC outputs\n' | tee -a "{log}" >&2
+                python bin/util/write_peddy_low_data_outputs.py \
+                    --prefix "{output.prefix}" \
+                    --ped "{input.ped_f}" \
+                    --sample-id "{wildcards.sample}" \
+                    --reason "peddy_no_usable_heterozygous_variants" \
+                    >> "{log}" 2>&1
+            else
+                printf 'ERROR: peddy exited with status %s\n' "$peddy_status" | tee -a "{log}" >&2
+                exit "$peddy_status"
+            fi
         }}
 
         for expected_output in \
-            "{output.prefix}peddy.ped" \
+            "{output.prefix}ped" \
             "{output.prefix}ped_check.csv" \
             "{output.prefix}sex_check.csv" \
             "{output.prefix}het_check.csv" \
@@ -136,11 +146,17 @@ rule peddy_sample_qc_gather:
                 sample_id = day_stage_sample_id(sample, aligner, deduper, caller)
                 prefix = str(done_path).replace(".peddy.done", ".peddy.")
                 sex_file = prefix + "sex_check.csv"
+                het_file = prefix + "het_check.csv"
                 sex_row = {}
                 if os.path.exists(sex_file):
                     with open(sex_file, newline="") as handle:
                         rows = list(csv.DictReader(handle))
                     sex_row = rows[0] if rows else {}
+                het_row = {}
+                if os.path.exists(het_file):
+                    with open(het_file, newline="") as handle:
+                        rows = list(csv.DictReader(handle))
+                    het_row = rows[0] if rows else {}
                 writer.writerow(
                     {
                         "Sample": sample_id,
@@ -150,8 +166,8 @@ rule peddy_sample_qc_gather:
                         "snv_caller": caller,
                         "reported_sex": sex_row.get("ped_sex", ""),
                         "predicted_sex": sex_row.get("predicted_sex", ""),
-                        "sex_check_status": sex_row.get("error", ""),
-                        "het_check_status": "generated",
+                        "sex_check_status": sex_row.get("dayoa_status") or sex_row.get("error", ""),
+                        "het_check_status": het_row.get("dayoa_status") or "generated",
                         "ped_check_status": "generated",
                         "peddy_prefix": prefix,
                     }
