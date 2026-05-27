@@ -12,6 +12,7 @@
 | CLI notes | [`ops/dycli.md`](ops/dycli.md) |
 | QEO reconnaissance | [`qeo/QEO_DAYOA_RECON.md`](qeo/QEO_DAYOA_RECON.md) |
 | QEO integration | [`qeo/QEO_DAYOA_INTEGRATION.md`](qeo/QEO_DAYOA_INTEGRATION.md) |
+| Dewey registration configuration | [`qeo/QEO_DEWEY_CONFIGURATION_GUIDE.md`](qeo/QEO_DEWEY_CONFIGURATION_GUIDE.md) |
 | Snakemake registration | [`qeo/QEO_SNAKEMAKE7_REGISTRATION.md`](qeo/QEO_SNAKEMAKE7_REGISTRATION.md) |
 | MultiQC artifact model | [`qeo/QEO_MULTIQC_ARTIFACT_MODEL.md`](qeo/QEO_MULTIQC_ARTIFACT_MODEL.md) |
 | Golden corpus test plan | [`qeo/QEO_GOLDEN_CORPUS_TEST_PLAN.md`](qeo/QEO_GOLDEN_CORPUS_TEST_PLAN.md) |
@@ -39,4 +40,3 @@ flowchart LR
 - Mark cluster-dependent examples as requiring a working `daylily-ec`/SSM headnode unless they have been verified live.
 - Prefer Mermaid diagrams where they clarify ownership, DAG shape, artifact identity, or replay semantics.
 - Do not document fallback behavior. Missing config, missing files, or malformed identity should fail hard.
-
