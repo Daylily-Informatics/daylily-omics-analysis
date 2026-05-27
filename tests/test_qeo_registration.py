@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import csv
 import json
+import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -21,6 +23,7 @@ from daylily_omics_analysis.qeo_registration import (
 
 
 FIXED_TIME = "2026-05-26T18:30:00Z"
+DEWEY_PUBLIC_URL = "https://dewey.day.lsmc.bio/"
 
 
 def _write(path: Path, text: str) -> Path:
@@ -234,7 +237,54 @@ def test_sample_collision_warnings_are_preserved(tmp_path: Path) -> None:
 
 def test_dewey_mode_requires_explicit_identity() -> None:
     with pytest.raises(QeoRegistrationError, match="Dewey registration mode requires"):
-        RegistrationConfig(mode="dewey", dewey_url="https://dewey.example").validate()
+        RegistrationConfig(mode="dewey", dewey_url=DEWEY_PUBLIC_URL).validate()
+
+
+def test_active_tree_does_not_probe_kahlo_reachability() -> None:
+    result = subprocess.run(
+        [
+            "git",
+            "ls-files",
+            "--",
+            ".",
+            ":(exclude)quarantine/**",
+            ":(exclude)resources/**",
+            ":(exclude)docs/plans/**",
+        ],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    active_paths = [
+        Path(path)
+        for path in result.stdout.splitlines()
+        if path != "tests/test_qeo_registration.py"
+    ]
+    reachability_patterns = (
+        "kahlo.*readyz",
+        "kahlo.*health",
+        "kahlo.*reach",
+        "kahlo.*curl",
+        "kahlo.*requests.get",
+        "kahlo.*urlopen",
+        "https://kahlo",
+        "http://kahlo",
+        "readyz.*kahlo",
+        "health.*kahlo",
+        "reach.*kahlo",
+        "curl.*kahlo",
+        "requests.get.*kahlo",
+        "urlopen.*kahlo",
+    )
+    haystack = "\n".join(
+        f"{path}: {path.read_text(encoding='utf-8', errors='ignore')}"
+        for path in active_paths
+        if path.is_file()
+    )
+
+    assert DEWEY_PUBLIC_URL in haystack
+    for pattern in reachability_patterns:
+        assert not re.search(pattern, haystack, re.IGNORECASE), pattern
 
 
 def test_analysis_artifact_set_registers_all_declared_inputs(tmp_path: Path) -> None:

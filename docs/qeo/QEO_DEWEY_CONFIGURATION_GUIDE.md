@@ -108,7 +108,7 @@ Dewey mode requires an explicit Dewey URL, token source, and S3 storage root:
 ```yaml
 qeo_registration:
   mode: dewey
-  dewey_url: https://dewey.example.internal
+  dewey_url: https://dewey.day.lsmc.bio/
   dewey_token_env: DEWEY_BEARER_TOKEN
   storage_root_uri: s3://lsmc-dayoa-analysis-results-usw2/validation/Z-ANL-EXAMPLE/ubuntu/Z-ANL-EXAMPLE/daylily-omics-analysis
   analysis_euid: Z-ANL-EXAMPLE
