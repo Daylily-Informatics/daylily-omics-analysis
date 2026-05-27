@@ -44,8 +44,8 @@ usage() {
     echo "Usage: source $0 [--project <project_name>] [--skip-project-check]"
     echo "If --project is not specified, the default budget for the region is used: daylily-omics-analysis-${region}."
     echo "Valid projects/budgets and authorized users:"
-    if [[ -f "/fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv" ]]; then
-        cat "/fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv"
+    if [[ -f "/fsx/references/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv" ]]; then
+        cat "/fsx/references/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv"
     else
         echo "Budget tags file not found."
     fi
@@ -200,7 +200,7 @@ if [[ "$SKIP_PROJECT_CHECK" == false ]]; then
     fi
 
     # Path to the budget file
-    budget_file="/fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv"
+    budget_file="/fsx/references/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv"
 
     # Ensure the budget file exists
     if [[ ! -f "$budget_file" ]]; then
@@ -223,8 +223,8 @@ fi
 create_budget() {
     echo "To create a budget, please exit and run the following command:"
     echo "bash bin/create_budget.sh --help"
-    echo "Then append the new project/budget name to /fsx/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv."
-    echo "Note: /fsx/runtime_assets is read-only; update the file via S3."
+    echo "Then append the new project/budget name to /fsx/references/runtime_assets/budget_tags/pcluster-project-budget-tags.tsv."
+    echo "Note: /fsx/references/runtime_assets is read-only; update the file via S3."
 
 }
 
@@ -356,7 +356,7 @@ if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
     export SENTIEON_LICENSE="${SENTIEON_LICENSE:-}"
 else
     export SENTIEON_TMPDIR='/dev/shm/'
-    export SENTIEON_INSTALL_DIR='/fsx/runtime_assets/cached_envs/sentieon-genomics-202503.02'
+    export SENTIEON_INSTALL_DIR='/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02'
     export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
 
     sentieon_license_dir="/fsx/references/runtime_assets/cached_envs"

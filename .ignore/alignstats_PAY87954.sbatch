@@ -9,8 +9,8 @@
 set -euo pipefail
 
 ALIGNSTATS="/fsx/analysis_results/ubuntu/hiom-fresh-20260219-010532/daylily-omics-analysis/resources/alignstats/alignstats"
-HUREF="/fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
-BAM="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
+HUREF="/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
+BAM="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
 OUT_DIR="/fsx/analysis_results/ubuntu/alignstats_giab_ont_hg003"
 
 echo "Starting alignstats PAY87954 at $(date)"

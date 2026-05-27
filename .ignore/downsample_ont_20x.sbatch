@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-INPUT="/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
+INPUT="/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam"
 OUTDIR="/fsx/scratch/ontbam"
 OUTPUT="${OUTDIR}/HG003_ONT_20x.sorted.bam"
 THREADS=64

@@ -18,6 +18,18 @@ def _yaml(path: str) -> dict:
     return yaml.safe_load(_read(path))
 
 
+def _localrules_entries(text: str) -> set[str]:
+    marker = "localrules:"
+    assert marker in text
+    block = text[text.index(marker) + len(marker) : text.index("rule register_multiqc_final:")]
+    entries = set()
+    for line in block.splitlines():
+        stripped = line.strip().rstrip(",")
+        if stripped:
+            entries.add(stripped)
+    return entries
+
+
 def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
 
@@ -190,6 +202,15 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "lsmc.daylily.artifact.produced.v1.json",
     ):
         assert expected in qeo
+
+    assert _localrules_entries(qeo) >= {
+        "register_multiqc_final",
+        "register_analysis_artifact_set",
+        "publish_qeo_ingest_event",
+        "produce_qeo_multiqc_registration",
+        "produce_qeo_analysis_artifact_set",
+        "produce_qeo_ingest_event",
+    }
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:

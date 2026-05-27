@@ -12,10 +12,10 @@ set -euo pipefail
 . /home/ubuntu/miniconda3/etc/profile.d/conda.sh
 conda activate SAM
 
-REF=/fsx/data/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta
-INPUT=/fsx/data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam
+REF=/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta
+INPUT=/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/ont/giab_2025.01/HG003/PAY87954.calls.sorted.bam
 OUTPUT=/fsx/scratch/ontbam/HG003_20x.cleaned.cram
-TEMPLATE=/fsx/data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_10x.cleaned.cram
+TEMPLATE=/fsx/control_data/genomic_data/organism_reads/H_sapiens/giab/agbt_2026/ont/HG003_10x.cleaned.cram
 THREADS=64
 FRACTION=42.6416
 

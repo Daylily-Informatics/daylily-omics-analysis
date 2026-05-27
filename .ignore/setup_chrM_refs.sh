@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Get samtools and bwa into PATH
 CONDA_ENV="/fsx/resources/environments/conda/ubuntu/ip-10-0-0-21/373e62c5ce20a4c69d98bd39b2804758_"
-export PATH="${CONDA_ENV}/bin:/fsx/data/cached_envs/sentieon-genomics-202503.02/bin:$PATH"
+export PATH="${CONDA_ENV}/bin:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin:$PATH"
 
 echo "samtools: $(which samtools 2>&1)"
 echo "bwa: $(which bwa 2>&1)"

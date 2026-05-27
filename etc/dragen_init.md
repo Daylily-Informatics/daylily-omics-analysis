@@ -72,7 +72,7 @@ cd /fsx/scratch/dragen_ref
 
 dragen \
   --build-hash-table true \
-  --ht-reference /fsx/data/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta \
+  --ht-reference /fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta \
   --output-directory /fsx/scratch/dragen_ref/hg38_dragen/
 
 
