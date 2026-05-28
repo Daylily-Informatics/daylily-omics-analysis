@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import json
 from pathlib import Path
 
 
@@ -15,6 +16,7 @@ FIELDNAMES = [
     "aligner",
     "deduper",
     "classifier",
+    "status",
     "database",
     "read_limit",
     "input_fastq",
@@ -106,6 +108,42 @@ def _parse_gather_csv(path: Path) -> list[dict[str, str]]:
         return [dict(row) for row in reader]
 
 
+def _validate_signature(path: Path, fastq_reads: int) -> None:
+    _require_file(path, "sourmash signature")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"sourmash signature is not valid JSON: {path}") from exc
+
+    if isinstance(payload, dict):
+        status = str(payload.get("dayoa_status", "")).strip()
+        signatures = payload.get("signatures")
+        if status == "no_unmapped_reads" and fastq_reads != 0:
+            raise ValueError(
+                "sourmash no_unmapped_reads sentinel is only valid when "
+                f"input FASTQ has zero reads: {path}"
+            )
+        if isinstance(signatures, list):
+            if not signatures and fastq_reads != 0:
+                raise ValueError(
+                    "sourmash signature list is empty for non-empty FASTQ: "
+                    f"{path}"
+                )
+            return
+    elif isinstance(payload, list):
+        if not payload and fastq_reads != 0:
+            raise ValueError(
+                f"sourmash signature list is empty for non-empty FASTQ: {path}"
+            )
+        return
+
+    if fastq_reads != 0:
+        raise ValueError(
+            "sourmash signature must contain a non-empty signatures list for "
+            f"non-empty FASTQ: {path}"
+        )
+
+
 def _float_field(row: dict[str, str], field: str) -> float:
     value = str(row[field]).strip()
     if value == "":
@@ -158,8 +196,8 @@ def _build_row(args: argparse.Namespace) -> dict[str, str]:
     fastq = Path(args.unmapped_fastq)
     signature = Path(args.sourmash_signature)
     gather_csv = Path(args.sourmash_gather_csv)
-    _require_file(signature, "sourmash signature")
     fastq_reads = _count_fastq_reads(fastq)
+    _validate_signature(signature, fastq_reads)
     gather_rows = _parse_gather_csv(gather_csv)
     top = _top_gather_row(gather_rows)
 
@@ -195,6 +233,7 @@ def _build_row(args: argparse.Namespace) -> dict[str, str]:
         "aligner": args.aligner,
         "deduper": args.deduper,
         "classifier": "sourmash_gather",
+        "status": "no_unmapped_reads" if fastq_reads == 0 else "ok",
         "database": args.database,
         "read_limit": "all",
         "input_fastq": str(fastq),

@@ -1342,46 +1342,24 @@ site_mix_contam:
 contam_identity:
     primary_snv_caller: "sentd"
 
-ngstroublefinder:
-    env_yaml: "../envs/ngstroublefinder_v0.1.yaml"
-    command: "ngsTroubleFinder"
-    threads: 4
-    mem_mb: 16000
-    partition: "i8"
-
 haplocheck:
     env_yaml: "../envs/haplocheck_v0.1.yaml"
     haplocheck_command: "haplocheck"
     cloudgene_command: "cloudgene"
     cloudgene_app: "haplocheck@1.2.2"
-    input_modes: ["bam", "vcf"]
+    input_modes: ["vcf"]
     threads: 4
     mem_mb: 8000
     partition: "i8"
 
 read_haps:
     env_yaml: "../envs/read_haps_v0.1.yaml"
-    read_haps_command: "read_haps"
+    read_haps_command: "/fsx/references/runtime_assets/tool_specific_resources/read_haps/read_haps"
     reliable_snp_file: /fsx/references/runtime_assets/tool_specific_resources/read_haps/high_quality_markers_deCODE_2015.txt.gz
     extra_args: ""
     threads: 4
     mem_mb: 16000
     partition: "i8"
-
-charr:
-    env_yaml: "../envs/charr_v0.1.yaml"
-    threads: 4
-    mem_mb: 64000
-    partition: "i8"
-    ref_af_resource: /fsx/references/runtime_assets/tool_specific_resources/charr/hg38_gnomad_ref_af.ht
-    ref_af_field: "ref_AF"
-    hail_reference_genome: "GRCh38"
-    autosome_contigs: "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22"
-    min_af: 0.05
-    max_af: 0.95
-    min_dp: 10
-    max_dp: 100
-    min_gq: 20
 
 relatedness:
     env_yaml: "../envs/somalier.yaml"

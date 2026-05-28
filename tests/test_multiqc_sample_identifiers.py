@@ -251,8 +251,29 @@ def test_contamination_and_tiddit_custom_tsvs_are_sample_first(tmp_path: Path) -
         assert rows[0]["Sample"] == "HG003.sent.dmd"
         assert rows[0]["base_sample"] == "HG003"
         assert rows[0]["tool"] == "site_mix"
+        assert rows[0]["status"] == "ok"
     for output in (site_out, donor_out):
         assert output.read_text(encoding="utf-8").split("\t", 1)[0] == "Sample"
+
+    site_mix_path.write_text(
+        "method\tcontamination_fraction\tcontamination_pct\tsite_count\tstatus\n"
+        "genotype_free_site_mix\tNA\tNA\t0\tno_usable_sites\n",
+        encoding="utf-8",
+    )
+    contamination_module.compile_reports(
+        SimpleNamespace(
+            sample_map_json='{"HG003":"EXT-HG003"}',
+            contamination_output=str(contam_out),
+            site_mix_output=str(site_out),
+            donor_output=str(donor_out),
+            gatk=[],
+            site_mix=[str(site_mix_path)],
+            site_mix_donors=[],
+        )
+    )
+    with site_out.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+        assert rows[0]["status"] == "no_usable_sites"
 
     vcf_path = (
         tmp_path
@@ -681,6 +702,110 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     with manifest.open(newline="", encoding="utf-8") as handle:
         samples = {row["Sample"] for row in csv.DictReader(handle, delimiter="\t")}
     assert samples == {"HG001.sent.dmd"}
+
+
+def test_stage_multiqc_inputs_keeps_haplocheck_native_manifest_distinct(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_haplocheck_native_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    custom = root / "other_reports/haplocheck_mtdna_mqc.tsv"
+    custom.parent.mkdir(parents=True)
+    custom.write_text(
+        "Sample\tbase_sample\taligner\tdeduper\tsnv_caller\tstatus\n"
+        "HG001.sent.dmd.sentd\tHG001\tsent\tdmd\tsentd\tok\n",
+        encoding="utf-8",
+    )
+    native = (
+        root
+        / "HG001/align/sent/dmd/snv/sentd/contam_identity/haplocheck/vcf/"
+        / "HG001.sent.dmd.sentd.haplocheck.contamination.txt"
+    )
+    native.parent.mkdir(parents=True)
+    native.write_text(
+        "Sample\tContamination Status\tContamination Level\nHG001\tNO\t0\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, custom)
+    module.stage_known_input(stager, native)
+    stager.finish()
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+
+    assert {
+        (row["module"], row["Sample"], row["input_kind"]) for row in rows
+    } == {
+        ("haplocheck_mtdna", "HG001.sent.dmd.sentd", "custom_mqc_row"),
+        (
+            "haplocheck_native",
+            "HG001.sent.dmd.sentd",
+            "HG001.sent.dmd.sentd.haplocheck.contamination.txt",
+        ),
+    }
+    assert (
+        out_dir
+        / "native/haplocheck/HG001.sent.dmd.sentd/"
+        / "HG001.sent.dmd.sentd.haplocheck.contamination.txt"
+    ).exists()
+
+
+def test_stage_multiqc_inputs_keeps_read_haps_native_manifest_distinct(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_read_haps_native_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    custom = root / "other_reports/read_haps_mqc.tsv"
+    custom.parent.mkdir(parents=True)
+    custom.write_text(
+        "Sample\tbase_sample\taligner\tdeduper\tsnv_caller\tstatus\n"
+        "HG001.sent.dmd.sentd\tHG001\tsent\tdmd\tsentd\tok\n",
+        encoding="utf-8",
+    )
+    native = (
+        root
+        / "HG001/align/sent/dmd/snv/sentd/contam_identity/read_haps/"
+        / "HG001.sent.dmd.sentd.read_haps.txt"
+    )
+    native.parent.mkdir(parents=True)
+    native.write_text(
+        "sample\tn_markers\tstatus\nHG001\t12\tok\n",
+        encoding="utf-8",
+    )
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    module.stage_known_input(stager, custom)
+    module.stage_known_input(stager, native)
+    stager.finish()
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+
+    assert {
+        (row["module"], row["Sample"], row["input_kind"]) for row in rows
+    } == {
+        ("read_haps", "HG001.sent.dmd.sentd", "custom_mqc_row"),
+        ("read_haps_native", "HG001.sent.dmd.sentd", "read_haps"),
+    }
+    assert (
+        out_dir
+        / "native/read_haps/HG001.sent.dmd.sentd/"
+        / "HG001.sent.dmd.sentd.read_haps.txt"
+    ).exists()
 
 
 def test_stage_multiqc_inputs_rewrites_somalier_native_files(tmp_path: Path) -> None:

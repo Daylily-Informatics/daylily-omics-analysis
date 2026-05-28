@@ -1,4 +1,3 @@
-import os
 # ###### GOLEFT
 #
 # coverage metrics calculation tools.
@@ -17,7 +16,7 @@ rule goleft:
         donetwo=touch(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft/golefttwo.done"),
     params:
         cluster_sample=ret_sample,
-        sexchrms="X,Y" if os.environ.get('DAY_GENOME_BUILD','') == 'b37' else "chrX,chrY",
+        sexchrms="",
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.goleft.bench.tsv"
@@ -38,7 +37,7 @@ rule goleft:
         
         export gl=$(dirname {output.donetwo} ) ;
         export REF_PATH={params.huref};
-        goleft indexcov --directory $gl --sex {params.sexchrms} --fai {params.huref}.fai {input.crai} >> {log} 2>&1;
+        goleft indexcov --directory $gl --sex {params.sexchrms:q} --fai {params.huref}.fai {input.crai} >> {log} 2>&1;
         
         touch {output.done}; touch {output.donetwo};
         

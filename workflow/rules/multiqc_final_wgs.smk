@@ -52,8 +52,7 @@ def _alignment_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
         paths.extend(_relatedness_native_inputs(wildcards))
     # Contamination identity staged reports include contam_identity_mqc.tsv,
-    # ngstroublefinder_mqc.tsv, haplocheck_mtdna_mqc.tsv, read_haps_mqc.tsv,
-    # and charr_mqc.tsv.
+    # haplocheck_mtdna_mqc.tsv, and read_haps_mqc.tsv.
     paths.extend(contam_identity_multiqc_inputs(wildcards))
     paths.extend(_contam_identity_native_inputs(wildcards))
     return paths

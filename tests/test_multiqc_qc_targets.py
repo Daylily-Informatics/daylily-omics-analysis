@@ -63,6 +63,8 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     assert '# include: "rules/smaca.smk"' in snakefile
     assert 'include: "rules/smn_copynumbercaller.smk"' not in active_includes
     assert '# include: "rules/smn_copynumbercaller.smk"' in snakefile
+    assert 'include: "rules/genetocn.smk"' not in active_includes
+    assert '# include: "rules/genetocn.smk"' in snakefile
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_final_wgs.smk")
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_cov_aln.smk")
     assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
@@ -134,8 +136,14 @@ def test_retired_fastv_and_verifybamid2_rules_are_archived_only() -> None:
         "vb2.tsv",
         "vb2_mqc.tsv",
         "verifybamid2_panel_comparison_mqc.tsv",
+        "contam_identity/charr",
+        "charr_mqc.tsv",
+        "rule charr_contam_identity:",
+        "rule produce_charr_contam_identity:",
     ):
         assert retired_output_token not in active_rule_text
+    assert not (REPO_ROOT / "workflow/envs/charr_v0.1.yaml").exists()
+    assert not (REPO_ROOT / "workflow/scripts/run_charr_contam.py").exists()
 
 
 def test_multiqc_runtime_gate_config_defaults() -> None:
@@ -156,15 +164,17 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
             "merged.500perchr.nosamp.sort.vcf.gz"
         )
         assert config["contam_identity"]["primary_snv_caller"] == "sentd"
-        for section in ("ngstroublefinder", "haplocheck", "read_haps", "charr"):
+        assert "ngstroublefinder" not in config
+        assert "charr" not in config
+        for section in ("haplocheck", "read_haps"):
             assert section in config
             assert config[section]["env_yaml"].startswith("../envs/")
             assert config[section]["partition"]
-        assert config["haplocheck"]["input_modes"] == ["bam", "vcf"]
+        assert config["haplocheck"]["input_modes"] == ["vcf"]
+        assert config["read_haps"]["read_haps_command"].endswith("/read_haps/read_haps")
         assert config["read_haps"]["reliable_snp_file"].endswith(
             "high_quality_markers_deCODE_2015.txt.gz"
         )
-        assert config["charr"]["ref_af_resource"].endswith("hg38_gnomad_ref_af.ht")
         metagenomics = config["unmapped_metagenomics"]
         assert metagenomics["kraken2_db"].endswith(
             "metagenomics/kraken2/k2_pluspfp_16_GB_20260226"
@@ -223,6 +233,16 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "_day_chrm_token_to_contig(chrm)" in common
     assert "def get_vepchrm" in common
     assert "def get_vep_allowed_contigs" in common
+
+
+def test_goleft_indexcov_disables_sex_chromosome_expectation() -> None:
+    goleft = _read("workflow/rules/go_left.smk")
+
+    assert 'sexchrms=""' in goleft
+    assert "--sex {params.sexchrms:q}" in goleft
+    assert "--sex {params.sexchrms} " not in goleft
+    assert "chrX,chrY" not in goleft
+    assert '"X,Y"' not in goleft
 
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
@@ -293,10 +313,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
         "contam_identity_mqc.tsv",
-        "ngstroublefinder_mqc.tsv",
         "haplocheck_mtdna_mqc.tsv",
         "read_haps_mqc.tsv",
-        "charr_mqc.tsv",
         "relatedness_mqc.tsv",
         "bcftools_variant_stats_mqc.tsv",
         "rtg_vcfstats_mqc.tsv",
@@ -555,19 +573,29 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert "verifybamid2" not in contamination_script.lower()
 
     for expected in (
-        "rule ngstroublefinder_contam_identity:",
         "rule haplocheck_bam_contam_identity:",
         "rule haplocheck_vcf_contam_identity:",
         "rule read_haps_contam_identity:",
-        "rule charr_contam_identity:",
         "rule contam_identity_mqc_gather:",
         "rule produce_global_contam_check:",
         "contam_identity.primary_snv_caller",
         "Haplocheck",
         "read_haps",
-        "CHARR",
     ):
         assert expected in contam_identity
+    for retired in (
+        "rule ngstroublefinder_contam_identity:",
+        "rule produce_ngstroublefinder_contam_identity:",
+        "ngstroublefinder_mqc.tsv",
+        "rule charr_contam_identity:",
+        "rule produce_charr_contam_identity:",
+        "charr_mqc.tsv",
+        "CHARR",
+    ):
+        assert retired not in contam_identity
+    assert 'result_prefix="$result_dir/contamination.txt"' in contam_identity
+    assert '{params.command:q} --out "$result_prefix" --raw {input.vcf:q}' in contam_identity
+    assert 'cp "$result_dir/contamination.html" {output.html:q}' in contam_identity
     for expected in (
         "IDENTITY_FIELDS",
         "READ_HAPS_FIELDS",
@@ -576,9 +604,9 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "mtdna_contamination_proxy",
         "ngstroublefinder",
         "haplocheck",
-        "charr",
     ):
         assert expected in identity_script
+    assert "charr" not in identity_script.lower()
 
     for expected in (
         "rule relatedness_batch_manifest:",
@@ -700,10 +728,8 @@ def test_multiqc_config_custom_content_entries() -> None:
         "site_mix_contam",
         "site_mix_donor",
         "contam_identity",
-        "ngstroublefinder",
         "haplocheck_mtdna",
         "read_haps",
-        "charr",
         "relatedness",
         "bcftools_variant_stats",
         "rtg_vcfstats",
@@ -720,6 +746,8 @@ def test_multiqc_config_custom_content_entries() -> None:
 
     assert "snpeff_annotation" not in config["custom_data"]
     assert "snpeff_annotation" not in config["sp"]
+    assert "charr" not in config["custom_data"]
+    assert "charr" not in config["sp"]
     assert config["exclude_modules"] == []
     exclude_file = REPO_ROOT / "config/multiqc_module_exclude.txt"
     assert exclude_file.exists()
@@ -808,12 +836,11 @@ def test_multiqc_sample_name_cleanup_contract() -> None:
     assert "verifybamid2_panel_comparison" not in module_order
     for module in (
         "contam_identity",
-        "ngstroublefinder",
         "haplocheck_mtdna",
         "read_haps",
-        "charr",
     ):
         assert module in module_order
+    assert "charr" not in module_order
 
 
 def test_multiqc_reports_scan_only_staged_inputs() -> None:

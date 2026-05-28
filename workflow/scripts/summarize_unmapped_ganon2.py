@@ -15,6 +15,7 @@ FIELDNAMES = [
     "aligner",
     "deduper",
     "classifier",
+    "status",
     "database",
     "read_limit",
     "input_fastq",
@@ -154,6 +155,11 @@ def _build_row(args: argparse.Namespace) -> dict[str, str]:
     processed = classified + unclassified
     records = _parse_tre(report)
     top = _top_taxon(records)
+    if fastq_reads > 0 and processed == 0:
+        raise ValueError(
+            "Ganon2 rep had zero classified and unclassified reads for "
+            f"non-empty FASTQ: {rep}"
+        )
 
     return {
         "Sample": args.sample,
@@ -161,6 +167,7 @@ def _build_row(args: argparse.Namespace) -> dict[str, str]:
         "aligner": args.aligner,
         "deduper": args.deduper,
         "classifier": "ganon2",
+        "status": "no_unmapped_reads" if fastq_reads == 0 else "ok",
         "database": args.database,
         "read_limit": "all",
         "input_fastq": str(fastq),
@@ -209,4 +216,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

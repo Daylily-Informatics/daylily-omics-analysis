@@ -210,7 +210,6 @@ SUPPORTED_HTD_CALLERS = (
     "smn12",
     "parascopy",
     "smaca",
-    "genetocn",
 )
 
 

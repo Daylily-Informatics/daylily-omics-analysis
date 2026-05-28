@@ -808,7 +808,7 @@ def stage_haplocheck_native(stager: Stager, source: Path) -> None:
         source,
         Path("native/haplocheck") / parts.stage_sample / source.name,
         parts,
-        module="haplocheck_mtdna",
+        module="haplocheck_native",
         input_kind=source.name,
         group_id=str(source.parent),
     )
@@ -820,20 +820,8 @@ def stage_read_haps_native(stager: Stager, source: Path) -> None:
         source,
         Path("native/read_haps") / parts.stage_sample / source.name,
         parts,
-        module="read_haps",
+        module="read_haps_native",
         input_kind="read_haps",
-        group_id=str(source),
-    )
-
-
-def stage_charr_native(stager: Stager, source: Path) -> None:
-    parts = parse_variant_parts(source)
-    stager.copy_file(
-        source,
-        Path("native/charr") / parts.stage_sample / source.name,
-        parts,
-        module="charr",
-        input_kind="charr",
         group_id=str(source),
     )
 
@@ -856,8 +844,6 @@ def stage_known_input(stager: Stager, source: Path) -> None:
         stage_haplocheck_native(stager, source)
     elif name.endswith(".read_haps.txt") and "/contam_identity/read_haps/" in source.as_posix():
         stage_read_haps_native(stager, source)
-    elif name.endswith(".charr.tsv") and "/contam_identity/charr/" in source.as_posix():
-        stage_charr_native(stager, source)
     elif name.endswith(".fastqc.done"):
         stage_fastqc_done(stager, source)
     elif name.endswith(".complete") and "/samtmetrics/" in source.as_posix():

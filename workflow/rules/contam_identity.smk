@@ -1,9 +1,6 @@
 ######### GLOBAL CONTAMINATION / IDENTITY EVIDENCE BUNDLE
 # DayOA emits evidence only. R2 owns interpretation, disposition, and release.
 
-import csv
-import os
-
 from snakemake.exceptions import WorkflowError
 
 
@@ -11,10 +8,8 @@ CONTAM_IDENTITY_ROOT = MDIR + "other_reports/contam_identity"
 CONTAM_IDENTITY_SAMPLES = qc_eligible_sample_ids(SSAMPS)
 CONTAM_IDENTITY_TARGETS = {
     "produce_global_contam_check",
-    "produce_ngstroublefinder_contam_identity",
     "produce_haplocheck_contam_identity",
     "produce_read_haps_contam_identity",
-    "produce_charr_contam_identity",
 }
 
 
@@ -129,18 +124,6 @@ def _contam_identity_primary_snv_tbi(wildcards):
     return _contam_identity_primary_snv_vcf(wildcards) + ".tbi"
 
 
-def _ngstroublefinder_outputs(suffix):
-    _contam_identity_required_cfg(
-        "ngstroublefinder",
-        ("env_yaml", "threads", "mem_mb", "partition", "command"),
-    )
-    return expand(
-        CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder/" + suffix,
-        alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_contamination_dedupers(),
-    )
-
-
 def _haplocheck_modes():
     cfg = _contam_identity_required_cfg(
         "haplocheck",
@@ -228,48 +211,13 @@ def _read_haps_outputs(suffix):
     )
 
 
-def _charr_outputs(suffix):
-    # Explicit required config: charr.ref_af_resource
-    _contam_identity_required_cfg(
-        "charr",
-        (
-            "env_yaml",
-            "threads",
-            "mem_mb",
-            "partition",
-            "ref_af_resource",
-            "ref_af_field",
-            "hail_reference_genome",
-            "autosome_contigs",
-            "min_af",
-            "max_af",
-            "min_dp",
-            "max_dp",
-            "min_gq",
-        ),
-    )
-    pairs = _contam_identity_primary_snv_pairs()
-    return expand(
-        MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/{snv}/contam_identity/charr/"
-        + "{sample}.{alnr}.{ddup}.{snv}."
-        + suffix,
-        sample=CONTAM_IDENTITY_SAMPLES,
-        alnr=[pair[0] for pair in pairs],
-        snv=[pair[1] for pair in pairs],
-        ddup=qc_variant_dedupers(),
-    )
-
-
 def contam_identity_multiqc_inputs(wildcards=None):
     if not contam_identity_enabled_for_multiqc():
         return []
     return [
         MDIR + "other_reports/contam_identity_mqc.tsv",
-        MDIR + "other_reports/ngstroublefinder_mqc.tsv",
         MDIR + "other_reports/haplocheck_mtdna_mqc.tsv",
         MDIR + "other_reports/read_haps_mqc.tsv",
-        MDIR + "other_reports/charr_mqc.tsv",
     ]
 
 
@@ -277,115 +225,18 @@ def _contam_identity_native_inputs(wildcards=None):
     if not contam_identity_enabled_for_multiqc():
         return []
     return (
-        _ngstroublefinder_outputs("qcReport.tsv")
-        + _ngstroublefinder_outputs("report.html")
-        + _haplocheck_outputs("contamination.txt")
+        _haplocheck_outputs("contamination.txt")
         + _haplocheck_outputs("contamination.raw.txt")
         + _haplocheck_outputs("report.html")
         + _read_haps_outputs("read_haps.txt")
-        + _charr_outputs("charr.tsv")
     )
 
 
-def _ngstroublefinder_manifest_inputs(wildcards):
-    paths = []
-    for sample in CONTAM_IDENTITY_SAMPLES:
-        paths.append(
-            MDIR
-            + f"{sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
-            + f"{sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
-        )
-        paths.append(
-            MDIR
-            + f"{sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
-            + f"{sample}.{wildcards.alnr}.{wildcards.ddup}.cram.crai"
-        )
-    return paths
-
-
-def _ngstroublefinder_sex(sample):
-    raw = str(
-        config.get("sample_info", {}).get(sample, {}).get("biological_sex", "")
-    ).strip().lower()
-    if raw == "female":
-        return "Female"
-    if raw == "male":
-        return "Male"
-    return "Unknown"
-
-
 localrules:
-    ngstroublefinder_manifest,
     contam_identity_mqc_gather,
     produce_global_contam_check,
-    produce_ngstroublefinder_contam_identity,
     produce_haplocheck_contam_identity,
     produce_read_haps_contam_identity,
-    produce_charr_contam_identity,
-
-
-rule ngstroublefinder_manifest:
-    input:
-        _ngstroublefinder_manifest_inputs
-    output:
-        CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder/metadata.tsv"
-    run:
-        os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
-        with open(output[0], "w", newline="", encoding="utf-8") as handle:
-            writer = csv.DictWriter(
-                handle,
-                fieldnames=["Sample_Name", "Bam_Path", "Sequencing", "Sex"],
-                delimiter="\t",
-            )
-            writer.writeheader()
-            for sample in CONTAM_IDENTITY_SAMPLES:
-                writer.writerow(
-                    {
-                        "Sample_Name": day_stage_sample_id(
-                            sample, wildcards.alnr, wildcards.ddup
-                        ),
-                        "Bam_Path": (
-                            MDIR
-                            + f"{sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
-                            + f"{sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
-                        ),
-                        "Sequencing": "DNA",
-                        "Sex": _ngstroublefinder_sex(sample),
-                    }
-                )
-
-
-rule ngstroublefinder_contam_identity:
-    input:
-        metadata=CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder/metadata.tsv"
-    output:
-        qcreport=CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder/qcReport.tsv",
-        html=CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder/report.html",
-    log:
-        CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder/logs/ngstroublefinder.log"
-    benchmark:
-        MDIR + "benchmarks/all.{alnr}.{ddup}.ngstroublefinder.bench.tsv"
-    conda:
-        config["ngstroublefinder"]["env_yaml"]
-    threads: config["ngstroublefinder"]["threads"]
-    resources:
-        vcpu=config["ngstroublefinder"]["threads"],
-        mem_mb=config["ngstroublefinder"]["mem_mb"],
-        partition=config["ngstroublefinder"]["partition"],
-    params:
-        outdir=CONTAM_IDENTITY_ROOT + "/{alnr}/{ddup}/ngstroublefinder",
-        ref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        command=config["ngstroublefinder"]["command"],
-        cluster_sample="ngstroublefinder",
-    shell:
-        r"""
-        set -euo pipefail
-        mkdir -p {params.outdir:q} $(dirname {log:q})
-        command -v {params.command:q} > /dev/null
-        {params.command:q} -m {input.metadata:q} -o {params.outdir:q} -r {params.ref:q} > {log:q} 2>&1
-        test -s {output.qcreport:q}
-        test -s {output.html:q}
-        """
 
 
 rule haplocheck_bam_contam_identity:
@@ -472,17 +323,18 @@ rule haplocheck_vcf_contam_identity:
         mkdir -p "$outdir" "$(dirname {log:q})"
         command -v {params.command:q} > /dev/null
         result_dir="$(mktemp -d "$outdir/.haplocheck_vcf_output.XXXXXX")"
+        result_prefix="$result_dir/contamination.txt"
         cleanup() {{
             rm -rf "$result_dir"
         }}
         trap cleanup EXIT
-        {params.command:q} --out "$result_dir" {input.vcf:q} > {log:q} 2>&1
-        test -s "$result_dir/report/contamination.txt"
-        test -s "$result_dir/report/contamination.raw.txt"
-        test -s "$result_dir/report/report.html"
-        cp "$result_dir/report/contamination.txt" {output.contamination:q}
-        cp "$result_dir/report/contamination.raw.txt" {output.raw:q}
-        cp "$result_dir/report/report.html" {output.html:q}
+        {params.command:q} --out "$result_prefix" --raw {input.vcf:q} > {log:q} 2>&1
+        test -s "$result_dir/contamination.txt"
+        test -s "$result_dir/contamination.raw.txt"
+        test -s "$result_dir/contamination.html"
+        cp "$result_dir/contamination.txt" {output.contamination:q}
+        cp "$result_dir/contamination.raw.txt" {output.raw:q}
+        cp "$result_dir/contamination.html" {output.html:q}
         """
 
 
@@ -528,74 +380,15 @@ rule read_haps_contam_identity:
         """
 
 
-rule charr_contam_identity:
-    input:
-        vcf=_contam_identity_primary_snv_vcf,
-        tbi=_contam_identity_primary_snv_tbi,
-    output:
-        tsv=MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/contam_identity/charr/{sample}.{alnr}.{ddup}.{snv}.charr.tsv",
-    log:
-        MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/contam_identity/charr/logs/{sample}.{alnr}.{ddup}.{snv}.charr.log",
-    benchmark:
-        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.charr.bench.tsv"
-    conda:
-        config["charr"]["env_yaml"]
-    threads: config["charr"]["threads"]
-    resources:
-        vcpu=config["charr"]["threads"],
-        mem_mb=config["charr"]["mem_mb"],
-        partition=config["charr"]["partition"],
-    params:
-        ref_af_resource=config["charr"]["ref_af_resource"],
-        ref_af_field=config["charr"]["ref_af_field"],
-        hail_reference_genome=config["charr"]["hail_reference_genome"],
-        autosome_contigs=config["charr"]["autosome_contigs"],
-        min_af=config["charr"]["min_af"],
-        max_af=config["charr"]["max_af"],
-        min_dp=config["charr"]["min_dp"],
-        max_dp=config["charr"]["max_dp"],
-        min_gq=config["charr"]["min_gq"],
-        sample_ok=lambda wildcards: require_qc_eligible_sample(wildcards, "CHARR"),
-        cluster_sample=ret_sample,
-    shell:
-        r"""
-        set -euo pipefail
-        test {params.sample_ok:q} = ok
-        outdir="$(dirname {output.tsv:q})"
-        mkdir -p "$outdir" "$(dirname {log:q})"
-        test -e {params.ref_af_resource:q}
-        python workflow/scripts/run_charr_contam.py \
-          --sample {wildcards.sample:q} \
-          --input-vcf {input.vcf:q} \
-          --output {output.tsv:q} \
-          --ref-af-resource {params.ref_af_resource:q} \
-          --ref-af-field {params.ref_af_field:q} \
-          --hail-reference-genome {params.hail_reference_genome:q} \
-          --autosome-contigs {params.autosome_contigs:q} \
-          --min-af {params.min_af:q} \
-          --max-af {params.max_af:q} \
-          --min-dp {params.min_dp:q} \
-          --max-dp {params.max_dp:q} \
-          --min-gq {params.min_gq:q} \
-          --tmp-dir "$outdir/hail_tmp" \
-          > {log:q} 2>&1
-        test -s {output.tsv:q}
-        """
-
-
 rule contam_identity_mqc_gather:
     input:
         contamination=MDIR + "other_reports/contamination_mqc.tsv",
-        ngstroublefinder=lambda wildcards: _ngstroublefinder_outputs("qcReport.tsv"),
         haplocheck=lambda wildcards: _haplocheck_outputs("contamination.txt"),
         read_haps=lambda wildcards: _read_haps_outputs("read_haps.txt"),
-        charr=lambda wildcards: _charr_outputs("charr.tsv"),
     output:
         identity=MDIR + "other_reports/contam_identity_mqc.tsv",
-        ngstroublefinder=MDIR + "other_reports/ngstroublefinder_mqc.tsv",
         haplocheck=MDIR + "other_reports/haplocheck_mtdna_mqc.tsv",
         read_haps=MDIR + "other_reports/read_haps_mqc.tsv",
-        charr=MDIR + "other_reports/charr_mqc.tsv",
     params:
         sample_map=_sample_external_ids_json,
     log:
@@ -607,22 +400,13 @@ rule contam_identity_mqc_gather:
         python workflow/scripts/compile_contam_identity_mqc.py \
           --sample-map-json {params.sample_map:q} \
           --contam-identity-output {output.identity:q} \
-          --ngstroublefinder-output {output.ngstroublefinder:q} \
           --haplocheck-output {output.haplocheck:q} \
           --read-haps-output {output.read_haps:q} \
-          --charr-output {output.charr:q} \
           --contamination {input.contamination:q} \
-          --ngstroublefinder {input.ngstroublefinder:q} \
           --haplocheck {input.haplocheck:q} \
           --read-haps {input.read_haps:q} \
-          --charr {input.charr:q} \
           > {log:q} 2>&1
         """
-
-
-rule produce_ngstroublefinder_contam_identity:  # TARGET: run NGSTroubleFinder contamination/identity evidence
-    input:
-        lambda wildcards: _ngstroublefinder_outputs("qcReport.tsv"),
 
 
 rule produce_haplocheck_contam_identity:  # TARGET: run Haplocheck mtDNA contamination proxy evidence
@@ -635,11 +419,6 @@ rule produce_read_haps_contam_identity:  # TARGET: run read_haps haplotype conta
         lambda wildcards: _read_haps_outputs("read_haps.txt"),
 
 
-rule produce_charr_contam_identity:  # TARGET: run Hail CHARR contamination evidence
-    input:
-        lambda wildcards: _charr_outputs("charr.tsv"),
-
-
 rule produce_global_contam_check:  # TARGET: run global contamination and identity evidence bundle
     input:
         MDIR + "other_reports/contamination_mqc.tsv",
@@ -648,7 +427,5 @@ rule produce_global_contam_check:  # TARGET: run global contamination and identi
         MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
         MDIR + "other_reports/relatedness_mqc.tsv",
         MDIR + "other_reports/contam_identity_mqc.tsv",
-        MDIR + "other_reports/ngstroublefinder_mqc.tsv",
         MDIR + "other_reports/haplocheck_mtdna_mqc.tsv",
         MDIR + "other_reports/read_haps_mqc.tsv",
-        MDIR + "other_reports/charr_mqc.tsv",

@@ -62,7 +62,7 @@ Duplicate `(module, Sample)` pairs fail during staging. Stage-scoped identifiers
 - `<sample>.<aligner>.<deduper>.<snv_caller>`
 - `<sample>.<aligner>.<deduper>.<sv_caller>`
 
-Peddy CSVs and Somalier native files are rewritten before MultiQC. NGSTroubleFinder, Haplocheck, read_haps, and CHARR native evidence is staged when the global contamination/identity bundle is enabled. MultiQC sections use `parent_id` / `parent_name` grouping to keep related evidence together.
+Peddy CSVs and Somalier native files are rewritten before MultiQC. Haplocheck and read_haps native evidence is staged when the global contamination/identity bundle is enabled. MultiQC sections use `parent_id` / `parent_name` grouping to keep related evidence together.
 
 ## Routine And Optional QC
 
@@ -70,7 +70,7 @@ Peddy CSVs and Somalier native files are rewritten before MultiQC. NGSTroubleFin
 |---|---|
 | FastQC, SeqFu, alignment metrics, mosdepth, goleft, normal coverage evenness | Routine when inputs exist. |
 | GATK contamination and site-mix | Explicitly configured sample-level QC. |
-| Global contamination/identity bundle | Long-running evidence-only target `produce_global_contam_check`: GATK contamination, site-mix, NGSTroubleFinder, Haplocheck, read_haps, CHARR, Peddy, and Somalier; emits `contam_identity_mqc.tsv`, `ngstroublefinder_mqc.tsv`, `haplocheck_mtdna_mqc.tsv`, `read_haps_mqc.tsv`, and `charr_mqc.tsv`. |
+| Global contamination/identity bundle | Long-running evidence-only target `produce_global_contam_check`: GATK contamination, site-mix, Haplocheck, read_haps, Peddy, and Somalier; emits `contam_identity_mqc.tsv`, `haplocheck_mtdna_mqc.tsv`, and `read_haps_mqc.tsv`. |
 | Relatedness and Peddy | Enabled when configured and parser inputs exist. |
 | GIAB SNV/SV concordance | Enabled when truthsets and valid caller pairs exist. |
 | VEP | Long-running, enabled explicitly. |
@@ -81,7 +81,7 @@ Peddy CSVs and Somalier native files are rewritten before MultiQC. NGSTroubleFin
 
 QC gap: generated evidence can be absent because the tool was not configured, not because the sample passed or failed. Interpretive decisions belong to R2.
 
-FASTV and VerifyBamID2 are retired from active Snakemake execution. Historical rule/config files remain under `workflow/rules/archived_qc/` for provenance and old-run inspection, but `workflow/Snakefile` does not include them, and final MultiQC no longer pulls their outputs.
+FASTV, VerifyBamID2, NGSTroubleFinder, and CHARR are retired from active Snakemake execution. Historical FASTV and VerifyBamID2 rule/config files remain under `workflow/rules/archived_qc/` for provenance and old-run inspection; NGSTroubleFinder parser support remains for old evidence inspection. Active rules and final MultiQC no longer pull their outputs.
 
 ## Global Contamination/Identity Configuration
 
@@ -99,62 +99,36 @@ Minimum explicit config shape:
 contam_identity:
   primary_snv_caller: "sentd"
 
-ngstroublefinder:
-  env_yaml: "../envs/ngstroublefinder_v0.1.yaml"
-  command: "ngsTroubleFinder"
-  threads: 16
-  mem_mb: 64000
-  partition: "i192,i192mem,i128"
-
 haplocheck:
   env_yaml: "../envs/haplocheck_v0.1.yaml"
   haplocheck_command: "haplocheck"
   cloudgene_command: "cloudgene"
   cloudgene_app: "haplocheck@1.2.2"
-  input_modes: ["bam", "vcf"]
+  input_modes: ["vcf"]
   threads: 8
   mem_mb: 16000
   partition: "i192,i192mem,i128"
 
 read_haps:
   env_yaml: "../envs/read_haps_v0.1.yaml"
-  read_haps_command: "read_haps"
+  read_haps_command: "/fsx/references/runtime_assets/tool_specific_resources/read_haps/read_haps"
   reliable_snp_file: /fsx/references/runtime_assets/tool_specific_resources/read_haps/high_quality_markers_deCODE_2015.txt.gz
   extra_args: ""
   threads: 8
   mem_mb: 32000
   partition: "i192,i192mem,i128"
-
-charr:
-  env_yaml: "../envs/charr_v0.1.yaml"
-  threads: 8
-  mem_mb: 128000
-  partition: "i192,i192mem,i128"
-  ref_af_resource: /fsx/references/runtime_assets/tool_specific_resources/charr/hg38_gnomad_ref_af.ht
-  ref_af_field: "ref_AF"
-  hail_reference_genome: "GRCh38"
-  autosome_contigs: "chr1,chr2,chr3,chr4,chr5,chr6,chr7,chr8,chr9,chr10,chr11,chr12,chr13,chr14,chr15,chr16,chr17,chr18,chr19,chr20,chr21,chr22"
-  min_af: 0.05
-  max_af: 0.95
-  min_dp: 10
-  max_dp: 100
-  min_gq: 20
 ```
 
-`contam_identity.primary_snv_caller` must be present in explicit `snv_callers`; auto-detected caller state is rejected for this bundle. Haplocheck BAM mode consumes alignment evidence. Haplocheck VCF mode, read_haps, and CHARR consume the configured primary SNV caller VCF.
+`contam_identity.primary_snv_caller` must be present in explicit `snv_callers`; auto-detected caller state is rejected for this bundle. The default Haplocheck mode consumes the configured primary SNV caller VCF. read_haps uses the configured runtime-asset binary plus the explicit reliable SNP file.
 
 Tool references:
 
 | Tool | Link |
 |---|---|
-| NGSTroubleFinder | https://github.com/STALICLA-RnD/NGSTroubleFinder |
-| NGSTroubleFinder paper | https://doi.org/10.1093/nargab/lqag006 |
 | Haplocheck | https://github.com/genepi/haplocheck |
 | Haplocheck docs | https://mitoverse.readthedocs.io/haplocheck/haplocheck/ |
 | read_haps | https://github.com/DecodeGenetics/read_haps |
 | read_haps paper | https://doi.org/10.1093/bioinformatics/btaa936 |
-| Hail CHARR API | https://hail.is/docs/0.2/methods/genetics.html#hail.methods.compute_charr |
-| CHARR paper | https://doi.org/10.1016/j.ajhg.2023.10.011 |
 
 ## LongTR Catalog Configuration
 

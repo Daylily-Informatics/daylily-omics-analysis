@@ -15,6 +15,7 @@ FIELDNAMES = [
     "aligner",
     "deduper",
     "classifier",
+    "status",
     "database",
     "read_limit",
     "input_fastq",
@@ -34,10 +35,10 @@ FIELDNAMES = [
 ]
 
 
-def _require_file(path: Path, label: str) -> None:
+def _require_file(path: Path, label: str, *, allow_empty: bool = False) -> None:
     if not path.is_file():
         raise FileNotFoundError(f"Required {label} was not found: {path}")
-    if path.stat().st_size == 0:
+    if path.stat().st_size == 0 and not allow_empty:
         raise ValueError(f"Required {label} is empty: {path}")
 
 
@@ -53,8 +54,8 @@ def _count_fastq_reads(path: Path) -> int:
     return line_count // 4
 
 
-def _count_kraken_output(path: Path) -> tuple[int, int]:
-    _require_file(path, "Kraken2 output")
+def _count_kraken_output(path: Path, *, allow_empty: bool = False) -> tuple[int, int]:
+    _require_file(path, "Kraken2 output", allow_empty=allow_empty)
     classified = 0
     unclassified = 0
     with path.open(encoding="utf-8") as handle:
@@ -143,10 +144,17 @@ def _build_row(args: argparse.Namespace) -> dict[str, str | int]:
     report = Path(args.kraken_report)
     kraken_output = Path(args.kraken_output)
     fastq_reads = _count_fastq_reads(fastq)
-    classified, unclassified = _count_kraken_output(kraken_output)
+    classified, unclassified = _count_kraken_output(
+        kraken_output, allow_empty=(fastq_reads == 0)
+    )
     processed = classified + unclassified
     records = _parse_kraken_report(report)
     top = _top_taxon(records)
+    if fastq_reads > 0 and processed == 0:
+        raise ValueError(
+            "Kraken2 output had no classified or unclassified reads for "
+            f"non-empty FASTQ: {kraken_output}"
+        )
 
     return {
         "Sample": args.sample,
@@ -154,6 +162,7 @@ def _build_row(args: argparse.Namespace) -> dict[str, str | int]:
         "aligner": args.aligner,
         "deduper": args.deduper,
         "classifier": "kraken2",
+        "status": "no_unmapped_reads" if fastq_reads == 0 else "ok",
         "database": args.database,
         "read_limit": "all",
         "input_fastq": str(fastq),

@@ -55,6 +55,12 @@ def _load_sourmash_summary_module():
     return module
 
 
+def _write_fastq(path: Path, reads: int) -> None:
+    with gzip.open(path, "wt", encoding="utf-8") as handle:
+        for idx in range(1, reads + 1):
+            handle.write(f"@read{idx}\nACGT\n+\nFFFF\n")
+
+
 def test_unmapped_metagenomics_rules_are_shell_only_and_included() -> None:
     snakefile = _read("workflow/Snakefile")
     rules = _read("workflow/rules/unmapped_metagenomics.smk")
@@ -95,6 +101,8 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_kraken2() -> 
         "{params.memory_mapping_flag}",
         "workflow/scripts/summarize_unmapped_metagenomics.py",
         "--read-limit {params.read_limit:q}",
+        "No human-unmapped reads; writing Kraken2 no_unmapped_reads sentinel outputs.",
+        "fastq_lines=",
     ):
         assert expected in rules
 
@@ -122,6 +130,8 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_ganon2() -> N
         "--threads {threads}",
         "workflow/scripts/summarize_unmapped_ganon2.py",
         "--read-limit {params.read_limit:q}",
+        "No human-unmapped reads; writing Ganon2 no_unmapped_reads sentinel outputs.",
+        "fastq_lines=",
         "for prefix in {params.ganon2_db_prefixes:q}; do",
         "test -s \"$prefix\".tax",
         ".hibf",
@@ -155,6 +165,9 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_sourmash() ->
         "--sourmash-signature {output.sig:q}",
         "--sourmash-gather-csv {output.gather_csv:q}",
         "--read-limit {params.read_limit:q}",
+        "No human-unmapped reads; writing sourmash no_unmapped_reads sentinel outputs.",
+        '{{"class":"sourmash_signature","signatures":[],"dayoa_status":"no_unmapped_reads"}}',
+        "fastq_lines=",
         "for database in {params.sourmash_databases:q}; do",
     ):
         assert expected in rules
@@ -326,9 +339,7 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
     kraken_output = tmp_path / "sample.kraken2.output.tsv"
     output = tmp_path / "sample.unmapped_metagenomics_mqc.tsv"
 
-    with gzip.open(fastq, "wt", encoding="utf-8") as handle:
-        for idx in range(1, 5):
-            handle.write(f"@read{idx}\nACGT\n+\nFFFF\n")
+    _write_fastq(fastq, 4)
 
     report.write_text(
         "\n".join(
@@ -393,6 +404,7 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
             "aligner": "sent",
             "deduper": "dmd",
             "classifier": "kraken2",
+            "status": "ok",
             "database": "/refs/kraken2",
             "read_limit": "all",
             "input_fastq": str(fastq),
@@ -413,6 +425,96 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
     ]
 
 
+def test_summarize_unmapped_metagenomics_accepts_zero_read_sentinel(
+    tmp_path: Path,
+) -> None:
+    module = _load_summary_module()
+    fastq = tmp_path / "empty.fastq.gz"
+    report = tmp_path / "sample.kraken2.report.txt"
+    kraken_output = tmp_path / "sample.kraken2.output.tsv"
+    output = tmp_path / "sample.unmapped_metagenomics_mqc.tsv"
+
+    _write_fastq(fastq, 0)
+    report.write_text("0.00\t0\t0\tU\t0\tunclassified\n", encoding="utf-8")
+    kraken_output.touch()
+
+    assert (
+        module.main(
+            [
+                "--sample",
+                "HG002.sent.dmd",
+                "--base-sample",
+                "HG002",
+                "--aligner",
+                "sent",
+                "--deduper",
+                "dmd",
+                "--database",
+                "/refs/kraken2",
+                "--read-limit",
+                "all",
+                "--unmapped-fastq",
+                str(fastq),
+                "--kraken-report",
+                str(report),
+                "--kraken-output",
+                str(kraken_output),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    with output.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    assert rows[0]["status"] == "no_unmapped_reads"
+    assert rows[0]["input_fastq_reads"] == "0"
+    assert rows[0]["reads_processed"] == "0"
+    assert rows[0]["top_taxon"] == "NA"
+
+
+def test_summarize_unmapped_metagenomics_rejects_empty_kraken_for_nonempty_fastq(
+    tmp_path: Path,
+) -> None:
+    module = _load_summary_module()
+    fastq = tmp_path / "nonempty.fastq.gz"
+    report = tmp_path / "sample.kraken2.report.txt"
+    kraken_output = tmp_path / "sample.kraken2.output.tsv"
+
+    _write_fastq(fastq, 1)
+    report.write_text("100.00\t1\t0\tR\t1\troot\n", encoding="utf-8")
+    kraken_output.touch()
+
+    with pytest.raises(ValueError, match="Required Kraken2 output is empty"):
+        module._build_row(
+            SimpleNamespace(
+                sample="HG002.sent.dmd",
+                base_sample="HG002",
+                aligner="sent",
+                deduper="dmd",
+                database="/refs/kraken2",
+                read_limit="all",
+                unmapped_fastq=str(fastq),
+                kraken_report=str(report),
+                kraken_output=str(kraken_output),
+            )
+        )
+
+
+def test_summarize_unmapped_metagenomics_rejects_malformed_fastq(
+    tmp_path: Path,
+) -> None:
+    module = _load_summary_module()
+    fastq = tmp_path / "malformed.fastq.gz"
+
+    with gzip.open(fastq, "wt", encoding="utf-8") as handle:
+        handle.write("@read1\nACGT\n+\n")
+
+    with pytest.raises(ValueError, match="FASTQ line count is not divisible by four"):
+        module._count_fastq_reads(fastq)
+
+
 def test_summarize_unmapped_ganon2_rejects_capped_read_limit() -> None:
     module = _load_ganon2_summary_module()
 
@@ -430,9 +532,7 @@ def test_summarize_unmapped_ganon2_writes_mqc_style_tsv(tmp_path: Path) -> None:
     rep = tmp_path / "sample.ganon2.quick.rep"
     output = tmp_path / "sample.unmapped_metagenomics_ganon2_mqc.tsv"
 
-    with gzip.open(fastq, "wt", encoding="utf-8") as handle:
-        for idx in range(1, 5):
-            handle.write(f"@read{idx}\nACGT\n+\nFFFF\n")
+    _write_fastq(fastq, 4)
 
     tre.write_text(
         "\n".join(
@@ -497,6 +597,7 @@ def test_summarize_unmapped_ganon2_writes_mqc_style_tsv(tmp_path: Path) -> None:
             "aligner": "sent",
             "deduper": "dmd",
             "classifier": "ganon2",
+            "status": "ok",
             "database": "/refs/ganon/bac;/refs/ganon/vir",
             "read_limit": "all",
             "input_fastq": str(fastq),
@@ -515,6 +616,89 @@ def test_summarize_unmapped_ganon2_writes_mqc_style_tsv(tmp_path: Path) -> None:
             "top_taxon_pct": "50.0000",
         }
     ]
+
+
+def test_summarize_unmapped_ganon2_accepts_zero_read_sentinel(
+    tmp_path: Path,
+) -> None:
+    module = _load_ganon2_summary_module()
+    fastq = tmp_path / "empty.fastq.gz"
+    tre = tmp_path / "sample.ganon2.quick.tre"
+    rep = tmp_path / "sample.ganon2.quick.rep"
+    output = tmp_path / "sample.unmapped_metagenomics_ganon2_mqc.tsv"
+
+    _write_fastq(fastq, 0)
+    tre.write_text(
+        "unclassified\tunclassified\t\tunclassified\t0\t0\t0\t0\t0.00000\n",
+        encoding="utf-8",
+    )
+    rep.write_text("#total_classified\t0\n#total_unclassified\t0\n", encoding="utf-8")
+
+    assert (
+        module.main(
+            [
+                "--sample",
+                "HG002.sent.dmd",
+                "--base-sample",
+                "HG002",
+                "--aligner",
+                "sent",
+                "--deduper",
+                "dmd",
+                "--database",
+                "/refs/ganon/dayoa",
+                "--read-limit",
+                "all",
+                "--unmapped-fastq",
+                str(fastq),
+                "--ganon2-report",
+                str(tre),
+                "--ganon2-rep",
+                str(rep),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    with output.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    assert rows[0]["status"] == "no_unmapped_reads"
+    assert rows[0]["input_fastq_reads"] == "0"
+    assert rows[0]["reads_processed"] == "0"
+    assert rows[0]["top_taxon"] == "NA"
+
+
+def test_summarize_unmapped_ganon2_rejects_zero_counts_for_nonempty_fastq(
+    tmp_path: Path,
+) -> None:
+    module = _load_ganon2_summary_module()
+    fastq = tmp_path / "nonempty.fastq.gz"
+    tre = tmp_path / "sample.ganon2.quick.tre"
+    rep = tmp_path / "sample.ganon2.quick.rep"
+
+    _write_fastq(fastq, 1)
+    tre.write_text(
+        "unclassified\tunclassified\t\tunclassified\t0\t0\t0\t0\t0.00000\n",
+        encoding="utf-8",
+    )
+    rep.write_text("#total_classified\t0\n#total_unclassified\t0\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="non-empty FASTQ"):
+        module._build_row(
+            SimpleNamespace(
+                sample="HG002.sent.dmd",
+                base_sample="HG002",
+                aligner="sent",
+                deduper="dmd",
+                database="/refs/ganon/dayoa",
+                read_limit="all",
+                unmapped_fastq=str(fastq),
+                ganon2_report=str(tre),
+                ganon2_rep=str(rep),
+            )
+        )
 
 
 def test_summarize_unmapped_sourmash_rejects_capped_read_limit() -> None:
@@ -543,11 +727,12 @@ def test_summarize_unmapped_sourmash_writes_mqc_style_tsv(tmp_path: Path) -> Non
     gather_csv = tmp_path / "sample.sourmash.gather.csv"
     output = tmp_path / "sample.unmapped_metagenomics_sourmash_mqc.tsv"
 
-    with gzip.open(fastq, "wt", encoding="utf-8") as handle:
-        for idx in range(1, 5):
-            handle.write(f"@read{idx}\nACGT\n+\nFFFF\n")
+    _write_fastq(fastq, 4)
 
-    sig.write_text("{\"class\":\"sourmash_signature\"}\n", encoding="utf-8")
+    sig.write_text(
+        '{"class":"sourmash_signature","signatures":[{"name":"HG002.sent.dmd"}]}\n',
+        encoding="utf-8",
+    )
     gather_csv.write_text(
         ",".join(
             [
@@ -652,6 +837,7 @@ def test_summarize_unmapped_sourmash_writes_mqc_style_tsv(tmp_path: Path) -> Non
             "aligner": "sent",
             "deduper": "dmd",
             "classifier": "sourmash_gather",
+            "status": "ok",
             "database": "/refs/sourmash/dayoa_qc.zip",
             "read_limit": "all",
             "input_fastq": str(fastq),
@@ -677,3 +863,104 @@ def test_summarize_unmapped_sourmash_writes_mqc_style_tsv(tmp_path: Path) -> Non
             "top_unique_intersect_bp": "2000",
         }
     ]
+
+
+def test_summarize_unmapped_sourmash_accepts_zero_read_sentinel(
+    tmp_path: Path,
+) -> None:
+    module = _load_sourmash_summary_module()
+    fastq = tmp_path / "empty.fastq.gz"
+    sig = tmp_path / "sample.sourmash.sig"
+    gather_csv = tmp_path / "sample.sourmash.gather.csv"
+    output = tmp_path / "sample.unmapped_metagenomics_sourmash_mqc.tsv"
+
+    _write_fastq(fastq, 0)
+    sig.write_text(
+        '{"class":"sourmash_signature","signatures":[],"dayoa_status":"no_unmapped_reads"}\n',
+        encoding="utf-8",
+    )
+    gather_csv.write_text(
+        ",".join(sorted(module.GATHER_REQUIRED_COLUMNS)) + "\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        module.main(
+            [
+                "--sample",
+                "HG002.sent.dmd",
+                "--base-sample",
+                "HG002",
+                "--aligner",
+                "sent",
+                "--deduper",
+                "dmd",
+                "--database",
+                "/refs/sourmash/dayoa_qc.zip",
+                "--read-limit",
+                "all",
+                "--unmapped-fastq",
+                str(fastq),
+                "--sourmash-signature",
+                str(sig),
+                "--sourmash-gather-csv",
+                str(gather_csv),
+                "--sourmash-ksize",
+                "31",
+                "--sourmash-scaled",
+                "1000",
+                "--sourmash-moltype",
+                "DNA",
+                "--sourmash-threshold-bp",
+                "3000",
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    with output.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    assert rows[0]["status"] == "no_unmapped_reads"
+    assert rows[0]["input_fastq_reads"] == "0"
+    assert rows[0]["gather_matches"] == "0"
+    assert rows[0]["top_name"] == "NA"
+
+
+def test_summarize_unmapped_sourmash_rejects_zero_signature_for_nonempty_fastq(
+    tmp_path: Path,
+) -> None:
+    module = _load_sourmash_summary_module()
+    fastq = tmp_path / "nonempty.fastq.gz"
+    sig = tmp_path / "sample.sourmash.sig"
+    gather_csv = tmp_path / "sample.sourmash.gather.csv"
+
+    _write_fastq(fastq, 1)
+    sig.write_text(
+        '{"class":"sourmash_signature","signatures":[],"dayoa_status":"no_unmapped_reads"}\n',
+        encoding="utf-8",
+    )
+    gather_csv.write_text(
+        ",".join(sorted(module.GATHER_REQUIRED_COLUMNS)) + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="only valid when input FASTQ has zero reads"):
+        module._build_row(
+            SimpleNamespace(
+                sample="HG002.sent.dmd",
+                base_sample="HG002",
+                aligner="sent",
+                deduper="dmd",
+                database="/refs/sourmash/dayoa_qc.zip",
+                read_limit="all",
+                unmapped_fastq=str(fastq),
+                sourmash_signature=str(sig),
+                sourmash_gather_csv=str(gather_csv),
+                sourmash_ksize="31",
+                sourmash_scaled="1000",
+                sourmash_moltype="DNA",
+                sourmash_threshold_bp="3000",
+            )
+        )

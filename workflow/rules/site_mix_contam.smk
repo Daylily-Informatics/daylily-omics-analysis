@@ -136,17 +136,25 @@ rule site_mix_contam:
             exit 2
         fi
 
-        bin/util/genotype_free_contam_estimator.py \
-          --sample-id "{params.stage_sample}" \
-          --counts-tsv {input.pileups} \
-          --output {output.tsv} \
-          --donor-output {output.donors} \
-          --min-depth {params.min_depth} \
-          --max-depth {params.max_depth} \
-          --min-sites {params.min_sites} \
-          --max-contamination {params.max_contamination} \
-          --grid-step {params.grid_step} \
-          > {log} 2>&1
+        if ! bin/util/genotype_free_contam_estimator.py \
+            --sample-id "{params.stage_sample}" \
+            --counts-tsv {input.pileups} \
+            --output {output.tsv} \
+            --donor-output {output.donors} \
+            --min-depth {params.min_depth} \
+            --max-depth {params.max_depth} \
+            --min-sites {params.min_sites} \
+            --max-contamination {params.max_contamination} \
+            --grid-step {params.grid_step} \
+            > {log} 2>&1; then
+            if grep -Eq '^ERROR: Only [0-9]+ usable sites after depth filters; need at least [0-9]+' {log:q}; then
+                printf 'sample_id\tmethod\tcontamination_fraction\tcontamination_pct\tci_low_fraction\tci_high_fraction\tunknown_contamination_fraction\tunknown_contamination_pct\tsite_count\tread_count\tmean_depth\tlog_likelihood\tnull_log_likelihood\tdelta_log_likelihood\tsource_delta_log_likelihood\tstatus\n' > {output.tsv:q}
+                printf '{params.stage_sample}\tgenotype_free_site_mix\tNA\tNA\t\t\tNA\tNA\t0\t0\t0\t\t\t\t\tno_usable_sites\n' >> {output.tsv:q}
+                printf 'sample_id\tsource_rank\tsource_sample_id\tis_unknown_source\tcontamination_fraction\tcontamination_pct\tsingle_source_delta_log_likelihood\n' > {output.donors:q}
+            else
+                exit 1
+            fi
+        fi
 
         test -s {output.tsv}
         test -s {output.donors}

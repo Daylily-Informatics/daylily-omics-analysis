@@ -485,18 +485,44 @@ rule unmapped_metagenomics_kraken2_quick:
         test {params.read_limit:q} = all || (echo "ERROR: unmapped_metagenomics.read_limit must be 'all' for full-unmapped mode." | tee -a {log:q}; exit 1)
 
         samtools quickcheck -v {input.alignment:q} >> {log:q} 2>&1
-        samtools view \
-            -@ {threads} \
-            -T {params.huref_fasta:q} \
+	        samtools view \
+	            -@ {threads} \
+	            -T {params.huref_fasta:q} \
             -u \
             -f 4 \
             -F 0xB00 \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
-          | gzip -c > {output.fastq:q}
-        test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
+	          | gzip -c > {output.fastq:q}
+	        test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
+	        fastq_lines="$(gzip -cd {output.fastq:q} | wc -l | tr -d '[:space:]')"
+	        if [ $((fastq_lines % 4)) -ne 0 ]; then
+	            echo "ERROR: unmapped FASTQ line count is not divisible by four: {output.fastq:q}" | tee -a {log:q}
+	            exit 1
+	        fi
+	        fastq_reads=$((fastq_lines / 4))
+	        if [ "$fastq_reads" -eq 0 ]; then
+	            echo "No human-unmapped reads; writing Kraken2 no_unmapped_reads sentinel outputs." | tee -a {log:q}
+	            printf '0.00\t0\t0\tU\t0\tunclassified\n' > {output.report:q}
+	            : > {output.kraken:q}
+	            python workflow/scripts/summarize_unmapped_metagenomics.py \
+	                --sample {params.sample_id:q} \
+	                --base-sample {wildcards.sample:q} \
+	                --aligner {wildcards.alnr:q} \
+	                --deduper {wildcards.ddup:q} \
+	                --database {params.kraken2_db:q} \
+	                --read-limit {params.read_limit:q} \
+	                --unmapped-fastq {output.fastq:q} \
+	                --kraken-report {output.report:q} \
+	                --kraken-output {output.kraken:q} \
+	                --output {output.mqc:q} >> {log:q} 2>&1
+	            test -s {output.report:q}
+	            test -e {output.kraken:q}
+	            test -s {output.mqc:q}
+	            exit 0
+	        fi
 
-        kraken2 \
+	        kraken2 \
             --quick \
             {params.memory_mapping_flag} \
             --db {params.kraken2_db:q} \
@@ -597,10 +623,36 @@ rule unmapped_metagenomics_ganon2_quick:
             -F 0xB00 \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
-          | gzip -c > {output.fastq:q}
-        test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
+	          | gzip -c > {output.fastq:q}
+	        test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
+	        fastq_lines="$(gzip -cd {output.fastq:q} | wc -l | tr -d '[:space:]')"
+	        if [ $((fastq_lines % 4)) -ne 0 ]; then
+	            echo "ERROR: unmapped FASTQ line count is not divisible by four: {output.fastq:q}" | tee -a {log:q}
+	            exit 1
+	        fi
+	        fastq_reads=$((fastq_lines / 4))
+	        if [ "$fastq_reads" -eq 0 ]; then
+	            echo "No human-unmapped reads; writing Ganon2 no_unmapped_reads sentinel outputs." | tee -a {log:q}
+	            printf 'unclassified\tunclassified\t\tunclassified\t0\t0\t0\t0\t0.00000\n' > {output.tre:q}
+	            printf '#total_classified\t0\n#total_unclassified\t0\n' > {output.rep:q}
+	            python workflow/scripts/summarize_unmapped_ganon2.py \
+	                --sample {params.sample_id:q} \
+	                --base-sample {wildcards.sample:q} \
+	                --aligner {wildcards.alnr:q} \
+	                --deduper {wildcards.ddup:q} \
+	                --database {params.ganon2_database_label:q} \
+	                --read-limit {params.read_limit:q} \
+	                --unmapped-fastq {output.fastq:q} \
+	                --ganon2-report {output.tre:q} \
+	                --ganon2-rep {output.rep:q} \
+	                --output {output.mqc:q} >> {log:q} 2>&1
+	            test -s {output.tre:q}
+	            test -s {output.rep:q}
+	            test -s {output.mqc:q}
+	            exit 0
+	        fi
 
-        ganon classify \
+	        ganon classify \
             --db-prefix {params.ganon2_db_prefixes:q} \
             --output-prefix {params.output_prefix:q} \
             --single-reads {output.fastq:q} \
@@ -698,10 +750,40 @@ rule unmapped_metagenomics_sourmash_gather:
             -F 0xB00 \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
-          | gzip -c > {output.fastq:q}
-        test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
+	          | gzip -c > {output.fastq:q}
+	        test -s {output.fastq:q} || (echo "ERROR: failed to write unmapped FASTQ: {output.fastq:q}" | tee -a {log:q}; exit 1)
+	        fastq_lines="$(gzip -cd {output.fastq:q} | wc -l | tr -d '[:space:]')"
+	        if [ $((fastq_lines % 4)) -ne 0 ]; then
+	            echo "ERROR: unmapped FASTQ line count is not divisible by four: {output.fastq:q}" | tee -a {log:q}
+	            exit 1
+	        fi
+	        fastq_reads=$((fastq_lines / 4))
+	        if [ "$fastq_reads" -eq 0 ]; then
+	            echo "No human-unmapped reads; writing sourmash no_unmapped_reads sentinel outputs." | tee -a {log:q}
+	            printf '%s\n' '{{"class":"sourmash_signature","signatures":[],"dayoa_status":"no_unmapped_reads"}}' > {output.sig:q}
+	            printf '%s\n' 'unique_intersect_bp,intersect_bp,f_unique_to_query,f_unique_weighted,filename,name,md5,gather_result_rank,query_bp,ksize,moltype,scaled,query_n_hashes' > {output.gather_csv:q}
+	            python workflow/scripts/summarize_unmapped_sourmash.py \
+	                --sample {params.sample_id:q} \
+	                --base-sample {wildcards.sample:q} \
+	                --aligner {wildcards.alnr:q} \
+	                --deduper {wildcards.ddup:q} \
+	                --database {params.sourmash_database_label:q} \
+	                --read-limit {params.read_limit:q} \
+	                --unmapped-fastq {output.fastq:q} \
+	                --sourmash-signature {output.sig:q} \
+	                --sourmash-gather-csv {output.gather_csv:q} \
+	                --sourmash-ksize {params.sourmash_ksize} \
+	                --sourmash-scaled {params.sourmash_scaled} \
+	                --sourmash-moltype {params.sourmash_moltype:q} \
+	                --sourmash-threshold-bp {params.sourmash_threshold_bp} \
+	                --output {output.mqc:q} >> {log:q} 2>&1
+	            test -s {output.sig:q}
+	            test -s {output.gather_csv:q}
+	            test -s {output.mqc:q}
+	            exit 0
+	        fi
 
-        sourmash --version >> {log:q} 2>&1
+	        sourmash --version >> {log:q} 2>&1
         sourmash sketch dna \
             --name {params.sample_id:q} \
             -p k={params.sourmash_ksize},scaled={params.sourmash_scaled},abund \

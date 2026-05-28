@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  - haplocheck=1.3.3
   - openjdk
   - samtools
   - bcftools

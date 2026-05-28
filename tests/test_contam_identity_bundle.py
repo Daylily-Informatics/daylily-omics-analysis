@@ -64,19 +64,10 @@ def test_contam_identity_parser_preserves_tool_evidence(tmp_path: Path) -> None:
         "100 2 1 0.01 0.02 0.001 FAIL CONTAMINATION\n",
         encoding="utf-8",
     )
-    charr = (
-        root
-        / "HG003/align/sent/dmd/snv/sentd/contam_identity/charr/"
-        / "HG003.sent.dmd.sentd.charr.tsv"
-    )
-    charr.parent.mkdir(parents=True)
-    charr.write_text("sample\tcharr\nHG003\t0.04\n", encoding="utf-8")
-
     identity_out = tmp_path / "contam_identity_mqc.tsv"
     ngs_out = tmp_path / "ngstroublefinder_mqc.tsv"
     haplo_out = tmp_path / "haplocheck_mtdna_mqc.tsv"
     read_haps_out = tmp_path / "read_haps_mqc.tsv"
-    charr_out = tmp_path / "charr_mqc.tsv"
 
     module.compile_reports(
         SimpleNamespace(
@@ -85,12 +76,10 @@ def test_contam_identity_parser_preserves_tool_evidence(tmp_path: Path) -> None:
             ngstroublefinder_output=str(ngs_out),
             haplocheck_output=str(haplo_out),
             read_haps_output=str(read_haps_out),
-            charr_output=str(charr_out),
             contamination=[str(contamination)],
             ngstroublefinder=[str(ngs)],
             haplocheck=[str(haplo)],
             read_haps=[str(read_haps)],
-            charr=[str(charr)],
         )
     )
 
@@ -124,7 +113,6 @@ def test_contam_identity_parser_preserves_tool_evidence(tmp_path: Path) -> None:
         "ngstroublefinder",
         "haplocheck",
         "read_haps",
-        "charr",
     }
     read_haps_rows = [row for row in rows if row["tool"] == "read_haps"]
     assert read_haps_rows[0]["tool_pass_fail"] == "FAIL"
@@ -147,8 +135,18 @@ def test_contam_identity_contracts_are_explicit() -> None:
         "contam_identity.primary_snv_caller",
         "haplocheck.input_modes",
         "read_haps.reliable_snp_file",
-        "charr.ref_af_resource",
         "produce_global_contam_check",
     ):
         assert expected in rules
+    for retired in (
+        "rule ngstroublefinder_contam_identity:",
+        "rule produce_ngstroublefinder_contam_identity:",
+        "ngstroublefinder_mqc.tsv",
+        "rule charr_contam_identity:",
+        "rule produce_charr_contam_identity:",
+        "charr_mqc.tsv",
+        "charr.ref_af_resource",
+    ):
+        assert retired not in rules
     assert "tool_pass_fail" in parser
+    assert "--ngstroublefinder-output" in parser

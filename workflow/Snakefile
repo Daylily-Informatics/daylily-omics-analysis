@@ -275,7 +275,9 @@ include: "rules/gatk_contam.smk"
 # include: "rules/gauchian.smk"
 # include: "rules/gba_gauchian.smk"  # Disabled until GBA integration is revalidated.
 include: "rules/generate_deduplicated_bams.smk"
-include: "rules/genetocn.smk"
+# GeneToCN is disabled until its upstream package/install surface is revalidated.
+# Keep workflow/rules/genetocn.smk for repair provenance.
+# include: "rules/genetocn.smk"
 include: "rules/go_left.smk"
 # include: "rules/hisat2.smk"  # Disabled until HISAT2 workflows are revalidated.
 include: "rules/htd_calls.smk"

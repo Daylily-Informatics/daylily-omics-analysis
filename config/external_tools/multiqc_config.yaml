@@ -89,10 +89,8 @@ module_order:
   - site_mix_contam
   - site_mix_donor
   - contam_identity
-  - ngstroublefinder
   - haplocheck_mtdna
   - read_haps
-  - charr
   - kraken
   - unmapped_metagenomics
   - unmapped_metagenomics_ganon2
@@ -174,14 +172,10 @@ report_section_order:
     order: 3040
   contam_identity:
     order: 3045
-  ngstroublefinder:
-    order: 3046
   haplocheck_mtdna:
     order: 3047
   read_haps:
     order: 3048
-  charr:
-    order: 3049
   kraken:
     order: 3050
   unmapped_metagenomics:
@@ -540,21 +534,11 @@ custom_data:
     section_name: 'Global Contamination / Identity Evidence'
     parent_id: 'dayoa_sample_contamination_metagenomics'
     parent_name: 'Sample identity, contamination, metagenomics'
-    description: 'Evidence-only global bundle across GATK, site-mix, NGSTroubleFinder, Haplocheck, read_haps, CHARR, Peddy, and Somalier'
+    description: 'Evidence-only global bundle across GATK, site-mix, Haplocheck, read_haps, Peddy, and Somalier'
     file_format: 'tsv'
     plot_type: 'table'
     pconfig:
       id: 'contam_identity'
-  ngstroublefinder:
-    id: 'ngstroublefinder'
-    section_name: 'NGSTroubleFinder Evidence'
-    parent_id: 'dayoa_sample_contamination_metagenomics'
-    parent_name: 'Sample identity, contamination, metagenomics'
-    description: 'Native NGSTroubleFinder per-sample evidence preserved as raw payloads'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'ngstroublefinder'
   haplocheck_mtdna:
     id: 'haplocheck_mtdna'
     section_name: 'Haplocheck mtDNA Contamination Proxy'
@@ -575,16 +559,6 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'read_haps'
-  charr:
-    id: 'charr'
-    section_name: 'CHARR Contamination'
-    parent_id: 'dayoa_sample_contamination_metagenomics'
-    parent_name: 'Sample identity, contamination, metagenomics'
-    description: 'Hail CHARR contamination estimates from primary SNV caller genotypes'
-    file_format: 'tsv'
-    plot_type: 'table'
-    pconfig:
-      id: 'charr'
   unmapped_metagenomics:
     id: 'unmapped_metagenomics'
     section_name: 'Unmapped-read Metagenomics'
@@ -810,14 +784,10 @@ sp:
     fn: "other_reports/site_mix_donor_mqc.tsv"
   contam_identity:
     fn: "other_reports/contam_identity_mqc.tsv"
-  ngstroublefinder:
-    fn: "other_reports/ngstroublefinder_mqc.tsv"
   haplocheck_mtdna:
     fn: "other_reports/haplocheck_mtdna_mqc.tsv"
   read_haps:
     fn: "other_reports/read_haps_mqc.tsv"
-  charr:
-    fn: "other_reports/charr_mqc.tsv"
   unmapped_metagenomics:
     fn: "other_reports/unmapped_metagenomics_mqc.tsv"
   unmapped_metagenomics_ganon2:

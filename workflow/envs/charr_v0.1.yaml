@@ -1,9 +1,0 @@
-name: charr_v0.1
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - python=3.11
-  - openjdk
-  - hail
-  - pandas

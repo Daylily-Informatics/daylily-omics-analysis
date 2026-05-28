@@ -80,19 +80,6 @@ READ_HAPS_FIELDS = [
     "source_path",
 ]
 
-CHARR_FIELDS = [
-    "Sample",
-    "base_sample",
-    "sample_id",
-    "external_sample_id",
-    "aligner",
-    "deduper",
-    "snv_caller",
-    "charr",
-    "source_path",
-]
-
-
 def _write_header(path: str, fields: list[str]) -> tuple[csv.DictWriter, object]:
     out_path = Path(path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -418,82 +405,45 @@ def _emit_read_haps(
         )
 
 
-def _emit_charr(
-    identity_writer: csv.DictWriter,
-    charr_writer: csv.DictWriter,
-    sample_map: dict[str, str],
-    paths: list[str],
-) -> None:
-    for path in paths:
-        sample, base_sample, external, aligner, deduper, caller = _sample_context(
-            path, sample_map, caller_required=True
-        )
-        for row in _read_tsv_rows(path):
-            charr = _first_existing_value(row, ("charr", "CHARR"))
-            charr_writer.writerow(
-                {
-                    "Sample": sample,
-                    "base_sample": base_sample,
-                    "sample_id": base_sample,
-                    "external_sample_id": external,
-                    "aligner": aligner,
-                    "deduper": deduper,
-                    "snv_caller": caller,
-                    "charr": charr,
-                    "source_path": path,
-                }
-            )
-            identity_writer.writerow(
-                _identity_row(
-                    sample=sample,
-                    base_sample=base_sample,
-                    external=external,
-                    aligner=aligner,
-                    deduper=deduper,
-                    caller=caller,
-                    tool="charr",
-                    evidence_type="contamination",
-                    method="hail_compute_charr",
-                    metric_name="charr",
-                    metric_value=charr,
-                    contamination_fraction=charr,
-                    contamination_pct=_safe_pct(charr),
-                    status="ok" if charr else "no_call",
-                    source_path=path,
-                )
-            )
-
-
 def compile_reports(args: argparse.Namespace) -> None:
     sample_map = json.loads(args.sample_map_json)
     identity_writer, identity_handle = _write_header(
         args.contam_identity_output, IDENTITY_FIELDS
     )
-    ngs_writer, ngs_handle = _write_header(
-        args.ngstroublefinder_output, NGSTROUBLEFINDER_FIELDS
-    )
+    ngs_writer = None
+    ngs_handle = None
+    if args.ngstroublefinder_output:
+        ngs_writer, ngs_handle = _write_header(
+            args.ngstroublefinder_output, NGSTROUBLEFINDER_FIELDS
+        )
     haplo_writer, haplo_handle = _write_header(
         args.haplocheck_output, HAPLOCHECK_FIELDS
     )
     read_haps_writer, read_haps_handle = _write_header(
         args.read_haps_output, READ_HAPS_FIELDS
     )
-    charr_writer, charr_handle = _write_header(args.charr_output, CHARR_FIELDS)
 
     try:
         _emit_existing_contamination(identity_writer, args.contamination)
-        _emit_ngstroublefinder(identity_writer, ngs_writer, sample_map, args.ngstroublefinder)
+        if args.ngstroublefinder:
+            if ngs_writer is None:
+                raise ValueError(
+                    "--ngstroublefinder requires --ngstroublefinder-output"
+                )
+            _emit_ngstroublefinder(
+                identity_writer, ngs_writer, sample_map, args.ngstroublefinder
+            )
         _emit_haplocheck(identity_writer, haplo_writer, sample_map, args.haplocheck)
         _emit_read_haps(identity_writer, read_haps_writer, sample_map, args.read_haps)
-        _emit_charr(identity_writer, charr_writer, sample_map, args.charr)
     finally:
-        for handle in (
+        handles = [
             identity_handle,
-            ngs_handle,
             haplo_handle,
             read_haps_handle,
-            charr_handle,
-        ):
+        ]
+        if ngs_handle is not None:
+            handles.append(ngs_handle)
+        for handle in handles:
             handle.close()
 
 
@@ -501,15 +451,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sample-map-json", required=True)
     parser.add_argument("--contam-identity-output", required=True)
-    parser.add_argument("--ngstroublefinder-output", required=True)
+    parser.add_argument("--ngstroublefinder-output")
     parser.add_argument("--haplocheck-output", required=True)
     parser.add_argument("--read-haps-output", required=True)
-    parser.add_argument("--charr-output", required=True)
     parser.add_argument("--contamination", nargs="*", default=[])
     parser.add_argument("--ngstroublefinder", nargs="*", default=[])
     parser.add_argument("--haplocheck", nargs="*", default=[])
     parser.add_argument("--read-haps", nargs="*", default=[])
-    parser.add_argument("--charr", nargs="*", default=[])
     args = parser.parse_args()
     compile_reports(args)
     return 0

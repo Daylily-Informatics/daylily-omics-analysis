@@ -20,15 +20,6 @@ def htd_call_outputs(*, require_non_empty=False):
                 ddup=ddups,
             )
         )
-    if "genetocn" in callers:
-        outputs.extend(
-            expand(
-                MDIR + "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done",
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=ddups,
-            )
-        )
     return outputs
 
 

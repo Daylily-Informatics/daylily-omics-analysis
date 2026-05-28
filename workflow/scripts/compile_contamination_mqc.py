@@ -169,9 +169,12 @@ def compile_reports(args: argparse.Namespace) -> None:
                 "mean_depth": row.get("mean_depth", ""),
                 "svd_prefix": "",
                 "source_path": path,
-                "status": "ok"
-                if row.get("contamination_fraction", "") not in ["", "NA"]
-                else "no_call",
+                "status": row.get("status", "")
+                or (
+                    "ok"
+                    if row.get("contamination_fraction", "") not in ["", "NA"]
+                    else "no_call"
+                ),
             }
             contam_writer.writerow(out_row)
             site_writer.writerow(out_row)

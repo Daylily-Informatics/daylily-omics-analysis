@@ -29,8 +29,11 @@ def test_htd_callers_default_empty_in_profiles() -> None:
 def test_common_declares_supported_htd_callers_and_validation() -> None:
     common = _read("workflow/rules/common.smk")
 
-    for caller in ("gauchian", "cyrius", "smn12", "parascopy", "smaca", "genetocn"):
+    for caller in ("gauchian", "cyrius", "smn12", "parascopy", "smaca"):
         assert f'"{caller}"' in common
+    assert '"genetocn"' not in common[
+        common.index("SUPPORTED_HTD_CALLERS") : common.index("def _supporting_file_name")
+    ]
     assert "SUPPORTED_HTD_CALLERS" in common
     assert "def htd_callers_selected" in common
     assert "Unsupported htd_callers value" in common
@@ -59,6 +62,9 @@ def test_cyrius_included_and_stargazer_intentionally_excluded() -> None:
     assert 'include: "rules/smn_copynumbercaller.smk"' not in active_includes
     assert '# include: "rules/smn_copynumbercaller.smk"' in snakefile
     assert "SMN12 is disabled until its runtime environment path" in snakefile
+    assert 'include: "rules/genetocn.smk"' not in active_includes
+    assert '# include: "rules/genetocn.smk"' in snakefile
+    assert "GeneToCN is disabled until its upstream package/install surface" in snakefile
     assert 'include: "rules/stargazer.smk"' not in active_includes
     assert "Stargazer is intentionally excluded from htd_callers" in snakefile
     assert '# include: "rules/stargazer.smk"' in snakefile
@@ -122,7 +128,6 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         '"logs/htd_calls.done"',
         "cyrius.tsv",
         "cyrius.json",
-        "genetocn.done",
     ):
         assert expected in htd
     assert "gauchian.done" not in htd
@@ -130,6 +135,7 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
     assert "smaca.summary.tsv" not in htd
     assert "smaca.done" not in htd
     assert "smn12.summary.json" not in htd
+    assert "genetocn.done" not in htd
 
 
 def test_htd_mqc_script_schema_and_cyrius_fields() -> None:
@@ -173,6 +179,9 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json" in smn12
     assert "htd/smn12" not in htd_calls
     assert "smn12.summary.json" not in htd_calls
+    assert "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done" in genetocn
+    assert "htd/genetocn" not in htd_calls
+    assert "genetocn.done" not in htd_calls
 
 
 def test_final_multiqc_and_multiqc_config_include_htd_when_selected() -> None:
