@@ -29,16 +29,6 @@ def _sequence_qc_native_inputs(wildcards):
         )
     if qc_tool_enabled("seqfu"):
         paths.append(MDIR + "other_reports/seqfu_mqc.tsv")
-    if qc_tool_enabled("fastv", long_running=True):
-        paths.extend(
-            expand(
-                [
-                    MDIR + "{sample}/seqqc/fastv/{sample}.fastv.json",
-                    MDIR + "{sample}/seqqc/fastv/{sample}.fastv.html",
-                ],
-                sample=FASTQ_QC_SAMPS,
-            )
-        )
     return paths
 
 
@@ -607,8 +597,8 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
         cluster_sample="multiqc_seq_data",
         stage_dir=MDIR + "reports/multiqc_inputs/seq_data",
         data_json=MDIR + "reports/DAY_seq_data_multiqc_data/multiqc_data.json",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail
@@ -656,8 +646,8 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
         cluster_sample="multiqc_alignment",
         stage_dir=MDIR + "reports/multiqc_inputs/alignment",
         data_json=MDIR + "reports/DAY_alignment_multiqc_data/multiqc_data.json",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail
@@ -705,8 +695,8 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
         cluster_sample="multiqc_variants",
         stage_dir=MDIR + "reports/multiqc_inputs/variants",
         data_json=MDIR + "reports/DAY_variants_multiqc_data/multiqc_data.json",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail
@@ -762,8 +752,8 @@ rule multiqc_final_wgs:  # TARGET: the big report
         data_json=MDIR + "reports/DAY_final_multiqc_data/multiqc_data.json",
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a.log",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         dbill='$';

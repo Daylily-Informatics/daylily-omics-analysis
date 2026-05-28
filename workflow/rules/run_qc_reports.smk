@@ -23,11 +23,7 @@ RUNQC_ILMN_CFG = RUNQC_CFG.get("illumina", {})
 RUNQC_ONT_CFG = RUNQC_CFG.get("ont", {})
 RUNQC_UG_CFG = RUNQC_CFG.get("ultima", {})
 RUNQC_ENV = _runqc_text(RUNQC_CFG, "env_yaml") or "../envs/run_qc_reports_v0.1.yaml"
-RUNQC_MULTIQC_ENV = (
-    config.get("multiqc", {})
-    .get("run_qc", {})
-    .get("env_yaml", "../envs/multiqc_v0.1.yaml")
-)
+RUNQC_MULTIQC_ENV = "../envs/multiqc_v0.1.yaml"
 
 RUNQC_ILMN_TARGET_REQUESTED = bool(
     _requested_targets()

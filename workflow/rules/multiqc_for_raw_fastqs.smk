@@ -30,8 +30,8 @@ rule multiqc_for_raw_fastqs:
         cluster_sample=f"{RU[0]}_{EX[0]}",
     log:
         f"{MDIR}logs/multiqc/SEQQC_multiqc.FQ.log",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
 

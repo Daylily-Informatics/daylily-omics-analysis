@@ -240,7 +240,7 @@ rule multiqc_bcl2fq_ready:
     log:
         f"{B2FD}snk_log/{runn}_bcl2fq_multiqc.ready.log",
     conda:
-        config["multiqc"]["bcl2fq"]["env_yaml"]
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         touch {output};
@@ -262,7 +262,7 @@ rule bcl2fastq_run:  # TARGET : Target to run BCL2FQ
     benchmark:
         B2FD + f"output/bcl2fq_finalrrule.bench.tsv",
     conda:
-        config["multiqc"]["bcl2fq"]["env_yaml"]
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """epocsec=$(date +'%s');
         cmd=$( echo "at2mgsamp_sheet.py {params.bcl_outdir} {params.ru} {params.ex} merge $DAY_ROOT/bcl2fq_links_$epocsec/ $DAY_ROOT/config/units.tsv");

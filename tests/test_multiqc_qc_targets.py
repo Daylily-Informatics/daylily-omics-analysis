@@ -6,6 +6,7 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+MULTIQC_ENV_YAML = "../envs/multiqc_v0.1.yaml"
 
 
 def _read(path: str) -> str:
@@ -30,32 +31,88 @@ def _localrules_entries(text: str) -> set[str]:
     return entries
 
 
+def _rule_block(text: str, rule_name: str) -> str:
+    marker = f"rule {rule_name}:"
+    assert marker in text, rule_name
+    start = text.index(marker)
+    next_start = text.find("\nrule ", start + len(marker))
+    if next_start == -1:
+        return text[start:]
+    return text[start:next_start]
+
+
 def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
+    active_includes = [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
 
     assert 'include: "rules/fastp.smk"' not in snakefile
-    assert 'include: "rules/picard.smk"' not in [
-        line.strip() for line in snakefile.splitlines() if not line.strip().startswith("#")
-    ]
+    assert 'include: "rules/fastv.smk"' not in active_includes
+    assert "workflow/rules/archived_qc/fastv.smk" in snakefile
+    assert "workflow/rules/archived_qc/verifybamid2_contam.smk" in snakefile
+    assert 'include: "rules/picard.smk"' not in active_includes
     assert '# include: "rules/picard.smk"' in snakefile
-    assert 'include: "rules/qualimap.smk"' not in [
-        line.strip() for line in snakefile.splitlines() if not line.strip().startswith("#")
-    ]
+    assert 'include: "rules/qualimap.smk"' not in active_includes
     assert '# include: "rules/qualimap.smk"' in snakefile
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_final_wgs.smk")
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_cov_aln.smk")
     assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
     assert "alignqc/qmap" not in _read("workflow/rules/multiqc_cov_aln.smk")
     for include in (
-        'include: "rules/fastv.smk"',
         'include: "rules/seqfu.smk"',
         'include: "rules/relatedness_batch.smk"',
         'include: "rules/contam_identity.smk"',
+        'include: "rules/longtr.smk"',
         'include: "rules/run_qc_reports.smk"',
         'include: "rules/truvari_sv_benchmark.smk"',
         'include: "rules/unmapped_metagenomics.smk"',
     ):
         assert include in snakefile
+
+
+def test_snakefile_active_rule_includes_are_alphabetized() -> None:
+    snakefile = _read("workflow/Snakefile")
+    block = snakefile.split("# Rule imports.", 1)[1].split("# #### A FEW FUSSY THINGS", 1)[0]
+    active_includes = [
+        line.strip().split('"')[1]
+        for line in block.splitlines()
+        if line.strip().startswith("include:")
+    ]
+
+    assert active_includes == sorted(active_includes, key=str.casefold)
+
+
+def test_retired_fastv_and_verifybamid2_rules_are_archived_only() -> None:
+    snakefile = _read("workflow/Snakefile")
+    active_includes = [
+        line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
+    ]
+
+    assert (REPO_ROOT / "workflow/rules/archived_qc/fastv.smk").exists()
+    assert (REPO_ROOT / "workflow/rules/archived_qc/verifybamid2_contam.smk").exists()
+    assert not (REPO_ROOT / "workflow/rules/fastv.smk").exists()
+    assert not (REPO_ROOT / "workflow/rules/verifybamid2_contam.smk").exists()
+    assert 'include: "rules/fastv.smk"' not in active_includes
+    assert 'include: "rules/archived_qc/fastv.smk"' not in active_includes
+    assert 'include: "rules/verifybamid2_contam.smk"' not in active_includes
+    assert 'include: "rules/archived_qc/verifybamid2_contam.smk"' not in active_includes
+
+    active_rule_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((REPO_ROOT / "workflow/rules").glob("*.smk"))
+    )
+    for retired_output_token in (
+        "seqqc/fastv",
+        "fastv.done",
+        "fastv.json",
+        "fastv.html",
+        "alignqc/contam/vb2",
+        "vb2.tsv",
+        "vb2_mqc.tsv",
+        "verifybamid2_panel_comparison_mqc.tsv",
+    ):
+        assert retired_output_token not in active_rule_text
 
 
 def test_multiqc_runtime_gate_config_defaults() -> None:
@@ -85,14 +142,49 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
             "high_quality_markers_deCODE_2015.txt.gz"
         )
         assert config["charr"]["ref_af_resource"].endswith("hg38_gnomad_ref_af.ht")
+        metagenomics = config["unmapped_metagenomics"]
+        assert metagenomics["kraken2_db"].endswith(
+            "metagenomics/kraken2/k2_pluspfp_16_GB_20260226"
+        )
+        assert metagenomics["ganon2_db_prefixes"] == [
+            "/fsx/references/runtime_assets/tool_specific_resources/ganon2/"
+            "dayoa_qc_refseq_abfv_complete_top1_20260528"
+        ]
+        assert metagenomics["sourmash_databases"] == [
+            "/fsx/references/runtime_assets/tool_specific_resources/sourmash/"
+            "gtdb-rs226/gtdb-reps-rs226-k31.dna.zip"
+        ]
+        assert metagenomics["read_limit"] == "all"
+        assert metagenomics["threads"] >= 16
+        longtr = config["longtr"]
+        assert longtr["command"] == "LongTR"
+        assert longtr["aligners"] == ["ont", "sentmm2ont"]
+        assert longtr["deduper"] == "na"
+        assert longtr["catalogs"]["all"]["regions_bed"].endswith(
+            "longtr/trexplorer_catalog/"
+            "TRExplorer.repeat_catalog_v2.hg38.1_to_1000bp_motifs.LongTR.bed.gz"
+        )
+        assert longtr["catalogs"]["diseaser"]["regions_bed"].endswith(
+            "longtr/disease_repeat_catalog/"
+            "dayoa_STRchive-disease-loci.hg38.longtr.bed.gz"
+        )
+        truvari = config["truvari_sv_benchmark"]
+        hg002 = truvari["truthsets"]["HG002"]["regions"]["giab_sv_v5_0q_hc"]
+        assert truvari["truthsets"]["HG002"]["alt_id"] == "HG002"
+        assert hg002["truth_vcf"].endswith("HG002_GRCh38_v5.0q_stvar.vcf.gz")
+        assert hg002["truth_tbi"].endswith("HG002_GRCh38_v5.0q_stvar.vcf.gz.tbi")
+        assert hg002["truth_bed"].endswith("HG002_GRCh38_v5.0q_stvar.benchmark.bed")
 
 
 def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert "MULTIQC_QC_LONG_RUNNING_TOOLS" in common
-    for tool in ("fastv", "vep", "contam_identity"):
+    for tool in ("vep", "contam_identity"):
         assert f'"{tool}"' in common
+    assert '"fastv"' not in common[
+        common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
+    ]
     assert '"snpeff"' not in common[
         common.index("MULTIQC_QC_LONG_RUNNING_TOOLS") : common.index("SUPPORTED_HTD_CALLERS")
     ]
@@ -141,7 +233,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert common.index("SAMPS = list(get_samp_ids())") < common.index("FASTQ_QC_SAMPS =")
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
-    assert "qc_tool_enabled(\"fastv\", long_running=True)" in text
+    assert "qc_tool_enabled(\"fastv\", long_running=True)" not in text
+    assert "seqqc/fastv" not in text
     assert "qc_tool_enabled(\"kat\"" not in text
     assert "seqqc/kat" not in text
     assert 'include: "rules/kat.smk"' not in [
@@ -217,7 +310,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     fastqc = _read("workflow/rules/fastqc.smk")
     fastp = _read("workflow/rules/fastp.smk")
-    fastv = _read("workflow/rules/fastv.smk")
+    fastv = _read("workflow/rules/archived_qc/fastv.smk")
     seqfu = _read("workflow/rules/seqfu.smk")
     multiqc = _read("config/external_tools/multiqc_config.yaml")
 
@@ -306,7 +399,11 @@ def test_multiqc_ignores_other_report_logs_and_custom_logs_avoid_mqc_suffix() ->
     assert text.count('--ignore "*_mqc.log"') >= 4
     assert text.count("workflow/scripts/multiqc_log_guard.py") >= 4
     assert text.count("multiqc --version") >= 4
-    assert "docker://multiqc/multiqc:v1.35" in text
+    assert f'conda:\n        "{MULTIQC_ENV_YAML}"' in text
+    assert "docker://multiqc" not in "\n".join(
+        rule_file.read_text(encoding="utf-8")
+        for rule_file in (REPO_ROOT / "workflow/rules").glob("*.smk")
+    )
     assert "daylilyinformatics/daylily_multiqc:0.2" not in text
     assert "workflow/scripts/force_multiqc_dark_mode.py" in text
     assert "DAY_final_multiqc.original.html" in text
@@ -320,6 +417,84 @@ def test_multiqc_ignores_other_report_logs_and_custom_logs_avoid_mqc_suffix() ->
         rule_text = rule_file.read_text(encoding="utf-8")
         assert "sequence_qc_outputs_mqc.log" not in rule_text, rule_file
         assert "alignment_qc_outputs_mqc.log" not in rule_text, rule_file
+
+
+def test_multiqc_command_rules_use_dedicated_conda_env() -> None:
+    bclconvert = _read("workflow/rules/bclconvert.smk")
+    run_qc = _read("workflow/rules/run_qc_reports.smk")
+
+    assert f'MULTIQC_ENV = "{MULTIQC_ENV_YAML}"' in bclconvert
+    assert f'RUNQC_MULTIQC_ENV = "{MULTIQC_ENV_YAML}"' in run_qc
+
+    rule_specs = (
+        (
+            "workflow/rules/multiqc_final_wgs.smk",
+            (
+                "multiqc_seq_data",
+                "multiqc_alignment",
+                "multiqc_variants",
+                "multiqc_final_wgs",
+            ),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/multiqc_singleton.smk",
+            ("multiqc_singleton",),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/multiqc_for_raw_fastqs.smk",
+            ("multiqc_for_raw_fastqs",),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/multiqc_cov_aln.smk",
+            ("multiqc_cov_aln",),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/multiqc_for_bcl2fq.smk",
+            ("multiqc_bcl2fq",),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/expansionhunter.smk",
+            ("expansionhunter_multiqc",),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/unmapped_metagenomics.smk",
+            (
+                "unmapped_metagenomics_multiqc",
+                "unmapped_metagenomics_ganon2_multiqc",
+                "unmapped_metagenomics_sourmash_multiqc",
+            ),
+            f'conda:\n        "{MULTIQC_ENV_YAML}"',
+        ),
+        (
+            "workflow/rules/bclconvert.smk",
+            ("multiqc_bclconvert",),
+            "conda:\n        MULTIQC_ENV",
+        ),
+        (
+            "workflow/rules/run_qc_reports.smk",
+            (
+                "illumina_run_qc_multiqc",
+                "ont_run_qc_multiqc",
+                "ont_demux_fastq_multiqc",
+            ),
+            "conda:\n        RUNQC_MULTIQC_ENV",
+        ),
+    )
+
+    for path, rule_names, expected_conda in rule_specs:
+        text = _read(path)
+        for rule_name in rule_names:
+            block = _rule_block(text, rule_name)
+            assert "multiqc " in block or "multiqc\t" in block, rule_name
+            assert expected_conda in block, rule_name
+            assert "container:" not in block, rule_name
+            assert "docker://multiqc" not in block, rule_name
 
 
 def test_contamination_and_relatedness_aggregates_are_wired() -> None:
@@ -666,7 +841,7 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
 
 
 def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> None:
-    verifybamid2 = _read("workflow/rules/verifybamid2_contam.smk")
+    verifybamid2 = _read("workflow/rules/archived_qc/verifybamid2_contam.smk")
     gatk = _read("workflow/rules/gatk_contam.smk")
     multiqc_final = _read("workflow/rules/multiqc_final_wgs.smk")
     snakefile = _read("workflow/Snakefile")
@@ -674,7 +849,7 @@ def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> Non
     assert 'include: "rules/verifybamid2_contam.smk"' not in [
         line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
     ]
-    assert '# include: "rules/verifybamid2_contam.smk"' in snakefile
+    assert "workflow/rules/archived_qc/verifybamid2_contam.smk" in snakefile
     assert "qc_contamination_dedupers()" in verifybamid2
     assert "qc_contamination_dedupers()" in gatk
     assert "vb2_mqc.tsv" not in verifybamid2.split("output:", 1)[1].split("log:", 1)[0]
@@ -703,7 +878,7 @@ def test_multiqc_runtime_policy_documented() -> None:
         "produce_multiqc_variant_annotation",
         "produce_multiqc_all",
         "runtime_gate_minutes: 45",
-        'enable_tools=["fastv"]',
+        "FASTV is retired from active Snakemake execution",
         "site_mix genotype-free contamination",
         "Global contamination/identity bundle",
         "reports/multiqc_inputs/<stage>/",

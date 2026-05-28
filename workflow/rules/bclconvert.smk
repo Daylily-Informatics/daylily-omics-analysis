@@ -126,11 +126,7 @@ BCL_MQC_COMPLETE = (
 )
 
 BCL_METRICS_ENV = "../envs/bclconvert_metrics_v0.1.yaml"
-MULTIQC_ENV = (
-    config.get("multiqc", {})
-    .get("bclconvert", {})
-    .get("env_yaml", "../envs/multiqc_v0.1.yaml")
-)
+MULTIQC_ENV = "../envs/multiqc_v0.1.yaml"
 MULTIQC_CONFIG = (
     config.get("multiqc", {})
     .get("bclconvert", {})

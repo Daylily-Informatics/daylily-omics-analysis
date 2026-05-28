@@ -34,12 +34,11 @@ Examples:
 
 ```bash
 dy-r produce_multiqc_all -p -j 20
-dy-r produce_multiqc_all -p -j 20 --config enable_tools=["fastv"]
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["metagenomics"]
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentd"]
 ```
 
-`enable_tools=["fastv"]` explicitly opts into long-running FASTV evidence. `site_mix genotype-free contamination`, Kraken2 unmapped metagenomics, Ganon2 unmapped metagenomics, and sourmash gather secondary fingerprinting are also controlled by explicit runtime gates and configuration. `multiqc_qc.enable_tools=["metagenomics"]` is the umbrella kitchen-sink opt-in for all three metagenomics evidence branches.
+FASTV is retired from active Snakemake execution. `site_mix genotype-free contamination`, Kraken2 unmapped metagenomics, Ganon2 unmapped metagenomics, and sourmash gather secondary fingerprinting are controlled by explicit runtime gates and configuration. `multiqc_qc.enable_tools=["metagenomics"]` is the umbrella kitchen-sink opt-in for all three metagenomics evidence branches.
 
 Global contamination/identity bundle evidence is long-running and explicit. `multiqc_qc.enable_tools=["contam_identity"]` stages the bundle into final MultiQC when it already exists or when `produce_global_contam_check` is requested.
 
@@ -82,7 +81,7 @@ Peddy CSVs and Somalier native files are rewritten before MultiQC. NGSTroubleFin
 
 QC gap: generated evidence can be absent because the tool was not configured, not because the sample passed or failed. Interpretive decisions belong to R2.
 
-VerifyBamID2 is retired from active Snakemake execution. Historical rule/config files may remain for provenance and old-run inspection, but `workflow/Snakefile` does not include `workflow/rules/verifybamid2_contam.smk`, and final MultiQC no longer pulls VerifyBamID2 panel comparison outputs.
+FASTV and VerifyBamID2 are retired from active Snakemake execution. Historical rule/config files remain under `workflow/rules/archived_qc/` for provenance and old-run inspection, but `workflow/Snakefile` does not include them, and final MultiQC no longer pulls their outputs.
 
 ## Global Contamination/Identity Configuration
 
@@ -157,19 +156,59 @@ Tool references:
 | Hail CHARR API | https://hail.is/docs/0.2/methods/genetics.html#hail.methods.compute_charr |
 | CHARR paper | https://doi.org/10.1016/j.ajhg.2023.10.011 |
 
+## LongTR Catalog Configuration
+
+DayOA runs LongTR as evidence-only ONT tandem-repeat genotyping. It does not infer catalog locations. The local and Slurm profile templates point to frozen catalogs in the shared DayOA reference runtime-assets prefix:
+
+```yaml
+longtr:
+  env_yaml: ../envs/longtr_v0.1.yaml
+  command: LongTR
+  aligners: [ont, sentmm2ont]
+  deduper: na
+  catalogs:
+    all:
+      name: trexplorer_catalog
+      regions_bed: /fsx/references/runtime_assets/tool_specific_resources/longtr/trexplorer_catalog/TRExplorer.repeat_catalog_v2.hg38.1_to_1000bp_motifs.LongTR.bed.gz
+    diseaser:
+      name: disease_repeat_catalog
+      regions_bed: /fsx/references/runtime_assets/tool_specific_resources/longtr/disease_repeat_catalog/dayoa_STRchive-disease-loci.hg38.longtr.bed.gz
+```
+
+The corresponding S3 source of truth is:
+
+- `s3://lsmc-dayoa-references-usw2/runtime_assets/tool_specific_resources/longtr/trexplorer_catalog/`
+- `s3://lsmc-dayoa-references-usw2/runtime_assets/tool_specific_resources/longtr/disease_repeat_catalog/`
+
+Run targets:
+
+```bash
+dy-r longtr_all -p -j 100 -k
+dy-r longtr_diseaser -p -j 100 -k
+```
+
+`longtr_all` uses the Broad/TRExplorer genome-wide LongTR BED catalog. `longtr_diseaser` uses the DayOA disease-repeat catalog converted from the STRchive/ExpansionHunter hg38 JSON catalog. LongTR can consume BAM/CRAM, but the CRAM must use the same FASTA configured for the workflow genome build.
+
+Tool references:
+
+| Tool/resource | Link |
+|---|---|
+| LongTR | https://github.com/gymrek-lab/LongTR |
+| TRExplorer catalog | https://github.com/broadinstitute/trexplorer-catalog |
+| ExpansionHunter catalog format | https://github.com/Illumina/ExpansionHunter |
+| STRchive | https://strchive.org |
+
 ## Metagenomics Reference Configuration
 
-DayOA does not infer metagenomics databases. Operators must provide explicit paths:
+DayOA does not infer unavailable metagenomics databases. The local and Slurm profile templates provide confirmed defaults for Kraken2 PlusPFP-16, the current Ganon2 ABFV top-1 database, and the GTDB RS226 k=31 DNA sourmash species-representative collection published under the shared runtime-asset reference bucket.
 
 ```yaml
 unmapped_metagenomics:
-  kraken2_db: /fsx/references/runtime_assets/tool_specific_resources/kraken2/<kraken_db_dir>
+  kraken2_db: /fsx/references/runtime_assets/tool_specific_resources/metagenomics/kraken2/k2_pluspfp_16_GB_20260226
   ganon2_db_prefixes:
-    - /fsx/references/runtime_assets/tool_specific_resources/ganon2/dayoa_qc_refseq_representative_core
-    - /fsx/references/runtime_assets/tool_specific_resources/ganon2/dayoa_qc_vectors_adapters_phiX
+    - /fsx/references/runtime_assets/tool_specific_resources/ganon2/dayoa_qc_refseq_abfv_complete_top1_20260528
   sourmash_databases:
-    - /fsx/references/runtime_assets/tool_specific_resources/sourmash/dayoa_qc_refseq_representative_core.zip
-    - /fsx/references/runtime_assets/tool_specific_resources/sourmash/dayoa_qc_vectors_adapters_phiX.zip
+    - /fsx/references/runtime_assets/tool_specific_resources/sourmash/gtdb-rs226/gtdb-reps-rs226-k31.dna.zip
   sourmash_ksize: 31
   sourmash_scaled: 1000
   sourmash_moltype: DNA

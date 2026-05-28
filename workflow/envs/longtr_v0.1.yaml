@@ -1,0 +1,7 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - longtr=1.2
+  - htslib
+  - samtools

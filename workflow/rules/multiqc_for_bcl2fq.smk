@@ -108,8 +108,8 @@ rule multiqc_bcl2fq:
         mdir="results/",
         cluster_sample="bcl2fqMQC_{config['b2fq_ruid']}",
         iop_d="results/bcl2fq_reports/"+config["b2fq_ruid"],
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
        """
        (ln -s {params.rud} results/bcl2fq_reports/{params.ru}) ;

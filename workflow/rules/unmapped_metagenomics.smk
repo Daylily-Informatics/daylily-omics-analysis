@@ -840,9 +840,7 @@ rule unmapped_metagenomics_multiqc:
         odir=MDIR + "reports",
         filename="unmapped_metagenomics.multiqc.html",
     conda:
-        config["multiqc"].get("env_yaml", "../envs/multiqc_v0.1.yaml")
-    container:
-        "docker://multiqc/multiqc:v1.35"
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail
@@ -901,9 +899,7 @@ rule unmapped_metagenomics_ganon2_multiqc:
         odir=MDIR + "reports",
         filename="unmapped_metagenomics_ganon2.multiqc.html",
     conda:
-        config["multiqc"].get("env_yaml", "../envs/multiqc_v0.1.yaml")
-    container:
-        "docker://multiqc/multiqc:v1.35"
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail
@@ -960,9 +956,7 @@ rule unmapped_metagenomics_sourmash_multiqc:
         odir=MDIR + "reports",
         filename="unmapped_metagenomics_sourmash.multiqc.html",
     conda:
-        config["multiqc"].get("env_yaml", "../envs/multiqc_v0.1.yaml")
-    container:
-        "docker://multiqc/multiqc:v1.35"
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail

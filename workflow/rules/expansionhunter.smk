@@ -369,8 +369,8 @@ rule expansionhunter_multiqc:
         gbranch=config["gitbranch"],
         gtag=config["gittag"],
         cluster_sample="expansionhunter_multiqc",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         set -euo pipefail

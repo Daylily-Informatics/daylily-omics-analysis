@@ -195,7 +195,7 @@ def test_peddy_env_pins_numpy_and_python_for_peddy_048(env_path: str) -> None:
             "{sample}.{alnr}.{ddup}.gatk.tsv",
         ),
         (
-            "workflow/rules/verifybamid2_contam.smk",
+            "workflow/rules/archived_qc/verifybamid2_contam.smk",
             "produce_contam_estimate",
             "{sample}/align/{alnr}/{ddup}/alignqc/contam/vb2/"
             "{vb2panel}/{sample}.{alnr}.{ddup}.{vb2panel}.vb2.tsv",
@@ -287,9 +287,9 @@ def test_gatk_cram_compat_parses_htsfile_tab_delimited_output() -> None:
 
 
 def test_verifybamid2_uses_svd_prefix_not_sites_only_refvcf() -> None:
-    rule_text = (REPO_ROOT / "workflow" / "rules" / "verifybamid2_contam.smk").read_text(
-        encoding="utf-8"
-    )
+    rule_text = (
+        REPO_ROOT / "workflow" / "rules" / "archived_qc" / "verifybamid2_contam.smk"
+    ).read_text(encoding="utf-8")
 
     assert "--SVDPrefix {params.db_prefix}" in rule_text
     assert "--RefVCF {params.site_vcf}" not in rule_text

@@ -106,6 +106,62 @@ properties:
                     type: string
                   truth_bed:
                     type: string
+  longtr:
+    type: object
+    required:
+    - env_yaml
+    - command
+    - threads
+    - mem_mb
+    - partition
+    - aligners
+    - deduper
+    - catalogs
+    properties:
+      env_yaml:
+        type: string
+      command:
+        type: string
+      threads:
+        type: integer
+      mem_mb:
+        type: integer
+      partition:
+        type: string
+      aligners:
+        type: array
+        items:
+          type: string
+      deduper:
+        type: string
+      extra_args:
+        type: string
+      catalogs:
+        type: object
+        required:
+        - all
+        - diseaser
+        properties:
+          all:
+            type: object
+            required:
+            - name
+            - regions_bed
+            properties:
+              name:
+                type: string
+              regions_bed:
+                type: string
+          diseaser:
+            type: object
+            required:
+            - name
+            - regions_bed
+            properties:
+              name:
+                type: string
+              regions_bed:
+                type: string
 
 required:
     - samples

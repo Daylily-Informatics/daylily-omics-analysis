@@ -71,7 +71,7 @@ rule write_dayoa_evidence_manifest:
             snakemake_version=snakemake_version(),
             workflow_config_hash=_evidence_workflow_config_hash(),
             workflow_profile=os.environ.get("DAY_PROFILE", ""),
-            container_images=("docker://multiqc/multiqc:v1.35",),
+            container_images=(),
             references=(str(config.get("genome_build", "")).strip(),),
             provenance_refs=_evidence_provenance_refs(),
         )

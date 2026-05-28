@@ -26,8 +26,8 @@ rule multiqc_cov_aln:  # TARGET : Run Alignment and Generate Alignment and Cover
         ghash=config["githash"],
         gbranch=config["gitbranch"],
         cluster_sample=f"{RU[0]}_{EX[0]}",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         "(multiqc --version > {log} 2>&1 || true; multiqc --interactive -x '*.js' -x '*bench.tsv' -x '*.bam' -x '*.fastq.gz' -x '*multiqc*' -x '*pyc' -x '*.fastq.gz'  -x  '*impute*glm*' -f -i 'SEQQC / COVERAGE & ALIGNMENT REPORT' -p  -b '{RU[0]}_{EX[0]} ___ {params.gbranch} {params.gtag} {params.ghash}' --sample-filters config/external_tools/multiqc_samplebtn_lcwgs.tsv -n {params.fn} -o {params.odir} --profile-runtime -c {params.micro_cfg} -c {params.macro_cfg} {MDIR} >> {log} 2>&1) || (echo 'Multiqc Exited With: '$? && time sleep 1 && echo done) "
 
@@ -64,11 +64,6 @@ rule cov_aln_qc:
             alnr=ALL_ALIGNERS,
             ddup=DDUP,
         ),
-        #expand(
-        #    MDIR + "{sample}/align/{alnr}/alignqc/contam/vb2/{sample}.{alnr}.vb2.tsv",
-        #    sample=SSAMPS,
-        #    alnr=ALL_ALIGNERS,
-        #),
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
         expand(
             MDIR
@@ -88,7 +83,6 @@ rule cov_aln_qc:
         #    sample=SSAMPS,
         #    alnr=ALL_ALIGNERS
         #),
-	#        expand(MDIR + "{sample}/seqqc/fastv/{sample}.fastv.html", sample=SSAMPS),
         #expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=SSAMPS),
         #expand(MDIR + "{sample}/seqqc/fastp/{sample}.fastp.done", sample=SSAMPS),
         #MDIR+"logs/seqfu.done",

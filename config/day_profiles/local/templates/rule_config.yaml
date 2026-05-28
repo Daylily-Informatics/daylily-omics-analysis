@@ -341,6 +341,37 @@ multiqc_qc:
     include_no_dedup_alignment_qc: true
     runtime_gate_minutes: 45
 
+unmapped_metagenomics:
+    kraken2_db: "/fsx/references/runtime_assets/tool_specific_resources/metagenomics/kraken2/k2_pluspfp_16_GB_20260226"
+    ganon2_db_prefixes:
+        - "/fsx/references/runtime_assets/tool_specific_resources/ganon2/dayoa_qc_refseq_abfv_complete_top1_20260528"
+    sourmash_databases:
+        - "/fsx/references/runtime_assets/tool_specific_resources/sourmash/gtdb-rs226/gtdb-reps-rs226-k31.dna.zip"
+    sourmash_ksize: 31
+    sourmash_scaled: 1000
+    sourmash_moltype: "DNA"
+    sourmash_threshold_bp: 3000
+    threads: 16
+    mem_mb: 64000
+    partition: "i8"
+    read_limit: "all"
+    memory_mapping: false
+
+truvari_sv_benchmark:
+    env_yaml: "../envs/truvari_v0.1.yaml"
+    threads: 8
+    mem_mb: 32000
+    partition: "i8"
+    extra_args: ""
+    truthsets:
+        HG002:
+            alt_id: "HG002"
+            regions:
+                giab_sv_v5_0q_hc:
+                    truth_vcf: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/sv/v5.0q/HG002/giabHCv5q/HG002_GRCh38_v5.0q_stvar.vcf.gz"
+                    truth_tbi: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/sv/v5.0q/HG002/giabHCv5q/HG002_GRCh38_v5.0q_stvar.vcf.gz.tbi"
+                    truth_bed: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/sv/v5.0q/HG002/giabHCv5q/HG002_GRCh38_v5.0q_stvar.benchmark.bed"
+
 htd_callers: []
 
 verifybamid2_panels: []
@@ -356,6 +387,23 @@ expansionhunter:
     analysis_mode: "seeking"
     region_extension_length: 1000
     extra_args: ""
+
+longtr:
+    env_yaml: "../envs/longtr_v0.1.yaml"
+    command: "LongTR"
+    threads: 2
+    mem_mb: 16000
+    partition: "i8"
+    aligners: ["ont", "sentmm2ont"]
+    deduper: "na"
+    extra_args: ""
+    catalogs:
+        all:
+            name: "trexplorer_catalog"
+            regions_bed: "/fsx/references/runtime_assets/tool_specific_resources/longtr/trexplorer_catalog/TRExplorer.repeat_catalog_v2.hg38.1_to_1000bp_motifs.LongTR.bed.gz"
+        diseaser:
+            name: "disease_repeat_catalog"
+            regions_bed: "/fsx/references/runtime_assets/tool_specific_resources/longtr/disease_repeat_catalog/dayoa_STRchive-disease-loci.hg38.longtr.bed.gz"
 
 fastp:
     threads: 7

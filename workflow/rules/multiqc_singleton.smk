@@ -50,8 +50,8 @@ rule multiqc_singleton:  # TARGET: the big report
         rtitle=RPT_TITLE,
     log:
         f"{MDIR}reports/logs/all__mqc_fin_a2.log",
-    container:
-        "docker://multiqc/multiqc:v1.35"
+    conda:
+        "../envs/multiqc_v0.1.yaml"
     shell:
         """
         dbill='$';
