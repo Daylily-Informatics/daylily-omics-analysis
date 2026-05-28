@@ -1,3 +1,10 @@
+# Shell Session Defaults
+
+- Default to an interactive shell for shell work. On this Mac, use the user's default shell unless the user explicitly asks for another shell.
+- For AWS EC2, ParallelCluster, and other remote Linux hosts, default to an interactive `bash` login shell as `ubuntu`. Do not use `root` unless the user explicitly grants permission for that specific work; use targeted `sudo` from `ubuntu` when escalation is required.
+- For Daylily/DayOA/DAY-EC headnode workflow work, use an interactive `ubuntu` tmux/login-shell pane for controllers and workflow commands. Run setup as separate commands in that pane (`source dyoainit`, then `dy-a ...`, then `dy-r ...`) so aliases/functions are defined before use.
+- SSM Run Command is for simple inspection or for writing helper scripts through the supported helpers. Do not launch workflow controllers or rely on `dy-*` aliases from non-interactive SSM scripts.
+
 # CRITICAL - HEADNODE ACCESS (READ FIRST)
 **SSM is the only supported access model for AWS ParallelCluster headnodes.**
 - Use the supported `daylily-ec headnode connect` / AWS Systems Manager path for headnode access.
