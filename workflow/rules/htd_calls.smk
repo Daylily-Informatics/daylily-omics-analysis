@@ -38,15 +38,6 @@ def htd_call_outputs(*, require_non_empty=False):
                 ddup=ddups,
             )
         )
-    if "parascopy" in callers:
-        outputs.extend(
-            expand(
-                MDIR + "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done",
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=ddups,
-            )
-        )
     if "smaca" in callers:
         outputs.extend(
             expand(

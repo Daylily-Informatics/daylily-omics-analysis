@@ -733,6 +733,10 @@ rule multiqc_final_wgs:  # TARGET: the big report
         html=f"{MDIR}reports/DAY_final_multiqc.html",
         html_original=f"{MDIR}reports/DAY_final_multiqc.original.html",
         header=f"{MDIR}reports/multiqc_header.yaml",
+        data_json=MDIR + "reports/DAY_final_multiqc_data/multiqc_data.json",
+        data_general_stats=MDIR + "reports/DAY_final_multiqc_data/multiqc_general_stats.txt",
+        data_sources=MDIR + "reports/DAY_final_multiqc_data/multiqc_sources.txt",
+        data_log=MDIR + "reports/DAY_final_multiqc_data/multiqc.log",
     benchmark:
         f"{MDIR}benchmarks/DAY_all.final_multiqc.bench.tsv"
     threads: config["multiqc"]["threads"]

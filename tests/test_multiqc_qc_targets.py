@@ -55,6 +55,8 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     assert '# include: "rules/picard.smk"' in snakefile
     assert 'include: "rules/qualimap.smk"' not in active_includes
     assert '# include: "rules/qualimap.smk"' in snakefile
+    assert 'include: "rules/parascopy.smk"' not in active_includes
+    assert '# include: "rules/parascopy.smk"' in snakefile
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_final_wgs.smk")
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_cov_aln.smk")
     assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
@@ -71,7 +73,7 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
         assert include in snakefile
 
 
-def test_snakefile_active_rule_includes_are_alphabetized() -> None:
+def test_snakefile_active_rule_includes_are_ordered_with_dependency_exceptions() -> None:
     snakefile = _read("workflow/Snakefile")
     block = snakefile.split("# Rule imports.", 1)[1].split("# #### A FEW FUSSY THINGS", 1)[0]
     active_includes = [
@@ -80,7 +82,22 @@ def test_snakefile_active_rule_includes_are_alphabetized() -> None:
         if line.strip().startswith("include:")
     ]
 
-    assert active_includes == sorted(active_includes, key=str.casefold)
+    dependency_exceptions = {
+        "rules/contam_identity.smk",
+        "rules/legacy_cram_compat_bam.smk",
+        "rules/site_mix_contam.smk",
+    }
+    assert active_includes.index("rules/legacy_cram_compat_bam.smk") < active_includes.index(
+        "rules/contam_identity.smk"
+    )
+    assert active_includes.index("rules/site_mix_contam.smk") < active_includes.index(
+        "rules/contam_identity.smk"
+    )
+    assert [item for item in active_includes if item not in dependency_exceptions] == [
+        item
+        for item in sorted(active_includes, key=str.casefold)
+        if item not in dependency_exceptions
+    ]
 
 
 def test_retired_fastv_and_verifybamid2_rules_are_archived_only() -> None:
@@ -247,6 +264,13 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"site_mix\")" in text
     assert "contam_identity_multiqc_inputs(wildcards)" in text
     assert "_contam_identity_native_inputs(wildcards)" in text
+    for expected in (
+        'data_json=MDIR + "reports/DAY_final_multiqc_data/multiqc_data.json"',
+        'data_general_stats=MDIR + "reports/DAY_final_multiqc_data/multiqc_general_stats.txt"',
+        'data_sources=MDIR + "reports/DAY_final_multiqc_data/multiqc_sources.txt"',
+        'data_log=MDIR + "reports/DAY_final_multiqc_data/multiqc.log"',
+    ):
+        assert expected in text
     assert "qc_tool_enabled(\"vep\", long_running=True)" in text
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
     assert "expansionhunter_report_targets_available()" in text

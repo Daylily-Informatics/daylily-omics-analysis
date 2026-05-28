@@ -47,6 +47,9 @@ def test_cyrius_included_and_stargazer_intentionally_excluded() -> None:
 
     assert 'include: "rules/cyp2d6_cyrius.smk"' in snakefile
     assert 'include: "rules/htd_calls.smk"' in snakefile
+    assert 'include: "rules/parascopy.smk"' not in active_includes
+    assert '# include: "rules/parascopy.smk"' in snakefile
+    assert "Parascopy is disabled until locus configuration assets" in snakefile
     assert 'include: "rules/stargazer.smk"' not in active_includes
     assert "Stargazer is intentionally excluded from htd_callers" in snakefile
     assert '# include: "rules/stargazer.smk"' in snakefile
@@ -112,11 +115,11 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "cyrius.tsv",
         "cyrius.json",
         "smn12.summary.json",
-        "parascopy.done",
         "smaca.summary.tsv",
         "genetocn.done",
     ):
         assert expected in htd
+    assert "parascopy.done" not in htd
 
 
 def test_htd_mqc_script_schema_and_cyrius_fields() -> None:
@@ -142,6 +145,7 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     parascopy = _read("workflow/rules/parascopy.smk")
     smaca = _read("workflow/rules/smaca.smk")
     genetocn = _read("workflow/rules/genetocn.smk")
+    htd_calls = _read("workflow/rules/htd_calls.smk")
 
     for text in (gauchian, smn12, parascopy, smaca, genetocn):
         assert "QC_CRAM_ALIGNERS" in text
@@ -149,6 +153,8 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "def genetocn_inputs" not in genetocn
     assert "cram=genetocn_cram" in genetocn
     assert "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done" in parascopy
+    assert "htd/parascopy" not in htd_calls
+    assert "parascopy.done" not in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done" in smaca
 
 

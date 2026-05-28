@@ -241,7 +241,8 @@ onerror:
     os._exit(1)
 
 
-# Rule imports. Keep active includes alphabetized by rules/<name>.smk.
+# Rule imports. Keep active includes alphabetized by rules/<name>.smk unless a
+# rule must be loaded before a consumer that references its helpers or outputs.
 # Disabled imports stay in their sorted position with the reason they remain off.
 include: "rules/aivariant.smk"
 include: "rules/alignstats.smk"
@@ -253,7 +254,7 @@ include: "rules/bwa_mem2a_align_sort.smk"
 include: "rules/calc_coverage_eveness.smk"
 include: "rules/calc_coverage_evenness_two.smk"
 include: "rules/clair3.smk"
-include: "rules/contam_identity.smk"
+include: "rules/legacy_cram_compat_bam.smk"
 include: "rules/cyp2d6_cyrius.smk"
 include: "rules/deepsomatic.smk"
 include: "rules/deepvariant_1_5.smk"
@@ -279,7 +280,6 @@ include: "rules/htd_calls.smk"
 include: "rules/hyb_ensemble_multi_platform.smk"
 # KAT is too slow/noisy for routine service and requires explicit revalidation.
 # include: "rules/kat.smk"
-include: "rules/legacy_cram_compat_bam.smk"
 include: "rules/lofreq2.smk"
 include: "rules/longtr.smk"
 include: "rules/manta.smk"
@@ -293,7 +293,9 @@ include: "rules/mutect2.smk"
 include: "rules/no_dedup.smk"
 include: "rules/no_dedup_cram.smk"
 include: "rules/octopus.smk"
-include: "rules/parascopy.smk"
+# Parascopy is disabled until locus configuration assets and runtime behavior
+# are revalidated. Keep workflow/rules/parascopy.smk for repair provenance.
+# include: "rules/parascopy.smk"
 include: "rules/peddy.smk"
 # Picard/htsjdk cannot reliably read current short-read CRAM 3.1 outputs.
 # include: "rules/picard.smk"
@@ -328,6 +330,7 @@ include: "rules/sentmm2_align_sort.smk"
 include: "rules/sentmm2ont_align_sort.smk"
 include: "rules/seqfu.smk"
 include: "rules/site_mix_contam.smk"
+include: "rules/contam_identity.smk"
 include: "rules/smaca.smk"
 include: "rules/smn_copynumbercaller.smk"
 # SnpEff is unavailable until annotation integration is revalidated.
