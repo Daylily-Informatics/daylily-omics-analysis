@@ -319,7 +319,7 @@
     {
       "workflow_id": "germline_wgs_kitchensink",
       "display_name": "Germline WGS Kitchensink",
-      "description": "Broad germline WGS run with multiple aligners, SNV callers, SV callers, MultiQC, and alignment statistics.",
+      "description": "Broad germline WGS evidence run with all active DayOA caller aliases, active special callers, active QC bundles, final MultiQC, and the DayOA evidence manifest.",
       "supported_genome_builds": [
         "hg38"
       ],
@@ -338,12 +338,25 @@
         }
       ],
       "targets": [
+        "produce_all_align",
+        "produce_all_dedup_cram",
+        "produce_all_snv_vcf",
+        "produce_all_sv_vcf",
         "produce_alignstats",
         "produce_snv_concordances",
-        "produce_manta_sv_vcf",
-        "produce_tiddit_sv_vcf",
-        "produce_dysgu_sv_vcf",
-        "produce_multiqc_all"
+        "produce_relatedness",
+        "produce_vep",
+        "produce_htd_calls",
+        "produce_expansionhunter",
+        "longtr_all",
+        "longtr_diseaser",
+        "produce_metagenomics",
+        "produce_global_contam_check",
+        "produce_multiqc_all",
+        "produce_dayoa_evidence_manifest"
+      ],
+      "fixed_config": [
+        "multiqc_qc={\"enable_long_running\":true,\"enable_tools\":[\"vep\",\"contam_identity\",\"expansionhunter\",\"unmapped_metagenomics\",\"unmapped_metagenomics_ganon2\",\"unmapped_metagenomics_sourmash\",\"htd_calls\"]}"
       ],
       "options": [
         {
@@ -381,9 +394,12 @@
           "description": "Short-read aligners included in the run.",
           "type": "multi_enum",
           "default": [
-            "strobe",
+            "sent",
             "bwa2a",
-            "sent"
+            "strobe",
+            "sentcg",
+            "sentmm2",
+            "sentmm2ont"
           ],
           "required": true,
           "render_as": "config_list",
@@ -399,6 +415,18 @@
             {
               "value": "strobe",
               "label": "StrobeAlign"
+            },
+            {
+              "value": "sentcg",
+              "label": "Sentieon Complete Genomics/MGI"
+            },
+            {
+              "value": "sentmm2",
+              "label": "Sentieon minimap2 PacBio"
+            },
+            {
+              "value": "sentmm2ont",
+              "label": "Sentieon minimap2 ONT"
             }
           ]
         },
@@ -408,7 +436,9 @@
           "description": "Duplicate-marking methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "dmd"
+            "dmd",
+            "smd",
+            "na"
           ],
           "required": true,
           "render_as": "config_list",
@@ -416,6 +446,14 @@
             {
               "value": "dmd",
               "label": "Doppelmark"
+            },
+            {
+              "value": "smd",
+              "label": "Sentieon markdup"
+            },
+            {
+              "value": "na",
+              "label": "No deduplication"
             }
           ]
         },
@@ -425,11 +463,31 @@
           "description": "SNV calling methods included in the run.",
           "type": "multi_enum",
           "default": [
-            "oct",
             "sentd",
+            "cgt7p",
+            "sentdpb",
+            "sentdont",
+            "sentdug",
+            "sentdhiomr",
+            "sentdhipmr",
+            "sentdhuomr",
+            "sentdhupmr",
+            "sentpg",
+            "gatk",
             "deep19",
+            "deep19r",
+            "deep15",
+            "oct",
             "clair3",
-            "lfq2"
+            "lfq2",
+            "varn",
+            "aiv",
+            "mutect2",
+            "dvsom",
+            "slk2g",
+            "slk2s",
+            "senttn",
+            "rochehc"
           ],
           "required": true,
           "render_as": "config_list",
@@ -437,6 +495,46 @@
             {
               "value": "sentd",
               "label": "Sentieon DNAscope"
+            },
+            {
+              "value": "cgt7p",
+              "label": "Complete Genomics/MGI Sentieon DNAscope"
+            },
+            {
+              "value": "sentdpb",
+              "label": "PacBio Sentieon DeepVariant"
+            },
+            {
+              "value": "sentdont",
+              "label": "ONT Sentieon DNAscope"
+            },
+            {
+              "value": "sentdug",
+              "label": "Ultima Sentieon DNAscope"
+            },
+            {
+              "value": "sentdhiomr",
+              "label": "Hybrid ILMN+ONT Sentieon"
+            },
+            {
+              "value": "sentdhipmr",
+              "label": "Hybrid ILMN+PacBio Sentieon"
+            },
+            {
+              "value": "sentdhuomr",
+              "label": "Hybrid Ultima+ONT Sentieon"
+            },
+            {
+              "value": "sentdhupmr",
+              "label": "Hybrid Ultima+PacBio Sentieon"
+            },
+            {
+              "value": "sentpg",
+              "label": "Sentieon pangenome"
+            },
+            {
+              "value": "gatk",
+              "label": "Sentieon GATK-compatible"
             },
             {
               "value": "oct",
@@ -447,12 +545,96 @@
               "label": "DeepVariant 1.9"
             },
             {
+              "value": "deep19r",
+              "label": "DeepVariant 1.9 Roche"
+            },
+            {
+              "value": "deep15",
+              "label": "DeepVariant 1.5"
+            },
+            {
               "value": "clair3",
               "label": "Clair3"
             },
             {
               "value": "lfq2",
               "label": "LoFreq2"
+            },
+            {
+              "value": "varn",
+              "label": "VarNet"
+            },
+            {
+              "value": "aiv",
+              "label": "AIVariant"
+            },
+            {
+              "value": "mutect2",
+              "label": "Mutect2"
+            },
+            {
+              "value": "dvsom",
+              "label": "DeepSomatic"
+            },
+            {
+              "value": "slk2g",
+              "label": "Strelka2 germline"
+            },
+            {
+              "value": "slk2s",
+              "label": "Strelka2 somatic"
+            },
+            {
+              "value": "senttn",
+              "label": "Sentieon TNscope"
+            },
+            {
+              "value": "rochehc",
+              "label": "Roche HaplotypeCaller"
+            }
+          ]
+        },
+        {
+          "option_id": "sv_callers",
+          "label": "SV callers",
+          "description": "SV calling methods included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "tiddit",
+            "manta",
+            "dysgu"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "tiddit",
+              "label": "TIDDIT"
+            },
+            {
+              "value": "manta",
+              "label": "Manta"
+            },
+            {
+              "value": "dysgu",
+              "label": "Dysgu"
+            }
+          ]
+        },
+        {
+          "option_id": "htd_callers",
+          "label": "Special callers",
+          "description": "Hard-to-detect-region callers included in the run.",
+          "type": "multi_enum",
+          "default": [
+            "cyrius"
+          ],
+          "required": true,
+          "render_as": "config_list",
+          "choices": [
+            {
+              "value": "cyrius",
+              "label": "Cyrius"
             }
           ]
         }

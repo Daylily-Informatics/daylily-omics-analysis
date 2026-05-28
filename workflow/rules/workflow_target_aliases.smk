@@ -108,6 +108,7 @@ def _workflow_target_alias_marker(target):
 
 
 localrules:
+    produce_kitchen_sink,
     produce_sent_align,
     produce_bwa2a_align,
     produce_strobe_align,
@@ -149,6 +150,61 @@ localrules:
     produce_manta_sv_vcf,
     produce_dysgu_sv_vcf,
     produce_all_sv_vcf,
+
+
+KITCHEN_SINK_TARGETS = (
+    "produce_all_align",
+    "produce_all_dedup_cram",
+    "produce_all_snv_vcf",
+    "produce_all_sv_vcf",
+    "produce_alignstats",
+    "produce_snv_concordances",
+    "produce_relatedness",
+    "produce_vep",
+    "produce_htd_calls",
+    "produce_expansionhunter",
+    "longtr_all",
+    "longtr_diseaser",
+    "produce_metagenomics",
+    "produce_global_contam_check",
+    "produce_multiqc_all",
+    "produce_dayoa_evidence_manifest",
+)
+
+
+def _kitchen_sink_inputs(wildcards):
+    inputs = [
+        _workflow_target_alias_marker("produce_all_align"),
+        _workflow_target_alias_marker("produce_all_dedup_cram"),
+        _workflow_target_alias_marker("produce_all_snv_vcf"),
+        _workflow_target_alias_marker("produce_all_sv_vcf"),
+        f"{MDIR}other_reports/alignstats_combo_mqc.tsv",
+        f"{MDIR}other_reports/giab_concordance_mqc.tsv",
+        f"{MDIR}other_reports/relatedness_mqc.tsv",
+        "logs/vep_gathered.done",
+        "logs/htd_calls.done",
+        f"{MDIR}other_reports/expansionhunter_mqc.tsv",
+        f"{MDIR}other_reports/longtr_all.done",
+        f"{MDIR}other_reports/longtr_diseaser.done",
+        f"{MDIR}reports/unmapped_metagenomics.multiqc.html",
+        f"{MDIR}reports/unmapped_metagenomics_ganon2.multiqc.html",
+        f"{MDIR}reports/unmapped_metagenomics_sourmash.multiqc.html",
+        f"{MDIR}other_reports/contamination_mqc.tsv",
+        f"{MDIR}other_reports/site_mix_contam_mqc.tsv",
+        f"{MDIR}other_reports/site_mix_donor_mqc.tsv",
+        f"{MDIR}other_reports/peddy_sample_qc_mqc.tsv",
+        f"{MDIR}other_reports/contam_identity_mqc.tsv",
+        f"{MDIR}other_reports/haplocheck_mtdna_mqc.tsv",
+        f"{MDIR}other_reports/read_haps_mqc.tsv",
+        f"{MDIR}reports/DAY_final_multiqc.html",
+        f"{MDIR}reports/dayoa_evidence_manifest.json",
+    ]
+    return sorted(set(inputs))
+
+
+rule produce_kitchen_sink:  # TARGET: canonical broad evidence-producing kitchen-sink workflow
+    input:
+        _kitchen_sink_inputs
 
 
 rule produce_sent_align:  # TARGET: canonical Sentieon BWA aligner selector

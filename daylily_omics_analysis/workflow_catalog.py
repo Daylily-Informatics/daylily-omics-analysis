@@ -140,6 +140,15 @@ def _validate_catalog(payload: dict[str, Any]) -> None:
             raise WorkflowCatalogError(f"Workflow '{workflow_id}' is missing display_name.")
         if not isinstance(workflow.get("targets"), list) or not workflow["targets"]:
             raise WorkflowCatalogError(f"Workflow '{workflow_id}' must declare targets.")
+        fixed_config = workflow.get("fixed_config", [])
+        if fixed_config is None:
+            fixed_config = []
+        if not isinstance(fixed_config, list) or any(
+            not str(item or "").strip() for item in fixed_config
+        ):
+            raise WorkflowCatalogError(
+                f"Workflow '{workflow_id}' fixed_config must be a list of non-empty strings."
+            )
         if not isinstance(workflow.get("supported_genome_builds"), list) or not workflow[
             "supported_genome_builds"
         ]:
@@ -277,6 +286,7 @@ def _render_targets(*, workflow: dict[str, Any], options: dict[str, Any]) -> lis
 def _render_argv(*, workflow: dict[str, Any], genome_build: str, options: dict[str, Any]) -> list[str]:
     argv = ["dy-r", *_render_targets(workflow=workflow, options=options)]
     config_parts = [f"genome_build={genome_build}"]
+    config_parts.extend(str(item) for item in list(workflow.get("fixed_config") or []))
     for option in workflow["options"]:
         option_id = str(option["option_id"])
         render_as = str(option["render_as"])

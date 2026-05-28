@@ -9,6 +9,25 @@ from daylily_omics_analysis.workflow_catalog import (
     render_workflow_command,
 )
 
+KITCHEN_SINK_TARGETS = [
+    "produce_all_align",
+    "produce_all_dedup_cram",
+    "produce_all_snv_vcf",
+    "produce_all_sv_vcf",
+    "produce_alignstats",
+    "produce_snv_concordances",
+    "produce_relatedness",
+    "produce_vep",
+    "produce_htd_calls",
+    "produce_expansionhunter",
+    "longtr_all",
+    "longtr_diseaser",
+    "produce_metagenomics",
+    "produce_global_contam_check",
+    "produce_multiqc_all",
+    "produce_dayoa_evidence_manifest",
+]
+
 
 def test_augment_wrapper_does_not_pass_workflow_args_to_dyoainit() -> None:
     wrapper = open("bin/augment_setup_and_run_dayoa.bash", encoding="utf-8").read()
@@ -50,23 +69,22 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
 
     assert preview["valid"] is True
     assert preview["validation_errors"] == []
-    assert preview["summary"]["targets"] == [
-        "produce_alignstats",
-        "produce_snv_concordances",
-        "produce_manta_sv_vcf",
-        "produce_tiddit_sv_vcf",
-        "produce_dysgu_sv_vcf",
-        "produce_multiqc_all",
-    ]
+    assert preview["summary"]["targets"] == KITCHEN_SINK_TARGETS
     assert preview["argv"][:3] == [
         "dy-r",
-        "produce_alignstats",
-        "produce_snv_concordances",
+        "produce_all_align",
+        "produce_all_dedup_cram",
     ]
     assert "-j" in preview["argv"]
     assert "genome_build=hg38" in preview["argv"]
+    argv_text = " ".join(preview["argv"])
+    assert "multiqc_qc=" in argv_text
+    assert "enable_long_running" in argv_text
     assert "aligners=['strobe','bwa2a','sent']" in preview["argv"]
     assert "dedupers=['dmd']" in preview["argv"]
+    assert "snv_callers=['oct','sentd','deep19']" in preview["argv"]
+    assert "sv_callers=['tiddit','manta','dysgu']" in preview["argv"]
+    assert "htd_callers=['cyrius']" in preview["argv"]
     assert preview["shell_preview"].startswith(
         "source dyoainit && dy-a slurm hg38 && dy-r "
     )
@@ -196,6 +214,28 @@ def test_workflow_catalog_private_validation_guards() -> None:
                 "workflows": [{"workflow_id": ""}],
             },
             "Each workflow requires a workflow_id.",
+        ),
+        (
+            {
+                "schema_version": "1",
+                "catalog_version": "1",
+                "repository": "repo",
+                "display_name": "Repo",
+                "workflows": [
+                    {
+                        "workflow_id": "bad_fixed_config",
+                        "display_name": "Bad Fixed Config",
+                        "description": "Bad fixed config",
+                        "targets": ["target"],
+                        "fixed_config": [""],
+                        "supported_genome_builds": ["hg38"],
+                        "supported_execution_profiles": ["local"],
+                        "required_inputs": [],
+                        "options": [],
+                    }
+                ],
+            },
+            "fixed_config must be a list of non-empty strings",
         ),
     ):
         try:

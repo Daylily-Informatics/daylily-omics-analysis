@@ -141,3 +141,55 @@ def test_multiqc_canonical_targets_and_deprecated_aliases() -> None:
     ):
         marker = f"rule {old_target}:  # DEPRECATED TARGET:"
         assert marker in multiqc
+
+
+def test_kitchen_sink_target_delegates_current_broad_evidence_targets() -> None:
+    selector_rules = _read("workflow/rules/workflow_target_aliases.smk")
+    current_all_targets = {
+        row["target"]
+        for row in _registry()
+        if row["status"] == "current" and row["code"] == "all"
+    }
+
+    assert "produce_kitchen_sink," in selector_rules
+    assert "rule produce_kitchen_sink:" in selector_rules
+    for target in current_all_targets:
+        assert f'"{target}"' in selector_rules
+        assert f'_workflow_target_alias_marker("{target}")' in selector_rules
+
+    for expected in (
+        "produce_alignstats",
+        "produce_snv_concordances",
+        "produce_relatedness",
+        "produce_vep",
+        "produce_htd_calls",
+        "produce_expansionhunter",
+        "longtr_all",
+        "longtr_diseaser",
+        "produce_metagenomics",
+        "produce_global_contam_check",
+        "produce_multiqc_all",
+        "produce_dayoa_evidence_manifest",
+        "DAY_final_multiqc.html",
+        "dayoa_evidence_manifest.json",
+    ):
+        assert f'"{expected}"' in selector_rules or expected in selector_rules
+
+    for retired in (
+        "produce_verifybamid",
+        "produce_verifybamid2",
+        "parascopy",
+        "genetocn",
+        "gauchian",
+        "smaca",
+        "smn12",
+        "stargazer",
+        "snpeff",
+        "qualimap",
+    ):
+        kitchen_sink_block = selector_rules[
+            selector_rules.index("KITCHEN_SINK_TARGETS") : selector_rules.index(
+                "rule produce_sent_align:"
+            )
+        ]
+        assert retired not in kitchen_sink_block
