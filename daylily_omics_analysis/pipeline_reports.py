@@ -285,14 +285,13 @@ def write_mermaid(
     samples = sample_names(analysis_root / "config")
     stats = benchmark_stats(analysis_root, genome_build)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    selected = summaries[:40]
     lines = [
         "%%{init: {\"theme\":\"base\",\"themeVariables\":{\"primaryColor\":\"#12343b\",\"primaryTextColor\":\"#ffffff\",\"primaryBorderColor\":\"#1f7a8c\",\"lineColor\":\"#334155\",\"secondaryColor\":\"#f6f1d1\",\"tertiaryColor\":\"#b91c1c\",\"fontFamily\":\"Inter,Arial,sans-serif\"}}}%%",
         "flowchart TB",
         '  start["DayOA workflow snapshot"]:::start',
     ]
     previous = "start"
-    for idx, summary in enumerate(selected, start=1):
+    for idx, summary in enumerate(summaries, start=1):
         node_id = f"r{idx}"
         label = _mermaid_label(
             summary=summary,

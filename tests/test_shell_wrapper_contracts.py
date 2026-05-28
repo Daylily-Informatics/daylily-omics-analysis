@@ -252,6 +252,29 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert "${1:-}" in dyoainit
 
 
+def test_dayoa_environment_declares_mermaid_cli_for_pipeline_reports() -> None:
+    day_yaml = _read("config/day/day.yaml")
+    installer = _read("config/day/day_env_installer.sh")
+
+    assert "  - nodejs\n" in day_yaml
+    assert 'DAYOA_MERMAID_CLI_PACKAGE="@mermaid-js/mermaid-cli@11.15.0"' in installer
+    assert 'npm install -g "$DAYOA_MERMAID_CLI_PACKAGE"' in installer
+    assert "mmdc --version >/dev/null" in installer
+
+
+def test_mmdc_is_not_called_inside_snakemake_rules() -> None:
+    rule_hits = []
+    for path in (REPO_ROOT / "workflow" / "rules").rglob("*.smk"):
+        if "mmdc" in path.read_text(encoding="utf-8"):
+            rule_hits.append(path.relative_to(REPO_ROOT).as_posix())
+
+    assert rule_hits == []
+    assert "python -m daylily_omics_analysis.pipeline_reports" in _read("bin/day_run")
+    assert 'pdf_path = output_dir / f"pipeline_workflow_{suffix}.pdf"' in _read(
+        "daylily_omics_analysis/pipeline_reports.py"
+    )
+
+
 def test_mac_local_activation_contracts() -> None:
     dyoainit = _read("dyoainit")
     day_activate = _read("bin/day_activate")

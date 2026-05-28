@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from daylily_omics_analysis.pipeline_reports import (
+    RuleSummary,
     parse_rule_summaries,
+    write_mermaid,
     write_snapshot,
 )
 
@@ -66,3 +68,33 @@ def test_parse_rule_summaries_requires_rules_directory(tmp_path: Path) -> None:
         assert "Rules directory is missing" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("expected missing rules directory to fail")
+
+
+def test_mermaid_snapshot_does_not_cap_rule_count(tmp_path: Path) -> None:
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "samples.tsv").write_text("sample\nHG002\n", encoding="utf-8")
+    output = tmp_path / "workflow.mmd"
+    summaries = [
+        RuleSummary(
+            name=f"rule_{idx:03d}",
+            command=f"tool_{idx:03d} --input sample",
+            tool_names=(f"tool_{idx:03d}",),
+            tool_versions={},
+        )
+        for idx in range(1, 66)
+    ]
+
+    write_mermaid(
+        summaries=summaries,
+        analysis_root=tmp_path,
+        genome_build="hg38",
+        state="planned",
+        output_path=output,
+    )
+
+    text = output.read_text(encoding="utf-8")
+    assert "rule_001" in text
+    assert "rule_040" in text
+    assert "rule_065" in text
+    assert text.count(':::rule') == 65

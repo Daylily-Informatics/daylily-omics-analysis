@@ -19,6 +19,7 @@ usage() {
 
 # Check if the correct argument is provided
 DY_ENVNAME="DAYOA"
+DAYOA_MERMAID_CLI_PACKAGE="@mermaid-js/mermaid-cli@11.15.0"
 if [[ "$1" != "$DY_ENVNAME" ]]; then
     echo "Hello! This is the __ $DY_ENVNAME __ installation script."
     echo ""
@@ -77,6 +78,37 @@ fi
 # Ensure conda is initialized
 source "$CONDA_DIR/etc/profile.d/conda.sh"
 
+install_mermaid_cli() {
+    echo "Installing Mermaid CLI for DAYOA pipeline diagram rendering: $DAYOA_MERMAID_CLI_PACKAGE"
+    conda activate "$DY_ENVNAME" || {
+        echo "Failed to activate $DY_ENVNAME before Mermaid CLI installation."
+        return 1
+    }
+    if ! command -v npm >/dev/null 2>&1; then
+        echo "npm is missing from $DY_ENVNAME; installing nodejs from conda-forge."
+        conda install -y -n "$DY_ENVNAME" -c conda-forge nodejs || {
+            echo "Failed to install nodejs into $DY_ENVNAME."
+            return 1
+        }
+        conda activate "$DY_ENVNAME" || {
+            echo "Failed to reactivate $DY_ENVNAME after nodejs installation."
+            return 1
+        }
+    fi
+    npm install -g "$DAYOA_MERMAID_CLI_PACKAGE" || {
+        echo "Failed to install $DAYOA_MERMAID_CLI_PACKAGE."
+        return 1
+    }
+    if ! command -v mmdc >/dev/null 2>&1; then
+        echo "mmdc was not found on PATH after installing $DAYOA_MERMAID_CLI_PACKAGE."
+        return 1
+    fi
+    mmdc --version >/dev/null || {
+        echo "mmdc is installed but failed to execute."
+        return 1
+    }
+}
+
 #conda install -y conda=25.5.1
 
 # Update Conda Config
@@ -96,9 +128,8 @@ conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 if conda env list | grep -q "^$DY_ENVNAME\s"; then
     echo ""
     echo "It appears you have a DAYOA environment already."
-    echo "You may need to manually remove the conda env dir for DAYOA and try again."
-    echo "To remove the environment, run:"
-    echo "  conda env remove -n DAYOA"
+    echo "Ensuring required DAYOA npm tools are installed."
+    install_mermaid_cli || return 1
     return 0
 else
     conda install -y -n base -c conda-forge yq || echo 'Failed to install yq'
@@ -106,6 +137,7 @@ else
     # Create the DAYOA environment
     if conda env create -n "$DY_ENVNAME" -f "$SCRIPT_DIR/day.yaml"; then
         echo "DAYOA environment created successfully."
+        install_mermaid_cli || return 1
         echo ""
         echo "Try the following commands to get started:"
         echo "  source dyinit --project <PROJECT>"
