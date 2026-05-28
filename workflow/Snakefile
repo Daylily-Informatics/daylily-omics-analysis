@@ -333,8 +333,12 @@ include: "rules/sentmm2ont_align_sort.smk"
 include: "rules/seqfu.smk"
 include: "rules/site_mix_contam.smk"
 include: "rules/contam_identity.smk"
-include: "rules/smaca.smk"
-include: "rules/smn_copynumbercaller.smk"
+# SMACA is disabled until its runtime environment path and caller behavior
+# are revalidated. Keep workflow/rules/smaca.smk for repair provenance.
+# include: "rules/smaca.smk"
+# SMN12 is disabled until its runtime environment path and caller behavior
+# are revalidated. Keep workflow/rules/smn_copynumbercaller.smk for repair provenance.
+# include: "rules/smn_copynumbercaller.smk"
 # SnpEff is unavailable until annotation integration is revalidated.
 # include: "rules/snpeff.smk"
 # Stargazer is intentionally excluded from htd_callers until its stale rule is repaired.

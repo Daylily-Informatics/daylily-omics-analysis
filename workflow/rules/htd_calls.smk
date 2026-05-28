@@ -20,27 +20,6 @@ def htd_call_outputs(*, require_non_empty=False):
                 ddup=ddups,
             )
         )
-    if "smn12" in callers:
-        outputs.extend(
-            expand(
-                MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=ddups,
-            )
-        )
-    if "smaca" in callers:
-        outputs.extend(
-            expand(
-                [
-                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.summary.tsv",
-                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",
-                ],
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=ddups,
-            )
-        )
     if "genetocn" in callers:
         outputs.extend(
             expand(

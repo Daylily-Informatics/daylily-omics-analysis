@@ -53,6 +53,12 @@ def test_cyrius_included_and_stargazer_intentionally_excluded() -> None:
     assert 'include: "rules/parascopy.smk"' not in active_includes
     assert '# include: "rules/parascopy.smk"' in snakefile
     assert "Parascopy is disabled until locus configuration assets" in snakefile
+    assert 'include: "rules/smaca.smk"' not in active_includes
+    assert '# include: "rules/smaca.smk"' in snakefile
+    assert "SMACA is disabled until its runtime environment path" in snakefile
+    assert 'include: "rules/smn_copynumbercaller.smk"' not in active_includes
+    assert '# include: "rules/smn_copynumbercaller.smk"' in snakefile
+    assert "SMN12 is disabled until its runtime environment path" in snakefile
     assert 'include: "rules/stargazer.smk"' not in active_includes
     assert "Stargazer is intentionally excluded from htd_callers" in snakefile
     assert '# include: "rules/stargazer.smk"' in snakefile
@@ -116,13 +122,14 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         '"logs/htd_calls.done"',
         "cyrius.tsv",
         "cyrius.json",
-        "smn12.summary.json",
-        "smaca.summary.tsv",
         "genetocn.done",
     ):
         assert expected in htd
     assert "gauchian.done" not in htd
     assert "parascopy.done" not in htd
+    assert "smaca.summary.tsv" not in htd
+    assert "smaca.done" not in htd
+    assert "smn12.summary.json" not in htd
 
 
 def test_htd_mqc_script_schema_and_cyrius_fields() -> None:
@@ -161,6 +168,11 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "htd/parascopy" not in htd_calls
     assert "parascopy.done" not in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done" in smaca
+    assert "htd/smaca" not in htd_calls
+    assert "smaca.done" not in htd_calls
+    assert "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json" in smn12
+    assert "htd/smn12" not in htd_calls
+    assert "smn12.summary.json" not in htd_calls
 
 
 def test_final_multiqc_and_multiqc_config_include_htd_when_selected() -> None:

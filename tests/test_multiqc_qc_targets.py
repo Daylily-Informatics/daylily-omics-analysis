@@ -59,6 +59,10 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     assert '# include: "rules/gauchian.smk"' in snakefile
     assert 'include: "rules/parascopy.smk"' not in active_includes
     assert '# include: "rules/parascopy.smk"' in snakefile
+    assert 'include: "rules/smaca.smk"' not in active_includes
+    assert '# include: "rules/smaca.smk"' in snakefile
+    assert 'include: "rules/smn_copynumbercaller.smk"' not in active_includes
+    assert '# include: "rules/smn_copynumbercaller.smk"' in snakefile
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_final_wgs.smk")
     assert "alignqc/picard" not in _read("workflow/rules/multiqc_cov_aln.smk")
     assert "alignqc/qmap" not in _read("workflow/rules/multiqc_final_wgs.smk")
