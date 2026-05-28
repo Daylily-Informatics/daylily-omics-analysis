@@ -7,15 +7,6 @@ def htd_call_outputs(*, require_non_empty=False):
     alnrs = QC_CRAM_ALIGNERS
     ddups = DDUP
 
-    if "gauchian" in callers:
-        outputs.extend(
-            expand(
-                MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done",
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=ddups,
-            )
-        )
     if "cyrius" in callers:
         outputs.extend(
             expand(

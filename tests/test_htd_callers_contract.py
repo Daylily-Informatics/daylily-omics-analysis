@@ -47,6 +47,9 @@ def test_cyrius_included_and_stargazer_intentionally_excluded() -> None:
 
     assert 'include: "rules/cyp2d6_cyrius.smk"' in snakefile
     assert 'include: "rules/htd_calls.smk"' in snakefile
+    assert 'include: "rules/gauchian.smk"' not in active_includes
+    assert '# include: "rules/gauchian.smk"' in snakefile
+    assert "Gauchian is disabled until its runtime environment path" in snakefile
     assert 'include: "rules/parascopy.smk"' not in active_includes
     assert '# include: "rules/parascopy.smk"' in snakefile
     assert "Parascopy is disabled until locus configuration assets" in snakefile
@@ -111,7 +114,6 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "other_reports/htd_calls_mqc.tsv",
         "workflow/scripts/htd_calls_mqc.py",
         '"logs/htd_calls.done"',
-        "gauchian.done",
         "cyrius.tsv",
         "cyrius.json",
         "smn12.summary.json",
@@ -119,6 +121,7 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "genetocn.done",
     ):
         assert expected in htd
+    assert "gauchian.done" not in htd
     assert "parascopy.done" not in htd
 
 
@@ -152,6 +155,8 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "def genetocn_cram" in genetocn
     assert "def genetocn_inputs" not in genetocn
     assert "cram=genetocn_cram" in genetocn
+    assert "htd/gauchian" not in htd_calls
+    assert "gauchian.done" not in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done" in parascopy
     assert "htd/parascopy" not in htd_calls
     assert "parascopy.done" not in htd_calls

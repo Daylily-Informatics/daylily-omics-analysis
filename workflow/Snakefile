@@ -270,7 +270,9 @@ include: "rules/fastqc.smk"
 # FASTV is retired from active Snakemake execution; archived at
 # workflow/rules/archived_qc/fastv.smk for old-run provenance.
 include: "rules/gatk_contam.smk"
-include: "rules/gauchian.smk"
+# Gauchian is disabled until its runtime environment path and caller behavior
+# are revalidated. Keep workflow/rules/gauchian.smk for repair provenance.
+# include: "rules/gauchian.smk"
 # include: "rules/gba_gauchian.smk"  # Disabled until GBA integration is revalidated.
 include: "rules/generate_deduplicated_bams.smk"
 include: "rules/genetocn.smk"
