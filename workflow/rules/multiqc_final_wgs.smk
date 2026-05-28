@@ -853,7 +853,8 @@ rule produce_multiqc_variant_annotation:  # TARGET: canonical variant annotation
 
 rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
     input:
-        MDIR + "reports/DAY_final_multiqc.html"
+        MDIR + "reports/DAY_final_multiqc.html",
+        MDIR + "reports/dayoa_evidence_manifest.json",
 
 
 rule produce_multiqc_stage_final:  # TARGET: stage final MultiQC input tree

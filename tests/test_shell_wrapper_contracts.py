@@ -143,9 +143,23 @@ def test_day_run_failed_snakemake_writes_marker_and_exits_nonzero(tmp_path: Path
     fakebin.mkdir()
     profile.mkdir()
     (tmp_path / "bin").symlink_to(REPO_ROOT / "bin", target_is_directory=True)
+    (tmp_path / "workflow").symlink_to(REPO_ROOT / "workflow", target_is_directory=True)
 
     (fakebin / "yq").write_text(
         '#!/usr/bin/env bash\nprintf "%s\\n" "$DAY_TEST_TMPDIR"\n',
+        encoding="utf-8",
+    )
+    (fakebin / "mmdc").write_text(
+        """#!/usr/bin/env bash
+out=""
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        -o) out="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+printf '%s\\n' '%PDF-1.4 test' > "$out"
+""",
         encoding="utf-8",
     )
     (fakebin / "snakemake").write_text(
@@ -160,6 +174,7 @@ exit 17
         encoding="utf-8",
     )
     (fakebin / "yq").chmod(0o755)
+    (fakebin / "mmdc").chmod(0o755)
     (fakebin / "snakemake").chmod(0o755)
 
     (profile / "profile_env.bash").write_text(
@@ -186,6 +201,8 @@ DY_IS0=
         "DAY_PROFILE_DIR": str(profile),
         "DAY_GENOME_BUILD": "hg38",
         "DAY_TEST_TMPDIR": str(fake_tmp),
+        "DAYOA_PIPELINE_REPORT_INTERVAL_SECONDS": "1",
+        "PYTHONPATH": f"{REPO_ROOT}:{os.environ.get('PYTHONPATH', '')}",
     }
 
     result = subprocess.run(
@@ -200,6 +217,9 @@ DY_IS0=
     assert result.returncode == 17
     assert (tmp_path / "daylily.failed_run").read_text(encoding="utf-8").strip()
     assert not (tmp_path / "daylily.successful_run").exists()
+    assert (tmp_path / "pipeline_details.md").is_file()
+    assert (tmp_path / "pipeline_workflow_planned.mmd").is_file()
+    assert (tmp_path / "pipeline_workflow_planned.pdf").is_file()
 
 
 def test_dyoainit_budget_and_optional_variable_contracts() -> None:

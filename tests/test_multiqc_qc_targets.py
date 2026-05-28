@@ -21,7 +21,7 @@ def _yaml(path: str) -> dict:
 def _localrules_entries(text: str) -> set[str]:
     marker = "localrules:"
     assert marker in text
-    block = text[text.index(marker) + len(marker) : text.index("rule register_multiqc_final:")]
+    block = text[text.index(marker) + len(marker) : text.index("rule write_dayoa_evidence_manifest:")]
     entries = set()
     for line in block.splitlines():
         stripped = line.strip().rstrip(",")
@@ -112,7 +112,7 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
 
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
-    qeo = _read("workflow/rules/qeo_registration.smk")
+    evidence = _read("workflow/rules/evidence_manifest.smk")
     snakefile = _read("workflow/Snakefile")
     common = _read("workflow/rules/common.smk")
 
@@ -190,26 +190,27 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert 'include: "rules/snpeff.smk"' not in [
         line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
     ]
-    assert 'include: "rules/qeo_registration.smk"' in snakefile
+    assert 'include: "rules/evidence_manifest.smk"' in snakefile
+    assert 'include: "rules/qeo_registration.smk"' not in snakefile
+    assert 'MDIR + "reports/dayoa_evidence_manifest.json"' in text
     for expected in (
-        "rule register_multiqc_final:",
-        "rule register_analysis_artifact_set:",
-        "rule publish_qeo_ingest_event:",
-        "DAY_final_multiqc.artifact_manifest.json",
-        "DAY_final_multiqc.dewey_receipt.json",
-        "DAY_final_multiqc.qeo_manifest.json",
-        "analysis_artifact_set.qeo_ingest_manifest.json",
-        "lsmc.daylily.artifact.produced.v1.json",
+        "rule write_dayoa_evidence_manifest:",
+        "rule produce_dayoa_evidence_manifest:",
+        "dayoa_evidence_manifest.json",
     ):
-        assert expected in qeo
+        assert expected in evidence
 
-    assert _localrules_entries(qeo) >= {
-        "register_multiqc_final",
-        "register_analysis_artifact_set",
+    for forbidden in (
+        "dewey_receipt",
+        "qeo_manifest",
+        "qeo_ingest_manifest",
         "publish_qeo_ingest_event",
-        "produce_qeo_multiqc_registration",
-        "produce_qeo_analysis_artifact_set",
-        "produce_qeo_ingest_event",
+    ):
+        assert forbidden not in evidence
+
+    assert _localrules_entries(evidence) >= {
+        "write_dayoa_evidence_manifest",
+        "produce_dayoa_evidence_manifest",
     }
 
 

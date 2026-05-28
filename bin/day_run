@@ -188,20 +188,79 @@ cmd_log="$PWD/day_cmd.log"
 cmddt=$(date --iso-8601="seconds")
 echo "SMK> D:$cmddt / U:$USER / PWD:$PWD / CMD: (${snakecmd[*]})" >> "$cmd_log"
 
+_day_write_pipeline_snapshot() {
+    local _state="$1"
+    local _details_flag="${2:-}"
+    python -m daylily_omics_analysis.pipeline_reports \
+        --analysis-root "$PWD" \
+        --workflow-root "$PWD/workflow" \
+        --output-dir "$PWD" \
+        --genome-build "$DAY_GENOME_BUILD" \
+        --state "$_state" \
+        --command "${snakecmd[*]}" \
+        $_details_flag
+}
+
 # Run snakemake command
 colr "Executing: ${snakecmd[*]}"  "$DY_IT0" "$DY_IB0" "$DY_IS1"  1>&2
 if [[ "$_is_dry_run" == "true" ]]; then
     $snakecmd
     ret_code=$?
 else
+    _day_write_pipeline_snapshot planned --write-details
+    report_ret_code=$?
+    if [[ "$report_ret_code" -ne 0 ]]; then
+        exit "$report_ret_code"
+    fi
+    _day_write_pipeline_snapshot checkpoint
+    report_ret_code=$?
+    if [[ "$report_ret_code" -ne 0 ]]; then
+        exit "$report_ret_code"
+    fi
+    checkpoint_failure_file=".dayoa_pipeline_report_monitor.failed"
+    rm -f "$checkpoint_failure_file"
     (
-        $snakecmd &&
-        echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run &&
-        bash bin/util/benchmarks/collect_day_benchmark_data.sh "$DAY_GENOME_BUILD" > /dev/null 2>&1
+        $snakecmd &
+        snakemake_pid=$!
+        (
+            while kill -0 "$snakemake_pid" 2>/dev/null; do
+                sleep "${DAYOA_PIPELINE_REPORT_INTERVAL_SECONDS:-900}"
+                if kill -0 "$snakemake_pid" 2>/dev/null; then
+                    _day_write_pipeline_snapshot checkpoint || {
+                        echo "checkpoint workflow diagram generation failed" > "$checkpoint_failure_file"
+                        exit 2
+                    }
+                fi
+            done
+        ) &
+        checkpoint_pid=$!
+        wait "$snakemake_pid"
+        workflow_ret_code=$?
+        kill "$checkpoint_pid" 2>/dev/null || true
+        wait "$checkpoint_pid" 2>/dev/null || true
+        if [[ -s "$checkpoint_failure_file" ]]; then
+            cat "$checkpoint_failure_file" 1>&2
+            exit 2
+        fi
+        if [[ "$workflow_ret_code" -eq 0 ]]; then
+            echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.successful_run
+            bash bin/util/benchmarks/collect_day_benchmark_data.sh "$DAY_GENOME_BUILD" > /dev/null 2>&1
+        fi
+        exit "$workflow_ret_code"
     )
     ret_code=$?
     if [[ "$ret_code" -ne 0 ]]; then
         echo "$(date '+%Y-%m-%d %H:%M:%S')" >> daylily.failed_run
+    fi
+    if [[ "$ret_code" -eq 0 ]]; then
+        _day_write_pipeline_snapshot final_success
+        ret_code=$?
+    else
+        _day_write_pipeline_snapshot final_failed
+        report_ret_code=$?
+        if [[ "$report_ret_code" -ne 0 ]]; then
+            ret_code="$report_ret_code"
+        fi
     fi
 fi
 

@@ -1,6 +1,6 @@
 # MultiQC QC Targets
 
-**Boundary:** MultiQC reports present evidence. They do not define canonical data, QC pass/fail state, disposition, or release. QEO registration happens after MultiQC generation and emits manifests/receipts for parser-ready ingest.
+**Boundary:** MultiQC reports present evidence. They do not define canonical data, QC pass/fail state, disposition, release, or downstream registration. DayOA emits local evidence manifests after MultiQC generation.
 
 ## Target Families
 
@@ -18,9 +18,7 @@
 | `produce_multiqc_variants` | Deprecated alias retained for now. |
 | `produce_multiqc_final` | Deprecated alias retained for now. |
 | `produce_multiqc_final_wgs` | Deprecated alias retained for now. |
-| `produce_qeo_multiqc_registration` | Register final MultiQC artifacts after report generation. |
-| `produce_qeo_analysis_artifact_set` | Register final analysis artifact set. |
-| `produce_qeo_ingest_event` | Emit replay-safe QEO outbox event. |
+| `produce_dayoa_evidence_manifest` | Emit the final local DayOA evidence manifest after report generation. |
 
 ## Runtime Gating
 
@@ -226,14 +224,13 @@ The docs and catalog cover these report surfaces:
 
 These surfaces produce evidence and custom content; they do not authorize clinical release.
 
-## QEO Registration Boundary
+## Local Evidence Boundary
 
-Registration targets are downstream of MultiQC:
+The local evidence manifest target is downstream of MultiQC:
 
 ```bash
 dy-r produce_multiqc_all -p -j 20
-dy-r produce_qeo_multiqc_registration -p -j 1
-dy-r produce_qeo_analysis_artifact_set -p -j 1
+dy-r produce_dayoa_evidence_manifest -p -j 1
 ```
 
-`register_multiqc_final` requires `DAY_final_multiqc.html`, `DAY_final_multiqc_data/`, staging manifests, parser-relevant files, and key `_mqc.tsv` files. It registers both the MultiQC directory and individual parser-relevant artifacts.
+`write_dayoa_evidence_manifest` requires `DAY_final_multiqc.html`, `DAY_final_multiqc_data/`, staging manifests, parser-relevant files, and key `_mqc.tsv` files. It records actual local files with relative paths, sizes, hashes, classifications, and parser relevance. It does not register artifacts or emit downstream ingest events.
