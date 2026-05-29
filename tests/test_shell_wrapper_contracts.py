@@ -13,7 +13,9 @@ def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
-def test_openai_token_helper_copies_to_ubuntu_path_and_exports_env(tmp_path: Path) -> None:
+def test_openai_token_helper_copies_to_ubuntu_path_and_exports_env(
+    tmp_path: Path,
+) -> None:
     token_source = tmp_path / "source" / ".config" / "openai" / "tok.tok"
     token_target = tmp_path / "ubuntu" / ".config" / "openai" / "tok.tok"
     token_source.parent.mkdir(parents=True)
@@ -25,14 +27,14 @@ def test_openai_token_helper_copies_to_ubuntu_path_and_exports_env(tmp_path: Pat
         f"export DAYOA_OPENAI_TOKEN_TARGET={str(token_target)!r}; "
         "export DAYOA_OPENAI_MODEL=gpt-5.5; "
         f"source {str(REPO_ROOT / 'bin/day_openai_env.bash')!r}; "
-        "test \"$OPENAI_API_KEY\" = sk-test-fake-token; "
-        "test \"$MULTIQC_AI_SUMMARY\" = 1; "
-        "test \"$MULTIQC_AI_PROVIDER\" = openai; "
-        "test \"$MULTIQC_AI_MODEL\" = gpt-5.5; "
-        "test \"$APPTAINERENV_OPENAI_API_KEY\" = sk-test-fake-token; "
-        "test \"$SINGULARITYENV_OPENAI_API_KEY\" = sk-test-fake-token; "
+        'test "$OPENAI_API_KEY" = sk-test-fake-token; '
+        'test "$MULTIQC_AI_SUMMARY" = 1; '
+        'test "$MULTIQC_AI_PROVIDER" = openai; '
+        'test "$MULTIQC_AI_MODEL" = gpt-5.5; '
+        'test "$APPTAINERENV_OPENAI_API_KEY" = sk-test-fake-token; '
+        'test "$SINGULARITYENV_OPENAI_API_KEY" = sk-test-fake-token; '
         f"test -f {str(token_target)!r}; "
-        f"test \"$(cat {str(token_target)!r})\" = sk-test-fake-token"
+        f'test "$(cat {str(token_target)!r})" = sk-test-fake-token'
     )
 
     result = subprocess.run(["bash", "-lc", command], text=True, capture_output=True)
@@ -40,7 +42,9 @@ def test_openai_token_helper_copies_to_ubuntu_path_and_exports_env(tmp_path: Pat
     assert result.returncode == 0, result.stderr
 
 
-def test_openai_token_helper_fails_hard_when_enabled_without_token(tmp_path: Path) -> None:
+def test_openai_token_helper_fails_hard_when_enabled_without_token(
+    tmp_path: Path,
+) -> None:
     missing_source = tmp_path / "missing" / "tok.tok"
     token_target = tmp_path / "ubuntu" / ".config" / "openai" / "tok.tok"
     command = (
@@ -75,8 +79,10 @@ def test_benchmark_collector_avoids_full_results_tree_scan() -> None:
     assert "fd -p -L" not in collector
     assert "parallel -j" not in collector
     assert "ls -1" not in collector
-    assert "head -n 1 \"${bench_files[0]}\"" in collector
-    assert 'find "$bench_dir" -maxdepth 1 -type f -name "*.bench.tsv" -print0' in collector
+    assert 'head -n 1 "${bench_files[0]}"' in collector
+    assert (
+        'find "$bench_dir" -maxdepth 1 -type f -name "*.bench.tsv" -print0' in collector
+    )
 
 
 def test_coverage_gathers_are_declared_input_driven() -> None:
@@ -136,7 +142,9 @@ def test_day_run_preserves_nonzero_workflow_exit_after_failure_marker() -> None:
     assert "exit $ret_code" in day_run
 
 
-def test_day_run_failed_snakemake_writes_marker_and_exits_nonzero(tmp_path: Path) -> None:
+def test_day_run_failed_snakemake_writes_marker_and_exits_nonzero(
+    tmp_path: Path,
+) -> None:
     fakebin = tmp_path / "fakebin"
     profile = tmp_path / "profile"
     fake_tmp = tmp_path / "daytmp"
@@ -235,10 +243,13 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
 
     assert "cluster_config_tag_value()" in dyoainit
     assert "aws-parallelcluster-enforce-budget" in dyoainit
-    assert "Notice: Cluster config sets aws-parallelcluster-enforce-budget=skip" in dyoainit
-    assert dyoainit.index('if [[ "$SKIP_PROJECT_CHECK" == true ]]; then') < dyoainit.index(
-        "aws sts get-caller-identity"
+    assert (
+        "Notice: Cluster config sets aws-parallelcluster-enforce-budget=skip"
+        in dyoainit
     )
+    assert dyoainit.index(
+        'if [[ "$SKIP_PROJECT_CHECK" == true ]]; then'
+    ) < dyoainit.index("aws sts get-caller-identity")
 
     assert "day_current_user()" in dyoainit
     assert "id -un" in dyoainit
@@ -250,6 +261,25 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert "${PS1:-}" in dyoainit
     assert "${SHELL:-}" in dyoainit
     assert "${1:-}" in dyoainit
+
+
+def test_shell_wrappers_do_not_reference_deprecated_network_overlay() -> None:
+    forbidden = (
+        "tail" + "scale",
+        "headnode-" + "authkey",
+        "dayec-headnode-" + "tail",
+        "pkgs." + "tail" + "scale" + ".com",
+    )
+
+    for path in (
+        "dyoainit",
+        "bin/day_activate",
+        "bin/day_run",
+        "bin/augment_setup_and_run_dayoa.bash",
+    ):
+        text = _read(path).lower()
+        for token in forbidden:
+            assert token not in text, path
 
 
 def test_dayoa_environment_declares_mermaid_cli_for_pipeline_reports() -> None:
@@ -289,12 +319,17 @@ def test_mac_local_activation_contracts() -> None:
     assert "macOS local mode: using conda environment DAYOA." in dyoainit
     assert "source config/day/day_env_installer.sh DAYOA" in dyoainit
 
-    assert 'if [[ "${DAY_BIOME:-}" == "MAC" && "$dayp" != "local" ]]; then' in day_activate
+    assert (
+        'if [[ "${DAY_BIOME:-}" == "MAC" && "$dayp" != "local" ]]; then' in day_activate
+    )
     assert 'target_conda_env="DAYOA"' in day_activate
     assert 'target_conda_env="DAY-EC"' not in day_activate
     assert "macOS local mode: using DAYOA while reinitializing DayOA." in day_activate
 
-    assert "env_script:config/day_profiles/local/templates/profile_env.bash" in local_profile_info
+    assert (
+        "env_script:config/day_profiles/local/templates/profile_env.bash"
+        in local_profile_info
+    )
     assert 'if [[ "${DAY_BIOME:-}" == "MAC" ]]; then' in local_profile_env
     assert "DAYOA_MAC_STATE_DIR" in local_profile_env
     assert "dayoa_sed_inplace()" in profile_warn
@@ -308,7 +343,10 @@ def test_sentieon_license_detection_contracts_are_explicit() -> None:
 
     for shell_source in (dyoainit, day_activate):
         assert "/fsx/references/runtime_assets/cached_envs" in shell_source
-        assert 'find "$sentieon_license_dir" -maxdepth 1 -type f -name \'*.lic\' -print0' in shell_source
+        assert (
+            "find \"$sentieon_license_dir\" -maxdepth 1 -type f -name '*.lic' -print0"
+            in shell_source
+        )
         assert "sort -z" in shell_source
         assert "longest filename" in shell_source
         assert "auto assigning a detected Sentieon license" in shell_source
@@ -320,5 +358,10 @@ def test_sentieon_license_detection_contracts_are_explicit() -> None:
 
 
 def test_shell_wrappers_have_valid_bash_syntax() -> None:
-    for path in ("bin/day_run", "bin/day_activate", "bin/util/profile_freshness_warn.bash", "dyoainit"):
+    for path in (
+        "bin/day_run",
+        "bin/day_activate",
+        "bin/util/profile_freshness_warn.bash",
+        "dyoainit",
+    ):
         subprocess.run(["bash", "-n", path], cwd=REPO_ROOT, check=True)
