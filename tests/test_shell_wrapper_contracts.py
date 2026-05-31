@@ -288,8 +288,9 @@ def test_dayoa_environment_declares_mermaid_cli_for_pipeline_reports() -> None:
 
     assert "  - nodejs\n" in day_yaml
     assert 'DAYOA_MERMAID_CLI_PACKAGE="@mermaid-js/mermaid-cli@11.15.0"' in installer
-    assert 'npm install -g "$DAYOA_MERMAID_CLI_PACKAGE"' in installer
-    assert "mmdc --version >/dev/null" in installer
+    assert '"$CONDA_PREFIX/bin/npm" install --global --prefix "$CONDA_PREFIX" "$DAYOA_MERMAID_CLI_PACKAGE"' in installer
+    assert '[[ ! -x "$CONDA_PREFIX/bin/mmdc" ]]' in installer
+    assert '"$CONDA_PREFIX/bin/mmdc" --version >/dev/null' in installer
 
 
 def test_mmdc_is_not_called_inside_snakemake_rules() -> None:

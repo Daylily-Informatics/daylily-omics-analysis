@@ -84,7 +84,12 @@ install_mermaid_cli() {
         echo "Failed to activate $DY_ENVNAME before Mermaid CLI installation."
         return 1
     }
-    if ! command -v npm >/dev/null 2>&1; then
+    export PATH="$CONDA_PREFIX/bin:$PATH"
+    if [[ -z "${CONDA_PREFIX:-}" ]]; then
+        echo "CONDA_PREFIX is not set after activating $DY_ENVNAME."
+        return 1
+    fi
+    if [[ ! -x "$CONDA_PREFIX/bin/npm" ]]; then
         echo "npm is missing from $DY_ENVNAME; installing nodejs from conda-forge."
         conda install -y -n "$DY_ENVNAME" -c conda-forge nodejs || {
             echo "Failed to install nodejs into $DY_ENVNAME."
@@ -94,16 +99,17 @@ install_mermaid_cli() {
             echo "Failed to reactivate $DY_ENVNAME after nodejs installation."
             return 1
         }
+        export PATH="$CONDA_PREFIX/bin:$PATH"
     fi
-    npm install -g "$DAYOA_MERMAID_CLI_PACKAGE" || {
+    "$CONDA_PREFIX/bin/npm" install --global --prefix "$CONDA_PREFIX" "$DAYOA_MERMAID_CLI_PACKAGE" || {
         echo "Failed to install $DAYOA_MERMAID_CLI_PACKAGE."
         return 1
     }
-    if ! command -v mmdc >/dev/null 2>&1; then
-        echo "mmdc was not found on PATH after installing $DAYOA_MERMAID_CLI_PACKAGE."
+    if [[ ! -x "$CONDA_PREFIX/bin/mmdc" ]]; then
+        echo "mmdc was not installed into $DY_ENVNAME at $CONDA_PREFIX/bin/mmdc."
         return 1
     fi
-    mmdc --version >/dev/null || {
+    "$CONDA_PREFIX/bin/mmdc" --version >/dev/null || {
         echo "mmdc is installed but failed to execute."
         return 1
     }

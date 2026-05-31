@@ -471,7 +471,7 @@ fi
 if [[ "$DAYOA_MAC_LOCAL" == true ]]; then
     if ! conda env list | awk '{print $1}' | grep -Fx "DAYOA" >/dev/null 2>&1; then
         echo "Error: macOS local mode requires the DAYOA conda environment."
-        echo "Install it with: conda env create -n DAYOA -f config/day/day.yaml"
+        echo "Install it with: source config/day/day_env_installer.sh DAYOA"
         return 1
     fi
     conda activate DAYOA || {
