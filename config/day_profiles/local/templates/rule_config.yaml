@@ -126,16 +126,16 @@ bclconvert:
     mem_mb: 16000
     partition: "i8"
     tmpdir: "/dev/shm"
-    staging_mode: "direct"
-    scratch_root: "/dev/shm/dayoa_bclconvert"
-    scratch_size_multiplier: 4
-    retain_scratch: false
     parallel_tiles: 1
     conversion_threads: 3
     compression_threads: 3
     decompression_threads: 1
     fastq_gzip_compression_level: 1
-    shared_thread_odirect_output: false
+    shared_thread_odirect_output: true
+    output_legacy_stats: true
+    num_unknown_barcodes_reported: 1000
+    barcode_mismatches_index1: 0
+    barcode_mismatches_index2: 0
 
 bcl2fq_by_lane:
     threads: 7

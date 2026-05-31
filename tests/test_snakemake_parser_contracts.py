@@ -123,3 +123,53 @@ def test_sentdhiomr_late_stages_handle_empty_refined_regions() -> None:
         "sentdhiomr_stage3/pass2 must tolerate valid empty refined-region shards:\n"
         + "\n".join(missing)
     )
+
+
+def test_sentdhuomr_stage1_uses_sequential_driver_outputs() -> None:
+    path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ug_ont_modular.refactored.smk"
+    text = path.read_text(encoding="utf-8")
+
+    required_fragments = [
+        "Match sentieon-cli hybrid_stage1(): run HAP + INS drivers sequentially",
+        'unset bwt_max_mem || true',
+        'sentieon driver \\',
+        '2>> {log} > "$TMPDIR/hap_stdout.sam"',
+        '2>> {log} > "$TMPDIR/ins_stdout.sam"',
+        'cat "$TMPDIR/hap_stdout.sam" "$TMPDIR/ins_stdout.sam"',
+        "samtools quickcheck {output.hap_bam} {output.bam}",
+    ]
+    forbidden_fragments = [
+        "cat <($HAP_CMD",
+        "process substitutions",
+        "wait",
+    ]
+    missing = [fragment for fragment in required_fragments if fragment not in text]
+    present_forbidden = [fragment for fragment in forbidden_fragments if fragment in text]
+
+    assert not missing, "sentdhuomr_stage1 missing hard-failure fragments:\n" + "\n".join(missing)
+    assert not present_forbidden, (
+        "sentdhuomr_stage1 must not use process substitution:\n" + "\n".join(present_forbidden)
+    )
+
+
+def test_sentdhuomr_late_stages_handle_empty_refined_regions() -> None:
+    path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ug_ont_modular.refactored.smk"
+    text = path.read_text(encoding="utf-8")
+
+    required_fragments = [
+        "WARNING: stage1_hap.bed is empty - no target haplotypes for Stage 2",
+        "Stage 2 completed with empty target haplotypes",
+        "if [ ! -s {input.bed} ]; then",
+        "WARNING: hybrid_stage2.bed is empty - no Stage 3 realignment regions; creating empty BAM",
+        "Stage 3 completed with empty input regions",
+        "initial_vcf=MDIR + \"{sample}/align/{alnr}/{ddup}/snv/sentdhuomr/vcfs/{dchrm}/tmp/initial.vcf.gz\"",
+        "WARNING: hybrid_stage2.bed is empty - no Pass 2 regions; creating empty VCF",
+        "bcftools view --threads {threads} -h {input.initial_vcf} | bgzip -c > {output.vcf}",
+        "Pass 2 completed with empty input regions",
+    ]
+    missing = [fragment for fragment in required_fragments if fragment not in text]
+
+    assert not missing, (
+        "sentdhuomr Stage2/Stage3/pass2 must tolerate empty target/refined-region shards:\n"
+        + "\n".join(missing)
+    )

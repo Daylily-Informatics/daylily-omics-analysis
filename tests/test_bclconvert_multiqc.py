@@ -45,30 +45,28 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "generated.units.tsv" in rule
     assert "BCL_BENCH_DIR" in rule
     assert "bcl_extra_args={params.extra_args:q}" in rule
-    assert "BCL_STAGING_MODE" in rule
-    assert "staging_mode={params.staging_mode:q}" in rule
-    assert "output_dev_shm" in rule
-    assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in rule
-    assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in rule
-    assert "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm" in rule
-    assert "Copying mounted BCL files with sharded cp" in rule
-    assert "mounted_stage_lanes" in rule
-    assert "mounted_stage_jobs" in rule
-    assert "mounted_stage_cycle_dirs" in rule
-    assert "mounted_stage_regular_files" in rule
-    assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in rule
-    assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in rule
-    assert "aws s3 sync" in rule
-    assert "aws sts get-caller-identity" in rule
-    assert "s3_stage_credential_mode: compute_instance_role" in rule
-    assert "singularity exec {params.container_uri:q} bcl-convert" in rule
-    assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in rule
-    assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in rule
-    assert "--bcl-num-conversion-threads \"$conversion_threads\"" in rule
-    assert "--bcl-num-compression-threads \"$compression_threads\"" in rule
-    assert "--bcl-num-decompression-threads \"$decompression_threads\"" in rule
-    assert "--fastq-gzip-compression-level {params.fastq_gzip_compression_level}" in rule
-    assert "--shared-thread-odirect-output {params.shared_thread_odirect_output}" in rule
+    assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in rule
+    assert "rule run_bclconvert_lane:" in rule
+    assert "workflow/scripts/run_bclconvert_lane.sh" in rule
+    assert "workflow/scripts/merge_bclconvert_lanes.py" in rule
+    lane_helper = _read("workflow/scripts/run_bclconvert_lane.sh")
+    samplesheet_helper = _read("workflow/scripts/prepare_bclconvert_lane_samplesheet.py")
+    assert "--bcl-only-lane" in lane_helper
+    assert "--output-legacy-stats" in lane_helper
+    assert "--num-unknown-barcodes-reported" in lane_helper
+    assert "--bind /fsx:/fsx" in lane_helper
+    assert "ALLOWED_SETTINGS" in samplesheet_helper
+    assert "BCL_LANE_ROOT = Path(BCL_RUN_DIR)" in rule
+    assert "sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON" in rule
+    assert '"BarcodeMismatchesIndex1": "barcode_mismatches_index1"' in rule
+    assert '"BarcodeMismatchesIndex2": "barcode_mismatches_index2"' in rule
+    assert "BCL_OUTPUT_LEGACY_STATS" in rule
+    assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in rule
+    assert "exclusive=\"--exclusive\"" in rule
+    assert "BCL_STAGING_MODE" not in rule
+    assert "Copying mounted BCL files with sharded cp" not in rule
+    assert "cp -aL --sparse=always" not in rule
+    assert "aws s3 sync" not in rule
     assert '--seq-platform-override "$seq_platform_override"' in rule
     for rule_name in (
         "bclconvert_validate_inputs",
@@ -155,17 +153,21 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert profile["multiqc"]["bclconvert"]["config_yaml"] == "config/external_tools/multiqc_config.yaml"
         assert profile["multiqc"]["bclconvert"]["env_yaml"] == "../envs/multiqc_v0.1.yaml"
         assert profile["bclconvert"]["fastq_gzip_compression_level"] == 1
-        assert profile["bclconvert"]["scratch_size_multiplier"] == 4
-        assert profile["bclconvert"]["retain_scratch"] is False
+        assert profile["bclconvert"]["barcode_mismatches_index1"] == 0
+        assert profile["bclconvert"]["barcode_mismatches_index2"] == 0
+        assert profile["bclconvert"]["output_legacy_stats"] is True
+        assert "staging_mode" not in profile["bclconvert"]
+        assert "scratch_size_multiplier" not in profile["bclconvert"]
 
     slurm_bcl = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")["bclconvert"]
     assert slurm_bcl["threads"] == 192
-    assert slurm_bcl["mem_mb"] == 180000
-    assert slurm_bcl["staging_mode"] == "mounted_dev_shm"
-    assert slurm_bcl["parallel_tiles"] == 8
+    assert slurm_bcl["mem_mb"] == 360000
+    assert slurm_bcl["partition"] == "i192mem,i192bigmem"
+    assert slurm_bcl["parallel_tiles"] == 16
     assert slurm_bcl["conversion_threads"] == 8
-    assert slurm_bcl["compression_threads"] == 12
-    assert slurm_bcl["decompression_threads"] == 4
+    assert slurm_bcl["compression_threads"] == 48
+    assert slurm_bcl["decompression_threads"] == 8
+    assert slurm_bcl["shared_thread_odirect_output"] is True
 
 
 def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(
@@ -274,6 +276,99 @@ def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lan
         ("HG003-a", "2"),
     ]
     assert unit_rows[0]["BARCODEID"] == "GAGTAATATACCGACCGTGA"
+
+
+def test_bclconvert_lane_samplesheet_injects_zero_barcode_mismatches(tmp_path: Path) -> None:
+    sample_sheet = tmp_path / "SampleSheet.csv"
+    sample_sheet.write_text(
+        "\n".join(
+            [
+                "[Header],",
+                "FileFormatVersion,2",
+                "RunName,run",
+                "",
+                "[Reads]",
+                "Read1Cycles,151",
+                "Index1Cycles,10",
+                "Index2Cycles,10",
+                "Read2Cycles,151",
+                "",
+                "[BCLConvert_Settings]",
+                "SoftwareVersion,4.0.3",
+                "",
+                "[BCLConvert_Data]",
+                "Sample_ID,Index,Index2",
+                "HG003,GAGTAATATA,CCGACCGTGA",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "L001" / "SampleSheet.csv"
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_lane_samplesheet.py"),
+            "--sample-sheet",
+            str(sample_sheet),
+            "--out",
+            str(out),
+            "--lane",
+            "L001",
+            "--settings-json",
+            '{"BarcodeMismatchesIndex1": 0, "BarcodeMismatchesIndex2": 0}',
+        ],
+        check=True,
+    )
+
+    text = out.read_text(encoding="utf-8")
+    assert "BarcodeMismatchesIndex1,0" in text
+    assert "BarcodeMismatchesIndex2,0" in text
+
+
+def test_bclconvert_lane_samplesheet_rejects_invalid_barcode_mismatch(tmp_path: Path) -> None:
+    sample_sheet = tmp_path / "SampleSheet.csv"
+    sample_sheet.write_text(
+        "\n".join(
+            [
+                "[Header],",
+                "FileFormatVersion,2",
+                "",
+                "[Reads]",
+                "Read1Cycles,151",
+                "",
+                "[BCLConvert_Settings]",
+                "SoftwareVersion,4.0.3",
+                "",
+                "[BCLConvert_Data]",
+                "Sample_ID,Index",
+                "HG003,GAGTAATATA",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_lane_samplesheet.py"),
+            "--sample-sheet",
+            str(sample_sheet),
+            "--out",
+            str(tmp_path / "out.csv"),
+            "--lane",
+            "1",
+            "--settings-json",
+            '{"BarcodeMismatchesIndex1": 3}',
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "BarcodeMismatchesIndex1 must be 0, 1, or 2" in result.stderr
 
 
 def test_bclconvert_metrics_to_multiqc_outputs_sample_first(tmp_path: Path) -> None:

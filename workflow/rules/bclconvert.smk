@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from pathlib import Path
@@ -138,19 +139,16 @@ SAMPLES_TABLE = str(
 
 BCL_THREADS = _intish(BCLCFG.get("threads", 1), 1)
 BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 3000), 3000)
-BCL_PARTITION = str(BCLCFG.get("partition", "i192,i192mem") or "i192,i192mem")
+BCL_PARTITION = str(BCLCFG.get("partition", "i192mem,i192bigmem") or "i192mem,i192bigmem")
 BCL_TMPDIR = str(BCLCFG.get("tmpdir", "/dev/shm") or "/dev/shm")
-BCL_STAGING_MODE = str(BCLCFG.get("staging_mode", "direct") or "direct").strip().lower()
-BCL_SCRATCH_ROOT = str(BCLCFG.get("scratch_root", "/dev/shm/dayoa_bclconvert") or "/dev/shm/dayoa_bclconvert")
-BCL_SCRATCH_SIZE_MULTIPLIER = _intish(BCLCFG.get("scratch_size_multiplier", 4), 4)
-BCL_RETAIN_SCRATCH = _bool(BCLCFG.get("retain_scratch", False), False)
-BCL_MOUNTED_STAGE_JOBS = _intish(BCLCFG.get("mounted_stage_jobs", 64), 64)
 BCL_PARALLEL_TILES = _intish(BCLCFG.get("parallel_tiles", 1), 1)
 BCL_CONVERSION_THREADS = _intish(BCLCFG.get("conversion_threads", BCL_THREADS), BCL_THREADS)
 BCL_COMPRESSION_THREADS = _intish(BCLCFG.get("compression_threads", BCL_THREADS), BCL_THREADS)
 BCL_DECOMPRESSION_THREADS = _intish(BCLCFG.get("decompression_threads", max(1, BCL_THREADS // 2)), max(1, BCL_THREADS // 2))
 BCL_FASTQ_GZIP_COMPRESSION_LEVEL = _intish(BCLCFG.get("fastq_gzip_compression_level", 1), 1)
-BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCLCFG.get("shared_thread_odirect_output", False), False)
+BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCLCFG.get("shared_thread_odirect_output", True), True)
+BCL_OUTPUT_LEGACY_STATS = _bool(BCLCFG.get("output_legacy_stats", True), True)
+BCL_NUM_UNKNOWN_BARCODES_REPORTED = _intish(BCLCFG.get("num_unknown_barcodes_reported", 1000), 1000)
 BCL_FORCE = _bool(BCLCFG.get("force", False))
 BCL_KEEP_UNDETERMINED = _bool(BCLCFG.get("keep_undetermined_fastqs", True), True)
 BCL_SAMPLEPROJECT_SUBDIRS = _bool(BCLCFG.get("sampleproject_subdirectories", False), False)
@@ -161,10 +159,97 @@ BCL_LIBPREP = str(BCLCFG.get("libprep", "PCR-FREE") or "PCR-FREE")
 BCL_SEQ_VENDOR = str(BCLCFG.get("seq_vendor", "ILMN") or "ILMN")
 BCL_SEQ_PLATFORM_OVERRIDE = str(BCLCFG.get("seq_platform_override", "") or "")
 BCL_CONTAINER_URI = f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
+DAYOA_BCLCONVERT_LANE_SPLIT = True
+
+# Barcode mismatch settings are injected through the lane sample sheet so the
+# container sees the same BCL Convert contract on every lane. Other settings use
+# this same path but remain unset unless config supplies explicit values.
+BCL_SAMPLE_SHEET_SETTING_CONFIG_KEYS = {
+    "AdapterRead1": "adapter_read1",
+    "AdapterRead2": "adapter_read2",
+    "AdapterBehavior": "adapter_behavior",
+    "AdapterStringency": "adapter_stringency",
+    "MinimumAdapterOverlap": "minimum_adapter_overlap",
+    "BarcodeMismatchesIndex1": "barcode_mismatches_index1",
+    "BarcodeMismatchesIndex2": "barcode_mismatches_index2",
+    "CreateFastqForIndexReads": "create_fastq_for_index_reads",
+    "MinimumTrimmedReadLength": "minimum_trimmed_read_length",
+    "MaskShortReads": "mask_short_reads",
+    "OverrideCycles": "override_cycles",
+    "SoftwareVersion": "software_version",
+    "TrimUMI": "trim_umi",
+    "NoLaneSplitting": "no_lane_splitting",
+}
+
+
+def _bcl_mapping(value, *, name):
+    if value in (None, "", "None"):
+        return {}
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise WorkflowError(f"bclconvert.{name} must be a mapping or JSON object string") from exc
+        if not isinstance(parsed, dict):
+            raise WorkflowError(f"bclconvert.{name} must be a mapping or JSON object string")
+        return parsed
+    raise WorkflowError(f"bclconvert.{name} must be a mapping or JSON object string")
+
+
+def _bcl_setting_value(config_key):
+    if config_key not in BCLCFG:
+        return ""
+    value = BCLCFG.get(config_key)
+    if value is None or value == "":
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value).strip()
+
+
+BCL_SAMPLE_SHEET_SETTINGS = {
+    canonical: value
+    for canonical, config_key in BCL_SAMPLE_SHEET_SETTING_CONFIG_KEYS.items()
+    for value in [_bcl_setting_value(config_key)]
+    if value
+}
+BCL_SAMPLE_SHEET_SETTINGS.update(
+    _bcl_mapping(BCLCFG.get("sample_sheet_settings", {}), name="sample_sheet_settings")
+)
+BCL_SAMPLE_SHEET_SETTINGS_BY_LANE = _bcl_mapping(
+    BCLCFG.get("sample_sheet_settings_by_lane", {}), name="sample_sheet_settings_by_lane"
+)
+BCL_SAMPLE_SHEET_SETTINGS_JSON = json.dumps(BCL_SAMPLE_SHEET_SETTINGS, sort_keys=True)
+BCL_SAMPLE_SHEET_SETTINGS_BY_LANE_JSON = json.dumps(BCL_SAMPLE_SHEET_SETTINGS_BY_LANE, sort_keys=True)
+
+BCL_LANE_ROOT = Path(BCL_RUN_DIR) / "Data" / "Intensities" / "BaseCalls"
+if BCL_TARGET_REQUESTED:
+    if not BCL_LANE_ROOT.is_dir():
+        raise WorkflowError(f"BCL run directory is missing lane root: {BCL_LANE_ROOT}")
+    BCL_LANES = sorted(
+        path.name
+        for path in BCL_LANE_ROOT.iterdir()
+        if path.is_dir() and re.fullmatch(r"L[0-9][0-9][0-9]", path.name)
+    )
+    if not BCL_LANES:
+        raise WorkflowError(f"BCL run directory has no L### lane directories under {BCL_LANE_ROOT}")
+else:
+    BCL_LANES = []
+BCL_LANE_FASTQ_ROOT = f"{BCL_ROOT}/lane_fastqs"
+BCL_LANE_REPORT_ROOT = f"{BCL_ROOT}/lane_reports"
+BCL_LANE_DONE_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/bclconvert.done", lane=BCL_LANES)
+BCL_LANE_FASTQ_LIST_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fastq_list.csv", lane=BCL_LANES)
+BCL_LANE_DEMUX_STATS_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv", lane=BCL_LANES)
+BCL_LANE_SAMPLE_SHEET_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv", lane=BCL_LANES)
 
 
 localrules:
     bclconvert_validate_inputs,
+    run_bclconvert,
+    bclconvert_metrics_summary,
+    bclconvert_generate_units_tsv,
     produce_bclconvert_fastqs,
     produce_bclconvert_metrics,
     produce_bclconvert_multiqc,
@@ -230,14 +315,18 @@ rule bclconvert_validate_inputs:
         """
 
 
-rule run_bclconvert:
+
+rule run_bclconvert_lane:
     input:
         validated=BCL_VALIDATE_OK,
         sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
     output:
-        done=BCL_DONE,
-        fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
-        demux_stats=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
+        done=f"{BCL_LANE_REPORT_ROOT}/{{lane}}/bclconvert.done",
+        fastq_list=f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fastq_list.csv",
+        demux_stats=f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv",
+        lane_sample_sheet=f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv",
+    wildcard_constraints:
+        lane="L[0-9][0-9][0-9]",
     threads:
         BCL_THREADS
     resources:
@@ -246,372 +335,85 @@ rule run_bclconvert:
         threads=BCL_THREADS,
         mem_mb=BCL_MEM_MB,
         tmpdir=BCL_TMPDIR,
+        exclusive="--exclusive",
     params:
-        cluster_sample="run_bclconvert",
+        cluster_sample=lambda wildcards: f"run_bclconvert_{wildcards.lane}",
         run_dir=BCL_RUN_DIR,
-        source_s3_uri=BCL_SOURCE_S3_URI,
-        region=BCL_RUN_REGION,
-        profile=BCL_RUN_PROFILE,
         container_uri=BCL_CONTAINER_URI,
         tmpdir=BCL_TMPDIR,
-        staging_mode=BCL_STAGING_MODE,
-        scratch_root=BCL_SCRATCH_ROOT,
-        scratch_size_multiplier=BCL_SCRATCH_SIZE_MULTIPLIER,
-        retain_scratch="true" if BCL_RETAIN_SCRATCH else "false",
-        mounted_stage_jobs=BCL_MOUNTED_STAGE_JOBS,
+        lane_number=lambda wildcards: str(int(wildcards.lane[1:])),
+        lane_output_dir=lambda wildcards: f"{BCL_LANE_FASTQ_ROOT}/{wildcards.lane}",
         parallel_tiles=BCL_PARALLEL_TILES,
         conversion_threads=BCL_CONVERSION_THREADS,
         compression_threads=BCL_COMPRESSION_THREADS,
         decompression_threads=BCL_DECOMPRESSION_THREADS,
         fastq_gzip_compression_level=BCL_FASTQ_GZIP_COMPRESSION_LEVEL,
         shared_thread_odirect_output="true" if BCL_SHARED_THREAD_ODIRECT_OUTPUT else "false",
+        output_legacy_stats="true" if BCL_OUTPUT_LEGACY_STATS else "false",
+        num_unknown_barcodes_reported=BCL_NUM_UNKNOWN_BARCODES_REPORTED,
+        sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON,
+        sample_sheet_settings_by_lane_json=BCL_SAMPLE_SHEET_SETTINGS_BY_LANE_JSON,
         force="-f" if BCL_FORCE else "",
         strict_mode="true" if BCL_STRICT_MODE else "false",
         first_tile_only="true" if BCL_FIRST_TILE_ONLY else "false",
         sampleproject_subdirectories="true" if BCL_SAMPLEPROJECT_SUBDIRS else "false",
     log:
-        f"{BCL_LOG_DIR}/run_bclconvert.log",
+        f"{BCL_LOG_DIR}/run_bclconvert.{{lane}}.log",
     benchmark:
-        f"{BCL_BENCH_DIR}/run_bclconvert.bench.tsv",
+        f"{BCL_BENCH_DIR}/run_bclconvert.{{lane}}.bench.tsv",
     shell:
-        r"""
-        set -euo pipefail
-        mkdir -p {BCL_FASTQ_DIR:q} {BCL_LOG_DIR:q}
-        : > {log:q}
-        export TMPDIR={params.tmpdir:q}
-        mkdir -p "$TMPDIR"
+        "TMPDIR={params.tmpdir:q} bash workflow/scripts/run_bclconvert_lane.sh "
+        "{params.container_uri:q} {params.run_dir:q} {params.lane_output_dir:q} {input.sample_sheet:q} "
+        "{params.lane_number:q} {output.lane_sample_sheet:q} {params.strict_mode:q} "
+        "{params.first_tile_only:q} {params.sampleproject_subdirectories:q} "
+        "{params.fastq_gzip_compression_level:q} {params.parallel_tiles:q} "
+        "{params.conversion_threads:q} {params.compression_threads:q} "
+        "{params.decompression_threads:q} {params.shared_thread_odirect_output:q} "
+        "{params.output_legacy_stats:q} {params.num_unknown_barcodes_reported:q} "
+        "{params.sample_sheet_settings_json:q} {params.sample_sheet_settings_by_lane_json:q} "
+        "{params.force:q} {threads:q} {log:q} {output.fastq_list:q} "
+        "{output.demux_stats:q} {output.done:q}"
 
-        staging_mode={params.staging_mode:q}
-        scratch_root={params.scratch_root:q}
-        retain_scratch={params.retain_scratch:q}
-        effective_run_dir={params.run_dir:q}
-        effective_output_dir={BCL_FASTQ_DIR:q}
-        scratch_dir=""
 
-        cleanup_bclconvert_scratch() {{
-            if [ -n "$scratch_dir" ] && [ "$retain_scratch" != "true" ]; then
-                rm -rf "$scratch_dir"
-            fi
-        }}
-        trap cleanup_bclconvert_scratch EXIT
-
-        echo "run_bclconvert started: $(date -Is)" >> {log:q}
-        echo "host: $(hostname)" >> {log:q}
-        echo "threads: {threads}" >> {log:q}
-        echo "resources_mem_mb: {resources.mem_mb}" >> {log:q}
-        echo "TMPDIR: $TMPDIR" >> {log:q}
-        echo "staging_mode: $staging_mode" >> {log:q}
-        echo "scratch_root: $scratch_root" >> {log:q}
-        echo "bcl_input_directory: $effective_run_dir" >> {log:q}
-        echo "source_s3_uri: {params.source_s3_uri}" >> {log:q}
-        echo "output_directory: $effective_output_dir" >> {log:q}
-        nproc >> {log:q} 2>&1 || true
-        df -h "$TMPDIR" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
-        command -v singularity >> {log:q} 2>&1
-        singularity exec {params.container_uri:q} bcl-convert --version >> {log:q} 2>&1
-
-        case "$staging_mode" in
-            direct)
-                ;;
-            output_dev_shm)
-                mkdir -p "$scratch_root"
-                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
-                scratch_output_dir="$scratch_dir/fastqs"
-                mkdir -p "$scratch_dir"
-                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
-                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
-                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                scratch_parent="$(dirname "$scratch_root")"
-                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
-                echo "scratch_dir: $scratch_dir" >> {log:q}
-                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
-                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
-                echo "scratch_required_bytes: $required_bytes" >> {log:q}
-                echo "scratch_available_bytes: $available_bytes" >> {log:q}
-                if [ "$available_bytes" -lt "$required_bytes" ]; then
-                    echo "Insufficient scratch for bclconvert.staging_mode=output_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
-                    exit 2
-                fi
-                effective_output_dir="$scratch_output_dir"
-                df -h "$scratch_root" >> {log:q} 2>&1 || true
-                ;;
-            dev_shm)
-                mkdir -p "$scratch_root"
-                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
-                scratch_run_dir="$scratch_dir/run"
-                scratch_output_dir="$scratch_dir/fastqs"
-                mkdir -p "$scratch_run_dir"
-                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
-                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
-                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                scratch_parent="$(dirname "$scratch_root")"
-                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
-                echo "scratch_dir: $scratch_dir" >> {log:q}
-                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
-                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
-                echo "scratch_required_bytes: $required_bytes" >> {log:q}
-                echo "scratch_available_bytes: $available_bytes" >> {log:q}
-                if [ "$available_bytes" -lt "$required_bytes" ]; then
-                    echo "Insufficient scratch for bclconvert.staging_mode=dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
-                    exit 2
-                fi
-                echo "Copying BCL run directory to scratch: $(date -Is)" >> {log:q}
-                cp -aL --sparse=always "$effective_run_dir"/. "$scratch_run_dir"/
-                effective_run_dir="$scratch_run_dir"
-                effective_output_dir="$scratch_output_dir"
-                df -h "$scratch_root" >> {log:q} 2>&1 || true
-                ;;
-            mounted_dev_shm)
-                mkdir -p "$scratch_root"
-                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
-                scratch_run_dir="$scratch_dir/run"
-                scratch_output_dir="$scratch_dir/fastqs"
-                scratch_sync_log_dir="$scratch_dir/rsync_logs"
-                stage_metadata_log="{BCL_LOG_DIR:q}/mounted_metadata.log"
-                stage_files_log="{BCL_LOG_DIR:q}/mounted_files.log"
-                mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
-                lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
-                if [ ! -d "$lane_root" ]; then
-                    echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
-                    exit 2
-                fi
-                root_file_bytes="$(find "$effective_run_dir" -maxdepth 1 -type f -printf '%s\n' | awk '{{s+=$1}} END {{print s+0}}')"
-                intensities_file_bytes="$(find "$effective_run_dir/Data/Intensities" -maxdepth 1 -type f -printf '%s\n' | awk '{{s+=$1}} END {{print s+0}}')"
-                lane_root_disk_bytes="$(du -sB1 "$lane_root" | awk '{{print $1}}')"
-                input_disk_bytes="$((root_file_bytes + intensities_file_bytes + lane_root_disk_bytes))"
-                input_apparent_bytes="$input_disk_bytes"
-                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                scratch_parent="$(dirname "$scratch_root")"
-                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
-                echo "scratch_dir: $scratch_dir" >> {log:q}
-                echo "scratch_input_basis: mounted_metadata_plus_lane_root" >> {log:q}
-                echo "scratch_root_file_bytes: $root_file_bytes" >> {log:q}
-                echo "scratch_intensities_file_bytes: $intensities_file_bytes" >> {log:q}
-                echo "scratch_lane_root_disk_bytes: $lane_root_disk_bytes" >> {log:q}
-                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
-                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
-                echo "scratch_required_bytes: $required_bytes" >> {log:q}
-                echo "scratch_available_bytes: $available_bytes" >> {log:q}
-                if [ "$available_bytes" -lt "$required_bytes" ]; then
-                    echo "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
-                    exit 2
-                fi
-                lane_ids=$(find "$lane_root" -mindepth 1 -maxdepth 1 -type d -name 'L[0-9][0-9][0-9]' -printf '%f\n' | sort)
-                if [ -z "$lane_ids" ]; then
-                    echo "BCL run directory has no L### lane directories under $lane_root" >> {log:q}
-                    exit 2
-                fi
-                echo "Staging mounted BCL run directory to scratch: $(date -Is)" >> {log:q}
-                echo "mounted_stage_lanes: $(printf "%s" "$lane_ids" | tr '\n' ' ')" >> {log:q}
-                mounted_stage_jobs={params.mounted_stage_jobs}
-                if [ "$mounted_stage_jobs" -lt 1 ]; then
-                    echo "bclconvert.mounted_stage_jobs must be >= 1" >> {log:q}
-                    exit 2
-                fi
-                echo "mounted_stage_jobs: $mounted_stage_jobs" >> {log:q}
-                mkdir -p "$scratch_run_dir/Data/Intensities/BaseCalls"
-                if ! {{
-                    echo "Copying root-level BCL metadata"
-                    find "$effective_run_dir" -maxdepth 1 -type f -print0 \
-                      | xargs -0 -r cp -L --sparse=always -t "$scratch_run_dir"
-                    find "$effective_run_dir/Data/Intensities" -maxdepth 1 -type f -print0 \
-                      | xargs -0 -r cp -L --sparse=always -t "$scratch_run_dir/Data/Intensities"
-                    echo "Skipping InterOp during BCLConvert scratch staging; run-QC rules own InterOp parsing"
-                }} > "$stage_metadata_log" 2>&1; then
-                    cat "$stage_metadata_log" >> {log:q} || true
-                    echo "Mounted metadata staging failed" >> {log:q}
-                    exit 2
-                fi
-                cycle_list="$scratch_sync_log_dir/cycle_dirs.txt"
-                find "$lane_root" -mindepth 2 -maxdepth 2 -type d -name 'C*.1' -printf '%P\n' | sort > "$cycle_list"
-                cycle_count="$(wc -l < "$cycle_list" | tr -d ' ')"
-                echo "mounted_stage_cycle_dirs: $cycle_count" >> {log:q}
-                if [ "$cycle_count" -lt 1 ]; then
-                    echo "BCL run directory has no L###/C*.1 cycle directories under $lane_root" >> {log:q}
-                    exit 2
-                fi
-                file_list="$scratch_sync_log_dir/basecall_files.nul"
-                find "$lane_root" -mindepth 2 -type f -printf '%P\0' > "$file_list"
-                file_count="$(tr -cd "\0" < "$file_list" | wc -c | tr -d " ")"
-                echo "mounted_stage_regular_files: $file_count" >> {log:q}
-                if [ "$file_count" -lt 1 ]; then
-                    echo "BCL run directory has no regular files under $lane_root" >> {log:q}
-                    exit 2
-                fi
-                echo "Copying mounted BCL files with sharded cp: $(date -Is)" >> {log:q}
-                if ! xargs -0 -r -P "$mounted_stage_jobs" -n 64 bash -c '
-                    set -euo pipefail
-                    lane_root="$1"
-                    scratch_run_dir="$2"
-                    shift 2
-                    for rel in "$@"; do
-                        src="$lane_root/$rel"
-                        dst="$scratch_run_dir/Data/Intensities/BaseCalls/$(dirname "$rel")"
-                        mkdir -p "$dst"
-                        cp -L --sparse=always "$src" "$dst/"
-                    done
-                ' _ "$lane_root" "$scratch_run_dir" \
-                  < "$file_list" > "$stage_files_log" 2>&1; then
-                    cat "$stage_metadata_log" "$stage_files_log" >> {log:q} || true
-                    echo "One or more mounted BCL file copy batches failed" >> {log:q}
-                    exit 2
-                fi
-                cat "$stage_metadata_log" "$stage_files_log" >> {log:q} || true
-                echo "Mounted scratch staging complete: $(date -Is)" >> {log:q}
-                du -sh "$scratch_run_dir" >> {log:q} 2>&1 || true
-                effective_run_dir="$scratch_run_dir"
-                effective_output_dir="$scratch_output_dir"
-                df -h "$scratch_root" >> {log:q} 2>&1 || true
-                ;;
-            s3_dev_shm)
-                mkdir -p "$scratch_root"
-                scratch_dir="$scratch_root/${{SLURM_JOB_ID:-local}}.$$"
-                scratch_run_dir="$scratch_dir/run"
-                scratch_output_dir="$scratch_dir/fastqs"
-                scratch_sync_log_dir="$scratch_dir/aws_sync_logs"
-                mkdir -p "$scratch_run_dir" "$scratch_sync_log_dir"
-                source_s3_uri={params.source_s3_uri:q}
-                run_region={params.region:q}
-                run_profile={params.profile:q}
-                if [ -z "$source_s3_uri" ]; then
-                    echo "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI in config/runs.tsv" >> {log:q}
-                    exit 2
-                fi
-                if [ -z "$run_region" ]; then
-                    echo "bclconvert.staging_mode=s3_dev_shm requires REGION in config/runs.tsv" >> {log:q}
-                    exit 2
-                fi
-                command -v aws >> {log:q} 2>&1
-                echo "s3_stage_submit_profile: $run_profile" >> {log:q}
-                echo "s3_stage_credential_mode: compute_instance_role" >> {log:q}
-                AWS_REGION="$run_region" AWS_DEFAULT_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
-                  aws sts get-caller-identity >> {log:q} 2>&1
-                input_disk_bytes="$(du -sB1 "$effective_run_dir" | awk '{{print $1}}')"
-                input_apparent_bytes="$(du -sb "$effective_run_dir" | awk '{{print $1}}')"
-                required_bytes="$((input_disk_bytes * {params.scratch_size_multiplier} + 1073741824))"
-                scratch_parent="$(dirname "$scratch_root")"
-                available_bytes="$(df -PB1 "$scratch_parent" | awk 'NR == 2 {{print $4}}')"
-                echo "scratch_dir: $scratch_dir" >> {log:q}
-                echo "scratch_input_disk_bytes: $input_disk_bytes" >> {log:q}
-                echo "scratch_input_apparent_bytes: $input_apparent_bytes" >> {log:q}
-                echo "scratch_required_bytes: $required_bytes" >> {log:q}
-                echo "scratch_available_bytes: $available_bytes" >> {log:q}
-                if [ "$available_bytes" -lt "$required_bytes" ]; then
-                    echo "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm: required=$required_bytes available=$available_bytes" >> {log:q}
-                    exit 2
-                fi
-                run_uri=$(printf "%s" "$source_s3_uri" | sed 's:/*$::')
-                lane_root="$effective_run_dir/Data/Intensities/BaseCalls"
-                if [ ! -d "$lane_root" ]; then
-                    echo "BCL run directory is missing lane root: $lane_root" >> {log:q}
-                    exit 2
-                fi
-                lane_ids=$(find "$lane_root" -mindepth 1 -maxdepth 1 -type d -name 'L[0-9][0-9][0-9]' -printf '%f\n' | sort)
-                if [ -z "$lane_ids" ]; then
-                    echo "BCL run directory has no L### lane directories under $lane_root" >> {log:q}
-                    exit 2
-                fi
-                echo "Staging BCL run directory from S3 to scratch: $(date -Is)" >> {log:q}
-                echo "s3_stage_lanes: $(printf "%s" "$lane_ids" | tr '\n' ' ')" >> {log:q}
-                if ! AWS_REGION="$run_region" AWS_DEFAULT_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
-                  aws s3 sync "$run_uri/" "$scratch_run_dir/" \
-                    --exclude "Analysis/*" \
-                    --exclude "Data/Intensities/BaseCalls/L*/*" \
-                    --only-show-errors \
-                    > "$scratch_sync_log_dir/root.log" 2>&1; then
-                    cat "$scratch_sync_log_dir/root.log" >> {log:q}
-                    echo "Root-level aws s3 sync failed" >> {log:q}
-                    exit 2
-                fi
-                pids=()
-                for lane_id in $lane_ids; do
-                    (
-                        AWS_REGION="$run_region" AWS_DEFAULT_REGION="$run_region" AWS_MAX_ATTEMPTS=10 AWS_RETRY_MODE=adaptive \
-                          aws s3 sync "$run_uri/Data/Intensities/BaseCalls/$lane_id/" "$scratch_run_dir/Data/Intensities/BaseCalls/$lane_id/" \
-                            --only-show-errors
-                    ) > "$scratch_sync_log_dir/$lane_id.log" 2>&1 &
-                    pids+=("$!")
-                done
-                sync_rc=0
-                for pid in "${{pids[@]}}"; do
-                    if ! wait "$pid"; then
-                        sync_rc=1
-                    fi
-                done
-                cat "$scratch_sync_log_dir"/*.log >> {log:q}
-                if [ "$sync_rc" -ne 0 ]; then
-                    echo "One or more lane-level aws s3 sync processes failed" >> {log:q}
-                    exit 2
-                fi
-                echo "S3 scratch staging complete: $(date -Is)" >> {log:q}
-                du -sh "$scratch_run_dir" >> {log:q} 2>&1 || true
-                effective_run_dir="$scratch_run_dir"
-                effective_output_dir="$scratch_output_dir"
-                df -h "$scratch_root" >> {log:q} 2>&1 || true
-                ;;
-            *)
-                echo "Unsupported bclconvert.staging_mode: $staging_mode" >> {log:q}
-                exit 2
-                ;;
-        esac
-
-        parallel_tiles={params.parallel_tiles}
-        conversion_threads={params.conversion_threads}
-        compression_threads={params.compression_threads}
-        decompression_threads={params.decompression_threads}
-        per_tile_threads="$((conversion_threads + compression_threads + decompression_threads))"
-        if [ "$per_tile_threads" -lt 1 ]; then
-            echo "BCLConvert per-tile thread total must be >= 1" >> {log:q}
-            exit 2
-        fi
-        max_parallel_tiles="$(({threads} / per_tile_threads))"
-        if [ "$max_parallel_tiles" -lt 1 ]; then
-            echo "BCLConvert thread allocation is too small: threads={threads} per_tile_threads=$per_tile_threads" >> {log:q}
-            exit 2
-        fi
-        if [ "$parallel_tiles" -gt "$max_parallel_tiles" ]; then
-            echo "Reducing BCLConvert parallel tiles from $parallel_tiles to $max_parallel_tiles for threads={threads}" >> {log:q}
-            parallel_tiles="$max_parallel_tiles"
-        fi
-        echo "bcl_num_parallel_tiles: $parallel_tiles" >> {log:q}
-        echo "bcl_num_conversion_threads: $conversion_threads" >> {log:q}
-        echo "bcl_num_compression_threads: $compression_threads" >> {log:q}
-        echo "bcl_num_decompression_threads: $decompression_threads" >> {log:q}
-
-        bcl_flags=(
-          --bcl-input-directory "$effective_run_dir"
-          --output-directory "$effective_output_dir"
-          --sample-sheet {input.sample_sheet:q}
-          --strict-mode {params.strict_mode}
-          --first-tile-only {params.first_tile_only}
-          --bcl-sampleproject-subdirectories {params.sampleproject_subdirectories}
-          --fastq-gzip-compression-level {params.fastq_gzip_compression_level}
-          --bcl-num-parallel-tiles "$parallel_tiles"
-          --bcl-num-conversion-threads "$conversion_threads"
-          --bcl-num-compression-threads "$compression_threads"
-          --bcl-num-decompression-threads "$decompression_threads"
-          --shared-thread-odirect-output {params.shared_thread_odirect_output}
-        )
-        force_arg={params.force:q}
-        if [ -n "$force_arg" ]; then
-            bcl_flags+=("$force_arg")
-        fi
-
-        printf 'bcl-convert command:' >> {log:q}
-        printf ' %q' singularity exec {params.container_uri:q} bcl-convert "${{bcl_flags[@]}}" >> {log:q}
-        printf '\n' >> {log:q}
-        singularity exec {params.container_uri:q} bcl-convert "${{bcl_flags[@]}}" >> {log:q} 2>&1
-
-        if [ "$staging_mode" = "dev_shm" ] || [ "$staging_mode" = "mounted_dev_shm" ] || [ "$staging_mode" = "s3_dev_shm" ] || [ "$staging_mode" = "output_dev_shm" ]; then
-            echo "Copying BCLConvert outputs from scratch to result tree: $(date -Is)" >> {log:q}
-            cp -a "$effective_output_dir"/. {BCL_FASTQ_DIR:q}/
-            df -h "$scratch_root" {BCL_FASTQ_DIR:q} >> {log:q} 2>&1 || true
-        fi
-        test -s {output.fastq_list:q}
-        test -s {output.demux_stats:q}
-        echo "run_bclconvert finished: $(date -Is)" >> {log:q}
-        touch {output.done:q}
-        """
+rule run_bclconvert:
+    input:
+        validated=BCL_VALIDATE_OK,
+        sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
+        lane_done=BCL_LANE_DONE_FILES,
+        fastq_lists=BCL_LANE_FASTQ_LIST_FILES,
+        demux_stats=BCL_LANE_DEMUX_STATS_FILES,
+        lane_sample_sheets=BCL_LANE_SAMPLE_SHEET_FILES,
+    output:
+        done=BCL_DONE,
+        fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
+        demux_stats=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
+    threads:
+        1
+    resources:
+        partition=BCL_PARTITION,
+        vcpu=1,
+        threads=1,
+        mem_mb=3000,
+        tmpdir=BCL_TMPDIR,
+    params:
+        cluster_sample="run_bclconvert_merge_lanes",
+        lanes=",".join(BCL_LANES),
+        lane_fastq_root=BCL_LANE_FASTQ_ROOT,
+        final_fastq_dir=BCL_FASTQ_DIR,
+        report_dir=BCL_REPORT_DIR,
+    log:
+        f"{BCL_LOG_DIR}/run_bclconvert.merge_lanes.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/run_bclconvert.merge_lanes.bench.tsv",
+    shell:
+        "python workflow/scripts/merge_bclconvert_lanes.py "
+        "--lane-fastq-root {params.lane_fastq_root:q} "
+        "--final-fastq-dir {params.final_fastq_dir:q} "
+        "--report-dir {params.report_dir:q} "
+        "--lanes {params.lanes:q} "
+        "--done {output.done:q} "
+        "--log {log:q} >> {log:q} 2>&1 && "
+        "test -s {output.fastq_list:q} && test -s {output.demux_stats:q}"
 
 
 rule bclconvert_generate_units_tsv:

@@ -11,7 +11,15 @@
 | MultiQC operations | [`ops/multiqc_qc_targets.md`](ops/multiqc_qc_targets.md) |
 | CLI notes | [`ops/dycli.md`](ops/dycli.md) |
 | Example MultiQC reports | [`examples/multiqc/README.md`](examples/multiqc/README.md) |
+| BCL Convert run-context workflow | [`workflows/bclconvert.md`](workflows/bclconvert.md) |
 | Ultima run QC contracts | [`specs/ultima_run_qc_requirements.md`](specs/ultima_run_qc_requirements.md), [`workflows/ultima_run_qc.md`](workflows/ultima_run_qc.md) |
+
+## Current Runtime Notes
+
+- BCL Convert uses the mounted run directory directly. It does not copy an Illumina run directory into `results/` or `/dev/shm` before demultiplexing.
+- BCL Convert launches one lane job per `Data/Intensities/BaseCalls/L###` directory, then merges lane FASTQs and reports locally.
+- The default BCL Convert sample-sheet contract injects `BarcodeMismatchesIndex1,0` and `BarcodeMismatchesIndex2,0` through generated lane sample sheets. Other sample-sheet settings are wired but intentionally unset until explicitly configured.
+- Hybrid Ultima+ONT `sentdhuomr` Stage1 now hard-fails on Sentieon driver errors, validates BAMs before Stage2, and handles empty target/refined-region shards explicitly in later stages.
 
 Legacy material moved to [`../quarantine/legacy-docs/`](../quarantine/legacy-docs/). The active `docs/plans/` tree remains in place because those files are durable execution ledgers.
 

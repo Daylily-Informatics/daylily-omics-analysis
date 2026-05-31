@@ -109,6 +109,20 @@ If the configured license path is absent, DayOA scans `/fsx/references/runtime_a
 | `produce_multiqc_snv`, `produce_multiqc_sv` | Variant-scope MultiQC. |
 | `produce_multiqc_all` | Canonical final routine MultiQC aggregation. |
 | `produce_dayoa_evidence_manifest` | Deterministic post-MultiQC local evidence manifest. |
+| `produce_bclconvert_fastqs_and_metrics` | Lane-split Illumina BCL Convert demultiplexing plus generated units and demux metrics. |
+| `produce_illumina_run_qc_and_bclconvert` | Mounted Illumina run QC plus lane-split BCL Convert in one run-context workflow. |
+
+## Mounted Run Directories And BCL Convert
+
+Run-directory workflows are designed to read from mounted, read-only FSx DRA paths supplied by `daylily-ephemeral-cluster`. DayOA must not copy full staged run directories into `results/` before analysis. For BCL Convert, the native rule reads the mounted run directory directly and launches one `bcl-convert` job per detected `Data/Intensities/BaseCalls/L###` lane. Each lane job writes lane-local FASTQs and BCL reports under `results/.../bclconvert/lane_fastqs/`, and a local merge rule moves FASTQs into the standard final FASTQ directory and merges `fastq_list.csv`, `Demultiplex_Stats.csv`, `Top_Unknown_Barcodes.csv`, and `Index_Hopping_Counts.csv`.
+
+The Slurm profile is tuned for solo 192-vCPU BCL runs on `i192mem,i192bigmem`: 16 parallel tiles, 8 conversion threads per tile, 48 compression threads, 8 decompression threads, gzip level 1, shared O_DIRECT output threads enabled, and legacy stats output enabled. The lane sample sheet is generated from the normalized sample sheet and injects `BarcodeMismatchesIndex1,0` and `BarcodeMismatchesIndex2,0` by default. Other BCL Convert sample-sheet settings are wired through config but remain unset unless explicitly configured and tested.
+
+For live validation of the zero-mismatch BCL path, use a `day-clone -d bclconvert_0_mm` workset name so the analysis directory itself records the matching policy.
+
+## Hybrid Ultima And ONT
+
+The modular Ultima+ONT Sentieon hybrid path (`sentdhuomr`) hard-fails on Stage1 driver errors and no longer uses process substitution for HAP and INS streams. Stage1 now runs the Sentieon drivers sequentially into temp SAM files, validates the target haplotype BAM and realigned BAM before downstream rules consume them, and indexes the haplotype BAM only after integrity checks. Stage2, Stage3, and Pass2 also tolerate genuinely empty target/refined-region shards by emitting explicit empty outputs with log messages rather than feeding empty target-hap state into Sentieon.
 
 ## MultiQC And Evidence Boundaries
 

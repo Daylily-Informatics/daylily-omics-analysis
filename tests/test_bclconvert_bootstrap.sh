@@ -226,7 +226,7 @@ with_temp_profile() {
   local backup_samples="${workdir}/samples.tsv.backup"
   local backup_units="${workdir}/units.tsv.backup"
 
-  mkdir -p "$(dirname "$PROFILE_FILE")" config "$FIXTURE_RUN_DIR"
+  mkdir -p "$(dirname "$PROFILE_FILE")" config "$FIXTURE_RUN_DIR/Data/Intensities/BaseCalls/L001"
 
   if [[ -f "$PROFILE_FILE" ]]; then
     cp "$PROFILE_FILE" "$backup_profile"
@@ -557,34 +557,27 @@ path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 assert "BCL_RUNTIME_VERSION = \"4.0.3\"" in text
 assert "BCL_CONTAINER_URI = f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
-assert "BCL_STAGING_MODE" in text
-assert "Unsupported bclconvert.staging_mode" in text
-assert "Insufficient scratch for bclconvert.staging_mode=output_dev_shm" in text
-assert "Insufficient scratch for bclconvert.staging_mode=dev_shm" in text
-assert "Insufficient scratch for bclconvert.staging_mode=mounted_dev_shm" in text
-assert "Copying mounted BCL files with sharded cp" in text
-assert "mounted_stage_lanes" in text
-assert "mounted_stage_jobs" in text
-assert "mounted_stage_cycle_dirs" in text
-assert "mounted_stage_regular_files" in text
-assert "Insufficient scratch for bclconvert.staging_mode=s3_dev_shm" in text
-assert "bclconvert.staging_mode=s3_dev_shm requires SOURCE_S3_URI" in text
-assert "aws s3 sync" in text
-assert "aws sts get-caller-identity" in text
-assert "s3_stage_credential_mode: compute_instance_role" in text
-assert "singularity exec {params.container_uri:q} bcl-convert" in text
-assert "Reducing BCLConvert parallel tiles from $parallel_tiles" in text
-assert "--bcl-num-parallel-tiles \"$parallel_tiles\"" in text
-assert "--bcl-num-conversion-threads \"$conversion_threads\"" in text
-assert "--bcl-num-compression-threads \"$compression_threads\"" in text
-assert "--bcl-num-decompression-threads \"$decompression_threads\"" in text
-assert "--fastq-gzip-compression-level {params.fastq_gzip_compression_level}" in text
+assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in text
+assert "rule run_bclconvert_lane:" in text
+assert "workflow/scripts/run_bclconvert_lane.sh" in text
+assert "workflow/scripts/merge_bclconvert_lanes.py" in text
+assert "BCL_LANE_ROOT = Path(BCL_RUN_DIR)" in text
+assert "BCL_SAMPLE_SHEET_SETTINGS_JSON" in text
+assert "\"BarcodeMismatchesIndex1\": \"barcode_mismatches_index1\"" in text
+assert "\"BarcodeMismatchesIndex2\": \"barcode_mismatches_index2\"" in text
+assert "BCL_OUTPUT_LEGACY_STATS" in text
+assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in text
+assert "BCL_STAGING_MODE" not in text
+assert "Copying mounted BCL files with sharded cp" not in text
+assert "cp -aL --sparse=always" not in text
+assert "aws s3 sync" not in text
 assert "-m fastqc" not in text
 assert "{BCL_FASTQ_DIR:q}" not in text[text.index("rule multiqc_bclconvert:"):]
 assert "script:" not in text
 assert re.search(r"(?m)^\\s*run:\\s*$", text) is None
 rule_names = [
     "bclconvert_validate_inputs",
+    "run_bclconvert_lane",
     "run_bclconvert",
     "bclconvert_generate_units_tsv",
     "bclconvert_metrics_summary",
