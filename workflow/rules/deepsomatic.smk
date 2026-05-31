@@ -146,6 +146,8 @@ rule dvsom_sort_index_chunk_vcf:
         config['deepsomatic']['dvsom_conda']
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/vcfs/{dvsomchrm}/log/{sample}.{alnr}.dvsom.{dvsomchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dvsomchrm}.dvsom_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -186,6 +188,8 @@ rule dvsom_concat_index_chunks:
         config['deepsomatic']['dvsom_conda'],
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/log/{sample}.{alnr}.dvsom.snv.merge.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.dvsom_concat_index_chunks.bench.tsv"
     params:
         cluster_sample=ret_sample,
     shell:
@@ -220,6 +224,8 @@ rule produce_dvsom_vcf:  # TARGET : Produce DeepSomatic VCFs
     priority: 48
     log:
         "gatheredall.dvsom.log",
+    benchmark:
+        MDIR + "benchmarks/produce_dvsom_vcf.bench.tsv"
     params:
         cluster_sample=ret_sample,
     conda:
@@ -261,6 +267,8 @@ rule prep_dvsom_chunkdirs:
         cluster_sample=ret_sample,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/dvsom/log/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_dvsom_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

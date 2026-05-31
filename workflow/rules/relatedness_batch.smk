@@ -64,6 +64,10 @@ rule relatedness_batch_manifest:
         _relatedness_manifest_inputs
     output:
         RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_manifest.tsv"
+    log:
+        MDIR + "logs/{alnr}.{ddup}.relatedness_batch_manifest.log"
+    benchmark:
+        MDIR + "benchmarks/{alnr}.{ddup}.relatedness_batch_manifest.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         with open(output[0], "w", newline="") as handle:
@@ -108,6 +112,8 @@ rule relatedness_batch_somalier_extract:
     log:
         RELATEDNESS_REPORT_ROOT
         + "/{alnr}/{ddup}/somalier/logs/{sample}.extract.log"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{alnr}.{ddup}.{sample}.relatedness_batch_somalier_extract.bench.tsv"
     conda:
         RELATEDNESS_CFG["env_yaml"]
     shell:
@@ -156,6 +162,8 @@ rule relatedness_batch_somalier_relate:
         partition=RELATEDNESS_CFG["partition"],
     log:
         RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/somalier/logs/cohort.log"
+    benchmark:
+        MDIR + "benchmarks/{alnr}.{ddup}.relatedness_batch_somalier_relate.bench.tsv"
     conda:
         RELATEDNESS_CFG["env_yaml"]
     shell:
@@ -190,6 +198,10 @@ rule relatedness_batch_report:
         + "/{alnr}/{ddup}/relatedness_pairs_classified.tsv",
         summary=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_summary.tsv",
         html=RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_report.html",
+    log:
+        MDIR + "logs/{alnr}.{ddup}.relatedness_batch_report.log"
+    benchmark:
+        MDIR + "benchmarks/{alnr}.{ddup}.relatedness_batch_report.bench.tsv"
     params:
         expected=RELATEDNESS_CFG.get("expected_relationships", ""),
         thresholds=RELATEDNESS_CFG.get("relationship_thresholds", {}),
@@ -209,6 +221,10 @@ rule relatedness_batch_gather:
         )
     output:
         MDIR + "other_reports/relatedness_mqc.tsv"
+    log:
+        MDIR + "logs/relatedness_batch_gather.log"
+    benchmark:
+        MDIR + "benchmarks/relatedness_batch_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
@@ -246,3 +262,7 @@ rule relatedness_batch_gather:
 rule produce_relatedness:  # TARGET: produce batch Somalier relatedness QC
     input:
         MDIR + "other_reports/relatedness_mqc.tsv"
+    log:
+        MDIR + "logs/produce_relatedness.log"
+    benchmark:
+        MDIR + "benchmarks/produce_relatedness.bench.tsv"

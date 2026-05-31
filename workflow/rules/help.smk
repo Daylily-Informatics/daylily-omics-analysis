@@ -124,6 +124,10 @@ rule util_test_fail:  # TARGET: rule which will always fail
     threads: 1
     output:
         "logs/this_file_is_never_created.txt",
+    log:
+        MDIR + "logs/util_test_fail.log"
+    benchmark:
+        MDIR + "benchmarks/util_test_fail.bench.tsv"
     shell:
         "echo 'Running Rule Which Will Fail To Produce {output}';"
 
@@ -137,6 +141,10 @@ rule util_print_targets:  # TARGET : Return a List of All Targets
     params:
         tgts=tgts,
         c=get_ccmd(),
+    log:
+        MDIR + "logs/util_print_targets.log"
+    benchmark:
+        MDIR + "benchmarks/util_print_targets.bench.tsv"
     shell:
         """
         set +euo pipefail; echo AAAAAA$?;
@@ -162,6 +170,8 @@ rule util_env_check:  # TARGET : Will create a few files in the results dir, use
         "../envs/vanilla_v0.1.yaml"  # oddity- the conda envs are declared relative to the rules directory, not like everything else which is from the execution directory.
     log:
         MDIR + "logs/env_check.log",
+    benchmark:
+        MDIR + "benchmarks/util_env_check.bench.tsv"
     threads: 8
     output: 
         "logs/env_check.out",
@@ -177,6 +187,10 @@ localrules:
     util_ipython_shell,
 
 rule util_ipython_shell:  # TARGET: opens an ipython embed session in the run block of the rule (this is the only run block in mg). you may open a global context ipython shell by setting --config ipython=yes.
+    log:
+        MDIR + "logs/util_ipython_shell.log"
+    benchmark:
+        MDIR + "benchmarks/util_ipython_shell.bench.tsv"
     run:
         from IPython import embed
         embed()
@@ -188,6 +202,10 @@ localrules:
 
 rule initm:
     """ Internal use. runs after mod-activate to force creation of template files for a new profile. """
+    log:
+        MDIR + "logs/initm.log"
+    benchmark:
+        MDIR + "benchmarks/initm.bench.tsv"
     shell:
         "echo profile:$DAY_PROFILE.initialized;"
 
@@ -203,6 +221,10 @@ rb = "}"
 rule util_profile_config_reset:  # TARGET: clears all profile config files so they can be regenerated from templates on next mod-run o r -activate
     """ Clears all of the initialized profile config files """
     """ The active profile config will be regenerated from templates w next 'mod-run'. """
+    log:
+        MDIR + "logs/util_profile_config_reset.log"
+    benchmark:
+        MDIR + "benchmarks/util_profile_config_reset.bench.tsv"
     run:
         os.system(
             f"""echo $PWD; ((rm config/day_profiles/*/config.yaml && rm config/day_profiles/*/rule_config.yaml && rm config/day_profiles/*/cluster.yaml ) || colr 'no config to remove' "$DY_WT1" "$DY_WB1"); colr 'CONFIG FILES REMOVED' "$DY_WT0" "$DY_WB0" "$DY_WB0";"""
@@ -225,6 +247,8 @@ rule test_benchmark:
         vcpu=2,
         threads=2,
         partition="i8,i128,i192,i192mem"
+    log:
+        MDIR + "logs/test_benchmark.log"
     benchmark:
         "logs/test_bench.tsv"
     shell:
@@ -242,6 +266,10 @@ rule help:
         vcpu=1,
         threads=1,
         partition="i8,i192,i192mem",
+    log:
+        MDIR + "logs/help.log"
+    benchmark:
+        MDIR + "benchmarks/help.bench.tsv"
     shell:
         """
 

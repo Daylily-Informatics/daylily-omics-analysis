@@ -69,6 +69,10 @@ rule produce_cov_uniformity:  # TARGET: Produce cov eveness calcs, swapping out 
     threads: 8
     output:
         mqc=MDIR+"other_reports/norm_cov_evenness_combo_mqc.tsv",
+    log:
+        MDIR + "logs/produce_cov_uniformity.log"
+    benchmark:
+        MDIR + "benchmarks/produce_cov_uniformity.bench.tsv"
     shell:
         """
         set -euo pipefail;

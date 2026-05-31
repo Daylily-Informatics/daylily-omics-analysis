@@ -287,6 +287,8 @@ rule expansionhunter_json_to_tsv:
         cluster_sample=ret_sample,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/logs/{sample}.{alnr}.{ddup}.expansionhunter_parse.log"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.expansionhunter_json_to_tsv.bench.tsv"
     threads: 1
     resources:
         threads=1,
@@ -326,6 +328,8 @@ rule expansionhunter_gather:
         MDIR + "other_reports/expansionhunter_mqc.tsv"
     log:
         MDIR + "other_reports/logs/expansionhunter_gather.log"
+    benchmark:
+        MDIR + "benchmarks/expansionhunter_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         os.makedirs(os.path.dirname(str(log[0])), exist_ok=True)
@@ -393,11 +397,23 @@ rule produce_expansion_hunter:  # TARGET: run ExpansionHunter for ILMN, Complete
         lambda wildcards: _expansionhunter_target_paths("tsv")
 
 
+    log:
+        MDIR + "logs/produce_expansion_hunter.log"
+    benchmark:
+        MDIR + "benchmarks/produce_expansion_hunter.bench.tsv"
 rule produce_expansionhunter:  # TARGET: alias for produce_expansion_hunter
     input:
         lambda wildcards: _expansionhunter_target_paths("tsv")
 
 
+    log:
+        MDIR + "logs/produce_expansionhunter.log"
+    benchmark:
+        MDIR + "benchmarks/produce_expansionhunter.bench.tsv"
 rule produce_expansionhunter_multiqc:  # TARGET: run ExpansionHunter and focused MultiQC report
     input:
         MDIR + "reports/expansionhunter.multiqc.html"
+    log:
+        MDIR + "logs/produce_expansionhunter_multiqc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_expansionhunter_multiqc.bench.tsv"

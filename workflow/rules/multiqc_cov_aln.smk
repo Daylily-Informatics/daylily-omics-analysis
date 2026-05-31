@@ -91,6 +91,8 @@ rule cov_aln_qc:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/logs/",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.cov_aln_qc.bench.tsv"
     conda:
         config["vanilla"]["env_yaml"]
     shell:

@@ -236,6 +236,8 @@ rule produce_rochehc_vcf:  # DEPRECATED TARGET: use produce_rochehc_snv_vcf
     threads: 1
     log:
         "gatheredall.rochehc.log",
+    benchmark:
+        MDIR + "benchmarks/produce_rochehc_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

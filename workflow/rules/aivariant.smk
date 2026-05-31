@@ -46,6 +46,8 @@ rule aiv_bams:
         normal_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/tmp/{aivchrm}/{sample}.{alnr}.aiv.{aivchrm}.normal.bam.bai"),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.aiv.{aivchrm}.bamify.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{aivchrm}.aiv_bams.bench.tsv"
     threads: config['aiv']['threads'],
     conda: "../envs/vanilla_v0.1.yaml"
     params:
@@ -272,6 +274,8 @@ rule aiv_sort_index_chunk_vcf:
         config['aiv']['conda'],
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/vcfs/{aivchrm}/log/{sample}.{alnr}.aiv.{aivchrm}.som.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{aivchrm}.aiv_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -315,6 +319,8 @@ rule aiv_concat_index_chunks:
         mem_mb=config['aiv']['mem_mb'],
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.aiv.som.merge.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.aiv_concat_index_chunks.bench.tsv"
     shell:
         """
         bcftools concat -a -O z -o {output.vcfgz} {input.vcfs} >> {log} 2>&1;
@@ -349,6 +355,8 @@ rule produce_aiv_vcf:  # TARGET: aiv vcf
     priority: 48,
     log:
         "gatheredall.aiv.log",
+    benchmark:
+        MDIR + "benchmarks/produce_aiv_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml",
     params:
@@ -387,6 +395,8 @@ rule prep_aiv_chunkdirs:
         cluster_sample=ret_sample,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/aiv/log/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_aiv_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output} ;

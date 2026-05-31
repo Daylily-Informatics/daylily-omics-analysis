@@ -182,6 +182,10 @@ rule clear_combined_pangenome_sr_vcf:  # TARGET: clear combined pangenome sr vcf
             MDIR + "{sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz",
             sample=SAMPS,
         ),
+    log:
+        MDIR + "logs/clear_combined_pangenome_sr_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_pangenome_sr_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -207,6 +211,8 @@ rule produce_pangenome_sr_vcf:  # TARGET: sentieon pangenome vcf
     threads: 1
     log:
         "gatheredall.pangenome_sr.log",
+    benchmark:
+        MDIR + "benchmarks/produce_pangenome_sr_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

@@ -139,6 +139,8 @@ rule sentdug_sort_index_chunk_vcf:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentdug/vcfs/{dchrm}/log/{sample}.{alnr}.{ddup}.sentdug.{dchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdug_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=64,
         threads=64,
@@ -269,6 +271,10 @@ rule clear_combined_sentdug_vcf:  # TARGET:  clear combined sentdug vcf so the c
             alnr=ALIGNERS_UG,
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_sentdug_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_sentdug_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -296,6 +302,8 @@ rule produce_sentdug_vcf:  # DEPRECATED TARGET: use produce_sentdug_snv_vcf
     threads: 1
     log:
         "gatheredall.sentdug.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdug_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
@@ -319,6 +327,8 @@ rule prep_sentdug_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdug/logs/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_sentdug_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

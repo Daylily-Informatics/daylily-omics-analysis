@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--fastq-list", required=True)
+    parser.add_argument("--fastq-list", required=True, nargs="+")
     parser.add_argument("--sample-sheet-rows", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--libprep", default="PCR-FREE")
@@ -140,13 +140,14 @@ def index_combo(index1: str, index2: str) -> str:
 
 def main() -> int:
     args = parse_args()
-    fastq_path = Path(args.fastq_list)
     rows_path = Path(args.sample_sheet_rows)
     out_path = Path(args.units_out)
 
     sample_rows = load_tsv(rows_path)
     sample_index = build_sample_sheet_index(sample_rows)
-    fastq_rows = load_csv(fastq_path)
+    fastq_rows: list[dict[str, str]] = []
+    for fastq_path in args.fastq_list:
+        fastq_rows.extend(load_csv(Path(fastq_path)))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
 

@@ -169,6 +169,8 @@ rule clair3_sort_index_chunk_vcf:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/log/{sample}.{alnr}.{ddup}.clair3.{clairchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{clairchrm}.clair3_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -300,6 +302,10 @@ rule clear_combined_clair3_vcf:  # TARGET : Clear combined Clair3 VCFs for re-ev
             alnr=ALIGNERS,
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_clair3_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_clair3_vcf.bench.tsv"
     priority: 42
     shell:
         "(rm {input.vcf}*  1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
@@ -326,6 +332,8 @@ rule produce_clair3_vcf:  # DEPRECATED TARGET: use produce_clair3_snv_vcf
     priority: 48
     log:
         "gatheredall.clair3.log",
+    benchmark:
+        MDIR + "benchmarks/produce_clair3_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
@@ -362,6 +370,8 @@ rule prep_clair3_chunkdirs:
     threads: 2
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/log/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_clair3_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

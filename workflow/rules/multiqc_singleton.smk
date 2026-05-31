@@ -17,6 +17,8 @@ rule collect_rules_benchmark_data2:
         ref_code=config["genome_build"],    
     log:
         f"{MDIR}other_reports/logs/rules_benchmarks_summary2.log",
+    benchmark:
+        MDIR + "benchmarks/{MDIR}.collect_rules_benchmark_data2.bench.tsv"
     container: None
     shell:
         "bin/util/benchmarks/collect_day_benchmark_data.sh {params.ref_code} > {log};"
@@ -111,3 +113,7 @@ localrules:
 rule produce_multiqc_singleton:  # TARGET : Generated All WGS Reports
     input:
         MDIR+ "reports/multiqc_singleton.html"
+    log:
+        MDIR + "logs/produce_multiqc_singleton.log"
+    benchmark:
+        MDIR + "benchmarks/produce_multiqc_singleton.bench.tsv"

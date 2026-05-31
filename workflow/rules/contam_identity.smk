@@ -393,6 +393,8 @@ rule contam_identity_mqc_gather:
         sample_map=_sample_external_ids_json,
     log:
         MDIR + "other_reports/logs/contam_identity_custom_data.log",
+    benchmark:
+        MDIR + "benchmarks/contam_identity_mqc_gather.bench.tsv"
     shell:
         r"""
         set -euo pipefail
@@ -414,11 +416,19 @@ rule produce_haplocheck_contam_identity:  # TARGET: run Haplocheck mtDNA contami
         lambda wildcards: _haplocheck_outputs("contamination.txt"),
 
 
+    log:
+        MDIR + "logs/produce_haplocheck_contam_identity.log"
+    benchmark:
+        MDIR + "benchmarks/produce_haplocheck_contam_identity.bench.tsv"
 rule produce_read_haps_contam_identity:  # TARGET: run read_haps haplotype contamination evidence
     input:
         lambda wildcards: _read_haps_outputs("read_haps.txt"),
 
 
+    log:
+        MDIR + "logs/produce_read_haps_contam_identity.log"
+    benchmark:
+        MDIR + "benchmarks/produce_read_haps_contam_identity.bench.tsv"
 rule produce_global_contam_check:  # TARGET: run global contamination and identity evidence bundle
     input:
         MDIR + "other_reports/contamination_mqc.tsv",
@@ -429,3 +439,7 @@ rule produce_global_contam_check:  # TARGET: run global contamination and identi
         MDIR + "other_reports/contam_identity_mqc.tsv",
         MDIR + "other_reports/haplocheck_mtdna_mqc.tsv",
         MDIR + "other_reports/read_haps_mqc.tsv",
+    log:
+        MDIR + "logs/produce_global_contam_check.log"
+    benchmark:
+        MDIR + "benchmarks/produce_global_contam_check.bench.tsv"

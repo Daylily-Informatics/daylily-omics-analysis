@@ -117,6 +117,8 @@ rule deep15_sort_index_chunk_vcf:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/deep15/vcfs/{dvchrm}/log/{sample}.{alnr}.deep15.{dvchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dvchrm}.deep15_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -241,6 +243,10 @@ rule clear_combined_deep15_vcf:  # TARGET:  clear combined deep vcf so the chunk
             alnr=ALIGNERS,
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_deep15_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_deep15_vcf.bench.tsv"
     priority: 42
     conda:
         config['deepvariant']['deep15_conda']
@@ -288,6 +294,8 @@ rule produce_deep15_vcf:  # DEPRECATED TARGET: use produce_deep15_snv_vcf
     priority: 48
     log:
         "gatheredall.deep15.log",
+    benchmark:
+        MDIR + "benchmarks/produce_deep15_vcf.bench.tsv"
     conda:
         config['deepvariant']['deep15_conda']
     params:
@@ -327,6 +335,8 @@ rule prep_deep15_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/deep15/log/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_deep15_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

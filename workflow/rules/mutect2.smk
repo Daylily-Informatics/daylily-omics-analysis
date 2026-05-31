@@ -21,6 +21,8 @@ rule mutect2_bams:
         normal_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/tmp/{m2chrm}/{sample}.{alnr}.mutect2.{m2chrm}.normal.bam.bai"),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.mutect2.{m2chrm}.bamify.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{m2chrm}.mutect2_bams.bench.tsv"
     threads: config['mutect2']['threads']
     conda: "../envs/vanilla_v0.1.yaml"
     params:
@@ -223,6 +225,8 @@ rule mutect2_sort_index_chunk_vcf:
         config['mutect2']['conda']
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/vcfs/{m2chrm}/log/{sample}.{alnr}.mutect2.{m2chrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{m2chrm}.mutect2_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -258,6 +262,8 @@ rule mutect2_concat_index_chunks:
         config['mutect2']['conda']
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.mutect2.snv.merge.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.mutect2_concat_index_chunks.bench.tsv"
     params:
         cluster_sample=ret_sample,
     shell:
@@ -289,6 +295,8 @@ rule produce_mutect2_vcf:  # TARGET : Produce Mutect2 VCFs
     priority: 48
     log:
         "gatheredall.mutect2.log",
+    benchmark:
+        MDIR + "benchmarks/produce_mutect2_vcf.bench.tsv"
     conda:
         config['mutect2']['conda']
     params:
@@ -317,6 +325,8 @@ rule prep_mutect2_chunkdirs:
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/mutect2/log/{sample}.{alnr}.chunkdirs.log",
 
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_mutect2_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

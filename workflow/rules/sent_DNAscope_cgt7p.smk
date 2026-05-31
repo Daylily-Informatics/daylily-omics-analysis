@@ -119,6 +119,8 @@ rule cgt7p_sort_index_chunk_vcf:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/vcfs/{dchrm}/log/{sample}.{alnr}.{ddup}.cgt7p.{dchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.cgt7p_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=1,
         threads=1,
@@ -241,6 +243,10 @@ rule clear_combined_cgt7p_vcf:  # TARGET: clear combined cgt7p vcf so chunks can
             alnr=["sentcg"],
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_cgt7p_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_cgt7p_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -268,6 +274,8 @@ rule produce_cgt7p_vcf:  # DEPRECATED TARGET: use produce_cgt7p_snv_vcf
     threads: 1
     log:
         "gatheredall.cgt7p.log",
+    benchmark:
+        MDIR + "benchmarks/produce_cgt7p_vcf.bench.tsv"
     shell:
         """( touch {output};
         ls {output} ) >> {log} 2>&1;
@@ -292,6 +300,8 @@ rule prep_cgt7p_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/cgt7p/logs/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_cgt7p_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output};

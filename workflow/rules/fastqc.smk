@@ -75,6 +75,10 @@ rule just_fastqc:
         expand(MDIR + "{sample}/seqqc/fastqc/{sample}.fastqc.done", sample=FASTQ_QC_SAMPS),
     output:
         "fqc.done",
+    log:
+        MDIR + "logs/just_fastqc.log"
+    benchmark:
+        MDIR + "benchmarks/just_fastqc.bench.tsv"
     threads: 1
     shell:
         "touch {output}"

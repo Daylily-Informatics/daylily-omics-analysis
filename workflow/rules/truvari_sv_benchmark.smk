@@ -403,6 +403,10 @@ rule produce_sv_concordances:  # TARGET: produce Truvari SV concordances
     priority: 48
     output:
         mqc=MDIR + "other_reports/giab_sv_concordance_mqc.tsv",
+    log:
+        MDIR + "logs/produce_sv_concordances.log"
+    benchmark:
+        MDIR + "benchmarks/produce_sv_concordances.bench.tsv"
     params:
         cluster_sample="aggregate",
     shell:

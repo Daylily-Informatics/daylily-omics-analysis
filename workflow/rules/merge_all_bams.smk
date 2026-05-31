@@ -72,5 +72,9 @@ rule merge_all_bams:  # TARGET merge_all_bams
         b=expand(MDIR+ "{sample}/align/{alnr}/{sample}.{alnr}.mg.sort.bam", sample=SSAMPS.keys(), alnr=ALIGNERS)
     output:
         "merge.done",
+    log:
+        MDIR + "logs/merge_all_bams.log"
+    benchmark:
+        MDIR + "benchmarks/merge_all_bams.bench.tsv"
     shell:
         "touch {output}"

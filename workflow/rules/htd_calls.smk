@@ -43,6 +43,8 @@ rule htd_calls_mqc:
         MDIR + "other_reports/htd_calls_mqc.tsv"
     log:
         MDIR + "other_reports/logs/htd_calls_custom_data.log"
+    benchmark:
+        MDIR + "benchmarks/htd_calls_mqc.bench.tsv"
     container: None
     shell:
         """
@@ -60,5 +62,9 @@ rule produce_htd_calls:  # TARGET : Produce selected HTD caller outputs
         mqc=MDIR + "other_reports/htd_calls_mqc.tsv",
     output:
         "logs/htd_calls.done"
+    log:
+        MDIR + "logs/produce_htd_calls.log"
+    benchmark:
+        MDIR + "benchmarks/produce_htd_calls.bench.tsv"
     shell:
         "mkdir -p $(dirname {output}); touch {output}"

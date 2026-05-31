@@ -122,6 +122,10 @@ rule peddy_sample_qc_gather:
         ],
     output:
         MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
+    log:
+        MDIR + "logs/peddy_sample_qc_gather.log"
+    benchmark:
+        MDIR + "benchmarks/peddy_sample_qc_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
@@ -184,5 +188,9 @@ rule produce_peddy:  # TARGET: just produce peddy results
         MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
     output:
         "logs/peddy_gathered.done",
+    log:
+        MDIR + "logs/produce_peddy.log"
+    benchmark:
+        MDIR + "benchmarks/produce_peddy.bench.tsv"
     shell:
         "touch {output};"

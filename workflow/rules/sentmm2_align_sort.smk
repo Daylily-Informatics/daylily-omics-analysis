@@ -143,3 +143,7 @@ localrules: produce_sentmm2_align_sort,
 rule produce_sentmm2_align_sort:  # DEPRECATED TARGET: use produce_sentmm2_align
     input:
         expand(MDIR + "{sample}/align/sentmm2/{sample}.sentmm2.cram", sample=PB_SENTMM2_SAMPS)
+    log:
+        MDIR + "logs/produce_sentmm2_align_sort.log"
+    benchmark:
+        MDIR + "benchmarks/produce_sentmm2_align_sort.bench.tsv"

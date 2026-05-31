@@ -16,6 +16,10 @@ rule arta:  # TARGET: A visual derrive.
         art_args="-j" if "art_args" not in config else config["art_args"],
     output:
         "logs/made.art",
+    log:
+        MDIR + "logs/arta.log"
+    benchmark:
+        MDIR + "benchmarks/arta.bench.tsv"
     shell:
         """
         if [[ "{params.art_args}" == "" ]]; then   \
@@ -36,5 +40,9 @@ rule arta:  # TARGET: A visual derrive.
 rule art:  # TARGET: A visual derrive.
     input:
         "logs/made.art",
+    log:
+        MDIR + "logs/art.log"
+    benchmark:
+        MDIR + "benchmarks/art.bench.tsv"
     shell:
         "rm {input};"

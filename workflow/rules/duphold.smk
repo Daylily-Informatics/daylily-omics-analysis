@@ -109,6 +109,10 @@ rule produce_all_svs:   # TARGET: gather cnvs calls and duphold
         ],
     output:
         MDIR + "logs/all_svVCF_dupheld.done",
+    log:
+        MDIR + "logs/produce_all_svs.log"
+    benchmark:
+        MDIR + "benchmarks/produce_all_svs.bench.tsv"
     threads: 1
     conda:
         config["vanilla"]["env_yaml"]

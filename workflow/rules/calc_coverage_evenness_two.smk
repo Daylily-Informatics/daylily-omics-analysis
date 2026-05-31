@@ -36,6 +36,10 @@ rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
     threads: 8
     output:
         mqc=MDIR+"other_reports/coverage_evenness_two_combo_mqc.tsv",
+    log:
+        MDIR + "logs/produce_coverage_evenness_two.log"
+    benchmark:
+        MDIR + "benchmarks/produce_coverage_evenness_two.bench.tsv"
     shell:
         """
         set -euo pipefail;

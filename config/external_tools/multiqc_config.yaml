@@ -124,6 +124,8 @@ report_section_order:
     order: 1310
   bclconvert_fastq_manifest:
     order: 1320
+  bclconvert_demux_fastqc_manifest:
+    order: 1325
   bclconvert_unknown_barcodes:
     order: 1330
   bclconvert_index_hopping:
@@ -399,6 +401,16 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'bclconvert_fastq_manifest'
+  bclconvert_demux_fastqc_manifest:
+    id: 'bclconvert_demux_fastqc_manifest'
+    section_name: 'BCL Convert Demux FastQC Manifest'
+    parent_id: 'dayoa_input_demux_read_qc'
+    parent_name: 'Input, demux, read QC, trimming'
+    description: 'Collision-safe FastQC identifiers and input links for BCL Convert demultiplexed FASTQs'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'bclconvert_demux_fastqc_manifest'
   bclconvert_unknown_barcodes:
     id: 'bclconvert_unknown_barcodes'
     section_name: 'BCL Convert Unknown Barcodes'
@@ -748,6 +760,8 @@ sp:
     fn: "other_reports/bclconvert_lane_summary_mqc.tsv"
   bclconvert_fastq_manifest:
     fn: "other_reports/bclconvert_fastq_manifest_mqc.tsv"
+  bclconvert_demux_fastqc_manifest:
+    fn: "other_reports/bclconvert_demux_fastqc_manifest_mqc.tsv"
   bclconvert_unknown_barcodes:
     fn: "other_reports/bclconvert_unknown_barcodes_mqc.tsv"
   bclconvert_index_hopping:

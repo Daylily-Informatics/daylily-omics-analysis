@@ -18,6 +18,7 @@ PARSER="workflow/scripts/parse_bclconvert_samplesheet.py"
 UNITS_GENERATOR="workflow/scripts/bclconvert_fastq_list_to_units.py"
 METRICS_SUMMARY="workflow/scripts/bclconvert_metrics_summary.py"
 METRICS_TO_MULTIQC="workflow/scripts/bclconvert_metrics_to_multiqc.py"
+DEMUX_FASTQC_PREP="workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py"
 RULE_FILE="workflow/rules/bclconvert.smk"
 COMMON_FILE="workflow/rules/common.smk"
 
@@ -558,20 +559,27 @@ text = path.read_text(encoding="utf-8")
 assert "BCL_RUNTIME_VERSION = \"4.0.3\"" in text
 assert "BCL_CONTAINER_URI = f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
 assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in text
+assert "BCL_MERGE_LANE_FASTQS" in text
 assert "rule run_bclconvert_lane:" in text
 assert "workflow/scripts/run_bclconvert_lane.sh" in text
 assert "workflow/scripts/merge_bclconvert_lanes.py" in text
+assert "run_bclconvert_lane_fastqs_ready" in text
+assert "BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES" in text
 assert "BCL_LANE_ROOT = Path(BCL_RUN_DIR)" in text
 assert "BCL_SAMPLE_SHEET_SETTINGS_JSON" in text
 assert "\"BarcodeMismatchesIndex1\": \"barcode_mismatches_index1\"" in text
 assert "\"BarcodeMismatchesIndex2\": \"barcode_mismatches_index2\"" in text
 assert "BCL_OUTPUT_LEGACY_STATS" in text
 assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in text
+assert "rule bclconvert_demux_fastq_qc:" in text
+assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in text
+assert "BCL_DEMUX_FASTQC_MQC" in text
+assert "FASTQC_ENV = \"../envs/fastqc_v0.1.yaml\"" in text
 assert "BCL_STAGING_MODE" not in text
 assert "Copying mounted BCL files with sharded cp" not in text
 assert "cp -aL --sparse=always" not in text
 assert "aws s3 sync" not in text
-assert "-m fastqc" not in text
+assert "-m fastqc" in text
 assert "{BCL_FASTQ_DIR:q}" not in text[text.index("rule multiqc_bclconvert:"):]
 assert "script:" not in text
 assert re.search(r"(?m)^\\s*run:\\s*$", text) is None
@@ -582,6 +590,7 @@ rule_names = [
     "bclconvert_generate_units_tsv",
     "bclconvert_metrics_summary",
     "bclconvert_metrics_multiqc_exports",
+    "bclconvert_demux_fastq_qc",
     "multiqc_bclconvert",
     "produce_bclconvert_fastqs",
     "produce_bclconvert_metrics",

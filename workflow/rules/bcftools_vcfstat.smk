@@ -66,6 +66,10 @@ rule bcftools_variant_stats_gather:
         ]
     output:
         MDIR + "other_reports/bcftools_variant_stats_mqc.tsv"
+    log:
+        MDIR + "logs/bcftools_variant_stats_gather.log"
+    benchmark:
+        MDIR + "benchmarks/bcftools_variant_stats_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
@@ -118,3 +122,7 @@ rule produce_bcfvcfstats:  # TARGET:  jusg genvcfstats
             for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
         ],
         MDIR + "other_reports/bcftools_variant_stats_mqc.tsv",
+    log:
+        MDIR + "logs/produce_bcfvcfstats.log"
+    benchmark:
+        MDIR + "benchmarks/produce_bcfvcfstats.bench.tsv"

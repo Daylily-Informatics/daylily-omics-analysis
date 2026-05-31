@@ -300,6 +300,10 @@ rule produce_ensemble_vcf:  # TARGET: ensemble VCF generation
         ]
     output:
         touch(MDIR + "other_reports/ensemble_vcf.done")
+    log:
+        MDIR + "logs/produce_ensemble_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ensemble_vcf.bench.tsv"
     params:
         cluster_sample="aggregate"
     conda:
@@ -327,6 +331,10 @@ rule produce_ensemble_concordances:  # TARGET: ensemble VCF + concordance
         ]
     output:
         touch(MDIR + "other_reports/ensemble_concordance.done")
+    log:
+        MDIR + "logs/produce_ensemble_concordances.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ensemble_concordances.bench.tsv"
     params:
         cluster_sample="aggregate"
     conda:

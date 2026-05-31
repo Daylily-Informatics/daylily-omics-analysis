@@ -44,6 +44,8 @@ rule varn_bams:
         normal_bai=temp(MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/tmp/{varnchrm}/{sample}.{alnr}.varn.{varnchrm}.normal.bam.bai"),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.varn.{varnchrm}.bamify.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{varnchrm}.varn_bams.bench.tsv"
     threads: config['varn']['threads'],
     conda: "../envs/vanilla_v0.1.yaml"
     params:
@@ -218,6 +220,8 @@ rule varn_sort_index_chunk_vcf:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/varn/vcfs/{varnchrm}/log/{sample}.{alnr}.varn.{varnchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{varnchrm}.varn_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -257,6 +261,8 @@ rule varn_concat_index_chunks:
         config['varn']['conda'],
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.varn.snv.merge.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.varn_concat_index_chunks.bench.tsv"
     shell:
         """
         bcftools concat -a -O z -o {output.vcfgz} {input.vcfs} >> {log} 2>&1;
@@ -288,6 +294,8 @@ rule produce_varn_vcf:  # TARGET: varn vcf
     priority: 48,
     log:
         "gatheredall.varn.log",
+    benchmark:
+        MDIR + "benchmarks/produce_varn_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml",
     params:
@@ -324,6 +332,8 @@ rule prep_varn_chunkdirs:
     threads: 1,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/varn/log/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_varn_chunkdirs.bench.tsv"
     params:
         cluster_sample=ret_sample,
     shell:

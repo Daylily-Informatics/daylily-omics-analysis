@@ -505,6 +505,8 @@ rule sentdhipmr_mapq0_slop:
         alnr="|".join(ALIGNERS_DHIPMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_slop.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhipmr_mapq0_slop.bench.tsv"
     threads: 2
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -540,6 +542,8 @@ rule sentdhipmr_merge_beds:
         alnr="|".join(ALIGNERS_DHIPMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.merge_beds.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhipmr_merge_beds.bench.tsv"
     threads: 2
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -931,6 +935,8 @@ rule sentdhipmr_subset:
         alnr="|".join(ALIGNERS_DHIPMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhipmr_subset.bench.tsv"
     threads: config['sentdhipmr']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -981,6 +987,8 @@ rule sentdhipmr_concat_pass:
         alnr="|".join(ALIGNERS_DHIPMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhipmr_concat_pass.bench.tsv"
     threads: config['sentdhipmr']['threads_light']
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -1015,6 +1023,8 @@ rule sentdhipmr_anno:
         alnr="|".join(ALIGNERS_DHIPMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhipmr_anno.bench.tsv"
     threads: config['sentdhipmr']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -1390,6 +1400,10 @@ rule clear_combined_sentdhipmr_vcf:  # TARGET: clear combined sentdhipmr vcf so 
             alnr=ALIGNERS_DHIPMR,
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_sentdhipmr_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_sentdhipmr_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -1417,6 +1431,8 @@ rule produce_sentdhipmr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
     threads: 1
     log:
         "gatheredall.sentdhipmr.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhipmr_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
@@ -1519,6 +1535,8 @@ rule produce_sentdhipmr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+pb modula
     threads: 1
     log:
         "gatheredall.sentdhipmr.sv.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhipmr_sv.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -1547,6 +1565,8 @@ rule prep_sentdhipmr_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhipmr/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_sentdhipmr_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

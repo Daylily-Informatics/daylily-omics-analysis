@@ -9,6 +9,7 @@
 | Operator entry point | [`../README.md`](../README.md) |
 | Tool and pipeline inventory | [`catalog_of_tools.md`](catalog_of_tools.md) |
 | MultiQC operations | [`ops/multiqc_qc_targets.md`](ops/multiqc_qc_targets.md) |
+| Results directory structure | [`ops/results_directory_structure.md`](ops/results_directory_structure.md) |
 | CLI notes | [`ops/dycli.md`](ops/dycli.md) |
 | Example MultiQC reports | [`examples/multiqc/README.md`](examples/multiqc/README.md) |
 | BCL Convert run-context workflow | [`workflows/bclconvert.md`](workflows/bclconvert.md) |
@@ -18,6 +19,9 @@
 
 - BCL Convert uses the mounted run directory directly. It does not copy an Illumina run directory into `results/` or `/dev/shm` before demultiplexing.
 - BCL Convert launches one lane job per `Data/Intensities/BaseCalls/L###` directory, then merges lane FASTQs and reports locally.
+- BCL Convert terminal targets run demux FastQC after FASTQ merge, generate collision-safe FastQC identifiers from run/lane/sample/RG/read fields, and include FastQC plus BCL Convert custom data in the focused MultiQC report.
+- ONT and Ultima mounted run-QC targets include demux FASTQ QC. ONT uses SeqKit, nanoq, NanoStat, NanoPlot, and focused MultiQC; Ultima uses FastQC, SeqKit, and focused MultiQC.
+- Run QC outputs live under `results/runs/<RUNID>/run_qc/<platform>/` unless `config/runs.tsv` provides an explicit `OUTPUT_ROOT`; BCL Convert outputs live under the sibling `results/runs/<RUNID>/bclconvert/` tree.
 - The default BCL Convert sample-sheet contract injects `BarcodeMismatchesIndex1,0` and `BarcodeMismatchesIndex2,0` through generated lane sample sheets. Other sample-sheet settings are wired but intentionally unset until explicitly configured.
 - Hybrid Ultima+ONT `sentdhuomr` Stage1 now hard-fails on Sentieon driver errors, validates BAMs before Stage2, and handles empty target/refined-region shards explicitly in later stages.
 

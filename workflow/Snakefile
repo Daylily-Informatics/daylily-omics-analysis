@@ -379,10 +379,18 @@ rule day:  # TARGET: Synonym for all
     "Does nothing but touch the output file. To run a useful rule, run 'dy-r help'."
     output:
         "logs/day.completed",
+    log:
+        "logs/day.log"
+    benchmark:
+        "logs/benchmarks/day.bench.tsv"
     shell:
         "touch {output};"
 
 rule all:  # TARGET: Prompt user to run help
+    log:
+        "logs/all.log"
+    benchmark:
+        "logs/benchmarks/all.bench.tsv"
     shell:
         """
         echo 'Hello!  To learn how to run daylily, execute the following:' ;

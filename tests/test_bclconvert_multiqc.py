@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import csv
+import json
+import os
 import shutil
 import subprocess
 import sys
@@ -46,9 +48,12 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "BCL_BENCH_DIR" in rule
     assert "bcl_extra_args={params.extra_args:q}" in rule
     assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in rule
+    assert 'BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)' in rule
     assert "rule run_bclconvert_lane:" in rule
     assert "workflow/scripts/run_bclconvert_lane.sh" in rule
     assert "workflow/scripts/merge_bclconvert_lanes.py" in rule
+    assert "run_bclconvert_lane_fastqs_ready" in rule
+    assert "BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES" in rule
     lane_helper = _read("workflow/scripts/run_bclconvert_lane.sh")
     samplesheet_helper = _read("workflow/scripts/prepare_bclconvert_lane_samplesheet.py")
     assert "--bcl-only-lane" in lane_helper
@@ -63,6 +68,10 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "BCL_OUTPUT_LEGACY_STATS" in rule
     assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in rule
     assert "exclusive=\"--exclusive\"" in rule
+    assert "rule bclconvert_demux_fastq_qc:" in rule
+    assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in rule
+    assert "BCL_DEMUX_FASTQC_MQC" in rule
+    assert 'FASTQC_ENV = "../envs/fastqc_v0.1.yaml"' in rule
     assert "BCL_STAGING_MODE" not in rule
     assert "Copying mounted BCL files with sharded cp" not in rule
     assert "cp -aL --sparse=always" not in rule
@@ -73,6 +82,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
         "run_bclconvert",
         "bclconvert_generate_units_tsv",
         "bclconvert_metrics_summary",
+        "bclconvert_demux_fastq_qc",
         "bclconvert_metrics_multiqc_exports",
         "multiqc_bclconvert",
     ):
@@ -80,14 +90,15 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
         block = block.split("\nrule ", 1)[0]
         assert 'cluster_sample="' in block, rule_name
     assert "-m bclconvert" in rule
+    assert "-m fastqc" in rule
     assert "-m custom_content" in rule
-    assert "-m fastqc" not in rule
     assert "rule bclconvert_metrics_multiqc_exports:" in rule
     assert "workflow/scripts/bclconvert_metrics_to_multiqc.py" in rule
     assert "bclconvert_demux_mqc.tsv" in rule
     assert "bclconvert_unknown_barcodes_mqc.tsv" in rule
     assert "bclconvert_index_hopping_mqc.tsv" in rule
     assert "bclconvert_fastq_manifest_mqc.tsv" in rule
+    assert "bclconvert_demux_fastqc_manifest_mqc.tsv" in rule
     assert "bclconvert_lane_summary_mqc.tsv" in rule
     assert "rule produce_bclconvert_metrics:" in rule
     assert "rule produce_bclconvert_multiqc:" in rule
@@ -137,6 +148,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         "bclconvert_demux",
         "bclconvert_lane_summary",
         "bclconvert_fastq_manifest",
+        "bclconvert_demux_fastqc_manifest",
         "bclconvert_unknown_barcodes",
         "bclconvert_index_hopping",
     ):
@@ -155,7 +167,10 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert profile["bclconvert"]["fastq_gzip_compression_level"] == 1
         assert profile["bclconvert"]["barcode_mismatches_index1"] == 0
         assert profile["bclconvert"]["barcode_mismatches_index2"] == 0
+        assert profile["bclconvert"]["merge_lane_fastqs"] is False
         assert profile["bclconvert"]["output_legacy_stats"] is True
+        assert "demux_qc_threads" in profile["bclconvert"]
+        assert "demux_qc_mem_mb" in profile["bclconvert"]
         assert "staging_mode" not in profile["bclconvert"]
         assert "scratch_size_multiplier" not in profile["bclconvert"]
 
@@ -168,6 +183,8 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["compression_threads"] == 48
     assert slurm_bcl["decompression_threads"] == 8
     assert slurm_bcl["shared_thread_odirect_output"] is True
+    assert slurm_bcl["demux_qc_threads"] == 32
+    assert slurm_bcl["demux_qc_mem_mb"] == 64000
 
 
 def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(
@@ -451,3 +468,146 @@ def test_bclconvert_metrics_to_multiqc_outputs_sample_first(tmp_path: Path) -> N
 
     hopping_header = (mqc_dir / "bclconvert_index_hopping_mqc.tsv").read_text(encoding="utf-8").splitlines()[0]
     assert hopping_header.startswith("Sample\t")
+
+
+def test_bclconvert_metrics_summary_accepts_lane_report_dirs(tmp_path: Path) -> None:
+    report_dirs = []
+    for lane in ("L001", "L002"):
+        report_dir = tmp_path / "run_a" / "bclconvert" / "lane_fastqs" / lane / "Reports"
+        report_dir.mkdir(parents=True)
+        shutil.copy2(FIXTURE_DIR / "Demultiplex_Stats.csv", report_dir / "Demultiplex_Stats.csv")
+        shutil.copy2(FIXTURE_DIR / "fastq_list.csv", report_dir / "fastq_list.csv")
+        report_dirs.append(report_dir)
+
+    metrics_dir = tmp_path / "metrics"
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "bclconvert_metrics_summary.py"),
+            "--report-dir",
+            *(str(report_dir) for report_dir in report_dirs),
+            "--run-id",
+            "run_a",
+            "--demux-out",
+            str(metrics_dir / "demultiplex_stats.tsv"),
+            "--unknown-out",
+            str(metrics_dir / "unknown_barcodes.tsv"),
+            "--hopping-out",
+            str(metrics_dir / "index_hopping.tsv"),
+            "--fastq-manifest-out",
+            str(metrics_dir / "fastq_manifest.tsv"),
+            "--rollup-json-out",
+            str(metrics_dir / "rollup.json"),
+        ],
+        check=True,
+    )
+
+    demux_rows = _read_tsv(metrics_dir / "demultiplex_stats.tsv")
+    manifest_rows = _read_tsv(metrics_dir / "fastq_manifest.tsv")
+    rollup = json.loads((metrics_dir / "rollup.json").read_text(encoding="utf-8"))
+
+    assert len(demux_rows) == 6
+    assert len(manifest_rows) == 6
+    assert rollup["run_id"] == "run_a"
+    assert rollup["report_dirs"] == [str(report_dir) for report_dir in report_dirs]
+    assert rollup["demultiplex_stats"]["total_pf_reads_by_lane"]["1"] == 2100
+
+
+def test_prepare_bclconvert_demux_fastqc_inputs_makes_collision_safe_names(tmp_path: Path) -> None:
+    fastq_dir = tmp_path / "fastqs"
+    fastq_dir.mkdir()
+    for name in (
+        "sample_L001_R1.fastq.gz",
+        "sample_L001_R2.fastq.gz",
+        "sample_L002_R1.fastq.gz",
+        "sample_L002_R2.fastq.gz",
+    ):
+        (fastq_dir / name).write_text("", encoding="utf-8")
+
+    fastq_list = tmp_path / "fastq_list.csv"
+    fastq_list.write_text(
+        "\n".join(
+            [
+                "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                f"RG001,HG003,HG003,1,{fastq_dir / 'sample_L001_R1.fastq.gz'},{fastq_dir / 'sample_L001_R2.fastq.gz'}",
+                f"RG001,HG003,HG003,2,{fastq_dir / 'sample_L002_R1.fastq.gz'},{fastq_dir / 'sample_L002_R2.fastq.gz'}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    input_dir = tmp_path / "fastqc_inputs"
+    manifest = tmp_path / "demux_fastqc_inputs.tsv"
+    mqc = tmp_path / "bclconvert_demux_fastqc_manifest_mqc.tsv"
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_demux_fastqc_inputs.py"),
+            "--fastq-list",
+            str(fastq_list),
+            "--run-id",
+            "20260514_LH01106_0009_B23TVLGLT4",
+            "--input-dir",
+            str(input_dir),
+            "--manifest-out",
+            str(manifest),
+            "--multiqc-out",
+            str(mqc),
+        ],
+        check=True,
+    )
+
+    rows = _read_tsv(manifest)
+    assert [row["Sample"] for row in rows] == [
+        "20260514_LH01106_0009_B23TVLGLT4.L1.HG003.RG001.R1",
+        "20260514_LH01106_0009_B23TVLGLT4.L1.HG003.RG001.R2",
+        "20260514_LH01106_0009_B23TVLGLT4.L2.HG003.RG001.R1",
+        "20260514_LH01106_0009_B23TVLGLT4.L2.HG003.RG001.R2",
+    ]
+    assert len({row["fastqc_input"] for row in rows}) == len(rows)
+    assert len({row["Sample"] for row in rows}) == len(rows)
+    for row in rows:
+        assert Path(row["fastqc_input"]).is_symlink()
+        assert Path(os.readlink(row["fastqc_input"])).exists()
+    assert _read_tsv(mqc) == rows
+
+
+def test_prepare_bclconvert_demux_fastqc_inputs_rejects_identifier_collision(tmp_path: Path) -> None:
+    fastq_dir = tmp_path / "fastqs"
+    fastq_dir.mkdir()
+    for name in ("a_R1.fastq.gz", "a_R2.fastq.gz", "b_R1.fastq.gz", "b_R2.fastq.gz"):
+        (fastq_dir / name).write_text("", encoding="utf-8")
+    fastq_list = tmp_path / "fastq_list.csv"
+    fastq_list.write_text(
+        "\n".join(
+            [
+                "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                f"RG001,HG003,HG003,1,{fastq_dir / 'a_R1.fastq.gz'},{fastq_dir / 'a_R2.fastq.gz'}",
+                f"RG001,HG003,HG003,1,{fastq_dir / 'b_R1.fastq.gz'},{fastq_dir / 'b_R2.fastq.gz'}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_demux_fastqc_inputs.py"),
+            "--fastq-list",
+            str(fastq_list),
+            "--run-id",
+            "run",
+            "--input-dir",
+            str(tmp_path / "inputs"),
+            "--manifest-out",
+            str(tmp_path / "manifest.tsv"),
+            "--multiqc-out",
+            str(tmp_path / "mqc.tsv"),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "FastQC sample identifier collision" in result.stderr

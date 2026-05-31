@@ -187,6 +187,8 @@ rule contamination_mqc_gather:
         sample_map=_sample_external_ids_json,
     log:
         MDIR + "other_reports/logs/contamination_custom_data.log",
+    benchmark:
+        MDIR + "benchmarks/contamination_mqc_gather.bench.tsv"
     shell:
         """
         set -euo pipefail
@@ -212,3 +214,7 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
             ddup=qc_contamination_dedupers(),
         ),
         MDIR + "other_reports/site_mix_contam_mqc.tsv",
+    log:
+        MDIR + "logs/produce_site_mix_contam_estimate.log"
+    benchmark:
+        MDIR + "benchmarks/produce_site_mix_contam_estimate.bench.tsv"

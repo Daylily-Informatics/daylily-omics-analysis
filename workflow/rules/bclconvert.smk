@@ -112,6 +112,13 @@ BCL_LOG_DIR = f"{BCL_ROOT}/logs"
 BCL_BENCH_DIR = f"{BCL_ROOT}/benchmarks"
 BCL_MQC_DIR = f"{BCL_ROOT}/multiqc_inputs" if BCL_RUN_CONTEXT is not None else f"{MDIR}other_reports"
 BCL_MQC_LOG_DIR = f"{BCL_MQC_DIR}/logs"
+BCL_DEMUX_FASTQC_ROOT = f"{BCL_ROOT}/demux_fastq_qc"
+BCL_DEMUX_FASTQC_INPUT_DIR = f"{BCL_DEMUX_FASTQC_ROOT}/inputs"
+BCL_DEMUX_FASTQC_OUTPUT_DIR = f"{BCL_DEMUX_FASTQC_ROOT}/fastqc"
+BCL_DEMUX_FASTQC_TMP_DIR = f"{BCL_DEMUX_FASTQC_ROOT}/tmp"
+BCL_DEMUX_FASTQC_MANIFEST = f"{BCL_DEMUX_FASTQC_ROOT}/demux_fastqc_inputs.tsv"
+BCL_DEMUX_FASTQC_MQC = f"{BCL_MQC_DIR}/bclconvert_demux_fastqc_manifest_mqc.tsv"
+BCL_DEMUX_FASTQC_DONE = f"{BCL_DEMUX_FASTQC_ROOT}/demux_fastqc.done"
 
 BCL_VALIDATE_OK = f"{BCL_LOG_DIR}/validated.ok"
 BCL_NORMALIZED_SAMPLE_SHEET = f"{BCL_ROOT}/normalized.SampleSheet.csv"
@@ -127,6 +134,7 @@ BCL_MQC_COMPLETE = (
 )
 
 BCL_METRICS_ENV = "../envs/bclconvert_metrics_v0.1.yaml"
+FASTQC_ENV = "../envs/fastqc_v0.1.yaml"
 MULTIQC_ENV = "../envs/multiqc_v0.1.yaml"
 MULTIQC_CONFIG = (
     config.get("multiqc", {})
@@ -149,7 +157,10 @@ BCL_FASTQ_GZIP_COMPRESSION_LEVEL = _intish(BCLCFG.get("fastq_gzip_compression_le
 BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCLCFG.get("shared_thread_odirect_output", True), True)
 BCL_OUTPUT_LEGACY_STATS = _bool(BCLCFG.get("output_legacy_stats", True), True)
 BCL_NUM_UNKNOWN_BARCODES_REPORTED = _intish(BCLCFG.get("num_unknown_barcodes_reported", 1000), 1000)
+BCL_DEMUX_QC_THREADS = _intish(BCLCFG.get("demux_qc_threads", min(max(BCL_THREADS, 1), 32)), min(max(BCL_THREADS, 1), 32))
+BCL_DEMUX_QC_MEM_MB = _intish(BCLCFG.get("demux_qc_mem_mb", 64000), 64000)
 BCL_FORCE = _bool(BCLCFG.get("force", False))
+BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)
 BCL_KEEP_UNDETERMINED = _bool(BCLCFG.get("keep_undetermined_fastqs", True), True)
 BCL_SAMPLEPROJECT_SUBDIRS = _bool(BCLCFG.get("sampleproject_subdirectories", False), False)
 BCL_STRICT_MODE = _bool(BCLCFG.get("strict_mode", False), False)
@@ -243,12 +254,24 @@ BCL_LANE_DONE_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/bclconvert.done",
 BCL_LANE_FASTQ_LIST_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fastq_list.csv", lane=BCL_LANES)
 BCL_LANE_DEMUX_STATS_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv", lane=BCL_LANES)
 BCL_LANE_SAMPLE_SHEET_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv", lane=BCL_LANES)
+BCL_LANE_REPORT_DIRS = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports", lane=BCL_LANES)
+BCL_MERGED_FASTQ_LIST = f"{BCL_REPORT_DIR}/fastq_list.csv"
+BCL_MERGED_DEMUX_STATS = f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv"
+if BCL_MERGE_LANE_FASTQS:
+    BCL_REPORT_INPUT_FILES = [BCL_MERGED_DEMUX_STATS, BCL_MERGED_FASTQ_LIST]
+    BCL_REPORT_INPUT_DIRS = [BCL_REPORT_DIR]
+    BCL_FASTQ_LIST_INPUT_FILES = [BCL_MERGED_FASTQ_LIST]
+else:
+    BCL_REPORT_INPUT_FILES = BCL_LANE_DEMUX_STATS_FILES + BCL_LANE_FASTQ_LIST_FILES
+    BCL_REPORT_INPUT_DIRS = BCL_LANE_REPORT_DIRS
+    BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES
 
 
 localrules:
     bclconvert_validate_inputs,
     run_bclconvert,
     bclconvert_metrics_summary,
+    bclconvert_demux_fastq_qc,
     bclconvert_generate_units_tsv,
     produce_bclconvert_fastqs,
     produce_bclconvert_metrics,
@@ -375,51 +398,89 @@ rule run_bclconvert_lane:
         "{output.demux_stats:q} {output.done:q}"
 
 
-rule run_bclconvert:
-    input:
-        validated=BCL_VALIDATE_OK,
-        sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
-        lane_done=BCL_LANE_DONE_FILES,
-        fastq_lists=BCL_LANE_FASTQ_LIST_FILES,
-        demux_stats=BCL_LANE_DEMUX_STATS_FILES,
-        lane_sample_sheets=BCL_LANE_SAMPLE_SHEET_FILES,
-    output:
-        done=BCL_DONE,
-        fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
-        demux_stats=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
-    threads:
-        1
-    resources:
-        partition=BCL_PARTITION,
-        vcpu=1,
-        threads=1,
-        mem_mb=3000,
-        tmpdir=BCL_TMPDIR,
-    params:
-        cluster_sample="run_bclconvert_merge_lanes",
-        lanes=",".join(BCL_LANES),
-        lane_fastq_root=BCL_LANE_FASTQ_ROOT,
-        final_fastq_dir=BCL_FASTQ_DIR,
-        report_dir=BCL_REPORT_DIR,
-    log:
-        f"{BCL_LOG_DIR}/run_bclconvert.merge_lanes.log",
-    benchmark:
-        f"{BCL_BENCH_DIR}/run_bclconvert.merge_lanes.bench.tsv",
-    shell:
-        "python workflow/scripts/merge_bclconvert_lanes.py "
-        "--lane-fastq-root {params.lane_fastq_root:q} "
-        "--final-fastq-dir {params.final_fastq_dir:q} "
-        "--report-dir {params.report_dir:q} "
-        "--lanes {params.lanes:q} "
-        "--done {output.done:q} "
-        "--log {log:q} >> {log:q} 2>&1 && "
-        "test -s {output.fastq_list:q} && test -s {output.demux_stats:q}"
+if BCL_MERGE_LANE_FASTQS:
+
+    rule run_bclconvert:
+        input:
+            validated=BCL_VALIDATE_OK,
+            sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
+            lane_done=BCL_LANE_DONE_FILES,
+            fastq_lists=BCL_LANE_FASTQ_LIST_FILES,
+            demux_stats=BCL_LANE_DEMUX_STATS_FILES,
+            lane_sample_sheets=BCL_LANE_SAMPLE_SHEET_FILES,
+        output:
+            done=BCL_DONE,
+            fastq_list=BCL_MERGED_FASTQ_LIST,
+            demux_stats=BCL_MERGED_DEMUX_STATS,
+        threads:
+            1
+        resources:
+            partition=BCL_PARTITION,
+            vcpu=1,
+            threads=1,
+            mem_mb=3000,
+            tmpdir=BCL_TMPDIR,
+        params:
+            cluster_sample="run_bclconvert_merge_lanes",
+            lanes=",".join(BCL_LANES),
+            lane_fastq_root=BCL_LANE_FASTQ_ROOT,
+            final_fastq_dir=BCL_FASTQ_DIR,
+            report_dir=BCL_REPORT_DIR,
+        log:
+            f"{BCL_LOG_DIR}/run_bclconvert.merge_lanes.log",
+        benchmark:
+            f"{BCL_BENCH_DIR}/run_bclconvert.merge_lanes.bench.tsv",
+        shell:
+            "python workflow/scripts/merge_bclconvert_lanes.py "
+            "--lane-fastq-root {params.lane_fastq_root:q} "
+            "--final-fastq-dir {params.final_fastq_dir:q} "
+            "--report-dir {params.report_dir:q} "
+            "--lanes {params.lanes:q} "
+            "--done {output.done:q} "
+            "--log {log:q} >> {log:q} 2>&1 && "
+            "test -s {output.fastq_list:q} && test -s {output.demux_stats:q}"
+else:
+
+    rule run_bclconvert:
+        input:
+            validated=BCL_VALIDATE_OK,
+            sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
+            lane_done=BCL_LANE_DONE_FILES,
+            fastq_lists=BCL_LANE_FASTQ_LIST_FILES,
+            demux_stats=BCL_LANE_DEMUX_STATS_FILES,
+            lane_sample_sheets=BCL_LANE_SAMPLE_SHEET_FILES,
+        output:
+            done=BCL_DONE,
+        threads:
+            1
+        resources:
+            partition=BCL_PARTITION,
+            vcpu=1,
+            threads=1,
+            mem_mb=3000,
+            tmpdir=BCL_TMPDIR,
+        params:
+            cluster_sample="run_bclconvert_lane_fastqs_ready",
+            lanes=",".join(BCL_LANES),
+        log:
+            f"{BCL_LOG_DIR}/run_bclconvert.lane_fastqs_ready.log",
+        benchmark:
+            f"{BCL_BENCH_DIR}/run_bclconvert.lane_fastqs_ready.bench.tsv",
+        shell:
+            r"""
+            set -euo pipefail
+            mkdir -p {BCL_LOG_DIR:q}
+            : > {log:q}
+            printf 'merge_lane_fastqs=false; lane FASTQs remain under %s for lanes %s\n' \
+              {BCL_LANE_FASTQ_ROOT:q} {params.lanes:q} >> {log:q}
+            touch {output.done:q}
+            """
 
 
 rule bclconvert_generate_units_tsv:
     input:
         done=BCL_DONE,
-        fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
+        fastq_lists=BCL_FASTQ_LIST_INPUT_FILES,
         sample_sheet_rows=BCL_SAMPLESHEET_ROWS,
     output:
         units=f"{BCL_TABLE_DIR}/generated.units.tsv",
@@ -443,7 +504,7 @@ rule bclconvert_generate_units_tsv:
         : > {log:q}
         seq_platform_override={params.seq_platform_override:q}
         python workflow/scripts/bclconvert_fastq_list_to_units.py \
-          --fastq-list {input.fastq_list:q} \
+          --fastq-list {input.fastq_lists:q} \
           --sample-sheet-rows {input.sample_sheet_rows:q} \
           --run-id {params.run_id:q} \
           --libprep {params.libprep:q} \
@@ -457,8 +518,7 @@ rule bclconvert_generate_units_tsv:
 rule bclconvert_metrics_summary:
     input:
         done=BCL_DONE,
-        demux=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
-        fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
+        report_files=BCL_REPORT_INPUT_FILES,
     output:
         demux_tsv=f"{BCL_METRIC_DIR}/demultiplex_stats.tsv",
         unknown_tsv=f"{BCL_METRIC_DIR}/unknown_barcodes.tsv",
@@ -471,6 +531,8 @@ rule bclconvert_metrics_summary:
         BCL_METRICS_ENV
     params:
         cluster_sample="bclconvert_metrics_summary",
+        run_id=BCL_RUN_ID,
+        report_dirs=BCL_REPORT_INPUT_DIRS,
     log:
         f"{BCL_LOG_DIR}/bclconvert_metrics_summary.log",
     benchmark:
@@ -481,7 +543,8 @@ rule bclconvert_metrics_summary:
         mkdir -p {BCL_METRIC_DIR:q}
         : > {log:q}
         python workflow/scripts/bclconvert_metrics_summary.py \
-          --report-dir {BCL_REPORT_DIR:q} \
+          --report-dir {params.report_dirs:q} \
+          --run-id {params.run_id:q} \
           --demux-out {output.demux_tsv:q} \
           --unknown-out {output.unknown_tsv:q} \
           --hopping-out {output.hopping_tsv:q} \
@@ -535,12 +598,69 @@ rule bclconvert_metrics_multiqc_exports:
         """
 
 
+rule bclconvert_demux_fastq_qc:
+    input:
+        done=BCL_DONE,
+        fastq_lists=BCL_FASTQ_LIST_INPUT_FILES,
+    output:
+        manifest=BCL_DEMUX_FASTQC_MANIFEST,
+        mqc_manifest=BCL_DEMUX_FASTQC_MQC,
+        done=touch(BCL_DEMUX_FASTQC_DONE),
+    threads:
+        BCL_DEMUX_QC_THREADS
+    conda:
+        FASTQC_ENV
+    resources:
+        partition=BCL_PARTITION,
+        vcpu=BCL_DEMUX_QC_THREADS,
+        threads=BCL_DEMUX_QC_THREADS,
+        mem_mb=BCL_DEMUX_QC_MEM_MB,
+        tmpdir=BCL_TMPDIR,
+    params:
+        cluster_sample="bclconvert_demux_fastq_qc",
+        run_id=BCL_RUN_ID,
+        input_dir=BCL_DEMUX_FASTQC_INPUT_DIR,
+        fastqc_dir=BCL_DEMUX_FASTQC_OUTPUT_DIR,
+        tmp_dir=BCL_DEMUX_FASTQC_TMP_DIR,
+    log:
+        f"{BCL_LOG_DIR}/bclconvert_demux_fastq_qc.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/bclconvert_demux_fastq_qc.bench.tsv",
+    shell:
+        r"""
+        set -euo pipefail
+        rm -rf {params.input_dir:q} {params.fastqc_dir:q} {params.tmp_dir:q}
+        mkdir -p {params.input_dir:q} {params.fastqc_dir:q} {params.tmp_dir:q} {BCL_MQC_DIR:q}
+        : > {log:q}
+        python workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py \
+          --fastq-list {input.fastq_lists:q} \
+          --run-id {params.run_id:q} \
+          --input-dir {params.input_dir:q} \
+          --manifest-out {output.manifest:q} \
+          --multiqc-out {output.mqc_manifest:q} \
+          >> {log:q} 2>&1
+        mapfile -t fastqc_inputs < <(awk -F '\t' 'NR > 1 {{ print $8 }}' {output.manifest:q})
+        if [ "${{#fastqc_inputs[@]}}" -eq 0 ]; then
+          echo "No demux FASTQ inputs were prepared for FastQC." >> {log:q}
+          exit 2
+        fi
+        fastqc -o {params.fastqc_dir:q} -t {threads:q} -d {params.tmp_dir:q} "${{fastqc_inputs[@]}}" >> {log:q} 2>&1
+        expected="${{#fastqc_inputs[@]}}"
+        observed="$(find {params.fastqc_dir:q} -maxdepth 1 -name '*_fastqc.zip' -type f | wc -l | tr -d ' ')"
+        if [ "$observed" != "$expected" ]; then
+          echo "FastQC output count mismatch: expected $expected zip files, observed $observed" >> {log:q}
+          exit 2
+        fi
+        """
+
+
 rule multiqc_bclconvert:
     input:
         done=BCL_DONE,
-        demux=f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv",
-        fastq_list=f"{BCL_REPORT_DIR}/fastq_list.csv",
+        report_files=BCL_REPORT_INPUT_FILES,
         mqc_exports=BCL_MQC_COMPLETE,
+        demux_fastqc=BCL_DEMUX_FASTQC_DONE,
+        demux_fastqc_manifest=BCL_DEMUX_FASTQC_MQC,
     output:
         html=f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
     threads:
@@ -551,6 +671,7 @@ rule multiqc_bclconvert:
         cluster_sample="multiqc_bclconvert",
         multiqc_cfg=MULTIQC_CONFIG,
         multiqc_filename="multiqc_report.html" if BCL_RUN_CONTEXT is not None else "bclconvert.multiqc.html",
+        report_dirs=BCL_REPORT_INPUT_DIRS,
     log:
         f"{BCL_LOG_DIR}/multiqc_bclconvert.log",
     benchmark:
@@ -562,12 +683,14 @@ rule multiqc_bclconvert:
         : > {log:q}
         multiqc -f \
           -m bclconvert \
+          -m fastqc \
           -m custom_content \
           --config {params.multiqc_cfg:q} \
           --template default \
           --filename {params.multiqc_filename:q} \
           --outdir {BCL_REPORT_OUT_DIR:q} \
-          {BCL_REPORT_DIR:q} \
+          {params.report_dirs:q} \
+          {BCL_DEMUX_FASTQC_OUTPUT_DIR:q} \
           {BCL_MQC_DIR:q} \
           >> {log:q} 2>&1
         test -s {output.html:q}
@@ -580,6 +703,10 @@ rule produce_bclconvert_fastqs:
         BCL_DONE,
     output:
         touch(BCL_FASTQS_COMPLETE),
+    log:
+        MDIR + "logs/produce_bclconvert_fastqs.log"
+    benchmark:
+        MDIR + "benchmarks/produce_bclconvert_fastqs.bench.tsv"
     shell:
         "touch {output}"
 
@@ -587,13 +714,23 @@ rule produce_bclconvert_fastqs:
 rule produce_bclconvert_metrics:  # TARGET: gather BCL Convert metrics into genome-build MultiQC custom-data TSVs
     input:
         BCL_MQC_COMPLETE,
+        BCL_DEMUX_FASTQC_MQC,
+        BCL_DEMUX_FASTQC_DONE,
 
 
+    log:
+        MDIR + "logs/produce_bclconvert_metrics.log"
+    benchmark:
+        MDIR + "benchmarks/produce_bclconvert_metrics.bench.tsv"
 rule produce_bclconvert_multiqc:  # TARGET: gather BCL Convert metrics and build a focused MultiQC report
     input:
         f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
 
 
+    log:
+        MDIR + "logs/produce_bclconvert_multiqc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_bclconvert_multiqc.bench.tsv"
 rule produce_bclconvert_fastqs_and_metrics:
     input:
         BCL_VALIDATE_OK,
@@ -605,8 +742,14 @@ rule produce_bclconvert_fastqs_and_metrics:
         f"{BCL_METRIC_DIR}/fastq_manifest.tsv",
         f"{BCL_METRIC_DIR}/rollup.json",
         BCL_MQC_COMPLETE,
+        BCL_DEMUX_FASTQC_MQC,
+        BCL_DEMUX_FASTQC_DONE,
         f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
     output:
         touch(BCL_BOOTSTRAP_COMPLETE),
+    log:
+        MDIR + "logs/produce_bclconvert_fastqs_and_metrics.log"
+    benchmark:
+        MDIR + "benchmarks/produce_bclconvert_fastqs_and_metrics.bench.tsv"
     shell:
         "touch {output}"

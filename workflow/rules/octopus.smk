@@ -133,6 +133,8 @@ rule oct_sort_index_chunk_vcf:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/oct/vcfs/{ochrm}/log/{sample}.{alnr}.{ddup}.oct.{ochrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{ochrm}.oct_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=8,
         threads=8,
@@ -257,6 +259,10 @@ rule clear_combined_octovcf:  # TARGET:  clear combined octo vcf so the chunks c
             alnr=ALIGNERS,
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_octovcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_octovcf.bench.tsv"
     priority: 42
     threads: 2
     shell:
@@ -282,6 +288,8 @@ rule produce_oct_vcf:  # DEPRECATED TARGET: use produce_oct_snv_vcf
     threads: 2
     log:
         "gatheredall.oct.log",
+    benchmark:
+        MDIR + "benchmarks/produce_oct_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
@@ -305,6 +313,8 @@ rule oct_prep_chunkdirs:
     threads: 2
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/oct/logs/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.oct_prep_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;

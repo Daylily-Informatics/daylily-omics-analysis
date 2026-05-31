@@ -23,6 +23,7 @@ RUNQC_ILMN_CFG = RUNQC_CFG.get("illumina", {})
 RUNQC_ONT_CFG = RUNQC_CFG.get("ont", {})
 RUNQC_UG_CFG = RUNQC_CFG.get("ultima", {})
 RUNQC_ENV = _runqc_text(RUNQC_CFG, "env_yaml") or "../envs/run_qc_reports_v0.1.yaml"
+RUNQC_FASTQC_ENV = _runqc_text(RUNQC_CFG, "fastqc_env_yaml") or "../envs/fastqc_v0.1.yaml"
 RUNQC_MULTIQC_ENV = "../envs/multiqc_v0.1.yaml"
 
 RUNQC_ILMN_TARGET_REQUESTED = bool(
@@ -44,7 +45,13 @@ RUNQC_ONT_TARGET_REQUESTED = bool(
     }
 )
 RUNQC_UG_TARGET_REQUESTED = bool(
-    _requested_targets() & {"produce_ultima_run_qc", "produce_run_qc_reports"}
+    _requested_targets()
+    & {
+        "produce_ultima_run_qc",
+        "produce_ultima_demux_fastq_qc",
+        "produce_ultima_run_qc_and_demux_multiqc",
+        "produce_run_qc_reports",
+    }
 )
 
 RUNQC_ILMN_CONTEXT = run_context_for_platform(
@@ -121,10 +128,18 @@ RUNQC_UG_ROOT = _runqc_root(RUNQC_UG_CONTEXT, "ultima")
 RUNQC_ONT_RUN_DIR = _runqc_mounted_run_dir(
     RUNQC_ONT_CONTEXT, "ONT", RUNQC_ONT_TARGET_REQUESTED
 )
+RUNQC_UG_RUN_DIR = _runqc_mounted_run_dir(
+    RUNQC_UG_CONTEXT, "Ultima", RUNQC_UG_TARGET_REQUESTED
+)
 RUNQC_ONT_RUN_S3_URI = (
     _runqc_text(RUNQC_ONT_CFG, "run_s3_uri")
     if RUNQC_ONT_CONTEXT is None
     else RUNQC_ONT_CONTEXT["SOURCE_S3_URI"]
+)
+RUNQC_UG_RUN_S3_URI = (
+    _runqc_text(RUNQC_UG_CFG, "run_s3_uri")
+    if RUNQC_UG_CONTEXT is None
+    else RUNQC_UG_CONTEXT["SOURCE_S3_URI"]
 )
 RUNQC_ONT_TABLE_DIR = RUNQC_ONT_ROOT + "/tables"
 RUNQC_ONT_LOG_DIR = RUNQC_ONT_ROOT + "/logs"
@@ -148,8 +163,17 @@ RUNQC_ONT_METRICS_PATH = (
 RUNQC_ONT_TARGET_INPUTS = [RUNQC_ONT_ROOT + "/logs/ont_run_qc_report.done"]
 if RUNQC_ONT_CONTEXT is not None:
     RUNQC_ONT_TARGET_INPUTS.append(RUNQC_ONT_MULTIQC_HTML)
+    RUNQC_ONT_TARGET_INPUTS.append(RUNQC_ONT_DEMUX_MULTIQC_HTML)
 
+RUNQC_UG_LOG_DIR = RUNQC_UG_ROOT + "/logs"
 RUNQC_UG_BENCH_DIR = RUNQC_UG_ROOT + "/benchmarks"
+RUNQC_UG_DEMUX_ROOT = RUNQC_UG_ROOT + "/demux_fastq_qc"
+RUNQC_UG_DEMUX_GROUP_LIST = RUNQC_UG_DEMUX_ROOT + "/fastq_group_dirs.txt"
+RUNQC_UG_DEMUX_DONE = RUNQC_UG_DEMUX_ROOT + "/ultima_demux_fastq_qc.done"
+RUNQC_UG_DEMUX_MULTIQC_HTML = RUNQC_UG_ROOT + "/ultima_demux_fastq.multiqc.html"
+RUNQC_UG_TARGET_INPUTS = [RUNQC_UG_LOG_DIR + "/ultima_run_qc_report.done"]
+if RUNQC_UG_CONTEXT is not None:
+    RUNQC_UG_TARGET_INPUTS.append(RUNQC_UG_DEMUX_MULTIQC_HTML)
 
 
 localrules:
@@ -168,12 +192,17 @@ localrules:
     ont_demux_fastq_qc,
     ont_demux_fastq_multiqc,
     ont_run_qc_report,
+    ultima_demux_fastq_group_list,
+    ultima_demux_fastq_qc,
+    ultima_demux_fastq_multiqc,
     ultima_run_qc_report,
     produce_illumina_run_qc,
     produce_ont_run_qc,
     produce_ont_demux_fastq_qc,
     produce_ont_run_qc_and_demux_multiqc,
     produce_ultima_run_qc,
+    produce_ultima_demux_fastq_qc,
+    produce_ultima_run_qc_and_demux_multiqc,
     produce_read_fate_river,
     produce_run_qc_reports,
 
@@ -498,6 +527,10 @@ rule produce_illumina_run_qc_and_bclconvert:  # TARGET: mounted Illumina run QC 
         BCL_BOOTSTRAP_COMPLETE,
 
 
+    log:
+        MDIR + "logs/produce_illumina_run_qc_and_bclconvert.log"
+    benchmark:
+        MDIR + "benchmarks/produce_illumina_run_qc_and_bclconvert.bench.tsv"
 rule ont_run_qc_collect_summaries:
     output:
         summary_list=RUNQC_ONT_SUMMARY_LIST,
@@ -670,6 +703,7 @@ rule ont_demux_fastq_qc:
         8
     params:
         out_root=RUNQC_ONT_DEMUX_ROOT,
+        run_dir=RUNQC_ONT_RUN_DIR,
         run_id="" if RUNQC_ONT_CONTEXT is None else RUNQC_ONT_CONTEXT["RUNID"],
         cluster_sample="ont_demux_fastq_qc",
     log:
@@ -687,10 +721,27 @@ rule ont_demux_fastq_qc:
         command -v nanoq >> {log:q} 2>&1
         command -v NanoStat >> {log:q} 2>&1
         command -v NanoPlot >> {log:q} 2>&1
+        run_dir="$(printf "%s" {params.run_dir:q} | sed 's:/*$::')"
+        seen_ids="{params.out_root}/.ont_demux_fastq_qc_seen_ids"
+        find {params.out_root:q} -mindepth 1 -maxdepth 1 -type d -exec rm -rf {{}} +
+        : > "$seen_ids"
         while IFS= read -r fastq_dir; do
-            status="$(basename "$(dirname "$fastq_dir")")"
-            barcode="$(basename "$fastq_dir")"
-            sample="{params.run_id}-${{status}}-${{barcode}}"
+            rel="${{fastq_dir#"$run_dir"/}}"
+            if [ "$rel" = "$fastq_dir" ]; then
+                echo "ONT demux FASTQ group is not under RUN_DIR: $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            group_token="$(printf "%s" "$rel" | sed 's#[^A-Za-z0-9._+-]#-#g; s#--*#-#g; s#^-##; s#-$##')"
+            if [ -z "$group_token" ]; then
+                echo "Could not derive ONT demux FASTQ sample identifier from $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            sample="{params.run_id}-${{group_token}}"
+            if grep -Fxq "$sample" "$seen_ids"; then
+                echo "Duplicate ONT demux FASTQ sample identifier $sample from $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            printf "%s\n" "$sample" >> "$seen_ids"
             sample_out="{params.out_root}/$sample"
             file_list="$sample_out/$sample.fastq_files.txt"
             mkdir -p "$sample_out/nanoplot"
@@ -753,6 +804,146 @@ rule ont_demux_fastq_multiqc:
         """
 
 
+rule ultima_demux_fastq_group_list:
+    output:
+        group_list=RUNQC_UG_DEMUX_GROUP_LIST,
+    params:
+        run_dir=RUNQC_UG_RUN_DIR,
+        cluster_sample="ultima_demux_fastq_group_list",
+    log:
+        RUNQC_UG_LOG_DIR + "/demux_fastq_group_list.log",
+    benchmark:
+        RUNQC_UG_BENCH_DIR + "/demux_fastq_group_list.bench.tsv",
+    conda:
+        RUNQC_FASTQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.group_list:q}) $(dirname {log:q})
+        : > {log:q}
+        if [ -z {params.run_dir:q} ]; then
+            echo "config/runs.tsv with PLATFORM=ULTIMA and RUN_DIR is required for Ultima demux FASTQ QC" >> {log:q}
+            exit 2
+        fi
+        test -d {params.run_dir:q}
+        find {params.run_dir:q} -type f \( -name '*.fastq.gz' -o -name '*.fq.gz' \) \
+          | sed 's#/[^/]*$##' \
+          | sort -u > {output.group_list:q}
+        if [ ! -s {output.group_list:q} ]; then
+            echo "No demux FASTQ groups found under {params.run_dir}" >> {log:q}
+            exit 2
+        fi
+        """
+
+
+rule ultima_demux_fastq_qc:
+    input:
+        group_list=RUNQC_UG_DEMUX_GROUP_LIST,
+    output:
+        done=touch(RUNQC_UG_DEMUX_DONE),
+    threads:
+        8
+    params:
+        out_root=RUNQC_UG_DEMUX_ROOT,
+        run_dir=RUNQC_UG_RUN_DIR,
+        run_id="" if RUNQC_UG_CONTEXT is None else RUNQC_UG_CONTEXT["RUNID"],
+        cluster_sample="ultima_demux_fastq_qc",
+    log:
+        RUNQC_UG_LOG_DIR + "/demux_fastq_qc.log",
+    benchmark:
+        RUNQC_UG_BENCH_DIR + "/demux_fastq_qc.bench.tsv",
+    conda:
+        RUNQC_FASTQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p {params.out_root:q} $(dirname {log:q})
+        : > {log:q}
+        command -v fastqc >> {log:q} 2>&1
+        command -v seqkit >> {log:q} 2>&1
+        run_dir="$(printf "%s" {params.run_dir:q} | sed 's:/*$::')"
+        seen_ids="{params.out_root}/.ultima_demux_fastq_qc_seen_ids"
+        find {params.out_root:q} -mindepth 1 -maxdepth 1 -type d -exec rm -rf {{}} +
+        : > "$seen_ids"
+        while IFS= read -r fastq_dir; do
+            rel="${{fastq_dir#"$run_dir"/}}"
+            if [ "$rel" = "$fastq_dir" ]; then
+                echo "Ultima demux FASTQ group is not under RUN_DIR: $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            group_token="$(printf "%s" "$rel" | sed 's#[^A-Za-z0-9._+-]#-#g; s#--*#-#g; s#^-##; s#-$##')"
+            if [ -z "$group_token" ]; then
+                echo "Could not derive Ultima demux FASTQ sample identifier from $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            sample="{params.run_id}-${{group_token}}"
+            if grep -Fxq "$sample" "$seen_ids"; then
+                echo "Duplicate Ultima demux FASTQ sample identifier $sample from $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            printf "%s\n" "$sample" >> "$seen_ids"
+            sample_out="{params.out_root}/$sample"
+            input_dir="$sample_out/inputs"
+            fastqc_dir="$sample_out/fastqc"
+            file_list="$sample_out/$sample.fastq_files.txt"
+            mkdir -p "$input_dir" "$fastqc_dir"
+            find "$fastq_dir" -maxdepth 1 -type f \( -name '*.fastq.gz' -o -name '*.fq.gz' \) \
+              | sort > "$file_list"
+            if [ ! -s "$file_list" ]; then
+                echo "No FASTQs found for $sample under $fastq_dir" >> {log:q}
+                exit 2
+            fi
+            mapfile -t fastqs < "$file_list"
+            seqkit stats --tabular "${{fastqs[@]}}" \
+              > "$sample_out/$sample.seqkit_stats.tsv" \
+              2>> {log:q}
+            fastqc_inputs=()
+            idx=0
+            for fastq in "${{fastqs[@]}}"; do
+                idx="$((idx + 1))"
+                base_token="$(basename "$fastq" | sed 's#[^A-Za-z0-9._+-]#-#g; s#--*#-#g; s#^-##; s#-$##')"
+                link_path="$input_dir/$sample.$(printf '%03d' "$idx").$base_token"
+                ln -sfn "$(realpath "$fastq")" "$link_path"
+                fastqc_inputs+=("$link_path")
+            done
+            fastqc \
+              -o "$fastqc_dir" \
+              -t {threads} \
+              "${{fastqc_inputs[@]}}" \
+              >> {log:q} 2>&1
+        done < {input.group_list:q}
+        """
+
+
+rule ultima_demux_fastq_multiqc:
+    input:
+        done=RUNQC_UG_DEMUX_DONE,
+    output:
+        html=RUNQC_UG_DEMUX_MULTIQC_HTML,
+    params:
+        root=RUNQC_UG_DEMUX_ROOT,
+        cluster_sample="ultima_demux_fastq_multiqc",
+    log:
+        RUNQC_UG_LOG_DIR + "/demux_fastq_multiqc.log",
+    benchmark:
+        RUNQC_UG_BENCH_DIR + "/demux_fastq_multiqc.bench.tsv",
+    conda:
+        RUNQC_MULTIQC_ENV
+    shell:
+        r"""
+        set -euo pipefail
+        mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
+        multiqc --version > {log:q} 2>&1 || true
+        multiqc -f \
+          -m fastqc \
+          -m seqkit \
+          --filename "$(basename {output.html:q})" \
+          --outdir "$(dirname {output.html:q})" \
+          {params.root:q} >> {log:q} 2>&1
+        test -s {output.html:q}
+        """
+
+
 rule ont_run_qc_report:
     input:
         metrics=lambda wildcards: _runqc_optional_input(RUNQC_ONT_METRICS_PATH),
@@ -791,7 +982,7 @@ rule ultima_run_qc_report:
         done=RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.done",
     params:
         metrics_path=_runqc_text(RUNQC_UG_CFG, "metrics_path"),
-        run_s3_uri=_runqc_text(RUNQC_UG_CFG, "run_s3_uri"),
+        run_s3_uri=RUNQC_UG_RUN_S3_URI,
         cluster_sample="ultima_run_qc_report",
     log:
         RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.log",
@@ -819,34 +1010,80 @@ rule produce_illumina_run_qc:  # TARGET: separate Illumina run-level QC report
         RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
 
 
-rule produce_ont_run_qc:  # TARGET: explicit ONT run-level QC placeholder report
+    log:
+        MDIR + "logs/produce_illumina_run_qc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_illumina_run_qc.bench.tsv"
+rule produce_ont_run_qc:  # TARGET: mounted ONT run-level QC plus demux FASTQ QC
     input:
         RUNQC_ONT_TARGET_INPUTS,
 
 
+    log:
+        MDIR + "logs/produce_ont_run_qc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ont_run_qc.bench.tsv"
 rule produce_ont_demux_fastq_qc:  # TARGET: mounted ONT demux FASTQ QC and focused MultiQC report
     input:
         RUNQC_ONT_DEMUX_MULTIQC_HTML,
 
 
+    log:
+        MDIR + "logs/produce_ont_demux_fastq_qc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ont_demux_fastq_qc.bench.tsv"
 rule produce_ont_run_qc_and_demux_multiqc:  # TARGET: mounted ONT run QC plus demux FASTQ MultiQC
     input:
-        RUNQC_ONT_TARGET_INPUTS + [RUNQC_ONT_DEMUX_MULTIQC_HTML],
+        RUNQC_ONT_TARGET_INPUTS,
 
 
-rule produce_ultima_run_qc:  # TARGET: explicit Ultima run-level QC placeholder report
+    log:
+        MDIR + "logs/produce_ont_run_qc_and_demux_multiqc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ont_run_qc_and_demux_multiqc.bench.tsv"
+rule produce_ultima_run_qc:  # TARGET: mounted Ultima run-level QC plus demux FASTQ QC
     input:
-        RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.done",
+        RUNQC_UG_TARGET_INPUTS,
 
 
+    log:
+        MDIR + "logs/produce_ultima_run_qc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ultima_run_qc.bench.tsv"
+rule produce_ultima_demux_fastq_qc:  # TARGET: mounted Ultima demux FASTQ QC and focused MultiQC report
+    input:
+        RUNQC_UG_DEMUX_MULTIQC_HTML,
+
+
+    log:
+        MDIR + "logs/produce_ultima_demux_fastq_qc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ultima_demux_fastq_qc.bench.tsv"
+rule produce_ultima_run_qc_and_demux_multiqc:  # TARGET: mounted Ultima run QC plus demux FASTQ MultiQC
+    input:
+        RUNQC_UG_TARGET_INPUTS,
+
+
+    log:
+        MDIR + "logs/produce_ultima_run_qc_and_demux_multiqc.log"
+    benchmark:
+        MDIR + "benchmarks/produce_ultima_run_qc_and_demux_multiqc.bench.tsv"
 rule produce_read_fate_river:  # TARGET: Illumina read-fate RIVER report
     input:
         RUNQC_ILMN_RIVER_HTML,
 
 
+    log:
+        MDIR + "logs/produce_read_fate_river.log"
+    benchmark:
+        MDIR + "benchmarks/produce_read_fate_river.bench.tsv"
 rule produce_run_qc_reports:  # TARGET: all run-level QC reports, separate from final WGS MultiQC
     input:
         RUNQC_ILMN_REPORT_DIR + "/summary.html",
         RUNQC_ILMN_REPORT_DIR + "/multiqc_report.html",
         RUNQC_ONT_TARGET_INPUTS,
-        RUNQC_UG_ROOT + "/logs/ultima_run_qc_report.done",
+        RUNQC_UG_TARGET_INPUTS,
+    log:
+        MDIR + "logs/produce_run_qc_reports.log"
+    benchmark:
+        MDIR + "benchmarks/produce_run_qc_reports.bench.tsv"

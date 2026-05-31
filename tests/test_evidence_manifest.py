@@ -10,8 +10,10 @@ import pytest
 from daylily_omics_analysis.evidence_manifest import (
     EvidenceManifestError,
     EvidenceMetadata,
+    build_analysis_evidence_manifest,
     build_multiqc_final_evidence_manifest,
     canonical_json_bytes,
+    file_classification,
     main,
     manifest_checksum,
     sha256_file,
@@ -169,13 +171,222 @@ def test_multiqc_evidence_manifest_classifies_key_files_and_preserves_unknowns(
     )
 
     by_path = {record["relative_path"]: record for record in manifest["files"]}
+    final_html_rel = "results/day/hg38/reports/DAY_final_multiqc.html"
     custom_rel = "results/day/hg38/other_reports/alignstats_combo_mqc.tsv"
-    unknown_rel = "results/day/hg38/reports/DAY_final_multiqc_data/extra_unknown.dat"
+    data_extra_rel = "results/day/hg38/reports/DAY_final_multiqc_data/extra_unknown.dat"
+    assert by_path[final_html_rel]["metadata"] == {
+        "genome_build": "hg38",
+        "report_kind": "final",
+        "report_name": "DAY_final_multiqc",
+        "result_scope": "day",
+    }
     assert by_path[custom_rel]["classification"] == "custom_mqc_tsv"
     assert by_path[custom_rel]["parser_relevant"] is True
     assert by_path[custom_rel]["sha256"] == sha256_file(paths["custom"])
-    assert by_path[unknown_rel]["classification"] == "unknown"
-    assert by_path[unknown_rel]["parser_relevant"] is False
+    assert by_path[data_extra_rel]["classification"] == "multiqc_data_artifact"
+    assert by_path[data_extra_rel]["parser_relevant"] is False
+
+
+def test_file_classification_covers_analysis_outputs_and_indexes() -> None:
+    cases = {
+        "results/day/hg38/HG002/calls/HG002.vcf": ("variant_vcf", False),
+        "results/day/hg38/HG002/calls/HG002.vcf.gz": ("variant_vcf", False),
+        "results/day/hg38/HG002/calls/HG002.vcf.gz.tbi": (
+            "variant_vcf_index",
+            False,
+        ),
+        "results/day/hg38/HG002/calls/HG002.vcf.gz.csi": (
+            "variant_vcf_index",
+            False,
+        ),
+        "results/day/hg38/HG002/align/HG002.cram": ("alignment_cram", False),
+        "results/day/hg38/HG002/align/HG002.cram.crai": (
+            "alignment_cram_index",
+            False,
+        ),
+        "results/day/hg38/HG002/align/HG002.bam": ("alignment_bam", False),
+        "results/day/hg38/HG002/align/HG002.bam.bai": (
+            "alignment_bam_index",
+            False,
+        ),
+        "results/day/hg38/HG002/align/HG002.bam.csi": (
+            "alignment_bam_index",
+            False,
+        ),
+        "results/runs/RUN1/run_qc/illumina/multiqc_report.html": (
+            "multiqc_html",
+            True,
+        ),
+        "results/runs/RUN1/bclconvert/multiqc_report_data/multiqc_bclconvert.txt": (
+            "multiqc_data_text_artifact",
+            True,
+        ),
+        "results/runs/RUN1/run_qc/illumina/summary.tsv": ("run_qc_tsv", True),
+        "results/runs/RUN1/bclconvert/metrics/rollup.json": (
+            "bclconvert_json",
+            True,
+        ),
+    }
+
+    for relative_path, expected in cases.items():
+        assert file_classification(relative_path) == expected
+
+
+def test_analysis_inventory_discovers_results_multiqc_and_derivable_metadata(
+    tmp_path: Path,
+) -> None:
+    _make_multiqc_fixture(tmp_path)
+    _write(tmp_path / "config/samples.tsv", "SAMPLEID\nHG002\nHG003\n")
+    _write(
+        tmp_path / "config/units.tsv",
+        (
+            "SAMPLEID\tRUNID\tEXPERIMENTID\tLANEID\tBARCODEID\tLIBPREP\tSEQ_VENDOR\tSEQ_PLATFORM\n"
+            "HG002\tRUN42\tEXP1\t1\tBC01\tPCR-free\tLSMC\tNOVASEQ\n"
+            "HG003\tRUN42\tEXP2\t2\tBC02\tPCR-free\tLSMC\tNOVASEQ\n"
+        ),
+    )
+    _write(
+        tmp_path / "results/day/hg38/HG002/align/HG002.sent.cram",
+        "cram bytes\n",
+    )
+    _write(
+        tmp_path / "results/day/hg38/HG002/align/HG002.sent.cram.crai",
+        "cram index\n",
+    )
+    _write(tmp_path / "results/day/hg38/HG002/align/HG002.sent.bam", "bam bytes\n")
+    _write(
+        tmp_path / "results/day/hg38/HG002/align/HG002.sent.bam.bai",
+        "bam index\n",
+    )
+    _write(tmp_path / "results/day/hg38/HG002/variants/HG002.snv.vcf.gz", "vcf\n")
+    _write(
+        tmp_path / "results/day/hg38/HG002/variants/HG002.snv.vcf.gz.tbi",
+        "vcf index\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/run_qc/illumina/multiqc_report.html",
+        "<html>run qc</html>\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/run_qc/illumina/multiqc_report_data/multiqc_data.json",
+        "{}\n",
+    )
+    _write(
+        tmp_path
+        / "results/runs/RUN42/run_qc/illumina/multiqc_report_data/multiqc_general_stats.txt",
+        "Sample\tReads\nRUN42\t1\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/run_qc/illumina/illumina_run_qc.json",
+        "{}\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/run_qc/illumina/summary.tsv",
+        "Sample\tReads\nRUN42\t1\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/run_qc/illumina/logs/illumina_run_qc_multiqc.log",
+        "log\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/bclconvert/multiqc_report.html",
+        "<html>bcl</html>\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/bclconvert/multiqc_report_data/multiqc_data.json",
+        "{}\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/bclconvert/multiqc_report_data/multiqc_bclconvert.txt",
+        "Sample\tReads\nRUN42\t1\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/bclconvert/metrics/rollup.json",
+        "{}\n",
+    )
+    _write(
+        tmp_path / "results/runs/RUN42/bclconvert/multiqc_inputs/bclconvert_demux_mqc.tsv",
+        "Sample\tReads\nRUN42\t1\n",
+    )
+    output = tmp_path / "results/day/hg38/reports/dayoa_evidence_manifest.json"
+
+    manifest = build_analysis_evidence_manifest(
+        analysis_root=tmp_path,
+        output_manifest=output,
+        metadata=_metadata(),
+        generated_at=FIXED_TIME,
+    )
+
+    by_path = {record["relative_path"]: record for record in manifest["files"]}
+    cram = by_path["results/day/hg38/HG002/align/HG002.sent.cram"]
+    assert cram["classification"] == "alignment_cram"
+    assert cram["metadata"] == {
+        "artifact_format": "cram",
+        "genome_build": "hg38",
+        "result_scope": "day",
+        "sample_id": "HG002",
+    }
+    assert (
+        by_path["results/day/hg38/HG002/variants/HG002.snv.vcf.gz.tbi"][
+            "classification"
+        ]
+        == "variant_vcf_index"
+    )
+    run_qc_html = by_path["results/runs/RUN42/run_qc/illumina/multiqc_report.html"]
+    assert run_qc_html["classification"] == "multiqc_html"
+    assert run_qc_html["metadata"] == {
+        "barcode_ids": ["BC01", "BC02"],
+        "experiment_ids": ["EXP1", "EXP2"],
+        "lane_ids": ["1", "2"],
+        "library_preps": ["PCR-free"],
+        "manifest_context_paths": ["config/samples.tsv", "config/units.tsv"],
+        "report_kind": "run_qc",
+        "report_name": "multiqc_report",
+        "result_scope": "run",
+        "run_id": "RUN42",
+        "run_ids": ["RUN42"],
+        "run_qc_platform": "illumina",
+        "sample_names": ["HG002", "HG003"],
+        "sequencing_platforms": ["NOVASEQ"],
+        "sequencing_vendors": ["LSMC"],
+    }
+    assert "sample:HG002" in run_qc_html["tags"]
+    assert "sample:HG003" in run_qc_html["tags"]
+    assert "experiment:EXP1" in run_qc_html["tags"]
+    assert "experiment:EXP2" in run_qc_html["tags"]
+    bcl_data = by_path[
+        "results/runs/RUN42/bclconvert/multiqc_report_data/multiqc_bclconvert.txt"
+    ]
+    assert bcl_data["classification"] == "multiqc_data_text_artifact"
+    assert bcl_data["metadata"]["report_kind"] == "bclconvert"
+    assert bcl_data["metadata"]["sample_names"] == ["HG002", "HG003"]
+    assert bcl_data["metadata"]["experiment_ids"] == ["EXP1", "EXP2"]
+    assert "multiqc" in bcl_data["tags"]
+    assert "report_kind:bclconvert" in bcl_data["tags"]
+    assert by_path["results/runs/RUN42/bclconvert/metrics/rollup.json"][
+        "parser_relevant"
+    ] is True
+    samples_record = by_path["config/samples.tsv"]
+    units_record = by_path["config/units.tsv"]
+    assert samples_record["classification"] == "samples_manifest"
+    assert units_record["classification"] == "units_manifest"
+    assert "manifest:samples" in samples_record["tags"]
+    assert "manifest:units" in units_record["tags"]
+    assert samples_record["metadata"]["sample_names"] == ["HG002", "HG003"]
+    assert units_record["metadata"]["experiment_ids"] == ["EXP1", "EXP2"]
+    assert str(output.relative_to(tmp_path)) not in by_path
+
+
+def test_analysis_inventory_fails_when_no_first_class_artifacts(tmp_path: Path) -> None:
+    _write(tmp_path / "notes.txt", "not under a discovery root\n")
+
+    with pytest.raises(EvidenceManifestError, match="No first-class evidence artifacts"):
+        build_analysis_evidence_manifest(
+            analysis_root=tmp_path,
+            output_manifest=tmp_path / "manifest.json",
+            metadata=_metadata(),
+            generated_at=FIXED_TIME,
+        )
 
 
 def test_required_multiqc_files_fail_loudly(tmp_path: Path) -> None:

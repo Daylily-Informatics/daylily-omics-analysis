@@ -112,6 +112,8 @@ rule tiddit_sv_mqc_gather:
         MDIR + "other_reports/tiddit_sv_mqc.tsv"
     log:
         MDIR + "other_reports/logs/tiddit_sv_custom_data.log"
+    benchmark:
+        MDIR + "benchmarks/tiddit_sv_mqc_gather.bench.tsv"
     container: None
     shell:
         """
@@ -127,3 +129,7 @@ rule produce_tiddit:  # DEPRECATED TARGET: use produce_tiddit_sv_vcf
     threads: 1
     input:
         expand(MDIR +"{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
+    log:
+        MDIR + "logs/produce_tiddit.log"
+    benchmark:
+        MDIR + "benchmarks/produce_tiddit.bench.tsv"

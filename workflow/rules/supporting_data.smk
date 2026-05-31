@@ -14,6 +14,8 @@ rule remove_supporting_data:
     threads: 1
     log:
         "logs/supporting_data_cleanup.log",
+    benchmark:
+        MDIR + "benchmarks/remove_supporting_data.bench.tsv"
     conda:
         config["vanilla"]["env_yaml"]
     script:
@@ -25,6 +27,8 @@ rule force_supporting_data_cleanup:  # TARGET : -not implemented yet- Will Clean
         touch("logs/forced_supporting_data_cleanup.done"),
     log:
         "logs/forced_supporting_data_cleanup.log",
+    benchmark:
+        MDIR + "benchmarks/force_supporting_data_cleanup.bench.tsv"
     threads: 1
     conda:
         config["vanilla"]["env_yaml"]
@@ -43,6 +47,8 @@ rule stage_supporting_data:  # TARGET : Create resources/fsx Link via Method Cho
     threads: 1
     log:
         "logs/staging_supporting_data.log",
+    benchmark:
+        MDIR + "benchmarks/stage_supporting_data.bench.tsv"
     conda:
         config["vanilla"]["env_yaml"]
     shell:

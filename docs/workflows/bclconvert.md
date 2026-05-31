@@ -29,7 +29,32 @@ The rule discovers every `L###` lane directory and submits one `run_bclconvert_l
 <output-root>/bclconvert/lane_reports/L###/
 ```
 
-The local `run_bclconvert` merge rule then moves FASTQs into the standard final FASTQ directory and writes merged reports under `<output-root>/bclconvert/fastqs/Reports/`.
+By default, `bclconvert.merge_lane_fastqs: false`. The local `run_bclconvert` rule only records that lane FASTQs are ready, and downstream DayOA steps consume the lane-level `fastq_list.csv` and report files in place. This avoids an unnecessary serial stitch step because alignment can stream the lane FASTQs directly into BWA.
+
+If a consumer explicitly needs the merged legacy tree, set `bclconvert.merge_lane_fastqs: true`. In that mode `run_bclconvert` moves FASTQs into the standard final FASTQ directory and writes merged reports under `<output-root>/bclconvert/fastqs/Reports/`.
+
+After demultiplexing, `bclconvert_demux_fastq_qc` prepares one FastQC input link for every demultiplexed FASTQ listed by the selected report set. Link names are composed as:
+
+```text
+<RUNID>.L<lane>.<sample>.<read-group>.R1.fastq.gz
+<RUNID>.L<lane>.<sample>.<read-group>.R2.fastq.gz
+```
+
+The helper fails before FastQC when two rows would produce the same MultiQC/FastQC sample identifier or when the same source FASTQ is listed more than once. That is intentional: demux QC must not silently overwrite R1/R2, lane, read-group, or repeated-sample evidence.
+
+## Terminal QC And MultiQC
+
+`produce_bclconvert_fastqs_and_metrics` ends with:
+
+1. lane-split BCL Convert;
+2. a local lane-ready marker by default, or an optional legacy lane merge when `merge_lane_fastqs: true`;
+3. generated DayOA `generated.units.tsv`;
+4. normalized BCL Convert demux metric TSVs;
+5. collision-safe demux FastQC input preparation;
+6. FastQC over every demultiplexed FASTQ, including undetermined FASTQs when BCL Convert emits them;
+7. focused MultiQC report generation.
+
+The focused report includes `bclconvert`, `fastqc`, and `custom_content` modules. The custom tables include demux stats, lane summary, FASTQ manifest, demux FastQC manifest, unknown barcodes, and index hopping when present.
 
 ## Default Demux Settings
 
@@ -40,6 +65,7 @@ bclconvert:
   threads: 192
   mem_mb: 360000
   partition: "i192mem,i192bigmem"
+  merge_lane_fastqs: false
   parallel_tiles: 16
   conversion_threads: 8
   compression_threads: 48
@@ -48,6 +74,8 @@ bclconvert:
   shared_thread_odirect_output: true
   output_legacy_stats: true
   num_unknown_barcodes_reported: 1000
+  demux_qc_threads: 32
+  demux_qc_mem_mb: 64000
   barcode_mismatches_index1: 0
   barcode_mismatches_index2: 0
 ```

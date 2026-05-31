@@ -13,6 +13,8 @@ rule vpot:
         done=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/{sample}.{alnr}.{snv}.vpot.done"),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vpot/log/{sample}.{alnr}.{snv}.vpot.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vpot.bench.tsv"
     threads: config["vpot"]["threads"]
     resources:
         vcpu=config["vpot"]["threads"],
@@ -47,5 +49,9 @@ rule produce_vpot:  # TARGET: run VPOT across all samples
         ],
     output:
         "logs/vpot_gathered.done",
+    log:
+        MDIR + "logs/produce_vpot.log"
+    benchmark:
+        MDIR + "benchmarks/produce_vpot.bench.tsv"
     shell:
         "touch {output};"

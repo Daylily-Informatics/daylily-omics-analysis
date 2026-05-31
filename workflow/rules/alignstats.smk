@@ -94,6 +94,10 @@ rule finish_align_stats:
     output:
         tsv=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
+    log:
+        MDIR + "{sample}/logs/{sample}.{alnr}.{ddup}.finish_align_stats.log"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.finish_align_stats.bench.tsv"
     threads: 2
     params:
         P=50,

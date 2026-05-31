@@ -206,6 +206,8 @@ rule sent_TNscope_sort_index_chunk_vcf:
         config['senttn']['conda']
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/vcfs/{senttnchrm}/log/{sample}.{alnr}.senttn.{senttnchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{senttnchrm}.sent_TNscope_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=4,
@@ -241,6 +243,8 @@ rule sent_TNscope_concat_index_chunks:
         config['senttn']['conda']
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/senttn/log/{sample}.{alnr}.senttn.snv.merge.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sent_TNscope_concat_index_chunks.bench.tsv"
     params:
         cluster_sample=ret_sample,
     shell:
@@ -272,6 +276,8 @@ rule produce_sent_TNscope_vcf:  # TARGET : Produce Sentieon TNscope somatic VCFs
     priority: 48
     log:
         "gatheredall.senttn.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sent_TNscope_vcf.bench.tsv"
     conda:
         config['senttn']['conda']
     params:

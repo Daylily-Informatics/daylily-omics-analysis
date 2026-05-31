@@ -69,6 +69,10 @@ rule compile_seqfu:
         mqc2=MDIR + "other_reports/seqfu2.mqc.tsv",
         mqc=MDIR + "other_reports/seqfu_mqc.tsv",
         d=MDIR + "logs/seqfu.done",
+    log:
+        MDIR + "logs/compile_seqfu.log"
+    benchmark:
+        MDIR + "benchmarks/compile_seqfu.bench.tsv"
     params:
         mdir=MDIR,
     shell:
@@ -115,5 +119,9 @@ localrules:
 rule produce_seqfu:  # TARGET: seqfu output
     input:
         MDIR + "logs/seqfu.done",
+    log:
+        MDIR + "logs/produce_seqfu.log"
+    benchmark:
+        MDIR + "benchmarks/produce_seqfu.bench.tsv"
     container:
         None

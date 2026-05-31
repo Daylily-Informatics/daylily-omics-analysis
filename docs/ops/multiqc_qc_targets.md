@@ -78,6 +78,7 @@ Peddy CSVs and Somalier native files are rewritten before MultiQC. Haplocheck an
 | Ganon2 unmapped metagenomics | Long-running, run with `produce_unmapped_metagenomics_ganon2_quick`, `produce_metagenomics`, or final MultiQC only when `multiqc_qc.enable_tools=["unmapped_metagenomics_ganon2"]` or `["metagenomics"]` and `unmapped_metagenomics.ganon2_db_prefixes` are explicit. |
 | sourmash gather unmapped fingerprint | Long-running secondary fingerprint, run with `produce_unmapped_metagenomics_sourmash_gather`, `produce_metagenomics`, or final MultiQC only when `multiqc_qc.enable_tools=["unmapped_metagenomics_sourmash"]` or `["metagenomics"]` and `unmapped_metagenomics.sourmash_databases` plus sketch parameters are explicit. |
 | Ultima run QC | Excluded from routine final MultiQC unless a parser-backed run-QC target explicitly enables Ultima run QC. |
+| ONT and Ultima demux FASTQ QC | Included in mounted `produce_ont_run_qc` and `produce_ultima_run_qc` targets when demux FASTQs are present under the explicit `RUN_DIR`; reported through focused run-QC MultiQC reports, not routine final WGS MultiQC. |
 
 QC gap: generated evidence can be absent because the tool was not configured, not because the sample passed or failed. Interpretive decisions belong to R2.
 
@@ -228,7 +229,9 @@ The docs and catalog cover these report surfaces:
 - `produce_illumina_run_qc`
 - `produce_read_fate_river`
 - `produce_ont_run_qc`
+- `produce_ont_demux_fastq_qc`
 - `produce_ultima_run_qc`
+- `produce_ultima_demux_fastq_qc`
 - `produce_unmapped_metagenomics_quick`
 - `produce_unmapped_metagenomics_ganon2_quick`
 - `produce_unmapped_metagenomics_sourmash_gather`

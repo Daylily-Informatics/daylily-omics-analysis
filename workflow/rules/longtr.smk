@@ -203,6 +203,10 @@ rule longtr_all:  # TARGET: run LongTR with the genome-wide TRExplorer catalog
         lambda wildcards: _longtr_outputs("all", require_non_empty=True)
     output:
         touch(MDIR + "other_reports/longtr_all.done")
+    log:
+        MDIR + "logs/longtr_all.log"
+    benchmark:
+        MDIR + "benchmarks/longtr_all.bench.tsv"
     shell:
         "touch {output}"
 
@@ -212,5 +216,9 @@ rule longtr_diseaser:  # TARGET: run LongTR with the disease-repeat catalog
         lambda wildcards: _longtr_outputs("diseaser", require_non_empty=True)
     output:
         touch(MDIR + "other_reports/longtr_diseaser.done")
+    log:
+        MDIR + "logs/longtr_diseaser.log"
+    benchmark:
+        MDIR + "benchmarks/longtr_diseaser.bench.tsv"
     shell:
         "touch {output}"

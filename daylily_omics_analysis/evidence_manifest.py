@@ -35,6 +35,30 @@ MULTIQC_REQUIRED_DATA_FILES = (
     "multiqc.log",
 )
 
+FIRST_CLASS_DISCOVERY_ROOTS = ("config", "results")
+GENERIC_NON_DISCOVERY_CLASSIFICATIONS = {
+    "json_artifact",
+    "tsv_artifact",
+    "unknown",
+}
+DAY_RESULT_RESERVED_DIRS = {
+    "benchmarks",
+    "compiled_impute_results",
+    "logs",
+    "other_reports",
+    "reports",
+}
+MANIFEST_CONTEXT_COLUMNS = {
+    "sample_names": ("SAMPLEID",),
+    "experiment_ids": ("EXPERIMENTID",),
+    "run_ids": ("RUNID",),
+    "lane_ids": ("LANEID",),
+    "barcode_ids": ("BARCODEID",),
+    "library_preps": ("LIBPREP",),
+    "sequencing_vendors": ("SEQ_VENDOR",),
+    "sequencing_platforms": ("SEQ_PLATFORM",),
+}
+
 
 @dataclass(frozen=True)
 class EvidenceMetadata:
@@ -69,6 +93,19 @@ class EvidenceMetadata:
             raise EvidenceManifestError(
                 "Evidence metadata is missing required field(s): " + ", ".join(missing)
             )
+
+
+@dataclass(frozen=True)
+class ManifestTagContext:
+    sample_names: tuple[str, ...] = ()
+    experiment_ids: tuple[str, ...] = ()
+    run_ids: tuple[str, ...] = ()
+    lane_ids: tuple[str, ...] = ()
+    barcode_ids: tuple[str, ...] = ()
+    library_preps: tuple[str, ...] = ()
+    sequencing_vendors: tuple[str, ...] = ()
+    sequencing_platforms: tuple[str, ...] = ()
+    source_paths: tuple[str, ...] = ()
 
 
 def utc_now_iso() -> str:
@@ -127,11 +164,275 @@ def snakemake_version() -> str:
         raise EvidenceManifestError("Unable to determine Snakemake version.") from exc
 
 
+def _has_any_suffix(name: str, suffixes: tuple[str, ...]) -> bool:
+    return any(name.endswith(suffix) for suffix in suffixes)
+
+
+def _is_multiqc_data_dir_name(name: str) -> bool:
+    return (
+        name == "multiqc_report_data"
+        or name.endswith("_multiqc_data")
+        or name.endswith(".multiqc_data")
+    )
+
+
+def _is_multiqc_data_dir_member(path: Path) -> bool:
+    return any(_is_multiqc_data_dir_name(part) for part in path.parts[:-1])
+
+
+def _is_multiqc_report_html(path: Path) -> bool:
+    name = path.name
+    parts = set(path.parts)
+    if name.startswith("DAY_") and name.endswith("_multiqc.html"):
+        return True
+    if name == "multiqc_report.html" and ({"run_qc", "bclconvert"} & parts):
+        return True
+    if name.endswith(".multiqc.html") and ({"run_qc", "bclconvert"} & parts):
+        return True
+    return False
+
+
+def _known_artifact_format(classification: str) -> str:
+    return {
+        "alignment_bam": "bam",
+        "alignment_bam_index": "bam_index",
+        "alignment_cram": "cram",
+        "alignment_cram_index": "cram_index",
+        "csi_index": "csi_index",
+        "variant_vcf": "vcf",
+        "variant_vcf_index": "vcf_index",
+    }.get(classification, "")
+
+
+def _read_manifest_table(path: Path, *, required_columns: set[str]) -> tuple[list[str], list[dict[str, str]]]:
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            fieldnames = [str(field or "").strip() for field in (reader.fieldnames or [])]
+            missing = required_columns - set(fieldnames)
+            if missing:
+                raise EvidenceManifestError(
+                    f"{path} is missing required metadata column(s): "
+                    + ", ".join(sorted(missing))
+                )
+            rows = [
+                {str(key or "").strip(): str(value or "").strip() for key, value in row.items()}
+                for row in reader
+            ]
+    except OSError as exc:
+        raise EvidenceManifestError(f"Unable to read manifest table: {path}") from exc
+    return fieldnames, rows
+
+
+def _unique_values(rows: list[dict[str, str]], columns: tuple[str, ...]) -> tuple[str, ...]:
+    values: set[str] = set()
+    for row in rows:
+        for column in columns:
+            value = str(row.get(column, "")).strip()
+            if value:
+                values.add(value)
+    return tuple(sorted(values))
+
+
+def build_manifest_tag_context(analysis_root: Path) -> ManifestTagContext:
+    config_dir = analysis_root / "config"
+    samples_path = config_dir / "samples.tsv"
+    units_path = config_dir / "units.tsv"
+    sample_rows: list[dict[str, str]] = []
+    unit_rows: list[dict[str, str]] = []
+    source_paths: list[str] = []
+
+    if samples_path.is_file():
+        _fieldnames, sample_rows = _read_manifest_table(
+            samples_path,
+            required_columns={"SAMPLEID"},
+        )
+        source_paths.append(relative_to_root(samples_path, analysis_root))
+    if units_path.is_file():
+        _fieldnames, unit_rows = _read_manifest_table(
+            units_path,
+            required_columns={"SAMPLEID", "EXPERIMENTID"},
+        )
+        source_paths.append(relative_to_root(units_path, analysis_root))
+
+    sample_names = tuple(
+        sorted(
+            {
+                *_unique_values(sample_rows, MANIFEST_CONTEXT_COLUMNS["sample_names"]),
+                *_unique_values(unit_rows, MANIFEST_CONTEXT_COLUMNS["sample_names"]),
+            }
+        )
+    )
+    return ManifestTagContext(
+        sample_names=sample_names,
+        experiment_ids=_unique_values(unit_rows, MANIFEST_CONTEXT_COLUMNS["experiment_ids"]),
+        run_ids=_unique_values(unit_rows, MANIFEST_CONTEXT_COLUMNS["run_ids"]),
+        lane_ids=_unique_values(unit_rows, MANIFEST_CONTEXT_COLUMNS["lane_ids"]),
+        barcode_ids=_unique_values(unit_rows, MANIFEST_CONTEXT_COLUMNS["barcode_ids"]),
+        library_preps=_unique_values(unit_rows, MANIFEST_CONTEXT_COLUMNS["library_preps"]),
+        sequencing_vendors=_unique_values(
+            unit_rows,
+            MANIFEST_CONTEXT_COLUMNS["sequencing_vendors"],
+        ),
+        sequencing_platforms=_unique_values(
+            unit_rows,
+            MANIFEST_CONTEXT_COLUMNS["sequencing_platforms"],
+        ),
+        source_paths=tuple(source_paths),
+    )
+
+
+def _multiqc_report_metadata(path: Path) -> dict[str, str]:
+    parts = path.parts
+    name = path.name
+    metadata: dict[str, str] = {}
+
+    data_dir = next((part for part in parts if _is_multiqc_data_dir_name(part)), "")
+    report_name = ""
+    if data_dir:
+        report_name = data_dir
+    elif name.endswith(".html") and _is_multiqc_report_html(path):
+        report_name = name.removesuffix(".html")
+    if report_name.endswith("_data"):
+        report_name = report_name[: -len("_data")]
+    if report_name.endswith(".multiqc_data"):
+        report_name = report_name[: -len(".multiqc_data")]
+    if report_name == "multiqc_report_data":
+        report_name = "multiqc_report"
+    if report_name:
+        metadata["report_name"] = report_name
+
+    if "bclconvert" in parts:
+        metadata["report_kind"] = "bclconvert"
+        return metadata
+
+    if "run_qc" in parts:
+        metadata["report_kind"] = "run_qc"
+        index = parts.index("run_qc")
+        if len(parts) > index + 1:
+            metadata["run_qc_platform"] = parts[index + 1]
+        return metadata
+
+    if report_name.startswith("DAY_") and report_name.endswith("_multiqc"):
+        metadata["report_kind"] = report_name[len("DAY_") : -len("_multiqc")]
+    return metadata
+
+
+def artifact_metadata(relative_path: str, classification: str) -> dict[str, Any]:
+    path = Path(relative_path)
+    parts = path.parts
+    metadata: dict[str, str] = {}
+
+    if len(parts) >= 3 and parts[0] == "results" and parts[1] == "day":
+        metadata["result_scope"] = "day"
+        metadata["genome_build"] = parts[2]
+        if len(parts) >= 4 and parts[3] not in DAY_RESULT_RESERVED_DIRS:
+            metadata["sample_id"] = parts[3]
+    elif len(parts) >= 3 and parts[0] == "results" and parts[1] == "runs":
+        metadata["result_scope"] = "run"
+        metadata["run_id"] = parts[2]
+
+    artifact_format = _known_artifact_format(classification)
+    if artifact_format:
+        metadata["artifact_format"] = artifact_format
+
+    if classification.startswith("multiqc_") or classification in {
+        "bclconvert_json",
+        "bclconvert_table",
+        "custom_mqc_tsv",
+        "run_qc_json",
+        "run_qc_tsv",
+        "staging_manifest",
+    }:
+        metadata.update(_multiqc_report_metadata(path))
+
+    return metadata
+
+
+def _context_metadata(context: ManifestTagContext) -> dict[str, Any]:
+    metadata: dict[str, Any] = {}
+    for field_name in (
+        "sample_names",
+        "experiment_ids",
+        "run_ids",
+        "lane_ids",
+        "barcode_ids",
+        "library_preps",
+        "sequencing_vendors",
+        "sequencing_platforms",
+    ):
+        values = list(getattr(context, field_name))
+        if values:
+            metadata[field_name] = values
+    if context.source_paths:
+        metadata["manifest_context_paths"] = list(context.source_paths)
+    return metadata
+
+
+def _context_tags(context: ManifestTagContext) -> list[str]:
+    tag_groups = (
+        ("sample", context.sample_names),
+        ("experiment", context.experiment_ids),
+        ("run", context.run_ids),
+        ("lane", context.lane_ids),
+        ("barcode", context.barcode_ids),
+        ("libprep", context.library_preps),
+        ("seq_vendor", context.sequencing_vendors),
+        ("seq_platform", context.sequencing_platforms),
+    )
+    return [
+        f"{prefix}:{value}"
+        for prefix, values in tag_groups
+        for value in values
+    ]
+
+
+def artifact_tags(
+    relative_path: str,
+    classification: str,
+    metadata: dict[str, Any],
+    context: ManifestTagContext,
+) -> list[str]:
+    tags: set[str] = {f"artifact_role:{classification}"}
+    if relative_path == "config/samples.tsv":
+        tags.add("manifest:samples")
+    if relative_path == "config/units.tsv":
+        tags.add("manifest:units")
+    if classification == "multiqc_html" or classification.startswith("multiqc_"):
+        tags.add("multiqc")
+        report_kind = str(metadata.get("report_kind") or "").strip()
+        if report_kind:
+            tags.add(f"report_kind:{report_kind}")
+        tags.update(_context_tags(context))
+    if classification in {"samples_manifest", "units_manifest"}:
+        tags.update(_context_tags(context))
+    return sorted(tags)
+
+
 def file_classification(relative_path: str) -> tuple[str, bool]:
     path = Path(relative_path)
     name = path.name
+    lower_name = name.lower()
     parts = set(path.parts)
-    if name == "DAY_final_multiqc.html":
+
+    if _has_any_suffix(lower_name, (".vcf.gz.tbi", ".vcf.tbi", ".vcf.gz.csi", ".vcf.csi")):
+        return "variant_vcf_index", False
+    if _has_any_suffix(lower_name, (".vcf.gz", ".vcf")):
+        return "variant_vcf", False
+    if lower_name.endswith(".cram.crai") or lower_name.endswith(".crai"):
+        return "alignment_cram_index", False
+    if lower_name.endswith(".cram"):
+        return "alignment_cram", False
+    if lower_name.endswith(".bam.bai") or lower_name.endswith(".bai"):
+        return "alignment_bam_index", False
+    if lower_name.endswith(".bam.csi"):
+        return "alignment_bam_index", False
+    if lower_name.endswith(".bam"):
+        return "alignment_bam", False
+    if lower_name.endswith(".csi"):
+        return "csi_index", False
+
+    if _is_multiqc_report_html(path):
         return "multiqc_html", True
     if name == "multiqc_data.json":
         return "multiqc_data_json", True
@@ -141,12 +442,32 @@ def file_classification(relative_path: str) -> tuple[str, bool]:
         return "multiqc_sources", True
     if name == "multiqc.log":
         return "multiqc_log", True
+    if _is_multiqc_data_dir_member(path):
+        if lower_name.endswith(".json"):
+            return "multiqc_data_json_artifact", True
+        if _has_any_suffix(lower_name, (".tsv", ".csv")):
+            return "multiqc_data_table_artifact", True
+        if lower_name.endswith(".txt"):
+            return "multiqc_data_text_artifact", True
+        if lower_name.endswith(".log"):
+            return "multiqc_log", True
+        return "multiqc_data_artifact", False
     if name.endswith("_mqc.tsv"):
         return "custom_mqc_tsv", True
     if name == "manifest.tsv" and "multiqc_inputs" in parts:
         return "staging_manifest", True
-    if name in {"samples.tsv", "units.tsv"}:
-        return "run_manifest", True
+    if name == "samples.tsv" and path.parts[:1] == ("config",):
+        return "samples_manifest", True
+    if name == "units.tsv" and path.parts[:1] == ("config",):
+        return "units_manifest", True
+    if "run_qc" in parts and lower_name.endswith(".json"):
+        return "run_qc_json", True
+    if "run_qc" in parts and lower_name.endswith(".tsv"):
+        return "run_qc_tsv", True
+    if "bclconvert" in parts and lower_name.endswith(".json"):
+        return "bclconvert_json", True
+    if "bclconvert" in parts and _has_any_suffix(lower_name, (".tsv", ".csv")):
+        return "bclconvert_table", True
     if name.endswith(".bench.tsv") or name == "benchmarks_summary.tsv":
         return "benchmark", False
     if name.endswith(".log") or "logs" in parts:
@@ -166,6 +487,11 @@ def file_classification(relative_path: str) -> tuple[str, bool]:
     return "unknown", False
 
 
+def include_discovered_evidence(relative_path: str) -> bool:
+    classification, _parser_relevant = file_classification(relative_path)
+    return classification not in GENERIC_NON_DISCOVERY_CLASSIFICATIONS
+
+
 def relative_to_root(path: Path, root: Path) -> str:
     try:
         rel_path = path.resolve().relative_to(root.resolve()).as_posix()
@@ -174,6 +500,34 @@ def relative_to_root(path: Path, root: Path) -> str:
     if rel_path == ".." or rel_path.startswith("../") or Path(rel_path).is_absolute():
         raise EvidenceManifestError(f"Evidence path is not relative to analysis root: {path}")
     return rel_path
+
+
+def discover_first_class_evidence_files(
+    analysis_root: Path,
+    *,
+    output_manifest: Path | None = None,
+) -> list[Path]:
+    excluded: set[Path] = set()
+    if output_manifest is not None:
+        excluded.add(output_manifest.resolve())
+
+    discovered: dict[str, Path] = {}
+    for root_name in FIRST_CLASS_DISCOVERY_ROOTS:
+        root = analysis_root / root_name
+        if not root.exists():
+            continue
+        if not root.is_dir():
+            raise EvidenceManifestError(f"Evidence discovery root is not a directory: {root}")
+        for path in sorted(root.rglob("*")):
+            if not path.is_file():
+                continue
+            resolved = path.resolve()
+            if resolved in excluded:
+                continue
+            rel_path = relative_to_root(path, analysis_root)
+            if include_discovered_evidence(rel_path):
+                discovered[rel_path] = resolved
+    return [discovered[key] for key in sorted(discovered)]
 
 
 def collect_inventory(
@@ -207,19 +561,29 @@ def collect_inventory(
                 candidates[relative_to_root(path, analysis_root)] = path.resolve()
 
     records: list[dict[str, Any]] = []
+    tag_context = build_manifest_tag_context(analysis_root)
     for rel_path, abs_path in sorted(candidates.items()):
         classification, parser_relevant = file_classification(rel_path)
-        records.append(
-            {
-                "relative_path": rel_path,
-                "size_bytes": abs_path.stat().st_size,
-                "sha256": sha256_file(abs_path),
-                "classification": classification,
-                "parser_relevant": parser_relevant,
-                "required": rel_path in required_rel,
-                "artifact_kind": "file",
-            }
-        )
+        record = {
+            "relative_path": rel_path,
+            "size_bytes": abs_path.stat().st_size,
+            "sha256": sha256_file(abs_path),
+            "classification": classification,
+            "parser_relevant": parser_relevant,
+            "required": rel_path in required_rel,
+            "artifact_kind": "file",
+        }
+        metadata = artifact_metadata(rel_path, classification)
+        if classification in {"samples_manifest", "units_manifest"} or (
+            classification == "multiqc_html" or classification.startswith("multiqc_")
+        ):
+            metadata.update(_context_metadata(tag_context))
+        tags = artifact_tags(rel_path, classification, metadata, tag_context)
+        if metadata:
+            record["metadata"] = metadata
+        if tags:
+            record["tags"] = tags
+        records.append(record)
     return records
 
 
@@ -333,6 +697,38 @@ def build_evidence_manifest(
     return manifest
 
 
+def build_analysis_evidence_manifest(
+    *,
+    analysis_root: Path,
+    output_manifest: Path,
+    metadata: EvidenceMetadata,
+    required_paths: list[Path] | None = None,
+    manifest_kind: str = "dayoa.analysis_evidence",
+    generated_at: str | None = None,
+) -> dict[str, Any]:
+    required_paths = required_paths or []
+    file_paths = discover_first_class_evidence_files(
+        analysis_root,
+        output_manifest=output_manifest,
+    )
+    for path in required_paths:
+        file_paths.append(path)
+    if not file_paths:
+        raise EvidenceManifestError(
+            f"No first-class evidence artifacts discovered under {analysis_root}"
+        )
+    return build_evidence_manifest(
+        analysis_root=analysis_root,
+        file_paths=file_paths,
+        directory_paths=[],
+        required_paths=required_paths,
+        output_manifest=output_manifest,
+        metadata=metadata,
+        manifest_kind=manifest_kind,
+        generated_at=generated_at,
+    )
+
+
 def build_multiqc_final_evidence_manifest(
     *,
     analysis_root: Path,
@@ -347,7 +743,14 @@ def build_multiqc_final_evidence_manifest(
     required_paths = [html_path, stage_manifest] + [
         multiqc_data_dir / name for name in MULTIQC_REQUIRED_DATA_FILES
     ]
-    file_paths = [html_path, stage_manifest] + parser_relevant_paths
+    file_paths = (
+        [html_path, stage_manifest]
+        + parser_relevant_paths
+        + discover_first_class_evidence_files(
+            analysis_root,
+            output_manifest=output_manifest,
+        )
+    )
     return build_evidence_manifest(
         analysis_root=analysis_root,
         file_paths=file_paths,
@@ -422,6 +825,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     inventory.add_argument("--required-file", action="append", default=[])
     inventory.add_argument("--manifest-kind", default="dayoa.analysis_evidence")
     inventory.add_argument("--evidence-manifest-output", required=True)
+
+    analysis_inventory = subparsers.add_parser("analysis-inventory")
+    _add_common_args(analysis_inventory)
+    analysis_inventory.add_argument("--required-file", action="append", default=[])
+    analysis_inventory.add_argument("--manifest-kind", default="dayoa.analysis_evidence")
+    analysis_inventory.add_argument("--evidence-manifest-output", required=True)
     return parser
 
 
@@ -445,6 +854,15 @@ def main(argv: list[str] | None = None) -> int:
                 analysis_root=Path(args.analysis_root),
                 file_paths=[Path(path) for path in args.file],
                 directory_paths=[Path(path) for path in args.directory],
+                required_paths=[Path(path) for path in args.required_file],
+                output_manifest=Path(args.evidence_manifest_output),
+                metadata=metadata,
+                manifest_kind=args.manifest_kind,
+                generated_at=args.generated_at or None,
+            )
+        elif args.command == "analysis-inventory":
+            build_analysis_evidence_manifest(
+                analysis_root=Path(args.analysis_root),
                 required_paths=[Path(path) for path in args.required_file],
                 output_manifest=Path(args.evidence_manifest_output),
                 metadata=metadata,

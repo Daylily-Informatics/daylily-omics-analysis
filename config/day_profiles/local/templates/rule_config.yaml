@@ -117,6 +117,7 @@ bclconvert:
     seq_vendor: "ILMN"
     seq_platform_override: ""
     force: false
+    merge_lane_fastqs: false
     keep_undetermined_fastqs: true
     sampleproject_subdirectories: false
     strict_mode: false
@@ -134,6 +135,8 @@ bclconvert:
     shared_thread_odirect_output: true
     output_legacy_stats: true
     num_unknown_barcodes_reported: 1000
+    demux_qc_threads: 4
+    demux_qc_mem_mb: 16000
     barcode_mismatches_index1: 0
     barcode_mismatches_index2: 0
 

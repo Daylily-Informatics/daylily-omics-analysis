@@ -37,6 +37,11 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
     assert "rule ont_demux_fastq_multiqc:" in rules
     assert "rule produce_ont_demux_fastq_qc:" in rules
     assert "rule produce_ont_run_qc_and_demux_multiqc:" in rules
+    assert "rule ultima_demux_fastq_group_list:" in rules
+    assert "rule ultima_demux_fastq_qc:" in rules
+    assert "rule ultima_demux_fastq_multiqc:" in rules
+    assert "rule produce_ultima_demux_fastq_qc:" in rules
+    assert "rule produce_ultima_run_qc_and_demux_multiqc:" in rules
     assert "rule produce_run_qc_reports:" in rules
     assert "run_qc/" in rules
     assert "RUNQC_ILMN_BENCH_DIR" in rules
@@ -52,6 +57,9 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
         "ont_run_qc_nanoplot",
         "ont_demux_fastq_qc",
         "ont_demux_fastq_multiqc",
+        "ultima_demux_fastq_group_list",
+        "ultima_demux_fastq_qc",
+        "ultima_demux_fastq_multiqc",
         "ultima_run_qc_report",
     ):
         block = rules[rules.index(f"rule {rule_name}:") :]
@@ -126,6 +134,7 @@ def test_ont_mounted_run_qc_and_demux_contracts_use_rule_env_tools() -> None:
         "seqkit stats --tabular",
         "nanoq",
         "ont_demux_fastq.multiqc.html",
+        "Duplicate ONT demux FASTQ sample identifier",
     ):
         assert required in rules
 
@@ -135,11 +144,42 @@ def test_ont_mounted_run_qc_and_demux_contracts_use_rule_env_tools() -> None:
     assert "RUNQC_ONT_CONTEXT is not None" in rules
     assert "RUNQC_ONT_PYCOQC_JSON" in rules
     assert "RUNQC_ONT_DEMUX_MULTIQC_HTML" in rules
+    assert "RUNQC_ONT_TARGET_INPUTS.append(RUNQC_ONT_DEMUX_MULTIQC_HTML)" in rules
+    assert 'sample="{params.run_id}-${{group_token}}"' in rules
     assert "pycoqc" in env
     assert "nanoplot" in env
     assert "nanostat" in env
     assert "seqkit" in env
     assert "nanoq" in env
+
+
+def test_ultima_mounted_run_qc_and_demux_contracts_use_fastqc_tools() -> None:
+    rules = _read("workflow/rules/run_qc_reports.smk")
+    fastqc_env = _read("workflow/envs/fastqc_v0.1.yaml")
+
+    for required in (
+        '"produce_ultima_demux_fastq_qc"',
+        '"produce_ultima_run_qc_and_demux_multiqc"',
+        'RUNQC_UG_ROOT = _runqc_root(RUNQC_UG_CONTEXT, "ultima")',
+        'RUNQC_UG_RUN_DIR = _runqc_mounted_run_dir(',
+        'RUNQC_UG_TARGET_INPUTS.append(RUNQC_UG_DEMUX_MULTIQC_HTML)',
+        "config/runs.tsv with PLATFORM=ULTIMA and RUN_DIR is required for Ultima demux FASTQ QC",
+        "No demux FASTQ groups found",
+        "Duplicate Ultima demux FASTQ sample identifier",
+        "Could not derive Ultima demux FASTQ sample identifier",
+        "ultima_demux_fastq.multiqc.html",
+        "command -v fastqc",
+        "command -v seqkit",
+        "seqkit stats --tabular",
+        "-m fastqc",
+        "-m seqkit",
+        "ln -sfn \"$(realpath \"$fastq\")\" \"$link_path\"",
+    ):
+        assert required in rules
+
+    assert "RUNQC_FASTQC_ENV" in rules
+    assert "fastqc=0.11.9" in fastqc_env
+    assert "seqkit" in fastqc_env
 
 
 def test_read_fate_river_is_generalized_and_explicit() -> None:

@@ -39,6 +39,8 @@ rule workflow_staging:
         oreport=MDIR+"other_reports",
     log:
         "logs/workflow_staging.log",
+    benchmark:
+        MDIR + "benchmarks/workflow_staging.bench.tsv"
     conda:
         config["vanilla"]["env_yaml"]
     shell:
@@ -52,6 +54,10 @@ rule yield_ref:
         "logs/workflow_staging.done",
     output:
         "human_g1k_v37_modified.fasta",
+    log:
+        MDIR + "logs/yield_ref.log"
+    benchmark:
+        MDIR + "benchmarks/yield_ref.bench.tsv"
     conda:
         config["vanilla"]["env_yaml"]
     threads: 1

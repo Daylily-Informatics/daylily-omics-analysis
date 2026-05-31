@@ -67,5 +67,9 @@ rule seqqc:  # TARGET : Run Just Sequence QC Rules - No Alignment or Variant Cal
         f"{MDIRreportsd}SEQQC_multiqc.html",
     output:
         f"{MDIRlogd}seqqc.done",
+    log:
+        MDIR + "logs/{MDIRlogd}.seqqc.log"
+    benchmark:
+        MDIR + "benchmarks/{MDIRlogd}.seqqc.bench.tsv"
     shell:
         "touch {output};"

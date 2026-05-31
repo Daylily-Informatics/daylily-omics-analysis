@@ -282,10 +282,18 @@ rule sentieon_cgt7p_bwa_sort:  # TARGET: Complete Genomics / MGI Sentieon bwa so
 localrules: produce_sentieon_bwa_sort_bam,
 
 rule produce_sentieon_bwa_sort_bam:  # DEPRECATED TARGET: use produce_sent_align
-     input:
-         expand(MDIR + "{sample}/align/sent/{sample}.sent.sort.bam", sample=SAMPS)
+    log:
+        MDIR + "logs/produce_sentieon_bwa_sort_bam.log"
+    benchmark:
+        MDIR + "benchmarks/produce_sentieon_bwa_sort_bam.bench.tsv"
+    input:
+        expand(MDIR + "{sample}/align/sent/{sample}.sent.sort.bam", sample=SAMPS)
 
 
 rule produce_sentieon_cgt7p_bwa_sort_bam:  # DEPRECATED TARGET: use produce_sentcg_align
-     input:
-         expand(MDIR + "{sample}/align/sentcg/{sample}.sentcg.sort.bam", sample=SAMPS)
+    log:
+        MDIR + "logs/produce_sentieon_cgt7p_bwa_sort_bam.log"
+    benchmark:
+        MDIR + "benchmarks/produce_sentieon_cgt7p_bwa_sort_bam.bench.tsv"
+    input:
+        expand(MDIR + "{sample}/align/sentcg/{sample}.sentcg.sort.bam", sample=SAMPS)

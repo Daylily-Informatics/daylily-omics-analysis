@@ -618,6 +618,8 @@ rule sentdhiomr_mapq0_slop:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_slop.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhiomr_mapq0_slop.bench.tsv"
     threads: 2
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -653,6 +655,8 @@ rule sentdhiomr_merge_beds:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.merge_beds.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhiomr_merge_beds.bench.tsv"
     threads: 2
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -1173,6 +1177,8 @@ rule sentdhiomr_subset:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhiomr_subset.bench.tsv"
     threads: config['sentdhiomr']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -1223,6 +1229,8 @@ rule sentdhiomr_concat_pass:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhiomr_concat_pass.bench.tsv"
     threads: config['sentdhiomr']['threads_light']
     conda:
         "../envs/vanilla_v0.1.yaml"
@@ -1257,6 +1265,8 @@ rule sentdhiomr_anno:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentdhiomr_anno.bench.tsv"
     threads: config['sentdhiomr']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -1638,6 +1648,10 @@ rule clear_combined_sentdhiomr_vcf:  # TARGET: clear combined sentdhiomr vcf so 
             alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
+    log:
+        MDIR + "logs/clear_combined_sentdhiomr_vcf.log"
+    benchmark:
+        MDIR + "benchmarks/clear_combined_sentdhiomr_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -1666,6 +1680,8 @@ rule produce_sentdhiomr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
     threads: 1
     log:
         "gatheredall.sentdhiomr.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhiomr_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
@@ -1768,6 +1784,8 @@ rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modul
     threads: 1
     log:
         "gatheredall.sentdhiomr.sv.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhiomr_sv.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -1871,6 +1889,8 @@ rule produce_sentdhiomr_cnv:  # TARGET: sentieon cnv hybrid ilmn+ont modular cnv
     threads: 1
     log:
         "gatheredall.sentdhiomr.cnv.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhiomr_cnv.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -1894,6 +1914,8 @@ rule sentdhiomr_export_sr_cram:
         alnr="|".join(ALIGNERS_DHIOMR)
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_export.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr_export_sr_cram.bench.tsv"
     threads: config['sentdhiomr']['threads_light']
     conda:
         "../envs/sentieon_v0.3.yaml"
@@ -1944,6 +1966,8 @@ rule prep_sentdhiomr_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_sentdhiomr_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output}  ;
@@ -2071,6 +2095,10 @@ rule sentdhiomr_call_segdup:
         ),
     output:
         done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
+    log:
+        MDIR + "{sample}/logs/{sample}.{alnr}.{ddup}.sentdhiomr_call_segdup.log"
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr_call_segdup.bench.tsv"
     wildcard_constraints:
         alnr="|".join(ALIGNERS_DHIOMR)
     threads: 1
@@ -2100,6 +2128,8 @@ rule produce_sentdhiomr_segdup:  # TARGET: sentieon segdup hybrid ilmn+ont modul
     threads: 1
     log:
         "gatheredall.sentdhiomr.segdup.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhiomr_segdup.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -2276,6 +2306,8 @@ rule produce_sentdhiomr_mito:  # TARGET: sentieon mito hybrid ilmn+ont modular m
     threads: 1
     log:
         "gatheredall.sentdhiomr.mito.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentdhiomr_mito.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;

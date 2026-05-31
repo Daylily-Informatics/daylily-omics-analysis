@@ -151,6 +151,8 @@ rule prep_gatk_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_gatk_chunkdirs.bench.tsv"
     shell:
         """
         ( echo {output};
@@ -257,6 +259,8 @@ rule gatk_sort_index_chunk_vcf:
         vcftbi=touch(MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.sort.vcf.gz.tbi"),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/gatk/vcfs/{gatkchrm}/log/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{gatkchrm}.gatk_sort_index_chunk_vcf.bench.tsv"
     priority: 46
     threads: 1
     resources:
@@ -382,6 +386,8 @@ rule produce_sentieon_gatk_vcf:  # TARGET: sentieon GATK HaplotypeCaller per-sam
     threads: 1
     log:
         "gatheredall.gatk.log",
+    benchmark:
+        MDIR + "benchmarks/produce_sentieon_gatk_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

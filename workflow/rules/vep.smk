@@ -27,6 +27,8 @@ rule vep_validate_input_contigs:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/log/{sample}.{alnr}.{ddup}.{snv}.vep.validate_contigs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep_validate_input_contigs.bench.tsv"
     resources:
         vcpu=1,
         threads=1,
@@ -196,6 +198,8 @@ rule vep_concat_fofn:
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/log/{sample}.{alnr}.{ddup}.{snv}.vep.concat_fofn.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.vep_concat_fofn.bench.tsv"
     params:
         tmp_fofn=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.concat.vcf.gz.fofn.tmp",
@@ -294,6 +298,10 @@ rule vep_annotation_gather:
         ],
     output:
         MDIR + "other_reports/vep_annotation_mqc.tsv",
+    log:
+        MDIR + "logs/vep_annotation_gather.log"
+    benchmark:
+        MDIR + "benchmarks/vep_annotation_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [
@@ -349,5 +357,9 @@ rule produce_vep:  # TARGET: just produce vep results
         MDIR + "other_reports/vep_annotation_mqc.tsv",
     output:
         "logs/vep_gathered.done",
+    log:
+        MDIR + "logs/produce_vep.log"
+    benchmark:
+        MDIR + "benchmarks/produce_vep.bench.tsv"
     shell:
         "touch {output};"

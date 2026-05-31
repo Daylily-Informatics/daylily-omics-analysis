@@ -374,6 +374,10 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         pc=print_wildcards_etc,
     output:
         mqc=MDIR + "other_reports/giab_concordance_mqc.tsv",
+    log:
+        MDIR + "logs/produce_snv_concordances.log"
+    benchmark:
+        MDIR + "benchmarks/produce_snv_concordances.bench.tsv"
     threads: 1
     run:
         import csv

@@ -98,7 +98,8 @@ def parse_args() -> argparse.Namespace:
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--report-dir", required=True)
+    parser.add_argument("--report-dir", required=True, nargs="+")
+    parser.add_argument("--run-id", default="")
     parser.add_argument("--demux-out", required=True)
     parser.add_argument("--unknown-out", required=True)
     parser.add_argument("--hopping-out", required=True)
@@ -150,6 +151,35 @@ def read_csv_rows(path: Path, required: bool, expected_headers: list[str] | None
         if required and not rows:
             raise SystemExit(f"ERROR: Required report file has no data rows: {path}")
         return (fieldnames, rows)
+
+
+def read_csv_rows_from_dirs(
+    report_dirs: list[Path],
+    filename: str,
+    *,
+    required: bool,
+    expected_headers: list[str] | None = None,
+) -> tuple[list[str], list[dict[str, str]]]:
+    merged_fieldnames: list[str] | None = None
+    merged_rows: list[dict[str, str]] = []
+    for report_dir in report_dirs:
+        path = report_dir / filename
+        fieldnames, rows = read_csv_rows(path, required=required, expected_headers=expected_headers)
+        if not fieldnames:
+            continue
+        if merged_fieldnames is None:
+            merged_fieldnames = fieldnames
+        elif fieldnames != merged_fieldnames:
+            raise SystemExit(
+                "ERROR: report header mismatch for "
+                f"{filename}: {path} has {fieldnames}, expected {merged_fieldnames}"
+            )
+        merged_rows.extend(rows)
+
+    if required and merged_fieldnames is None:
+        joined = ", ".join(str(report_dir) for report_dir in report_dirs)
+        raise SystemExit(f"ERROR: no readable {filename} found under report dirs: {joined}")
+    return (merged_fieldnames or expected_headers or [], merged_rows)
 
 
 def convert_value(value: str) -> object:
@@ -204,6 +234,12 @@ def add_list_bucket(bucket: dict[str, list[dict[str, object]]], lane: str, row: 
 
 def infer_run_id(path: Path) -> str:
     try:
+        bclconvert_index = path.parts.index("bclconvert")
+    except ValueError:
+        bclconvert_index = -1
+    if bclconvert_index > 0 and path.parts[bclconvert_index - 1] != "results":
+        return path.parts[bclconvert_index - 1]
+    try:
         return path.parents[1].name
     except IndexError:
         return path.stem
@@ -211,25 +247,32 @@ def infer_run_id(path: Path) -> str:
 
 def main() -> int:
     args = parse_args()
-    report_dir = Path(args.report_dir)
-    run_id = infer_run_id(report_dir)
+    report_dirs = [Path(report_dir) for report_dir in args.report_dir]
+    run_id = args.run_id.strip() or infer_run_id(report_dirs[0])
 
-    demux_path = report_dir / "Demultiplex_Stats.csv"
-    fastq_list_path = report_dir / "fastq_list.csv"
-    unknown_path = report_dir / "Top_Unknown_Barcodes.csv"
-    hopping_path = report_dir / "Index_Hopping_Counts.csv"
-
-    demux_fieldnames, demux_rows = read_csv_rows(
-        demux_path, required=True, expected_headers=EXPECTED_HEADERS["Demultiplex_Stats.csv"]
+    demux_fieldnames, demux_rows = read_csv_rows_from_dirs(
+        report_dirs,
+        "Demultiplex_Stats.csv",
+        required=True,
+        expected_headers=EXPECTED_HEADERS["Demultiplex_Stats.csv"],
     )
-    fastq_fieldnames, fastq_rows = read_csv_rows(
-        fastq_list_path, required=True, expected_headers=EXPECTED_HEADERS["fastq_list.csv"]
+    fastq_fieldnames, fastq_rows = read_csv_rows_from_dirs(
+        report_dirs,
+        "fastq_list.csv",
+        required=True,
+        expected_headers=EXPECTED_HEADERS["fastq_list.csv"],
     )
-    unknown_fieldnames, unknown_rows = read_csv_rows(
-        unknown_path, required=False, expected_headers=EXPECTED_HEADERS["Top_Unknown_Barcodes.csv"]
+    unknown_fieldnames, unknown_rows = read_csv_rows_from_dirs(
+        report_dirs,
+        "Top_Unknown_Barcodes.csv",
+        required=False,
+        expected_headers=EXPECTED_HEADERS["Top_Unknown_Barcodes.csv"],
     )
-    hopping_fieldnames, hopping_rows = read_csv_rows(
-        hopping_path, required=False, expected_headers=EXPECTED_HEADERS["Index_Hopping_Counts.csv"]
+    hopping_fieldnames, hopping_rows = read_csv_rows_from_dirs(
+        report_dirs,
+        "Index_Hopping_Counts.csv",
+        required=False,
+        expected_headers=EXPECTED_HEADERS["Index_Hopping_Counts.csv"],
     )
 
     demux_headers, demux_norm = normalize_rows(demux_fieldnames, demux_rows, run_id)
@@ -289,7 +332,7 @@ def main() -> int:
 
     rollup = {
         "run_id": run_id,
-        "report_dir": str(report_dir),
+        "report_dirs": [str(report_dir) for report_dir in report_dirs],
         "demultiplex_stats": {
             "total_pf_reads_by_lane": dict(sorted(total_pf_reads_by_lane.items())),
             "reads_by_sample_by_lane": {

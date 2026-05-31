@@ -44,6 +44,8 @@ rule setup_ILMN_data:
         MDIR + "{sample}/logs/{sample_lane}.{RR}.ilmn_prep.done",
     log:
         MDIR + "{sample}/logs/{sample_lane}.{RR}.fastq.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{sample_lane}.{RR}.setup_ILMN_data.bench.tsv"
     params:
         cluster_sample=f"wildcards.sample",
     conda:
@@ -513,6 +515,8 @@ rule pre_prep_ultima_cram:
     threads: config["prep_input_sample_files"]["threads"],
     log:
         MDIR + "{sample}/align/ug/logs/{sample_lane}.cram.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{sample_lane}.pre_prep_ultima_cram.bench.tsv"
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -560,6 +564,8 @@ rule pre_prep_ont_cram:
         ont_crai=lambda wildcards, input: input[1] if len(input) > 1 else "",
     log:
         MDIR + "{sample}/align/ont/logs/{sample_lane}.cram.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{sample_lane}.pre_prep_ont_cram.bench.tsv"
     conda:
         config["prep_input_sample_files"]["env_yaml"]
     shell:
@@ -629,6 +635,10 @@ rule prep_cram_inputs:  # TARGET: Just Pre
         crai=expand(MDIR + "{sample}/align/{alnr}/{sample_lane}.cram.crai",sample=SAMPS, sample_lane=SAMPS,alnr=CRAM_ALIGNERS)
     output:
         "crams_staged",
+    log:
+        MDIR + "logs/prep_cram_inputs.log"
+    benchmark:
+        MDIR + "benchmarks/prep_cram_inputs.bench.tsv"
     shell:
         "touch  {output.cram};"
         "sleep 2;"
@@ -753,6 +763,8 @@ rule pre_prep_pb_cram:
         c=config["prep_input_sample_files"]["source_read_method"],
     log:
         MDIR + "{sample}/align/pb/logs/{sample_lane}.cram.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{sample_lane}.pre_prep_pb_cram.bench.tsv"
     shell:
         "(mkdir -p $(dirname {log}) || echo {log} dir exists) >> {log} 2>&1;"
         "{params.c} {input[0]} {output.cram} >> {log} 2>&1;"

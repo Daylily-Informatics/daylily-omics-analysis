@@ -50,6 +50,10 @@ rule write_dayoa_evidence_manifest:
         parser_relevant=_evidence_final_parser_relevant_inputs,
     output:
         evidence_manifest=MDIR + "reports/dayoa_evidence_manifest.json",
+    log:
+        MDIR + "logs/write_dayoa_evidence_manifest.log"
+    benchmark:
+        MDIR + "benchmarks/write_dayoa_evidence_manifest.bench.tsv"
     params:
         multiqc_data_dir=MDIR + "reports/DAY_final_multiqc_data",
         cluster_sample="write_dayoa_evidence_manifest",
@@ -89,3 +93,7 @@ rule write_dayoa_evidence_manifest:
 rule produce_dayoa_evidence_manifest:
     input:
         MDIR + "reports/dayoa_evidence_manifest.json",
+    log:
+        MDIR + "logs/produce_dayoa_evidence_manifest.log"
+    benchmark:
+        MDIR + "benchmarks/produce_dayoa_evidence_manifest.bench.tsv"

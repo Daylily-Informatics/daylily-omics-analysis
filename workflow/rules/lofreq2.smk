@@ -44,6 +44,8 @@ rule lfq2_indelqual:
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/{sample}.{alnr}.{ddup}.indelqual.cram.crai",
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.{ddup}.indelqual.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.lfq2_indelqual.bench.tsv"
     conda:
         "../envs/lofreq2_v0.1.yaml"
     threads: config['lofreq2']['threads']
@@ -152,6 +154,8 @@ rule lofreq2_sort_index_chunk_vcf:
         "../envs/vanilla_v0.1.yaml"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/vcfs/{lfqchrm}/log/{sample}.{alnr}.{ddup}.lfq2.{lfqchrm}.snv.sort.vcf.gz.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{lfqchrm}.lofreq2_sort_index_chunk_vcf.bench.tsv"
     resources:
         vcpu=4,
         threads=config['lofreq2']['threads'],
@@ -292,6 +296,8 @@ rule produce_lofreq2_vcf:  # DEPRECATED TARGET: use produce_lfq2_snv_vcf
     priority: 48
     log:
         "gatheredall.lfq2.log",
+    benchmark:
+        MDIR + "benchmarks/produce_lofreq2_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:
@@ -323,6 +329,8 @@ rule prep_lofreq2_chunkdirs:
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/lfq2/log/{sample}.{alnr}.chunkdirs.log",
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_lofreq2_chunkdirs.bench.tsv"
     shell:
         """
         (echo {output};

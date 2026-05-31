@@ -81,3 +81,7 @@ rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estima
             alnr=QC_CRAM_ALIGNERS,
             ddup=qc_contamination_dedupers(),
         )
+    log:
+        MDIR + "logs/produce_gatk_contam_estimate.log"
+    benchmark:
+        MDIR + "benchmarks/produce_gatk_contam_estimate.bench.tsv"
