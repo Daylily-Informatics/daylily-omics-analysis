@@ -442,7 +442,7 @@ rule collect_rules_benchmark_data:
     log:
         f"{MDIR}other_reports/logs/rules_benchmarks_summary.log",
     benchmark:
-        MDIR + "benchmarks/{MDIR}.collect_rules_benchmark_data.bench.tsv"
+        f"{MDIR}benchmarks/collect_rules_benchmark_data.bench.tsv"
     container: None
     shell:
         "bin/util/benchmarks/collect_day_benchmark_data.sh {params.ref_code} > {log};"
@@ -460,7 +460,7 @@ rule collect_rules_benchmark_data_singleton:  # TARGET: collect benchmarks
     log:
         f"{MDIR}other_reports/logs/rules_benchmarks_singleton_summary.log",
     benchmark:
-        MDIR + "benchmarks/{MDIR}.collect_rules_benchmark_data_singleton.bench.tsv"
+        f"{MDIR}benchmarks/collect_rules_benchmark_data_singleton.bench.tsv"
     container: None
     shell:
         "bin/util/benchmarks/collect_day_benchmark_data.sh {params.ref_code} > {log};"

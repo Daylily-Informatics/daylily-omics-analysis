@@ -41,6 +41,25 @@ def _rule_block(text: str, rule_name: str) -> str:
     return text[start:next_start]
 
 
+def test_benchmark_collection_rules_do_not_introduce_benchmark_only_wildcards() -> None:
+    final_wgs = _read("workflow/rules/multiqc_final_wgs.smk")
+    singleton = _read("workflow/rules/multiqc_singleton.smk")
+
+    for text, rule_name in (
+        (final_wgs, "collect_rules_benchmark_data"),
+        (final_wgs, "collect_rules_benchmark_data_singleton"),
+        (singleton, "collect_rules_benchmark_data2"),
+    ):
+        block = _rule_block(text, rule_name)
+        benchmark_line = next(
+            line.strip()
+            for line in block.splitlines()
+            if line.strip().endswith(f"{rule_name}.bench.tsv\"")
+        )
+        assert "benchmarks/{MDIR}." not in benchmark_line
+        assert f"{rule_name}.bench.tsv" in block
+
+
 def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
     active_includes = [

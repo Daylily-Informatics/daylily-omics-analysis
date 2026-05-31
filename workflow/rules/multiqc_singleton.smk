@@ -18,7 +18,7 @@ rule collect_rules_benchmark_data2:
     log:
         f"{MDIR}other_reports/logs/rules_benchmarks_summary2.log",
     benchmark:
-        MDIR + "benchmarks/{MDIR}.collect_rules_benchmark_data2.bench.tsv"
+        f"{MDIR}benchmarks/collect_rules_benchmark_data2.bench.tsv"
     container: None
     shell:
         "bin/util/benchmarks/collect_day_benchmark_data.sh {params.ref_code} > {log};"
