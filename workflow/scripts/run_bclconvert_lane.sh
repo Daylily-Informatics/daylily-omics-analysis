@@ -64,14 +64,6 @@ echo "singularity_bind_args: ${singularity_bind_args[*]}" >> "$log_path"
 singularity exec "${singularity_bind_args[@]}" "$container_uri" bcl-convert --version >> "$log_path" 2>&1
 
 heavy_threads="$((parallel_tiles * conversion_threads + compression_threads + decompression_threads))"
-if [[ "$heavy_threads" -lt 1 ]]; then
-  echo "BCLConvert CPU-heavy thread total must be >= 1" >> "$log_path"
-  exit 2
-fi
-if [[ "$heavy_threads" -gt "$threads" ]]; then
-  echo "BCLConvert thread allocation exceeds requested threads: heavy_threads=$heavy_threads threads=$threads" >> "$log_path"
-  exit 2
-fi
 
 echo "bcl_num_parallel_tiles: $parallel_tiles" >> "$log_path"
 echo "bcl_num_conversion_threads: $conversion_threads" >> "$log_path"

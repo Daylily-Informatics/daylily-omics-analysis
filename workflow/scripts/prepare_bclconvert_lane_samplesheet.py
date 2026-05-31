@@ -34,6 +34,9 @@ ALLOWED_SETTINGS = {
     "TrimUMI",
     "NoLaneSplitting",
 }
+STRIPPED_BCLCONVERT_SETTINGS = {
+    "GenerateFastqcMetrics",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -139,6 +142,33 @@ def upsert_settings(lines: list[str], updates: dict[str, str]) -> list[str]:
     return lines
 
 
+def strip_unsupported_settings(lines: list[str]) -> list[str]:
+    section_start = None
+    section_end = len(lines)
+    for index, raw_line in enumerate(lines):
+        match = SECTION_RE.match(raw_line.strip())
+        if not match:
+            continue
+        if match.group("name").strip() == "BCLConvert_Settings":
+            section_start = index
+            continue
+        if section_start is not None and index > section_start:
+            section_end = index
+            break
+    if section_start is None:
+        raise SystemExit("ERROR: normalized sample sheet lacks [BCLConvert_Settings]")
+
+    stripped: list[str] = []
+    for index, raw_line in enumerate(lines):
+        if section_start < index < section_end and raw_line.strip():
+            row = next(csv.reader([raw_line]))
+            key = row[0].strip() if row else ""
+            if key in STRIPPED_BCLCONVERT_SETTINGS:
+                continue
+        stripped.append(raw_line)
+    return stripped
+
+
 def main() -> int:
     args = parse_args()
     global_settings = canonical_updates(
@@ -151,6 +181,7 @@ def main() -> int:
 
     output = Path(args.out)
     lines = Path(args.sample_sheet).read_text(encoding="utf-8-sig").splitlines()
+    lines = strip_unsupported_settings(lines)
     if updates:
         lines = upsert_settings(lines, updates)
     output.parent.mkdir(parents=True, exist_ok=True)

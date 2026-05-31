@@ -178,10 +178,10 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["threads"] == 192
     assert slurm_bcl["mem_mb"] == 360000
     assert slurm_bcl["partition"] == "i192mem,i192bigmem"
-    assert slurm_bcl["parallel_tiles"] == 16
-    assert slurm_bcl["conversion_threads"] == 8
-    assert slurm_bcl["compression_threads"] == 48
-    assert slurm_bcl["decompression_threads"] == 8
+    assert slurm_bcl["parallel_tiles"] == 24
+    assert slurm_bcl["conversion_threads"] == 4
+    assert slurm_bcl["compression_threads"] == 64
+    assert slurm_bcl["decompression_threads"] == 32
     assert slurm_bcl["shared_thread_odirect_output"] is True
     assert slurm_bcl["demux_qc_threads"] == 32
     assert slurm_bcl["demux_qc_mem_mb"] == 64000
@@ -342,6 +342,54 @@ def test_bclconvert_lane_samplesheet_injects_zero_barcode_mismatches(tmp_path: P
     text = out.read_text(encoding="utf-8")
     assert "BarcodeMismatchesIndex1,0" in text
     assert "BarcodeMismatchesIndex2,0" in text
+
+
+def test_bclconvert_lane_samplesheet_strips_fastqc_metrics_setting(tmp_path: Path) -> None:
+    sample_sheet = tmp_path / "SampleSheet.csv"
+    sample_sheet.write_text(
+        "\n".join(
+            [
+                "[Header],",
+                "FileFormatVersion,2",
+                "RunName,run",
+                "",
+                "[Reads]",
+                "Read1Cycles,151",
+                "Index1Cycles,10",
+                "Index2Cycles,10",
+                "Read2Cycles,151",
+                "",
+                "[BCLConvert_Settings]",
+                "SoftwareVersion,4.0.3",
+                "GenerateFastqcMetrics,true",
+                "",
+                "[BCLConvert_Data]",
+                "Sample_ID,Index,Index2",
+                "HG003,GAGTAATATA,CCGACCGTGA",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "L001" / "SampleSheet.csv"
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_lane_samplesheet.py"),
+            "--sample-sheet",
+            str(sample_sheet),
+            "--out",
+            str(out),
+            "--lane",
+            "L001",
+        ],
+        check=True,
+    )
+
+    text = out.read_text(encoding="utf-8")
+    assert "GenerateFastqcMetrics" not in text
+    assert "SoftwareVersion,4.0.3" in text
 
 
 def test_bclconvert_lane_samplesheet_rejects_invalid_barcode_mismatch(tmp_path: Path) -> None:

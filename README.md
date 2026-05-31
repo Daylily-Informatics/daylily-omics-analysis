@@ -121,7 +121,7 @@ Run-directory workflows are designed to read from mounted, read-only FSx DRA pat
 
 After demultiplexing, DayOA prepares collision-safe FastQC input links for every demux FASTQ using identifiers that include run, lane, sample, read group, and read number. The BCL Convert terminal target runs FastQC on those links, fails on identifier collisions, and builds a focused MultiQC report that includes native BCL Convert metrics, custom demux tables, and demux FastQC sections.
 
-The Slurm profile is tuned for solo 192-vCPU BCL runs on `i192mem,i192bigmem`: 16 parallel tiles, 8 conversion threads per tile, 48 compression threads, 8 decompression threads, gzip level 1, shared O_DIRECT output threads enabled, and legacy stats output enabled. The lane sample sheet is generated from the normalized sample sheet and injects `BarcodeMismatchesIndex1,0` and `BarcodeMismatchesIndex2,0` by default. Other BCL Convert sample-sheet settings are wired through config but remain unset unless explicitly configured and tested.
+The Slurm profile is tuned for solo 192-vCPU BCL runs on `i192mem,i192bigmem`: 24 parallel tiles, 4 conversion threads per tile, 64 compression threads, 32 decompression threads, gzip level 1, shared O_DIRECT output threads enabled, and legacy stats output enabled. The lane sample sheet is generated from the normalized sample sheet and injects `BarcodeMismatchesIndex1,0` and `BarcodeMismatchesIndex2,0` by default. Other BCL Convert sample-sheet settings are wired through config but remain unset unless explicitly configured and tested.
 
 For live validation of the zero-mismatch BCL path, use a `day-clone -d bclconvert_0_mm` workset name so the analysis directory itself records the matching policy.
 
