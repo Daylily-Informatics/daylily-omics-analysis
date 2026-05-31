@@ -68,8 +68,8 @@ rule seqqc:  # TARGET : Run Just Sequence QC Rules - No Alignment or Variant Cal
     output:
         f"{MDIRlogd}seqqc.done",
     log:
-        MDIR + "logs/{MDIRlogd}.seqqc.log"
+        MDIR + "logs/seqqc.log"
     benchmark:
-        MDIR + "benchmarks/{MDIRlogd}.seqqc.bench.tsv"
+        MDIR + "benchmarks/seqqc.bench.tsv"
     shell:
         "touch {output};"
