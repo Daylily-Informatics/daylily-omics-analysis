@@ -60,6 +60,30 @@ def test_benchmark_collection_rules_do_not_introduce_benchmark_only_wildcards() 
         assert f"{rule_name}.bench.tsv" in block
 
 
+def test_target_wrapper_rules_do_not_introduce_log_only_wildcards() -> None:
+    dedup = _read("workflow/rules/generate_deduplicated_bams.smk")
+    final_wgs = _read("workflow/rules/multiqc_final_wgs.smk")
+
+    for text, rule_name in (
+        (dedup, "produce_deduplicated_crams"),
+        (dedup, "dedup_doppelmark"),
+        (dedup, "dedup_sentieon"),
+        (dedup, "dedup_none"),
+        (final_wgs, "aggregate_report_components"),
+    ):
+        block = _rule_block(text, rule_name)
+        log_block = block.split("log:", 1)[1].split("benchmark:", 1)[0]
+        benchmark_block = block.split("benchmark:", 1)[1].split("shell:", 1)[0]
+        assert "{sample}" not in log_block
+        assert "{alnr}" not in log_block
+        assert "{ddup}" not in log_block
+        assert "{MDIR}" not in log_block
+        assert "{sample}" not in benchmark_block
+        assert "{alnr}" not in benchmark_block
+        assert "{ddup}" not in benchmark_block
+        assert "{MDIR}" not in benchmark_block
+
+
 def test_snakefile_includes_repaired_qc_rules() -> None:
     snakefile = _read("workflow/Snakefile")
     active_includes = [

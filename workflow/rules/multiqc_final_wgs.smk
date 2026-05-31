@@ -554,9 +554,9 @@ rule aggregate_report_components:
     output:
         f"{MDIR}logs/report_components_aggregated.done",
     log:
-        MDIR + "logs/{MDIR}.aggregate_report_components.log"
+        MDIR + "logs/aggregate_report_components.log"
     benchmark:
-        MDIR + "benchmarks/{MDIR}.aggregate_report_components.bench.tsv"
+        MDIR + "benchmarks/aggregate_report_components.bench.tsv"
     shell:
         "mkdir -p $(dirname {output}); touch {output};"
 
