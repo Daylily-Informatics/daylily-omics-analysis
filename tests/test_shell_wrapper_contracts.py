@@ -261,6 +261,9 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert "${PS1:-}" in dyoainit
     assert "${SHELL:-}" in dyoainit
     assert "${1:-}" in dyoainit
+    assert 'alias day-help="bin/day_run help"' in dyoainit
+    assert 'alias dy-h="bin/day_run help"' in dyoainit
+    assert 'alias dy-h="echo hello"' not in dyoainit
 
 
 def test_shell_wrappers_do_not_reference_deprecated_network_overlay() -> None:
