@@ -559,11 +559,18 @@ text = path.read_text(encoding="utf-8")
 assert "BCL_RUNTIME_VERSION = \"4.0.3\"" in text
 assert "BCL_CONTAINER_URI = f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\"" in text
 assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in text
+assert "DAYOA_BCLCONVERT_TILE_SHARDS = True" in text
 assert "BCL_MERGE_LANE_FASTQS" in text
 assert "rule run_bclconvert_lane:" in text
+assert "rule run_bclconvert_tile_shard:" in text
+assert "rule merge_bclconvert_tile_shards:" in text
 assert "workflow/scripts/run_bclconvert_lane.sh" in text
 assert "workflow/scripts/merge_bclconvert_lanes.py" in text
+assert "workflow/scripts/merge_bclconvert_tile_shards.py" in text
 assert "run_bclconvert_lane_fastqs_ready" in text
+assert "BCL_TILE_SHARD_LEVEL" in text
+assert "BCL_TILE_SHARD_REGEX" in text
+assert "BCL_TILE_REGEX_BY_KEY" in text
 assert "BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES" in text
 assert "BCL_LANE_ROOT = Path(BCL_RUN_DIR)" in text
 assert "BCL_SAMPLE_SHEET_SETTINGS_JSON" in text
@@ -586,6 +593,8 @@ assert re.search(r"(?m)^\\s*run:\\s*$", text) is None
 rule_names = [
     "bclconvert_validate_inputs",
     "run_bclconvert_lane",
+    "run_bclconvert_tile_shard",
+    "merge_bclconvert_tile_shards",
     "run_bclconvert",
     "bclconvert_generate_units_tsv",
     "bclconvert_metrics_summary",

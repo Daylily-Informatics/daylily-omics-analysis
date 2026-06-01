@@ -33,6 +33,24 @@ By default, `bclconvert.merge_lane_fastqs: false`. The local `run_bclconvert` ru
 
 If a consumer explicitly needs the merged legacy tree, set `bclconvert.merge_lane_fastqs: true`. In that mode `run_bclconvert` moves FASTQs into the standard final FASTQ directory and writes merged reports under `<output-root>/bclconvert/fastqs/Reports/`.
 
+## Tile Sharding
+
+Tile sharding is off by default with `bclconvert.tile_shard_level: "lane"`. To split selected lanes into scheduler-visible BCL Convert jobs, set `tile_shard_level` to an integer shard count and optionally set `tile_shard_lanes` to a comma-separated lane list:
+
+```yaml
+bclconvert:
+  tile_shard_level: "40"
+  tile_shard_lanes: "L003"
+  tile_shard_threads: 48
+  tile_shard_mem_mb: 180000
+  tile_parallel_tiles: 8
+  tile_conversion_threads: 2
+  tile_compression_threads: 24
+  tile_decompression_threads: 8
+```
+
+DayOA discovers exact tile names from `Data/Intensities/BaseCalls/L###/*.filter`, balances them across zero-padded shard names such as `0001_tiles0001-0020`, and passes the exact shard tile set to BCL Convert with `--tiles`. After every shard for a lane finishes, `merge_bclconvert_tile_shards` concatenates the shard FASTQs in shard-name order and writes an aggregated lane-level `fastq_list.csv` and `Demultiplex_Stats.csv`. Downstream generated units, demux metrics, FastQC, and MultiQC continue to consume the lane-level reports.
+
 After demultiplexing, `bclconvert_demux_fastq_qc` prepares one FastQC input link for every demultiplexed FASTQ listed by the selected report set. Link names are composed as:
 
 ```text
@@ -47,12 +65,13 @@ The helper fails before FastQC when two rows would produce the same MultiQC/Fast
 `produce_bclconvert_fastqs_and_metrics` ends with:
 
 1. lane-split BCL Convert;
-2. a local lane-ready marker by default, or an optional legacy lane merge when `merge_lane_fastqs: true`;
-3. generated DayOA `generated.units.tsv`;
-4. normalized BCL Convert demux metric TSVs;
-5. collision-safe demux FastQC input preparation;
-6. FastQC over every demultiplexed FASTQ, including undetermined FASTQs when BCL Convert emits them;
-7. focused MultiQC report generation.
+2. optional tile-shard merge back to lane-level outputs when `tile_shard_level` is not `lane`;
+3. a local lane-ready marker by default, or an optional legacy lane merge when `merge_lane_fastqs: true`;
+4. generated DayOA `generated.units.tsv`;
+5. normalized BCL Convert demux metric TSVs;
+6. collision-safe demux FastQC input preparation;
+7. FastQC over every demultiplexed FASTQ, including undetermined FASTQs when BCL Convert emits them;
+8. focused MultiQC report generation.
 
 The focused report includes `bclconvert`, `fastqc`, and `custom_content` modules. The custom tables include demux stats, lane summary, FASTQ manifest, demux FastQC manifest, unknown barcodes, and index hopping when present.
 
@@ -70,6 +89,14 @@ bclconvert:
   conversion_threads: 4
   compression_threads: 64
   decompression_threads: 32
+  tile_shard_level: "lane"
+  tile_shard_lanes: ""
+  tile_shard_threads: 48
+  tile_shard_mem_mb: 180000
+  tile_parallel_tiles: 8
+  tile_conversion_threads: 2
+  tile_compression_threads: 24
+  tile_decompression_threads: 8
   fastq_gzip_compression_level: 1
   shared_thread_odirect_output: true
   output_legacy_stats: true

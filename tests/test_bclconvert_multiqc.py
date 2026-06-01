@@ -48,15 +48,25 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "BCL_BENCH_DIR" in rule
     assert "bcl_extra_args={params.extra_args:q}" in rule
     assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in rule
+    assert "DAYOA_BCLCONVERT_TILE_SHARDS = True" in rule
+    assert 'BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane")' in rule
+    assert 'return "+".join(re.escape(name) for name in tile_names)' in rule
+    assert 'BCL_TILE_SHARD_REGEX = "|".join(re.escape(row["shard"])' in rule
     assert 'BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)' in rule
     assert "rule run_bclconvert_lane:" in rule
+    assert "rule run_bclconvert_tile_shard:" in rule
+    assert "rule merge_bclconvert_tile_shards:" in rule
     assert "workflow/scripts/run_bclconvert_lane.sh" in rule
     assert "workflow/scripts/merge_bclconvert_lanes.py" in rule
+    assert "workflow/scripts/merge_bclconvert_tile_shards.py" in rule
     assert "run_bclconvert_lane_fastqs_ready" in rule
     assert "BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES" in rule
     lane_helper = _read("workflow/scripts/run_bclconvert_lane.sh")
     samplesheet_helper = _read("workflow/scripts/prepare_bclconvert_lane_samplesheet.py")
     assert "--bcl-only-lane" in lane_helper
+    assert "--tiles" in lane_helper
+    assert 'tile_regex="${26:-}"' in lane_helper
+    assert "BCL Convert thread allocation exceeds requested threads" in lane_helper
     assert "--output-legacy-stats" in lane_helper
     assert "--num-unknown-barcodes-reported" in lane_helper
     assert "--bind /fsx:/fsx" in lane_helper
@@ -79,6 +89,8 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert '--seq-platform-override "$seq_platform_override"' in rule
     for rule_name in (
         "bclconvert_validate_inputs",
+        "run_bclconvert_tile_shard",
+        "merge_bclconvert_tile_shards",
         "run_bclconvert",
         "bclconvert_generate_units_tsv",
         "bclconvert_metrics_summary",
@@ -88,7 +100,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     ):
         block = rule[rule.index(f"rule {rule_name}:") :]
         block = block.split("\nrule ", 1)[0]
-        assert 'cluster_sample="' in block, rule_name
+        assert "cluster_sample=" in block, rule_name
     assert "-m bclconvert" in rule
     assert "-m fastqc" in rule
     assert "-m custom_content" in rule
@@ -168,6 +180,14 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert profile["bclconvert"]["barcode_mismatches_index1"] == 0
         assert profile["bclconvert"]["barcode_mismatches_index2"] == 0
         assert profile["bclconvert"]["merge_lane_fastqs"] is False
+        assert profile["bclconvert"]["tile_shard_level"] == "lane"
+        assert profile["bclconvert"]["tile_shard_lanes"] == ""
+        assert "tile_shard_threads" in profile["bclconvert"]
+        assert "tile_shard_mem_mb" in profile["bclconvert"]
+        assert "tile_parallel_tiles" in profile["bclconvert"]
+        assert "tile_conversion_threads" in profile["bclconvert"]
+        assert "tile_compression_threads" in profile["bclconvert"]
+        assert "tile_decompression_threads" in profile["bclconvert"]
         assert profile["bclconvert"]["output_legacy_stats"] is True
         assert "demux_qc_threads" in profile["bclconvert"]
         assert "demux_qc_mem_mb" in profile["bclconvert"]
@@ -185,6 +205,104 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["shared_thread_odirect_output"] is True
     assert slurm_bcl["demux_qc_threads"] == 32
     assert slurm_bcl["demux_qc_mem_mb"] == 64000
+    assert slurm_bcl["tile_shard_threads"] == 48
+    assert slurm_bcl["tile_shard_mem_mb"] == 180000
+    assert slurm_bcl["tile_parallel_tiles"] == 8
+    assert slurm_bcl["tile_conversion_threads"] == 2
+    assert slurm_bcl["tile_compression_threads"] == 24
+    assert slurm_bcl["tile_decompression_threads"] == 8
+
+
+def test_merge_bclconvert_tile_shards_concatenates_fastqs_and_reports(tmp_path: Path) -> None:
+    tile_root = tmp_path / "tile_fastqs"
+    lane = "L003"
+    shards = ("0001_tiles0001-0002", "0002_tiles0003-0004")
+    demux_header = (
+        "Lane,SampleID,Index,# Reads,# Perfect Index Reads,# One Mismatch Index Reads,"
+        "# Two Mismatch Index Reads,% Reads,% Perfect Index Reads,% One Index Reads,"
+        "% Two Index Reads,# of \u2265 Q30 Bases (PF),Mean Quality Score (PF),QualityScoreSum,ReadNumber"
+    )
+    for idx, shard in enumerate(shards, start=1):
+        shard_dir = tile_root / lane / shard
+        reports_dir = shard_dir / "Reports"
+        reports_dir.mkdir(parents=True)
+        (shard_dir / "Sample_A_L003_R1_001.fastq.gz").write_bytes(f"r1-shard-{idx}\n".encode())
+        (shard_dir / "Sample_A_L003_R2_001.fastq.gz").write_bytes(f"r2-shard-{idx}\n".encode())
+        (reports_dir / "fastq_list.csv").write_text(
+            "\n".join(
+                [
+                    "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                    "RG001,Sample_A,Sample_A,3,Sample_A_L003_R1_001.fastq.gz,Sample_A_L003_R2_001.fastq.gz",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        reads = idx * 10
+        (reports_dir / "Demultiplex_Stats.csv").write_text(
+            "\n".join(
+                [
+                    demux_header,
+                    f"3,Sample_A,AAAA+CCCC,{reads},{reads - 2},2,0,100.00,80.00,20.00,0.00,{reads * 100},35.0,{reads * 35},1",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        (reports_dir / "Top_Unknown_Barcodes.csv").write_text(
+            "\n".join(
+                [
+                    "Lane,index,index2,# Reads,% of Unknown Barcodes,% of All Reads",
+                    f"3,NNNN,NNNN,{idx},100.00,1.00",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+    sample_sheet = tmp_path / "SampleSheet.csv"
+    sample_sheet.write_text("[Header],\nRunName,run\n", encoding="utf-8")
+    lane_output = tmp_path / "lane_fastqs" / lane
+    report_dir = lane_output / "Reports"
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "merge_bclconvert_tile_shards.py"),
+            "--tile-fastq-root",
+            str(tile_root),
+            "--lane-output-dir",
+            str(lane_output),
+            "--report-dir",
+            str(report_dir),
+            "--lane",
+            lane,
+            "--shards",
+            ",".join(shards),
+            "--sample-sheet",
+            str(sample_sheet),
+            "--lane-sample-sheet",
+            str(tmp_path / "lane_reports" / lane / "SampleSheet.csv"),
+            "--done",
+            str(tmp_path / "lane_reports" / lane / "bclconvert.done"),
+            "--log",
+            str(tmp_path / "merge.log"),
+        ],
+        check=True,
+    )
+
+    assert (lane_output / "Sample_A_L003_R1_001.fastq.gz").read_bytes() == b"r1-shard-1\nr1-shard-2\n"
+    assert (lane_output / "Sample_A_L003_R2_001.fastq.gz").read_bytes() == b"r2-shard-1\nr2-shard-2\n"
+    with (report_dir / "fastq_list.csv").open("r", encoding="utf-8", newline="") as handle:
+        fastq_rows = list(csv.DictReader(handle))
+    assert fastq_rows[0]["Read1File"] == str(lane_output / "Sample_A_L003_R1_001.fastq.gz")
+    with (report_dir / "Demultiplex_Stats.csv").open("r", encoding="utf-8", newline="") as handle:
+        demux_rows = list(csv.DictReader(handle))
+    assert demux_rows[0]["# Reads"] == "30"
+    assert demux_rows[0]["# Perfect Index Reads"] == "26"
+    assert demux_rows[0]["% Perfect Index Reads"] == "86.67"
+    with (report_dir / "Top_Unknown_Barcodes.csv").open("r", encoding="utf-8", newline="") as handle:
+        unknown_rows = list(csv.DictReader(handle))
+    assert unknown_rows[0]["# Reads"] == "3"
 
 
 def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(
