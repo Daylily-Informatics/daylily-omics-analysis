@@ -255,6 +255,158 @@ BCL_LANE_FASTQ_LIST_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fast
 BCL_LANE_DEMUX_STATS_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv", lane=BCL_LANES)
 BCL_LANE_SAMPLE_SHEET_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv", lane=BCL_LANES)
 BCL_LANE_REPORT_DIRS = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports", lane=BCL_LANES)
+DAYOA_BCLCONVERT_TILE_SHARDS = True
+BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane") or "lane").strip().lower()
+BCL_TILE_SHARD_LANES_RAW = BCLCFG.get("tile_shard_lanes", "")
+BCL_TILE_SHARD_THREADS = _intish(BCLCFG.get("tile_shard_threads", BCL_THREADS), BCL_THREADS)
+BCL_TILE_SHARD_MEM_MB = _intish(
+    BCLCFG.get("tile_shard_mem_mb", max(3000, BCL_MEM_MB // 4)),
+    max(3000, BCL_MEM_MB // 4),
+)
+BCL_TILE_PARALLEL_TILES = _intish(BCLCFG.get("tile_parallel_tiles", BCL_PARALLEL_TILES), BCL_PARALLEL_TILES)
+BCL_TILE_CONVERSION_THREADS = _intish(
+    BCLCFG.get("tile_conversion_threads", BCL_CONVERSION_THREADS),
+    BCL_CONVERSION_THREADS,
+)
+BCL_TILE_COMPRESSION_THREADS = _intish(
+    BCLCFG.get("tile_compression_threads", BCL_COMPRESSION_THREADS),
+    BCL_COMPRESSION_THREADS,
+)
+BCL_TILE_DECOMPRESSION_THREADS = _intish(
+    BCLCFG.get("tile_decompression_threads", BCL_DECOMPRESSION_THREADS),
+    BCL_DECOMPRESSION_THREADS,
+)
+
+
+def _bcl_lane_name(value):
+    text = str(value or "").strip()
+    if text.upper().startswith("L"):
+        text = text[1:]
+    return f"L{int(text):03d}"
+
+
+if not BCL_LANES and BCL_TILE_SHARD_LANES_RAW not in (None, "", "None", []):
+    BCL_LANES = sorted(
+        {
+            _bcl_lane_name(value)
+            for value in (
+                [part.strip() for part in BCL_TILE_SHARD_LANES_RAW.split(",") if part.strip()]
+                if isinstance(BCL_TILE_SHARD_LANES_RAW, str)
+                else list(BCL_TILE_SHARD_LANES_RAW)
+            )
+        }
+    )
+
+
+def _bcl_tile_lane_set(raw):
+    if raw in (None, "", "None", []):
+        return set(BCL_LANES)
+    values = [part.strip() for part in raw.split(",") if part.strip()] if isinstance(raw, str) else list(raw)
+    lanes = {_bcl_lane_name(value) for value in values}
+    unknown = sorted(lanes - set(BCL_LANES))
+    if unknown:
+        raise WorkflowError("bclconvert.tile_shard_lanes includes absent lanes: " + ",".join(unknown))
+    return lanes
+
+
+def _bcl_lane_tile_names(lane):
+    lane_num = int(lane[1:])
+    lane_dir = BCL_LANE_ROOT / lane
+    if not lane_dir.is_dir():
+        raise WorkflowError(f"BCL lane directory is missing for tile sharding: {lane_dir}")
+    pattern = re.compile(rf"s_{lane_num}_[0-9]{{4}}")
+    names = sorted(
+        {
+            path.stem
+            for path in lane_dir.glob(f"s_{lane_num}_*.filter")
+            if pattern.fullmatch(path.stem)
+        }
+    )
+    if not names:
+        raise WorkflowError(f"BCL lane has no filter tile names for tile sharding: {lane_dir}")
+    return names
+
+
+def _bcl_exact_tile_regex(tile_names):
+    return "+".join(re.escape(name) for name in tile_names)
+
+
+def _bcl_balanced_tile_shards(lane, shard_count):
+    tile_names = _bcl_lane_tile_names(lane)
+    tile_count = len(tile_names)
+    if shard_count < 2:
+        return []
+    if shard_count > tile_count:
+        raise WorkflowError(
+            f"bclconvert.tile_shard_level={shard_count} cannot split {lane} "
+            f"with only {tile_count} discovered tiles"
+        )
+    base_size = tile_count // shard_count
+    remainder = tile_count % shard_count
+    rows = []
+    start = 0
+    for index in range(shard_count):
+        shard_size = base_size + (1 if index < remainder else 0)
+        stop = start + shard_size
+        rows.append(
+            {
+                "shard": f"{index + 1:04d}_tiles{start + 1:04d}-{stop:04d}",
+                "tiles": _bcl_exact_tile_regex(tile_names[start:stop]),
+            }
+        )
+        start = stop
+    return rows
+
+
+def _bcl_tile_shards_for_lane(lane):
+    if BCL_TILE_SHARD_LEVEL in {"", "0", "1", "lane", "none", "false"}:
+        return []
+    if BCL_TILE_SHARD_LEVEL.isdigit():
+        return _bcl_balanced_tile_shards(lane, int(BCL_TILE_SHARD_LEVEL))
+    if BCL_TILE_SHARD_LEVEL in {"2", "surface"}:
+        return _bcl_balanced_tile_shards(lane, 2)
+    if BCL_TILE_SHARD_LEVEL in {"4", "surface_swath_pair", "surface-swath-pair"}:
+        return _bcl_balanced_tile_shards(lane, 4)
+    if BCL_TILE_SHARD_LEVEL in {"8", "swath", "surface_swath", "surface-swath"}:
+        return _bcl_balanced_tile_shards(lane, 8)
+    raise WorkflowError(
+        "bclconvert.tile_shard_level must be lane, none, surface, surface_swath, "
+        "or an integer shard count no larger than the discovered lane tile count"
+    )
+
+
+BCL_TILE_SHARD_LANE_SET = _bcl_tile_lane_set(BCL_TILE_SHARD_LANES_RAW)
+BCL_TILE_SHARD_ROWS = [
+    {"lane": lane, **shard}
+    for lane in BCL_LANES
+    if lane in BCL_TILE_SHARD_LANE_SET
+    for shard in _bcl_tile_shards_for_lane(lane)
+]
+BCL_TILE_SHARDS_BY_LANE = {
+    lane: [row for row in BCL_TILE_SHARD_ROWS if row["lane"] == lane]
+    for lane in BCL_LANES
+}
+BCL_REQUESTED_LANES = [lane for lane in BCL_LANES if lane in BCL_TILE_SHARD_LANE_SET]
+BCL_DIRECT_LANES = [lane for lane in BCL_REQUESTED_LANES if not BCL_TILE_SHARDS_BY_LANE.get(lane)]
+BCL_TILE_LANES = [lane for lane in BCL_REQUESTED_LANES if BCL_TILE_SHARDS_BY_LANE.get(lane)]
+BCL_LANES = BCL_REQUESTED_LANES
+BCL_LANE_DONE_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/bclconvert.done", lane=BCL_LANES)
+BCL_LANE_FASTQ_LIST_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fastq_list.csv", lane=BCL_LANES)
+BCL_LANE_DEMUX_STATS_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv", lane=BCL_LANES)
+BCL_LANE_SAMPLE_SHEET_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv", lane=BCL_LANES)
+BCL_LANE_REPORT_DIRS = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports", lane=BCL_LANES)
+BCL_DIRECT_LANE_REGEX = "|".join(re.escape(lane) for lane in BCL_DIRECT_LANES) if BCL_DIRECT_LANES else "a^"
+BCL_TILE_LANE_REGEX = "|".join(re.escape(lane) for lane in BCL_TILE_LANES) if BCL_TILE_LANES else "a^"
+BCL_TILE_SHARD_REGEX = "|".join(re.escape(row["shard"]) for row in BCL_TILE_SHARD_ROWS) if BCL_TILE_SHARD_ROWS else "a^"
+BCL_TILE_REGEX_BY_KEY = {f'{row["lane"]}/{row["shard"]}': row["tiles"] for row in BCL_TILE_SHARD_ROWS}
+BCL_TILE_FASTQ_ROOT = f"{BCL_ROOT}/tile_fastqs"
+BCL_TILE_REPORT_ROOT = f"{BCL_ROOT}/tile_reports"
+
+
+def _bcl_tile_shards_for_wildcards(wildcards):
+    return [row["shard"] for row in BCL_TILE_SHARDS_BY_LANE.get(wildcards.lane, [])]
+
+
 BCL_MERGED_FASTQ_LIST = f"{BCL_REPORT_DIR}/fastq_list.csv"
 BCL_MERGED_DEMUX_STATS = f"{BCL_REPORT_DIR}/Demultiplex_Stats.csv"
 if BCL_MERGE_LANE_FASTQS:
@@ -349,7 +501,7 @@ rule run_bclconvert_lane:
         demux_stats=f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv",
         lane_sample_sheet=f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv",
     wildcard_constraints:
-        lane="L[0-9][0-9][0-9]",
+        lane=BCL_DIRECT_LANE_REGEX,
     threads:
         BCL_THREADS
     resources:
@@ -395,7 +547,125 @@ rule run_bclconvert_lane:
         "{params.output_legacy_stats:q} {params.num_unknown_barcodes_reported:q} "
         "{params.sample_sheet_settings_json:q} {params.sample_sheet_settings_by_lane_json:q} "
         "{params.force:q} {threads:q} {log:q} {output.fastq_list:q} "
-        "{output.demux_stats:q} {output.done:q}"
+        "{output.demux_stats:q} {output.done:q} \"\""
+
+
+rule run_bclconvert_tile_shard:
+    input:
+        validated=BCL_VALIDATE_OK,
+        sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
+    output:
+        done=f"{BCL_TILE_REPORT_ROOT}/{{lane}}/{{shard}}/bclconvert.done",
+        fastq_list=f"{BCL_TILE_FASTQ_ROOT}/{{lane}}/{{shard}}/Reports/fastq_list.csv",
+        demux_stats=f"{BCL_TILE_FASTQ_ROOT}/{{lane}}/{{shard}}/Reports/Demultiplex_Stats.csv",
+        lane_sample_sheet=f"{BCL_TILE_REPORT_ROOT}/{{lane}}/{{shard}}/SampleSheet.csv",
+    wildcard_constraints:
+        lane=BCL_TILE_LANE_REGEX,
+        shard=BCL_TILE_SHARD_REGEX,
+    threads:
+        BCL_TILE_SHARD_THREADS
+    resources:
+        partition=BCL_PARTITION,
+        vcpu=BCL_TILE_SHARD_THREADS,
+        threads=BCL_TILE_SHARD_THREADS,
+        mem_mb=BCL_TILE_SHARD_MEM_MB,
+        tmpdir=BCL_TMPDIR,
+    params:
+        cluster_sample=lambda wildcards: f"run_bclconvert_{wildcards.lane}_{wildcards.shard}",
+        run_dir=BCL_RUN_DIR,
+        container_uri=BCL_CONTAINER_URI,
+        tmpdir=BCL_TMPDIR,
+        lane_number=lambda wildcards: str(int(wildcards.lane[1:])),
+        lane_output_dir=lambda wildcards: f"{BCL_TILE_FASTQ_ROOT}/{wildcards.lane}/{wildcards.shard}",
+        tile_regex=lambda wildcards: BCL_TILE_REGEX_BY_KEY[f"{wildcards.lane}/{wildcards.shard}"],
+        parallel_tiles=BCL_TILE_PARALLEL_TILES,
+        conversion_threads=BCL_TILE_CONVERSION_THREADS,
+        compression_threads=BCL_TILE_COMPRESSION_THREADS,
+        decompression_threads=BCL_TILE_DECOMPRESSION_THREADS,
+        fastq_gzip_compression_level=BCL_FASTQ_GZIP_COMPRESSION_LEVEL,
+        shared_thread_odirect_output="true" if BCL_SHARED_THREAD_ODIRECT_OUTPUT else "false",
+        output_legacy_stats="true" if BCL_OUTPUT_LEGACY_STATS else "false",
+        num_unknown_barcodes_reported=BCL_NUM_UNKNOWN_BARCODES_REPORTED,
+        sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON,
+        sample_sheet_settings_by_lane_json=BCL_SAMPLE_SHEET_SETTINGS_BY_LANE_JSON,
+        force="-f" if BCL_FORCE else "",
+        strict_mode="true" if BCL_STRICT_MODE else "false",
+        first_tile_only="true" if BCL_FIRST_TILE_ONLY else "false",
+        sampleproject_subdirectories="true" if BCL_SAMPLEPROJECT_SUBDIRS else "false",
+    log:
+        f"{BCL_LOG_DIR}/run_bclconvert.{{lane}}.{{shard}}.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/run_bclconvert.{{lane}}.{{shard}}.bench.tsv",
+    shell:
+        "TMPDIR={params.tmpdir:q} bash workflow/scripts/run_bclconvert_lane.sh "
+        "{params.container_uri:q} {params.run_dir:q} {params.lane_output_dir:q} {input.sample_sheet:q} "
+        "{params.lane_number:q} {output.lane_sample_sheet:q} {params.strict_mode:q} "
+        "{params.first_tile_only:q} {params.sampleproject_subdirectories:q} "
+        "{params.fastq_gzip_compression_level:q} {params.parallel_tiles:q} "
+        "{params.conversion_threads:q} {params.compression_threads:q} "
+        "{params.decompression_threads:q} {params.shared_thread_odirect_output:q} "
+        "{params.output_legacy_stats:q} {params.num_unknown_barcodes_reported:q} "
+        "{params.sample_sheet_settings_json:q} {params.sample_sheet_settings_by_lane_json:q} "
+        "{params.force:q} {threads:q} {log:q} {output.fastq_list:q} "
+        "{output.demux_stats:q} {output.done:q} {params.tile_regex:q}"
+
+
+rule merge_bclconvert_tile_shards:
+    input:
+        done=lambda wildcards: expand(
+            f"{BCL_TILE_REPORT_ROOT}/{{lane}}/{{shard}}/bclconvert.done",
+            lane=[wildcards.lane],
+            shard=_bcl_tile_shards_for_wildcards(wildcards),
+        ),
+        fastq_lists=lambda wildcards: expand(
+            f"{BCL_TILE_FASTQ_ROOT}/{{lane}}/{{shard}}/Reports/fastq_list.csv",
+            lane=[wildcards.lane],
+            shard=_bcl_tile_shards_for_wildcards(wildcards),
+        ),
+        demux_stats=lambda wildcards: expand(
+            f"{BCL_TILE_FASTQ_ROOT}/{{lane}}/{{shard}}/Reports/Demultiplex_Stats.csv",
+            lane=[wildcards.lane],
+            shard=_bcl_tile_shards_for_wildcards(wildcards),
+        ),
+        sample_sheet=BCL_NORMALIZED_SAMPLE_SHEET,
+    output:
+        done=f"{BCL_LANE_REPORT_ROOT}/{{lane}}/bclconvert.done",
+        fastq_list=f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fastq_list.csv",
+        demux_stats=f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv",
+        lane_sample_sheet=f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv",
+    wildcard_constraints:
+        lane=BCL_TILE_LANE_REGEX,
+    threads:
+        1
+    resources:
+        partition=BCL_PARTITION,
+        vcpu=1,
+        threads=1,
+        mem_mb=3000,
+        tmpdir=BCL_TMPDIR,
+    params:
+        cluster_sample=lambda wildcards: f"merge_bclconvert_tile_shards_{wildcards.lane}",
+        lane=lambda wildcards: wildcards.lane,
+        shards=lambda wildcards: ",".join(_bcl_tile_shards_for_wildcards(wildcards)),
+        tile_fastq_root=BCL_TILE_FASTQ_ROOT,
+        lane_output_dir=lambda wildcards: f"{BCL_LANE_FASTQ_ROOT}/{wildcards.lane}",
+        report_dir=lambda wildcards: f"{BCL_LANE_FASTQ_ROOT}/{wildcards.lane}/Reports",
+    log:
+        f"{BCL_LOG_DIR}/merge_bclconvert_tile_shards.{{lane}}.log",
+    benchmark:
+        f"{BCL_BENCH_DIR}/merge_bclconvert_tile_shards.{{lane}}.bench.tsv",
+    shell:
+        "python workflow/scripts/merge_bclconvert_tile_shards.py "
+        "--tile-fastq-root {params.tile_fastq_root:q} "
+        "--lane-output-dir {params.lane_output_dir:q} "
+        "--report-dir {params.report_dir:q} "
+        "--lane {params.lane:q} "
+        "--shards {params.shards:q} "
+        "--sample-sheet {input.sample_sheet:q} "
+        "--lane-sample-sheet {output.lane_sample_sheet:q} "
+        "--done {output.done:q} "
+        "--log {log:q} >> {log:q} 2>&1 && "
+        "test -s {output.fastq_list:q} && test -s {output.demux_stats:q}"
 
 
 if BCL_MERGE_LANE_FASTQS:

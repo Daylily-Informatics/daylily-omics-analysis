@@ -131,6 +131,14 @@ bclconvert:
     conversion_threads: 3
     compression_threads: 3
     decompression_threads: 1
+    tile_shard_level: "lane"
+    tile_shard_lanes: ""
+    tile_shard_threads: 7
+    tile_shard_mem_mb: 16000
+    tile_parallel_tiles: 1
+    tile_conversion_threads: 3
+    tile_compression_threads: 3
+    tile_decompression_threads: 1
     fastq_gzip_compression_level: 1
     shared_thread_odirect_output: true
     output_legacy_stats: true

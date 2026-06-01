@@ -125,6 +125,8 @@ directly and writes:
 
 ```text
 results/runs/<RUNID>/bclconvert/
+  tile_fastqs/L###/0001_tiles0001-0020/   # present only when bclconvert.tile_shard_level is not lane
+  tile_reports/L###/0001_tiles0001-0020/  # present only when bclconvert.tile_shard_level is not lane
   lane_fastqs/L###/
   lane_reports/L###/
   fastqs/              # present only when bclconvert.merge_lane_fastqs=true
@@ -149,8 +151,10 @@ results/runs/<RUNID>/bclconvert/
 
 By default `bclconvert.merge_lane_fastqs=false`, so generated units, metrics,
 demux FastQC, and MultiQC read each lane `fastq_list.csv` directly from
-`lane_fastqs/L###/Reports/`. The optional `fastqs/Reports/` legacy merged tree
-is created only when `merge_lane_fastqs=true`.
+`lane_fastqs/L###/Reports/`. When `bclconvert.tile_shard_level` is not `lane`,
+tile shard outputs are merged back into this same lane-level tree before those
+downstream steps run. The optional `fastqs/Reports/` legacy merged tree is
+created only when `merge_lane_fastqs=true`.
 
 Before exporting a run-context analysis, verify the result tree does not contain
 a copied run folder or a live run-directory symlink. The export should include

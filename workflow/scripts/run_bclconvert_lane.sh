@@ -26,6 +26,7 @@ log_path="${22}"
 fastq_list="${23}"
 demux_stats="${24}"
 done_path="${25}"
+tile_regex="${26:-}"
 
 mkdir -p "$lane_output_dir" "$(dirname "$lane_sample_sheet")" "$(dirname "$log_path")"
 : > "$log_path"
@@ -52,6 +53,7 @@ echo "bcl_input_directory: $run_dir" >> "$log_path"
 echo "output_directory: $lane_output_dir" >> "$log_path"
 echo "sample_sheet: $lane_sample_sheet" >> "$log_path"
 echo "bcl_only_lane: $lane_number" >> "$log_path"
+echo "tile_regex: ${tile_regex:-<none>}" >> "$log_path"
 echo "sample_sheet_settings_json: $sample_sheet_settings_json" >> "$log_path"
 echo "sample_sheet_settings_by_lane_json: $sample_sheet_settings_by_lane_json" >> "$log_path"
 echo "output_legacy_stats: $output_legacy_stats" >> "$log_path"
@@ -64,6 +66,14 @@ echo "singularity_bind_args: ${singularity_bind_args[*]}" >> "$log_path"
 singularity exec "${singularity_bind_args[@]}" "$container_uri" bcl-convert --version >> "$log_path" 2>&1
 
 heavy_threads="$((parallel_tiles * conversion_threads + compression_threads + decompression_threads))"
+if [[ "$heavy_threads" -lt 1 ]]; then
+  echo "BCL Convert CPU-heavy thread total must be >= 1" >> "$log_path"
+  exit 2
+fi
+if [[ "$heavy_threads" -gt "$threads" ]]; then
+  echo "BCL Convert thread allocation exceeds requested threads: heavy_threads=$heavy_threads threads=$threads" >> "$log_path"
+  exit 2
+fi
 
 echo "bcl_num_parallel_tiles: $parallel_tiles" >> "$log_path"
 echo "bcl_num_conversion_threads: $conversion_threads" >> "$log_path"
@@ -75,7 +85,6 @@ bcl_flags=(
   --bcl-input-directory "$run_dir"
   --output-directory "$lane_output_dir"
   --sample-sheet "$lane_sample_sheet"
-  --bcl-only-lane "$lane_number"
   --strict-mode "$strict_mode"
   --first-tile-only "$first_tile_only"
   --bcl-sampleproject-subdirectories "$sampleproject_subdirectories"
@@ -88,6 +97,11 @@ bcl_flags=(
   --output-legacy-stats "$output_legacy_stats"
   --num-unknown-barcodes-reported "$num_unknown_barcodes_reported"
 )
+if [[ -n "$tile_regex" ]]; then
+  bcl_flags+=(--tiles "$tile_regex")
+else
+  bcl_flags+=(--bcl-only-lane "$lane_number")
+fi
 if [[ -n "$force_arg" ]]; then
   bcl_flags+=("$force_arg")
 fi
