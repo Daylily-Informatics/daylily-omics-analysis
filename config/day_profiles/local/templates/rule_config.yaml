@@ -140,7 +140,7 @@ bclconvert:
     tile_compression_threads: 3
     tile_decompression_threads: 1
     fastq_gzip_compression_level: 1
-    shared_thread_odirect_output: true
+    shared_thread_odirect_output: false
     output_legacy_stats: true
     num_unknown_barcodes_reported: 1000
     demux_qc_threads: 4
