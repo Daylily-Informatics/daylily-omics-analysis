@@ -3,7 +3,8 @@ requires = ["setuptools>=64", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-tag_regex = "^(?P<version>\\d+\\.\\d+\\.\\d+(?:[A-Za-z0-9.+-]*)?)$"
+tag_regex = "^(?P<version>\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?)$"
+git_describe_command = "git describe --dirty --tags --long --match '[0-9]*.[0-9]*.[0-9]*' --match '[0-9]*.[0-9]*.[0-9]*.[0-9]*' --exclude '*[!0-9.]*' --exclude '*.*.*.*.*'"
 local_scheme = "no-local-version"
 
 [tool.coverage.run]
