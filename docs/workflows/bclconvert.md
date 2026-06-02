@@ -29,7 +29,7 @@ The rule discovers every `L###` lane directory and submits one `run_bclconvert_l
 <output-root>/bclconvert/lane_reports/L###/
 ```
 
-By default, `bclconvert.merge_lane_fastqs: false`. The local `run_bclconvert` rule only records that lane FASTQs are ready, and downstream DayOA steps consume the lane-level `fastq_list.csv` and report files in place. This avoids an unnecessary serial stitch step because alignment can stream the lane FASTQs directly into BWA.
+By default, `bclconvert.merge_lane_fastqs: false` and `bclconvert.merge_tile_fastqs: false`. The local `run_bclconvert` rule only records that lane FASTQs are ready, and downstream DayOA steps consume the lane-level `fastq_list.csv` and report files in place. This avoids unnecessary serial stitch steps because alignment can stream comma-separated FASTQ lists directly into BWA.
 
 If a consumer explicitly needs the merged legacy tree, set `bclconvert.merge_lane_fastqs: true`. In that mode `run_bclconvert` moves FASTQs into the standard final FASTQ directory and writes merged reports under `<output-root>/bclconvert/fastqs/Reports/`.
 
@@ -47,9 +47,14 @@ bclconvert:
   tile_conversion_threads: 2
   tile_compression_threads: 24
   tile_decompression_threads: 8
+  merge_tile_fastqs: false
 ```
 
-DayOA discovers exact tile names from `Data/Intensities/BaseCalls/L###/*.filter`, balances them across zero-padded shard names such as `0001_tiles0001-0020`, and passes the exact shard tile set to BCL Convert with `--tiles`. After every shard for a lane finishes, `merge_bclconvert_tile_shards` concatenates the shard FASTQs in shard-name order and writes an aggregated lane-level `fastq_list.csv` and `Demultiplex_Stats.csv`. Downstream generated units, demux metrics, FastQC, and MultiQC continue to consume the lane-level reports.
+DayOA discovers exact tile names from `Data/Intensities/BaseCalls/L###/*.filter`, balances them across zero-padded shard names such as `0001_tiles0001-0020`, and passes the exact shard tile set to BCL Convert with `--tiles`. After every shard for a lane finishes, `merge_bclconvert_tile_shards` aggregates lane-level reports and writes a lane-level `fastq_list.csv` that references the unmerged tile-shard FASTQs. Generated units collapse those rows into comma-separated R1/R2 FASTQ path lists per sample/lane. Downstream generated units, demux metrics, FastQC, and MultiQC continue to consume the lane-level reports.
+
+Set `bclconvert.merge_tile_fastqs: true` only when a consumer explicitly needs one R1/R2 FASTQ pair per sample/lane. In that mode `merge_bclconvert_tile_shards` concatenates shard FASTQs in shard-name order before writing the lane-level `fastq_list.csv`.
+
+`bclconvert.shared_thread_odirect_output` defaults to `auto`: DayOA passes `--shared-thread-odirect-output true` when tile sharding is active and `false` for direct whole-lane BCL Convert. Set `shared_thread_odirect_output: true` or `false` to override the auto choice.
 
 After demultiplexing, `bclconvert_demux_fastq_qc` prepares one FastQC input link for every demultiplexed FASTQ listed by the selected report set. Link names are composed as:
 
@@ -65,7 +70,7 @@ The helper fails before FastQC when two rows would produce the same MultiQC/Fast
 `produce_bclconvert_fastqs_and_metrics` ends with:
 
 1. lane-split BCL Convert;
-2. optional tile-shard merge back to lane-level outputs when `tile_shard_level` is not `lane`;
+2. tile-shard report aggregation when `tile_shard_level` is not `lane`, with FASTQ concatenation only when `merge_tile_fastqs: true`;
 3. a local lane-ready marker by default, or an optional legacy lane merge when `merge_lane_fastqs: true`;
 4. generated DayOA `generated.units.tsv`;
 5. normalized BCL Convert demux metric TSVs;
@@ -85,6 +90,7 @@ bclconvert:
   mem_mb: 360000
   partition: "i192mem,i192bigmem"
   merge_lane_fastqs: false
+  merge_tile_fastqs: false
   parallel_tiles: 24
   conversion_threads: 4
   compression_threads: 64
@@ -98,7 +104,7 @@ bclconvert:
   tile_compression_threads: 24
   tile_decompression_threads: 8
   fastq_gzip_compression_level: 1
-  shared_thread_odirect_output: false
+  shared_thread_odirect_output: auto
   output_legacy_stats: true
   num_unknown_barcodes_reported: 1000
   demux_qc_threads: 32

@@ -561,6 +561,9 @@ assert "BCL_CONTAINER_URI = f\"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}\
 assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in text
 assert "DAYOA_BCLCONVERT_TILE_SHARDS = True" in text
 assert "BCL_MERGE_LANE_FASTQS" in text
+assert "BCL_MERGE_TILE_FASTQS" in text
+assert "BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW" in text
+assert "BCL_TILE_SHARDING_ACTIVE" in text
 assert "rule run_bclconvert_lane:" in text
 assert "rule run_bclconvert_tile_shard:" in text
 assert "rule merge_bclconvert_tile_shards:" in text

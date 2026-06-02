@@ -154,13 +154,14 @@ BCL_CONVERSION_THREADS = _intish(BCLCFG.get("conversion_threads", BCL_THREADS), 
 BCL_COMPRESSION_THREADS = _intish(BCLCFG.get("compression_threads", BCL_THREADS), BCL_THREADS)
 BCL_DECOMPRESSION_THREADS = _intish(BCLCFG.get("decompression_threads", max(1, BCL_THREADS // 2)), max(1, BCL_THREADS // 2))
 BCL_FASTQ_GZIP_COMPRESSION_LEVEL = _intish(BCLCFG.get("fastq_gzip_compression_level", 1), 1)
-BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCLCFG.get("shared_thread_odirect_output", False), False)
+BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW = BCLCFG.get("shared_thread_odirect_output", "auto")
 BCL_OUTPUT_LEGACY_STATS = _bool(BCLCFG.get("output_legacy_stats", True), True)
 BCL_NUM_UNKNOWN_BARCODES_REPORTED = _intish(BCLCFG.get("num_unknown_barcodes_reported", 1000), 1000)
 BCL_DEMUX_QC_THREADS = _intish(BCLCFG.get("demux_qc_threads", min(max(BCL_THREADS, 1), 32)), min(max(BCL_THREADS, 1), 32))
 BCL_DEMUX_QC_MEM_MB = _intish(BCLCFG.get("demux_qc_mem_mb", 64000), 64000)
 BCL_FORCE = _bool(BCLCFG.get("force", False))
 BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)
+BCL_MERGE_TILE_FASTQS = _bool(BCLCFG.get("merge_tile_fastqs", False), False)
 BCL_KEEP_UNDETERMINED = _bool(BCLCFG.get("keep_undetermined_fastqs", True), True)
 BCL_SAMPLEPROJECT_SUBDIRS = _bool(BCLCFG.get("sampleproject_subdirectories", False), False)
 BCL_STRICT_MODE = _bool(BCLCFG.get("strict_mode", False), False)
@@ -386,6 +387,11 @@ BCL_TILE_SHARDS_BY_LANE = {
     lane: [row for row in BCL_TILE_SHARD_ROWS if row["lane"] == lane]
     for lane in BCL_LANES
 }
+BCL_TILE_SHARDING_ACTIVE = bool(BCL_TILE_SHARD_ROWS)
+if str(BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW).strip().lower() in {"", "auto", "none"}:
+    BCL_SHARED_THREAD_ODIRECT_OUTPUT = BCL_TILE_SHARDING_ACTIVE
+else:
+    BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW, False)
 BCL_REQUESTED_LANES = [lane for lane in BCL_LANES if lane in BCL_TILE_SHARD_LANE_SET]
 BCL_DIRECT_LANES = [lane for lane in BCL_REQUESTED_LANES if not BCL_TILE_SHARDS_BY_LANE.get(lane)]
 BCL_TILE_LANES = [lane for lane in BCL_REQUESTED_LANES if BCL_TILE_SHARDS_BY_LANE.get(lane)]
@@ -647,6 +653,7 @@ rule merge_bclconvert_tile_shards:
         cluster_sample=lambda wildcards: f"merge_bclconvert_tile_shards_{wildcards.lane}",
         lane=lambda wildcards: wildcards.lane,
         shards=lambda wildcards: ",".join(_bcl_tile_shards_for_wildcards(wildcards)),
+        merge_fastqs="true" if BCL_MERGE_TILE_FASTQS else "false",
         tile_fastq_root=BCL_TILE_FASTQ_ROOT,
         lane_output_dir=lambda wildcards: f"{BCL_LANE_FASTQ_ROOT}/{wildcards.lane}",
         report_dir=lambda wildcards: f"{BCL_LANE_FASTQ_ROOT}/{wildcards.lane}/Reports",
@@ -661,6 +668,7 @@ rule merge_bclconvert_tile_shards:
         "--report-dir {params.report_dir:q} "
         "--lane {params.lane:q} "
         "--shards {params.shards:q} "
+        "--merge-fastqs {params.merge_fastqs:q} "
         "--sample-sheet {input.sample_sheet:q} "
         "--lane-sample-sheet {output.lane_sample_sheet:q} "
         "--done {output.done:q} "

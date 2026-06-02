@@ -118,6 +118,7 @@ bclconvert:
     seq_platform_override: ""
     force: false
     merge_lane_fastqs: false
+    merge_tile_fastqs: false
     keep_undetermined_fastqs: true
     sampleproject_subdirectories: false
     strict_mode: false
@@ -140,7 +141,7 @@ bclconvert:
     tile_compression_threads: 24
     tile_decompression_threads: 8
     fastq_gzip_compression_level: 1
-    shared_thread_odirect_output: false
+    shared_thread_odirect_output: auto
     output_legacy_stats: true
     num_unknown_barcodes_reported: 1000
     demux_qc_threads: 32

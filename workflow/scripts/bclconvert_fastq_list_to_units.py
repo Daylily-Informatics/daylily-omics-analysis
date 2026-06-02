@@ -151,34 +151,33 @@ def main() -> int:
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    seen: set[tuple[str, str]] = set()
-    with out_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=UNITS_HEADER, delimiter="\t", lineterminator="\n")
-        writer.writeheader()
+    unit_rows: OrderedDict[tuple[str, str], dict[str, object]] = OrderedDict()
+    seen_read_pairs: dict[tuple[str, str], set[tuple[str, str]]] = {}
+    for row in fastq_rows:
+        sample_id = first_nonempty(row.get("RGSM"), row.get("SAMPLE_ID"), row.get("SAMPLEID"))
+        if not sample_id or sample_id.lower() == "undetermined":
+            continue
 
-        for row in fastq_rows:
-            sample_id = first_nonempty(row.get("RGSM"), row.get("SAMPLE_ID"), row.get("SAMPLEID"))
-            if not sample_id or sample_id.lower() == "undetermined":
-                continue
+        lane = first_nonempty(row.get("LANE"))
+        if not lane:
+            raise SystemExit(f"ERROR: fastq_list row is missing Lane: {row}")
 
-            lane = first_nonempty(row.get("LANE"))
-            if not lane:
-                raise SystemExit(f"ERROR: fastq_list row is missing Lane: {row}")
+        sample_row = match_sample_row(sample_index, lane, sample_id)
+        if sample_row is None:
+            raise SystemExit(
+                f"ERROR: fastq_list.csv contains known sample {sample_id!r} in lane {lane!r} "
+                "but no matching parsed sample-sheet row was found."
+            )
 
-            sample_row = match_sample_row(sample_index, lane, sample_id)
-            if sample_row is None:
-                raise SystemExit(
-                    f"ERROR: fastq_list.csv contains known sample {sample_id!r} in lane {lane!r} "
-                    "but no matching parsed sample-sheet row was found."
-                )
+        read1 = first_nonempty(row.get("READ1FILE"), row.get("READ1_FILE"), row.get("READ1"))
+        read2 = first_nonempty(row.get("READ2FILE"), row.get("READ2_FILE"), row.get("READ2"))
+        if not read1 or not read2:
+            raise SystemExit(
+                f"ERROR: fastq_list row for sample {sample_id!r} lane {lane!r} is missing FASTQ paths."
+            )
 
-            read1 = first_nonempty(row.get("READ1FILE"), row.get("READ1_FILE"), row.get("READ1"))
-            read2 = first_nonempty(row.get("READ2FILE"), row.get("READ2_FILE"), row.get("READ2"))
-            if not read1 or not read2:
-                raise SystemExit(
-                    f"ERROR: fastq_list row for sample {sample_id!r} lane {lane!r} is missing FASTQ paths."
-                )
-
+        unique_key = (lane, sample_id)
+        if unique_key not in unit_rows:
             index1 = first_nonempty(sample_row.get("INDEX"))
             index2 = first_nonempty(sample_row.get("INDEX2"))
             barcode_combo = index_combo(index1, index2)
@@ -190,13 +189,7 @@ def main() -> int:
                 if args.seq_platform_override.strip()
                 else normalize_platform(first_nonempty(sample_row.get("INSTRUMENT_PLATFORM")))
             )
-
-            unique_key = (lane, sample_id)
-            if unique_key in seen:
-                continue
-            seen.add(unique_key)
-
-            output_row = {
+            unit_rows[unique_key] = {
                 "RUNID": args.run_id,
                 "SAMPLEID": sample_id,
                 "EXPERIMENTID": experiment_id,
@@ -205,9 +198,25 @@ def main() -> int:
                 "LIBPREP": args.libprep,
                 "SEQ_VENDOR": args.seq_vendor,
                 "SEQ_PLATFORM": seq_platform,
-                "ILMN_R1_PATH": read1,
-                "ILMN_R2_PATH": read2,
+                "ILMN_R1_PATH": [],
+                "ILMN_R2_PATH": [],
             }
+            seen_read_pairs[unique_key] = set()
+
+        pair = (read1, read2)
+        if pair in seen_read_pairs[unique_key]:
+            continue
+        seen_read_pairs[unique_key].add(pair)
+        unit_rows[unique_key]["ILMN_R1_PATH"].append(read1)
+        unit_rows[unique_key]["ILMN_R2_PATH"].append(read2)
+
+    with out_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=UNITS_HEADER, delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        for output_row in unit_rows.values():
+            output_row = dict(output_row)
+            output_row["ILMN_R1_PATH"] = ",".join(output_row["ILMN_R1_PATH"])
+            output_row["ILMN_R2_PATH"] = ",".join(output_row["ILMN_R2_PATH"])
             writer.writerow(output_row)
 
     return 0

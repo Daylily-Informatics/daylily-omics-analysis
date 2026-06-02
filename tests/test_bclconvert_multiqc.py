@@ -53,6 +53,9 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert 'return "+".join(re.escape(name) for name in tile_names)' in rule
     assert 'BCL_TILE_SHARD_REGEX = "|".join(re.escape(row["shard"])' in rule
     assert 'BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)' in rule
+    assert 'BCL_MERGE_TILE_FASTQS = _bool(BCLCFG.get("merge_tile_fastqs", False), False)' in rule
+    assert 'BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW = BCLCFG.get("shared_thread_odirect_output", "auto")' in rule
+    assert "BCL_SHARED_THREAD_ODIRECT_OUTPUT = BCL_TILE_SHARDING_ACTIVE" in rule
     assert "rule run_bclconvert_lane:" in rule
     assert "rule run_bclconvert_tile_shard:" in rule
     assert "rule merge_bclconvert_tile_shards:" in rule
@@ -180,6 +183,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert profile["bclconvert"]["barcode_mismatches_index1"] == 0
         assert profile["bclconvert"]["barcode_mismatches_index2"] == 0
         assert profile["bclconvert"]["merge_lane_fastqs"] is False
+        assert profile["bclconvert"]["merge_tile_fastqs"] is False
         assert profile["bclconvert"]["tile_shard_level"] == "lane"
         assert profile["bclconvert"]["tile_shard_lanes"] == ""
         assert "tile_shard_threads" in profile["bclconvert"]
@@ -202,7 +206,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["conversion_threads"] == 4
     assert slurm_bcl["compression_threads"] == 64
     assert slurm_bcl["decompression_threads"] == 32
-    assert slurm_bcl["shared_thread_odirect_output"] is False
+    assert slurm_bcl["shared_thread_odirect_output"] == "auto"
     assert slurm_bcl["demux_qc_threads"] == 32
     assert slurm_bcl["demux_qc_mem_mb"] == 64000
     assert slurm_bcl["tile_shard_threads"] == 48
@@ -213,7 +217,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["tile_decompression_threads"] == 8
 
 
-def test_merge_bclconvert_tile_shards_concatenates_fastqs_and_reports(tmp_path: Path) -> None:
+def _tile_shard_merge_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...], Path, Path, Path]:
     tile_root = tmp_path / "tile_fastqs"
     lane = "L003"
     shards = ("0001_tiles0001-0002", "0002_tiles0003-0004")
@@ -264,6 +268,11 @@ def test_merge_bclconvert_tile_shards_concatenates_fastqs_and_reports(tmp_path: 
     sample_sheet.write_text("[Header],\nRunName,run\n", encoding="utf-8")
     lane_output = tmp_path / "lane_fastqs" / lane
     report_dir = lane_output / "Reports"
+    return tile_root, lane, shards, sample_sheet, lane_output, report_dir
+
+
+def test_merge_bclconvert_tile_shards_preserves_unmerged_fastqs_by_default(tmp_path: Path) -> None:
+    tile_root, lane, shards, sample_sheet, lane_output, report_dir = _tile_shard_merge_fixture(tmp_path)
     subprocess.run(
         [
             sys.executable,
@@ -290,11 +299,18 @@ def test_merge_bclconvert_tile_shards_concatenates_fastqs_and_reports(tmp_path: 
         check=True,
     )
 
-    assert (lane_output / "Sample_A_L003_R1_001.fastq.gz").read_bytes() == b"r1-shard-1\nr1-shard-2\n"
-    assert (lane_output / "Sample_A_L003_R2_001.fastq.gz").read_bytes() == b"r2-shard-1\nr2-shard-2\n"
+    assert not (lane_output / "Sample_A_L003_R1_001.fastq.gz").exists()
+    assert not (lane_output / "Sample_A_L003_R2_001.fastq.gz").exists()
     with (report_dir / "fastq_list.csv").open("r", encoding="utf-8", newline="") as handle:
         fastq_rows = list(csv.DictReader(handle))
-    assert fastq_rows[0]["Read1File"] == str(lane_output / "Sample_A_L003_R1_001.fastq.gz")
+    assert [row["Read1File"] for row in fastq_rows] == [
+        str(tile_root / lane / shards[0] / "Sample_A_L003_R1_001.fastq.gz"),
+        str(tile_root / lane / shards[1] / "Sample_A_L003_R1_001.fastq.gz"),
+    ]
+    assert [row["RGID"] for row in fastq_rows] == [
+        f"RG001.{shards[0]}",
+        f"RG001.{shards[1]}",
+    ]
     with (report_dir / "Demultiplex_Stats.csv").open("r", encoding="utf-8", newline="") as handle:
         demux_rows = list(csv.DictReader(handle))
     assert demux_rows[0]["# Reads"] == "30"
@@ -303,6 +319,43 @@ def test_merge_bclconvert_tile_shards_concatenates_fastqs_and_reports(tmp_path: 
     with (report_dir / "Top_Unknown_Barcodes.csv").open("r", encoding="utf-8", newline="") as handle:
         unknown_rows = list(csv.DictReader(handle))
     assert unknown_rows[0]["# Reads"] == "3"
+
+
+def test_merge_bclconvert_tile_shards_can_concatenate_fastqs_when_enabled(tmp_path: Path) -> None:
+    tile_root, lane, shards, sample_sheet, lane_output, report_dir = _tile_shard_merge_fixture(tmp_path)
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "merge_bclconvert_tile_shards.py"),
+            "--tile-fastq-root",
+            str(tile_root),
+            "--lane-output-dir",
+            str(lane_output),
+            "--report-dir",
+            str(report_dir),
+            "--lane",
+            lane,
+            "--shards",
+            ",".join(shards),
+            "--merge-fastqs",
+            "true",
+            "--sample-sheet",
+            str(sample_sheet),
+            "--lane-sample-sheet",
+            str(tmp_path / "lane_reports" / lane / "SampleSheet.csv"),
+            "--done",
+            str(tmp_path / "lane_reports" / lane / "bclconvert.done"),
+            "--log",
+            str(tmp_path / "merge.log"),
+        ],
+        check=True,
+    )
+
+    assert (lane_output / "Sample_A_L003_R1_001.fastq.gz").read_bytes() == b"r1-shard-1\nr1-shard-2\n"
+    assert (lane_output / "Sample_A_L003_R2_001.fastq.gz").read_bytes() == b"r2-shard-1\nr2-shard-2\n"
+    with (report_dir / "fastq_list.csv").open("r", encoding="utf-8", newline="") as handle:
+        fastq_rows = list(csv.DictReader(handle))
+    assert fastq_rows[0]["Read1File"] == str(lane_output / "Sample_A_L003_R1_001.fastq.gz")
 
 
 def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lane(
@@ -381,6 +434,7 @@ def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lan
             [
                 "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
                 "RG001,HG003-a,HG003-a,1,/tmp/HG003-a_L001_R1_001.fastq.gz,/tmp/HG003-a_L001_R2_001.fastq.gz",
+                "RG001b,HG003-a,HG003-a,1,/tmp/HG003-a_L001_tile2_R1_001.fastq.gz,/tmp/HG003-a_L001_tile2_R2_001.fastq.gz",
                 "RG002,HG003-a,HG003-a,2,/tmp/HG003-a_L002_R1_001.fastq.gz,/tmp/HG003-a_L002_R2_001.fastq.gz",
                 "RGUND,Undetermined,Undetermined,1,/tmp/Undetermined_S0_L001_R1_001.fastq.gz,/tmp/Undetermined_S0_L001_R2_001.fastq.gz",
                 "",
@@ -410,6 +464,14 @@ def test_lane_optional_bclconvert_samplesheet_generates_units_for_each_fastq_lan
         ("HG003-a", "1"),
         ("HG003-a", "2"),
     ]
+    assert unit_rows[0]["ILMN_R1_PATH"] == (
+        "/tmp/HG003-a_L001_R1_001.fastq.gz,"
+        "/tmp/HG003-a_L001_tile2_R1_001.fastq.gz"
+    )
+    assert unit_rows[0]["ILMN_R2_PATH"] == (
+        "/tmp/HG003-a_L001_R2_001.fastq.gz,"
+        "/tmp/HG003-a_L001_tile2_R2_001.fastq.gz"
+    )
     assert unit_rows[0]["BARCODEID"] == "GAGTAATATACCGACCGTGA"
 
 

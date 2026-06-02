@@ -11,6 +11,7 @@ from pathlib import Path
 
 
 FASTQ_COLUMNS = ("Read1File", "Read2File", "READ1FILE", "READ2FILE", "Read1_File", "Read2_File")
+READ_GROUP_COLUMNS = ("RGID", "ReadGroup", "RG")
 DEMUX_SUM_COLUMNS = {
     "# Reads",
     "# Perfect Index Reads",
@@ -43,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report-dir", required=True)
     parser.add_argument("--lane", required=True)
     parser.add_argument("--shards", required=True)
+    parser.add_argument("--merge-fastqs", default="false", choices=("true", "false"))
     parser.add_argument("--sample-sheet", required=True)
     parser.add_argument("--lane-sample-sheet", required=True)
     parser.add_argument("--done", required=True)
@@ -251,12 +253,29 @@ def merge_fastq_list(
     tagged_rows: list[tuple[str, Path, dict[str, str]]],
     lane_output_dir: Path,
     report_dir: Path,
+    *,
+    merge_fastqs: bool,
 ) -> None:
     if not fieldnames:
         raise SystemExit("ERROR: no fastq_list.csv headers were found")
     fastq_columns = [column for column in FASTQ_COLUMNS if column in fieldnames]
     if not fastq_columns:
         raise SystemExit("ERROR: fastq_list.csv has no recognized FASTQ path columns")
+
+    if not merge_fastqs:
+        rows: list[dict[str, str]] = []
+        for shard_name, shard_dir, row in tagged_rows:
+            output_row = {column: row.get(column, "") for column in fieldnames}
+            for column in READ_GROUP_COLUMNS:
+                if column in output_row:
+                    output_row[column] = ".".join(part for part in (output_row[column], shard_name) if part)
+            for column in fastq_columns:
+                if not output_row.get(column):
+                    continue
+                output_row[column] = str(resolve_fastq_path(shard_dir, output_row[column]))
+            rows.append(output_row)
+        write_csv(report_dir / "fastq_list.csv", fieldnames, rows)
+        return
 
     row_key_columns = [column for column in fieldnames if column not in fastq_columns]
     merged_rows: OrderedDict[tuple[str, ...], dict[str, str]] = OrderedDict()
@@ -307,11 +326,18 @@ def main() -> int:
     with log_path.open("a", encoding="utf-8") as log:
         print(f"tile_shard_merge_lane: {args.lane}", file=log)
         print(f"tile_shard_merge_shards: {','.join(shards)}", file=log)
+        print(f"tile_shard_merge_fastqs: {args.merge_fastqs}", file=log)
         print(f"tile_fastq_root: {tile_fastq_root}", file=log)
         print(f"lane_output_dir: {lane_output_dir}", file=log)
 
     fastq_fieldnames, fastq_rows = read_shard_report(shard_dirs, "fastq_list.csv", required=True)
-    merge_fastq_list(fastq_fieldnames, fastq_rows, lane_output_dir, report_dir)
+    merge_fastq_list(
+        fastq_fieldnames,
+        fastq_rows,
+        lane_output_dir,
+        report_dir,
+        merge_fastqs=args.merge_fastqs == "true",
+    )
 
     demux_fieldnames, demux_tagged_rows = read_shard_report(shard_dirs, "Demultiplex_Stats.csv", required=True)
     demux_rows = aggregate_rows(
