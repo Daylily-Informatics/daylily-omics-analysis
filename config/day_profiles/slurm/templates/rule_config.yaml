@@ -162,18 +162,18 @@ bcl2fq_by_lane:
 
 bwa_mem2a_aln_sort:
     env_yaml: "../envs/bwasamtools_v0.1.yaml"
-    partition: "i192mem"
-    threads: 192
-    bwa_threads: 192 # from 128
-    orig_threads: 2
-    sort_threads: 192 # from 48
-    mem_mb: 200000
+    partition: "bcl2fq-i384-nvme-test"
+    threads: 384
+    bwa_threads: 254 # 384-vCPU c8id scratch tuning test
+    orig_threads: 8
+    sort_threads: 48 # 384-vCPU c8id tuning test
+    mem_mb: 650000 # 384-vCPU c8id scratch tuning: 384G sort + BWA + mbuffer headroom
     igz: "  igzip -cd -T 64 " #  Consider OMP_BIND_PROC=spread was OMP_BIND_PROC=TRUE
     benchmark_runs: 0
-    cmd: " OMP_NUM_THREADS=192 OMP_PLACES=threads OMP_PROC_BIND=close OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE  resources/bwa-mem2/bwa-mem2 "  # removed  OMP_PROC_BIND=close
-    bwa_opts: "  -k 19 -Y -M -K 1000000000  "
-    sort_thread_mem: "1024M"
-    mbuffer: " | mbuffer -m 128G -q -s 2M  "  #| mbuffer -m 10G -q -s 1M "
+    cmd: " numactl --interleave=all env OMP_NUM_THREADS=384 OMP_PLACES=cores OMP_PROC_BIND=spread OMP_DYNAMIC=false OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE resources/bwa-mem2/bwa-mem2 "
+    bwa_opts: "  -k 19 -Y -M -K 2000000000  "
+    sort_thread_mem: "8G" # 48 sort threads -> 384G nominal sort pool, about 50% of c8id.96xlarge RAM
+    mbuffer: " | mbuffer -m 64G -q -s 2M  "
     constraint: ""  # --constraint 'm7gb768|r7gb1536'
 
 sentmm2_align_sort:
