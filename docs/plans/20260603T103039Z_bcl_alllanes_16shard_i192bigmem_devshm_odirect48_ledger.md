@@ -58,7 +58,9 @@ Run the full `20260514_LH01106_0009_B23TVLGLT4` flowcell through DayOA BCL Conve
 | Dry-run | `PASS` | `RC=0`; `128` `run_bclconvert_tile_shard`, `8` `merge_bclconvert_tile_shards`, `0` `run_bclconvert_lane`; `16` shards each for `L001`-`L008` |
 | Live run initial attempt | `FAILED` | `RC=1`; no compute jobs submitted; `PermissionError` creating new DRA output dir under root-owned run dir |
 | DRA output dir precreate | `PASS` | `sudo mkdir -p` and `sudo chown ubuntu:ubuntu` for the new empty destination only |
-| Live run retry | `LAUNCHED` | same `dy-r` command; log `live_bclconvert_alllanes_16shard_retry1_20260603T103039Z.log` |
+| Live run retry 1 | `FAILED` | `RC=1`; no compute jobs submitted; `bclconvert_validate_inputs` failed because all-lane SampleSheet IDs were absent from default one-row `samples.tsv` |
+| All-lane samples.tsv | `PASS` | wrote `42` sample rows: default `ANA0-HG002` plus `41` BCLConvert SampleSheet IDs; previous file backed up as `config/samples.tsv.before_alllanes_20260603T103039Z` |
+| Live run retry 2 | `LAUNCHED` | same `dy-r` command; log `live_bclconvert_alllanes_16shard_retry2_20260603T103039Z.log` |
 | Acceptance | `PENDING` |  |
 
 ## Non-Intervention Boundary
