@@ -63,8 +63,6 @@ rule rtg_vcfstats_gather:
         MDIR + "other_reports/rtg_vcfstats_mqc.tsv"
     log:
         MDIR + "logs/rtg_vcfstats_gather.log"
-    benchmark:
-        MDIR + "benchmarks/rtg_vcfstats_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [

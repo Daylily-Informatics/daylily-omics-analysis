@@ -68,8 +68,6 @@ rule bcftools_variant_stats_gather:
         MDIR + "other_reports/bcftools_variant_stats_mqc.tsv"
     log:
         MDIR + "logs/bcftools_variant_stats_gather.log"
-    benchmark:
-        MDIR + "benchmarks/bcftools_variant_stats_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [

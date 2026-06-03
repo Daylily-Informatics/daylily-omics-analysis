@@ -115,6 +115,7 @@ rule quickmer2:
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/cnv/quickmer2/logs/{sample}.{alnr}.{ddup}.quickmer2.log",
     params:
+        cluster_sample=ret_sample,
         repo_dir=lambda wildcards: _quickmer2_repo_dir(),
         repo_url=lambda wildcards: _quickmer2_cfg().get(
             "repo_url", "https://github.com/KiddLab/QuicK-mer2.git"

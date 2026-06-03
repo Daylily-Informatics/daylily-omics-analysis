@@ -279,7 +279,9 @@ rule sentieon_cgt7p_bwa_sort:  # TARGET: Complete Genomics / MGI Sentieon bwa so
         echo "Elapsed-Time-min:\t$itype\t$elapsed_time" >> {log} 2>&1;
         """
 
-localrules: produce_sentieon_bwa_sort_bam,
+localrules:
+    produce_sentieon_bwa_sort_bam,
+    produce_sentieon_cgt7p_bwa_sort_bam,
 
 rule produce_sentieon_bwa_sort_bam:  # DEPRECATED TARGET: use produce_sent_align
     log:

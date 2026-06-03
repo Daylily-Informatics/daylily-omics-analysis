@@ -361,6 +361,8 @@ rule produce_deepug_vcf:  # TARGET: deep variant vcf
         MDIR + "benchmarks/produce_deepug_vcf.bench.tsv"
     conda:
         config['deepvariant']['deepug_conda']
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         # Convert VCF to BCF and index it
@@ -381,6 +383,7 @@ rule produce_deepug_vcf:  # TARGET: deep variant vcf
 
 
 localrules:
+    clear_combined_deepug_vcf,
     prep_deepug_chunkdirs,
 
 

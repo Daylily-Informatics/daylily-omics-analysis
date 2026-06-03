@@ -66,8 +66,6 @@ rule relatedness_batch_manifest:
         RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_manifest.tsv"
     log:
         MDIR + "logs/{alnr}.{ddup}.relatedness_batch_manifest.log"
-    benchmark:
-        MDIR + "benchmarks/{alnr}.{ddup}.relatedness_batch_manifest.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         with open(output[0], "w", newline="") as handle:
@@ -223,8 +221,6 @@ rule relatedness_batch_gather:
         MDIR + "other_reports/relatedness_mqc.tsv"
     log:
         MDIR + "logs/relatedness_batch_gather.log"
-    benchmark:
-        MDIR + "benchmarks/relatedness_batch_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [

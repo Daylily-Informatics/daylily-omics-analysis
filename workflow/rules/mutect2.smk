@@ -327,6 +327,8 @@ rule prep_mutect2_chunkdirs:
 
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.prep_mutect2_chunkdirs.bench.tsv"
+    params:
+        cluster_sample=ret_sample,
     shell:
         """
         ( echo {output}  ;

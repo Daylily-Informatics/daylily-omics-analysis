@@ -328,8 +328,6 @@ rule expansionhunter_gather:
         MDIR + "other_reports/expansionhunter_mqc.tsv"
     log:
         MDIR + "other_reports/logs/expansionhunter_gather.log"
-    benchmark:
-        MDIR + "benchmarks/expansionhunter_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         os.makedirs(os.path.dirname(str(log[0])), exist_ok=True)

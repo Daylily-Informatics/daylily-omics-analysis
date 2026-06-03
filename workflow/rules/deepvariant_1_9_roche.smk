@@ -316,6 +316,7 @@ rule produce_deep19_r_vcf:  # DEPRECATED TARGET: use produce_deep19r_snv_vcf
 
 
 localrules:
+    clear_combined_deep19_r_vcf,
     prep_deep19_r_chunkdirs,
     produce_deep19_r_vcf,
 

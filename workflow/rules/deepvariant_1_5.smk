@@ -320,6 +320,7 @@ rule produce_deep15_vcf:  # DEPRECATED TARGET: use produce_deep15_snv_vcf
 
 
 localrules:
+    clear_combined_deep15_vcf,
     prep_deep15_chunkdirs,
 
 

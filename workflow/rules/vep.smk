@@ -300,8 +300,6 @@ rule vep_annotation_gather:
         MDIR + "other_reports/vep_annotation_mqc.tsv",
     log:
         MDIR + "logs/vep_annotation_gather.log"
-    benchmark:
-        MDIR + "benchmarks/vep_annotation_gather.bench.tsv"
     run:
         os.makedirs(os.path.dirname(str(output[0])), exist_ok=True)
         fieldnames = [

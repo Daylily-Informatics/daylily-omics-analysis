@@ -373,6 +373,7 @@ include: "rules/workflow_target_aliases.smk"
 
 localrules:
     day,
+    all,
 
 
 rule day:  # TARGET: Synonym for all

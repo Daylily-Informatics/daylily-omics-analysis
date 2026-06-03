@@ -475,8 +475,6 @@ rule input_sample_libraries_custom_data:
         MDIR + "other_reports/input_sample_libraries_mqc.tsv"
     log:
         MDIR + "other_reports/logs/input_sample_libraries_custom_data.log"
-    benchmark:
-        MDIR + "benchmarks/input_sample_libraries_custom_data.bench.tsv"
     params:
         cluster_sample="input_sample_libraries",
     container: None

@@ -15,6 +15,8 @@ rule manta_get_centos_env:
         MDIR + "logs/manta_get_centos_env.log"
     benchmark:
         MDIR + "benchmarks/manta_get_centos_env.bench.tsv"
+    params:
+        cluster_sample="manta_get_centos_env",
     shell:
         "echo got it"
 

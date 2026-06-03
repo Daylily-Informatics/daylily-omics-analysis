@@ -189,8 +189,6 @@ localrules:
 rule util_ipython_shell:  # TARGET: opens an ipython embed session in the run block of the rule (this is the only run block in mg). you may open a global context ipython shell by setting --config ipython=yes.
     log:
         MDIR + "logs/util_ipython_shell.log"
-    benchmark:
-        MDIR + "benchmarks/util_ipython_shell.bench.tsv"
     run:
         from IPython import embed
         embed()
@@ -223,8 +221,6 @@ rule util_profile_config_reset:  # TARGET: clears all profile config files so th
     """ The active profile config will be regenerated from templates w next 'mod-run'. """
     log:
         MDIR + "logs/util_profile_config_reset.log"
-    benchmark:
-        MDIR + "benchmarks/util_profile_config_reset.bench.tsv"
     run:
         os.system(
             f"""echo $PWD; ((rm config/day_profiles/*/config.yaml && rm config/day_profiles/*/rule_config.yaml && rm config/day_profiles/*/cluster.yaml ) || colr 'no config to remove' "$DY_WT1" "$DY_WB1"); colr 'CONFIG FILES REMOVED' "$DY_WT0" "$DY_WB0" "$DY_WB0";"""

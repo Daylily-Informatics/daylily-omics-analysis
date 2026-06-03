@@ -11,6 +11,7 @@ DIRECTIVE_RE = re.compile(r"^    ([A-Za-z_][A-Za-z0-9_]*)\s*:")
 WILDCARD_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 ASSIGNMENT_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*=")
 FSTRING_PREFIX_RE = re.compile(r"(?P<prefix>\bf[ruRU]*|\b[ruRU]*f)(?P<quote>[\"'])", re.ASCII)
+LOCALRULES_RE = re.compile(r"^\s*localrules:\s*(.*)$")
 
 EXCLUDED_WILDCARD_NAMES = {
     "config",
@@ -44,6 +45,50 @@ def _collect_imported_files(path: Path, seen: set[Path] | None = None) -> list[P
         if match:
             files.extend(_collect_imported_files(_resolve_include(path, match.group(1)), seen))
     return files
+
+
+def _localrule_names_from_text(text: str) -> set[str]:
+    lines = text.splitlines()
+    names = set()
+    index = 0
+    while index < len(lines):
+        match = LOCALRULES_RE.match(lines[index])
+        if not match:
+            index += 1
+            continue
+
+        tail = match.group(1).strip()
+        if tail:
+            names.update(_parse_localrule_names(tail))
+            index += 1
+            continue
+
+        index += 1
+        while index < len(lines) and (
+            not lines[index].strip()
+            or lines[index].startswith(" ")
+            or lines[index].startswith("\t")
+        ):
+            names.update(_parse_localrule_names(lines[index]))
+            index += 1
+
+    return names
+
+
+def _parse_localrule_names(line: str) -> set[str]:
+    names = set()
+    for token in line.split("#", 1)[0].split(","):
+        token = token.strip()
+        if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token):
+            names.add(token)
+    return names
+
+
+def _localrules() -> set[str]:
+    names = set()
+    for path in _collect_imported_files(SNAKEFILE):
+        names.update(_localrule_names_from_text(path.read_text()))
+    return names
 
 
 def _rule_starts(lines: list[str]) -> list[tuple[int, str]]:
@@ -139,11 +184,48 @@ def _rules():
             yield relpath, rule_start + 1, rule_name, lines, directives
 
 
-def test_all_imported_rules_define_log_and_benchmark():
+def test_all_imported_rules_define_required_log_and_benchmark_directives():
     missing = []
     for relpath, line, rule_name, _lines, directives in _rules():
-        if "log" not in directives or "benchmark" not in directives:
+        if "log" not in directives:
+            missing.append(f"{relpath}:{line}:{rule_name}:log")
+        if "run" not in directives and "benchmark" not in directives:
+            missing.append(f"{relpath}:{line}:{rule_name}:benchmark")
+
+    assert missing == []
+
+
+def test_run_rules_do_not_define_benchmark():
+    offenders = []
+    for relpath, line, rule_name, _lines, directives in _rules():
+        if "run" in directives and "benchmark" in directives:
+            offenders.append(f"{relpath}:{line}:{rule_name}")
+
+    assert offenders == []
+
+
+def test_shell_rules_define_benchmark():
+    missing = []
+    for relpath, line, rule_name, _lines, directives in _rules():
+        if "shell" in directives and "benchmark" not in directives:
             missing.append(f"{relpath}:{line}:{rule_name}")
+
+    assert missing == []
+
+
+def test_nonlocal_rules_define_cluster_sample_param():
+    localrules = _localrules()
+    missing = []
+    for relpath, line, rule_name, lines, directives in _rules():
+        if rule_name in localrules:
+            continue
+        if "params" not in directives:
+            missing.append(f"{relpath}:{line}:{rule_name}:params")
+            continue
+        start, end = directives["params"]
+        params_block = "\n".join(lines[start:end])
+        if "cluster_sample" not in params_block:
+            missing.append(f"{relpath}:{line}:{rule_name}:cluster_sample")
 
     assert missing == []
 

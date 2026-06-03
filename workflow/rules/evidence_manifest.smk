@@ -52,8 +52,6 @@ rule write_dayoa_evidence_manifest:
         evidence_manifest=MDIR + "reports/dayoa_evidence_manifest.json",
     log:
         MDIR + "logs/write_dayoa_evidence_manifest.log"
-    benchmark:
-        MDIR + "benchmarks/write_dayoa_evidence_manifest.bench.tsv"
     params:
         multiqc_data_dir=MDIR + "reports/DAY_final_multiqc_data",
         cluster_sample="write_dayoa_evidence_manifest",
