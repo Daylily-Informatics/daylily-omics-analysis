@@ -590,6 +590,11 @@ assert "{params.force:q} {threads:q} {log:q}" not in text
 helper_text = Path("workflow/scripts/run_bclconvert_lane.sh").read_text()
 assert "expected 28 arguments" in helper_text
 assert "__dayoa_no_force__" in helper_text
+assert "trap cleanup_scratch EXIT" in helper_text
+assert "expected_scratch_prefix=" in helper_text
+assert "/dayoa_bclconvert_" in helper_text
+assert "rm -rf --" in helper_text
+assert "scratch_work_dir" in helper_text
 assert "find \"$final_output_dir\" -mindepth 1 ! -type d -print -quit" in helper_text
 assert "BCL output directory contains existing files; refusing to overwrite" in helper_text
 assert "find \"$run_output_dir\" -depth -type d -empty -delete" in helper_text

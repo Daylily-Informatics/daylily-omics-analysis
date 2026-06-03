@@ -39,6 +39,21 @@ final_output_dir="$lane_output_dir"
 run_output_dir="$final_output_dir"
 scratch_work_dir=""
 
+cleanup_scratch() {
+  local rc=$?
+  local expected_scratch_prefix
+  if [[ -n "$scratch_work_dir" && -d "$scratch_work_dir" ]]; then
+    expected_scratch_prefix="${scratch_output_root%/}/dayoa_bclconvert_"
+    if [[ -z "$scratch_output_root" || "$scratch_work_dir" != "$expected_scratch_prefix"* ]]; then
+      echo "refusing BCL scratch cleanup outside expected root after exit rc=$rc: $scratch_work_dir" >> "$log_path"
+      return
+    fi
+    echo "cleaning BCL scratch work directory after exit rc=$rc: $scratch_work_dir" >> "$log_path"
+    rm -rf -- "$scratch_work_dir"
+  fi
+}
+trap cleanup_scratch EXIT
+
 mkdir -p "$(dirname "$final_output_dir")" "$(dirname "$lane_sample_sheet")" "$(dirname "$log_path")"
 : > "$log_path"
 if [[ "$force_arg" == "__dayoa_no_force__" ]]; then

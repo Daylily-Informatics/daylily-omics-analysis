@@ -81,6 +81,9 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert 'if [[ "$#" -ne 28 ]]; then' in lane_helper
     assert "pass __dayoa_no_force__ or -f for the force argument" in lane_helper
     assert 'if [[ "$force_arg" == "__dayoa_no_force__" ]]; then' in lane_helper
+    assert "trap cleanup_scratch EXIT" in lane_helper
+    assert 'expected_scratch_prefix="${scratch_output_root%/}/dayoa_bclconvert_"' in lane_helper
+    assert 'rm -rf -- "$scratch_work_dir"' in lane_helper
     assert 'find "$final_output_dir" -mindepth 1 ! -type d -print -quit' in lane_helper
     assert "BCL output directory contains existing files; refusing to overwrite" in lane_helper
     assert 'find "$run_output_dir" -depth -type d -empty -delete' in lane_helper
