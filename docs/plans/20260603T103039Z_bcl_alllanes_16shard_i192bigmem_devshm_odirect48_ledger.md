@@ -56,7 +56,9 @@ Run the full `20260514_LH01106_0009_B23TVLGLT4` flowcell through DayOA BCL Conve
 | DayOA init retry with explicit license | `PASS` | `SENTIEON_LICENSE=/fsx/references/runtime_assets/cached_envs/Life_Sciences_Manufacturing_Corporation_eval.lic` after initial stale `x.lic` config blocker |
 | Headnode Daylily global license config | `PASS` | corrected `~/.config/daylily/daylily_cli_global.yaml` from missing `x.lic` to existing eval license; timestamped backup preserved |
 | Dry-run | `PASS` | `RC=0`; `128` `run_bclconvert_tile_shard`, `8` `merge_bclconvert_tile_shards`, `0` `run_bclconvert_lane`; `16` shards each for `L001`-`L008` |
-| Live run | `LAUNCHED` | `dy-r produce_bclconvert_fastqs -p -k -j 300 -T 0 --rerun-triggers mtime --configfile config/bclconvert_alllanes_16shard_i192bigmem_devshm_odirect48_20260603T103039Z.yaml` |
+| Live run initial attempt | `FAILED` | `RC=1`; no compute jobs submitted; `PermissionError` creating new DRA output dir under root-owned run dir |
+| DRA output dir precreate | `PASS` | `sudo mkdir -p` and `sudo chown ubuntu:ubuntu` for the new empty destination only |
+| Live run retry | `LAUNCHED` | same `dy-r` command; log `live_bclconvert_alllanes_16shard_retry1_20260603T103039Z.log` |
 | Acceptance | `PENDING` |  |
 
 ## Non-Intervention Boundary
