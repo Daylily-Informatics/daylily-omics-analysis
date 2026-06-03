@@ -66,8 +66,9 @@ def _derive_bclconvert_run_id(sample_sheet_path):
 
 
 BCLCFG = config.get("bclconvert", {})
+BCL_REQUESTED_TARGETS = _requested_targets()
 BCL_RUNTIME_VERSION = "4.0.3"
-BCL_TARGET_REQUESTED = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS)
+BCL_TARGET_REQUESTED = bool(BCL_REQUESTED_TARGETS & BCL_BOOTSTRAP_TARGETS)
 BCL_RUN_CONTEXT = run_context_for_platform("ILMN", require=False)
 if BCL_RUN_CONTEXT is not None and BCL_TARGET_REQUESTED:
     if not _filled(BCL_RUN_CONTEXT.get("RUN_DIR", "")):
@@ -188,6 +189,32 @@ BCL_SEQ_VENDOR = str(BCLCFG.get("seq_vendor", "ILMN") or "ILMN")
 BCL_SEQ_PLATFORM_OVERRIDE = str(BCLCFG.get("seq_platform_override", "") or "")
 BCL_CONTAINER_URI = f"docker://nfcore/bclconvert:{BCL_RUNTIME_VERSION}"
 DAYOA_BCLCONVERT_LANE_SPLIT = True
+DAYOA_BCLCONVERT_TILE_SHARDS = True
+BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane") or "lane").strip().lower()
+BCL_TILE_SHARD_LANES_RAW = BCLCFG.get("tile_shard_lanes", "")
+BCL_TILE_SHARD_TILE_LIMIT = _optional_nonnegative_int(
+    BCLCFG.get("tile_shard_tile_limit", 0),
+    name="tile_shard_tile_limit",
+)
+BCL_TILE_SHARD_TILE_NAMES_RAW = BCLCFG.get("tile_shard_tile_names", "")
+BCL_TILE_SHARD_THREADS = _intish(BCLCFG.get("tile_shard_threads", BCL_THREADS), BCL_THREADS)
+BCL_TILE_SHARD_MEM_MB = _intish(
+    BCLCFG.get("tile_shard_mem_mb", max(3000, BCL_MEM_MB // 4)),
+    max(3000, BCL_MEM_MB // 4),
+)
+BCL_TILE_PARALLEL_TILES = _intish(BCLCFG.get("tile_parallel_tiles", BCL_PARALLEL_TILES), BCL_PARALLEL_TILES)
+BCL_TILE_CONVERSION_THREADS = _intish(
+    BCLCFG.get("tile_conversion_threads", BCL_CONVERSION_THREADS),
+    BCL_CONVERSION_THREADS,
+)
+BCL_TILE_COMPRESSION_THREADS = _intish(
+    BCLCFG.get("tile_compression_threads", BCL_COMPRESSION_THREADS),
+    BCL_COMPRESSION_THREADS,
+)
+BCL_TILE_DECOMPRESSION_THREADS = _intish(
+    BCLCFG.get("tile_decompression_threads", BCL_DECOMPRESSION_THREADS),
+    BCL_DECOMPRESSION_THREADS,
+)
 
 # Barcode mismatch settings are injected through the lane sample sheet so the
 # container sees the same BCL Convert contract on every lane. Other settings use
@@ -253,7 +280,13 @@ BCL_SAMPLE_SHEET_SETTINGS_JSON = json.dumps(BCL_SAMPLE_SHEET_SETTINGS, sort_keys
 BCL_SAMPLE_SHEET_SETTINGS_BY_LANE_JSON = json.dumps(BCL_SAMPLE_SHEET_SETTINGS_BY_LANE, sort_keys=True)
 
 BCL_LANE_ROOT = Path(BCL_RUN_DIR) / "Data" / "Intensities" / "BaseCalls"
-if BCL_TARGET_REQUESTED:
+BCL_DISCOVER_LANES_FOR_TARGET = BCL_TARGET_REQUESTED or (
+    bool(BCL_REQUESTED_TARGETS)
+    and bool(BCLCFG)
+    and _filled(BCL_RUN_DIR)
+    and BCL_TILE_SHARD_LANES_RAW in (None, "", "None", [])
+)
+if BCL_DISCOVER_LANES_FOR_TARGET:
     if not BCL_LANE_ROOT.is_dir():
         raise WorkflowError(f"BCL run directory is missing lane root: {BCL_LANE_ROOT}")
     BCL_LANES = sorted(
@@ -272,32 +305,6 @@ BCL_LANE_FASTQ_LIST_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/fast
 BCL_LANE_DEMUX_STATS_FILES = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports/Demultiplex_Stats.csv", lane=BCL_LANES)
 BCL_LANE_SAMPLE_SHEET_FILES = expand(f"{BCL_LANE_REPORT_ROOT}/{{lane}}/SampleSheet.csv", lane=BCL_LANES)
 BCL_LANE_REPORT_DIRS = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports", lane=BCL_LANES)
-DAYOA_BCLCONVERT_TILE_SHARDS = True
-BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane") or "lane").strip().lower()
-BCL_TILE_SHARD_LANES_RAW = BCLCFG.get("tile_shard_lanes", "")
-BCL_TILE_SHARD_TILE_LIMIT = _optional_nonnegative_int(
-    BCLCFG.get("tile_shard_tile_limit", 0),
-    name="tile_shard_tile_limit",
-)
-BCL_TILE_SHARD_TILE_NAMES_RAW = BCLCFG.get("tile_shard_tile_names", "")
-BCL_TILE_SHARD_THREADS = _intish(BCLCFG.get("tile_shard_threads", BCL_THREADS), BCL_THREADS)
-BCL_TILE_SHARD_MEM_MB = _intish(
-    BCLCFG.get("tile_shard_mem_mb", max(3000, BCL_MEM_MB // 4)),
-    max(3000, BCL_MEM_MB // 4),
-)
-BCL_TILE_PARALLEL_TILES = _intish(BCLCFG.get("tile_parallel_tiles", BCL_PARALLEL_TILES), BCL_PARALLEL_TILES)
-BCL_TILE_CONVERSION_THREADS = _intish(
-    BCLCFG.get("tile_conversion_threads", BCL_CONVERSION_THREADS),
-    BCL_CONVERSION_THREADS,
-)
-BCL_TILE_COMPRESSION_THREADS = _intish(
-    BCLCFG.get("tile_compression_threads", BCL_COMPRESSION_THREADS),
-    BCL_COMPRESSION_THREADS,
-)
-BCL_TILE_DECOMPRESSION_THREADS = _intish(
-    BCLCFG.get("tile_decompression_threads", BCL_DECOMPRESSION_THREADS),
-    BCL_DECOMPRESSION_THREADS,
-)
 
 
 def _bcl_lane_name(value):

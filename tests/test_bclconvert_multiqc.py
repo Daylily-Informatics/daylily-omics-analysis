@@ -37,7 +37,8 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
 
     assert 'BCL_RUN_CONTEXT = run_context_for_platform("ILMN", require=False)' in rule
     assert 'BCL_RUNTIME_VERSION = "4.0.3"' in rule
-    assert "BCL_TARGET_REQUESTED = bool(_requested_targets() & BCL_BOOTSTRAP_TARGETS)" in rule
+    assert "BCL_REQUESTED_TARGETS = _requested_targets()" in rule
+    assert "BCL_TARGET_REQUESTED = bool(BCL_REQUESTED_TARGETS & BCL_BOOTSTRAP_TARGETS)" in rule
     assert 'BCL_ROOT = (' in rule
     assert 'f"{BCL_OUTPUT_ROOT}/bclconvert"' in rule
     assert 'f"{BCL_ROOT}/fastqs"' in rule
@@ -49,6 +50,9 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "bcl_extra_args={params.extra_args:q}" in rule
     assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in rule
     assert "DAYOA_BCLCONVERT_TILE_SHARDS = True" in rule
+    assert "BCL_DISCOVER_LANES_FOR_TARGET = BCL_TARGET_REQUESTED or (" in rule
+    assert "bool(BCL_REQUESTED_TARGETS)" in rule
+    assert 'and BCL_TILE_SHARD_LANES_RAW in (None, "", "None", [])' in rule
     assert 'BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane")' in rule
     assert "BCL_TILE_SHARD_TILE_LIMIT = _optional_nonnegative_int" in rule
     assert 'BCL_TILE_SHARD_TILE_NAMES_RAW = BCLCFG.get("tile_shard_tile_names", "")' in rule
