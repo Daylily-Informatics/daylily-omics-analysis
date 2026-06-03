@@ -242,7 +242,7 @@ rule test_benchmark:
     resources:
         vcpu=2,
         threads=2,
-        partition="i8,i128,i192,i192mem"
+        partition="i8,i128,i192,i192mem,bcl2fq-i384-nvme-test"
     log:
         MDIR + "logs/test_benchmark.log"
     benchmark:
