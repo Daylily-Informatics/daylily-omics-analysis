@@ -592,6 +592,9 @@ assert "expected 28 arguments" in helper_text
 assert "__dayoa_no_force__" in helper_text
 assert "find \"$final_output_dir\" -mindepth 1 ! -type d -print -quit" in helper_text
 assert "BCL output directory contains existing files; refusing to overwrite" in helper_text
+assert "find \"$run_output_dir\" -depth -type d -empty -delete" in helper_text
+assert "BCL run output directory exists after empty skeleton cleanup" in helper_text
+assert "mkdir -p \"$run_output_dir\"" not in helper_text
 assert "rule bclconvert_demux_fastq_qc:" in text
 assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in text
 assert "BCL_DEMUX_FASTQC_MQC" in text

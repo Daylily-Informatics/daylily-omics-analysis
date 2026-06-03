@@ -73,7 +73,7 @@ if [[ -n "$scratch_output_root" ]]; then
     echo "Scratch work directory already exists; refusing to overwrite: $scratch_work_dir" >> "$log_path"
     exit 2
   fi
-  mkdir -p "$run_output_dir"
+  mkdir -p "$scratch_work_dir"
   if [[ "$scratch_available_bytes_min" -gt 0 ]]; then
     scratch_available_bytes="$(df -PB1 "$scratch_output_root" | awk 'NR == 2 {print $4}')"
     echo "scratch_available_bytes: ${scratch_available_bytes:-<unknown>}" >> "$log_path"
@@ -88,7 +88,14 @@ if [[ -n "$scratch_output_root" ]]; then
     fi
   fi
 else
-  mkdir -p "$run_output_dir"
+  mkdir -p "$(dirname "$run_output_dir")"
+fi
+if [[ -d "$run_output_dir" ]]; then
+  find "$run_output_dir" -depth -type d -empty -delete 2>/dev/null || true
+fi
+if [[ -e "$run_output_dir" ]]; then
+  echo "BCL run output directory exists after empty skeleton cleanup; refusing to overwrite: $run_output_dir" >> "$log_path"
+  exit 2
 fi
 
 python workflow/scripts/prepare_bclconvert_lane_samplesheet.py \
@@ -117,7 +124,7 @@ echo "sample_sheet_settings_by_lane_json: $sample_sheet_settings_by_lane_json" >
 echo "output_legacy_stats: $output_legacy_stats" >> "$log_path"
 echo "num_unknown_barcodes_reported: $num_unknown_barcodes_reported" >> "$log_path"
 nproc >> "$log_path" 2>&1 || true
-df -h "$TMPDIR" "$run_dir" "$run_output_dir" "$(dirname "$final_output_dir")" >> "$log_path" 2>&1 || true
+df -h "$TMPDIR" "$run_dir" "$(dirname "$run_output_dir")" "$(dirname "$final_output_dir")" >> "$log_path" 2>&1 || true
 command -v singularity >> "$log_path" 2>&1
 singularity_bind_args=(--bind /fsx:/fsx)
 if [[ -n "$scratch_output_root" ]]; then

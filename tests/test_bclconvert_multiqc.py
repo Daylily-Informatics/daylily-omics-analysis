@@ -83,6 +83,9 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert 'if [[ "$force_arg" == "__dayoa_no_force__" ]]; then' in lane_helper
     assert 'find "$final_output_dir" -mindepth 1 ! -type d -print -quit' in lane_helper
     assert "BCL output directory contains existing files; refusing to overwrite" in lane_helper
+    assert 'find "$run_output_dir" -depth -type d -empty -delete' in lane_helper
+    assert "BCL run output directory exists after empty skeleton cleanup" in lane_helper
+    assert 'mkdir -p "$run_output_dir"' not in lane_helper
     assert "bclconvert.scratch_output_root must be an absolute path" in lane_helper
     assert "BCL scratch output root free bytes below required minimum" in lane_helper
     assert 'rsync -a --remove-source-files --human-readable --stats "$run_output_dir/" "$final_output_dir/"' in lane_helper
