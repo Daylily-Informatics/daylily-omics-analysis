@@ -39,7 +39,7 @@ fi
 
 # Function to display usage
 usage() {
-    echo "This script initializes the Day CLI (commands aliased to dy-* )."
+    echo "This script initializes the Day CLI and adds bin/ command links to PATH."
     echo "Region is autodetected as $region"
     echo "Usage: source $0 [--project <project_name>] [--skip-project-check]"
     echo "If --project is not specified, the default budget for the region is used: daylily-omics-analysis-${region}."
@@ -441,21 +441,6 @@ if [[ -f "bin/tabcomp.bash" ]]; then
 else
     echo "Warning: Tab completion script not found at bin/tabcomp.bash"
 fi
-
-# Define aliases
-alias day-activate="source bin/day_activate"
-alias day-deactivate="source bin/day_deactivate"
-alias day-run="bin/day_run"
-alias day-monitor="bin/day_monitor"
-alias dy-a="source bin/day_activate"
-alias dy-d="source bin/day_deactivate"
-alias dy-r="bin/day_run"
-alias dy-m="bin/day_monitor"
-alias day-help="bin/day_run help"
-alias dy-h="bin/day_run help"
-alias day-set-genome-build="source bin/day_set_genome_build"
-alias dy-g="source bin/day_set_genome_build"
-
 
 # Display help if requested
 if [[ "${1:-}" =~ ^(-h|--help|help)$ ]]; then

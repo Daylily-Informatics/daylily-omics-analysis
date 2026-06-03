@@ -6,7 +6,7 @@ DayOA CLI work starts in the `DAY-EC` conda environment. On a Mac, activate it b
 eval "$(conda shell.zsh hook)" && conda activate DAY-EC
 ```
 
-Every DayOA command session has three explicit steps. Run them as separate commands so shell functions, aliases, profile variables, and error codes are visible:
+Every DayOA command session has three explicit steps. Run them as separate commands so command links, profile variables, and error codes are visible:
 
 ```bash
 source dyoainit
@@ -17,7 +17,7 @@ dy-r produce_multiqc_all -n -p -j 1
 
 ## Command Model
 
-`source dyoainit` initializes the repository shell state and defines DayOA helper aliases. `dy-a <profile> <build>` activates one configured profile such as `local hg38`, `slurm hg38`, or `slurm hg38_broad`. `dy-r <target> <flags>` is the supported DayOA wrapper for workflow execution; it passes targets and flags through to Snakemake after applying the DayOA profile contract.
+`source dyoainit` initializes the repository shell state and adds `bin/` to `PATH`. The `dy-*` commands are file-backed links in `bin/`: `dy-a <profile> <build>` activates one configured profile such as `local hg38`, `slurm hg38`, or `slurm hg38_broad`, while `dy-r <target> <flags>` is the supported DayOA wrapper for workflow execution. These commands are also installed into the active environment's `bin/` directory when the DayOA package is installed with `pip`. `dy-r` passes targets and flags through to Snakemake after applying the DayOA profile contract.
 
 Agent/headnode workflow instructions must use `dy-r` instead of calling `snakemake` directly. Direct Snakemake invocations bypass the wrapper contract that operators use for profile, logging, benchmark, and Slurm behavior.
 

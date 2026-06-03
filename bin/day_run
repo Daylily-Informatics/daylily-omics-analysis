@@ -22,6 +22,14 @@ if [[ "${DAY_REMOTE_EXE:-}" == "remote" ]]; then
     conda activate DAYOA
 fi
 
+if [[ -z "${DAY_PROFILE:-}" || -z "${DAY_PROFILE_DIR:-}" || -z "${DAY_GENOME_BUILD:-}" ]]; then
+    if [[ -n "${DAY_ROOT:-}" && -f "$DAY_ROOT/.dayoa_env.bash" ]]; then
+        source "$DAY_ROOT/.dayoa_env.bash"
+    elif [[ -f ".dayoa_env.bash" ]]; then
+        source ".dayoa_env.bash"
+    fi
+fi
+
 if [[ -z "${DAY_ROOT:-}" || -z "${DAY_PROFILE:-}" || -z "${DAY_PROFILE_DIR:-}" ]]; then
     colr "ERROR: . dayiniy && day-activate [local|slurm] needs to have been run prior to day-run."  "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
     exit 33

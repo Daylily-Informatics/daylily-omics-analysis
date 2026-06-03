@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Test suite for Daylily CLI commands
-# Tests: day-activate, day-run, day-monitor, day-set-genome-build, day-deactivate
+# Tests: day-activate, day-run, day-monitor, day-set-genome-build, day-deactivate, dy-* links
 
 set -u
 
@@ -175,16 +175,27 @@ test_day_deactivate_exists() {
   test_result "day-deactivate exists" $?
 }
 
-# Test 14: dyoainit defines day-monitor alias
-test_dyoainit_monitor_alias() {
-  grep -q 'alias day-monitor="bin/day_monitor"' dyoainit
-  test_result "dyoainit defines day-monitor alias" $?
+# Test 14: dyoainit does not define DayOA aliases
+test_dyoainit_has_no_dayoa_aliases() {
+  ! grep -qE '^alias (day-|dy-)' dyoainit
+  test_result "dyoainit has no DayOA aliases" $?
 }
 
-# Test 15: dyoainit defines dy-m alias
-test_dyoainit_dy_m_alias() {
-  grep -q 'alias dy-m="bin/day_monitor"' dyoainit
-  test_result "dyoainit defines dy-m alias" $?
+# Test 15: dy-* commands are bin links
+test_dy_command_links() {
+  [[ "$(readlink bin/dy-a)" == "day_activate" ]] &&
+    [[ -x bin/dy-a ]] &&
+    [[ "$(readlink bin/dy-d)" == "day_deactivate" ]] &&
+    [[ -x bin/dy-d ]] &&
+    [[ "$(readlink bin/dy-g)" == "day_set_genome_build" ]] &&
+    [[ -x bin/dy-g ]] &&
+    [[ "$(readlink bin/dy-h)" == "day_help" ]] &&
+    [[ -x bin/dy-h ]] &&
+    [[ "$(readlink bin/dy-m)" == "day_monitor" ]] &&
+    [[ -x bin/dy-m ]] &&
+    [[ "$(readlink bin/dy-r)" == "day_run" ]] &&
+    [[ -x bin/dy-r ]]
+  test_result "dy-* commands are bin links" $?
 }
 
 # Test 16: tabcomp.bash has monitor completion
@@ -292,8 +303,8 @@ main() {
   test_day_run_version
   test_day_set_genome_build_exists
   test_day_deactivate_exists
-  test_dyoainit_monitor_alias
-  test_dyoainit_dy_m_alias
+  test_dyoainit_has_no_dayoa_aliases
+  test_dy_command_links
   test_tabcomp_monitor_completion
   test_tabcomp_monitor_registration
   test_tabcomp_day_run_version_completion

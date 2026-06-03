@@ -78,7 +78,7 @@ _dym() {
 complete -F _dya day-activate dy-a day_activate
 complete -F _dyb day-build day_build dy-b
 complete -F _dyd day-deactivate day_deactivate dy-d
-complete -F _dyr day-run dy-r
+complete -F _dyr day-run dy-r day-help dy-h
 complete -F _dym day-monitor dy-m
 complete -F _scc day-script-cmds
-complete -F _dyg gay-set-genome-build dy-g
+complete -F _dyg day-set-genome-build dy-g

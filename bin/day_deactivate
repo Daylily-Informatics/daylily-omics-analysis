@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 
 # day_deactivate: Deactivate the Daylily environment
-# This script must be sourced, not executed directly.
+# This script can be sourced to clear the current shell, or executed to clear
+# persisted DayOA CLI state for executable dy-* links.
 
-# Ensure the script is sourced
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "Error: This script must be sourced, not executed directly."
-    echo "Usage: source $0 [reset|--help]"
-    return 1
-fi
+_day_deactivate_main() {
+day_deactivate_arg="${1:-}"
 
 # Function to display usage information
 usage() {
@@ -28,7 +25,7 @@ usage() {
 }
 
 # Handle input arguments
-case "$1" in
+case "$day_deactivate_arg" in
     reset|RESET)
         # Reset the command line prompt to default
         export PS1="[\h \A \W]\$ "
@@ -50,13 +47,14 @@ case "$1" in
 esac
 
 # Restore original PATH if it was saved
-if [[ -n "$ORIG_PATH" ]]; then
+if [[ -n "${ORIG_PATH:-}" ]]; then
     export PATH="$ORIG_PATH"
     unset ORIG_PATH
 fi
 
 # Remove DAY_ROOT/bin from PATH if DAY_ROOT is set
-if [[ -n "$DAY_ROOT" ]]; then
+if [[ -n "${DAY_ROOT:-}" ]]; then
+    rm -f "$DAY_ROOT/.dayoa_env.bash"
     export PATH="${PATH//:$DAY_ROOT\/bin/}"
     export PATH="${PATH//$DAY_ROOT\/bin:/}"
     export PATH="${PATH//$DAY_ROOT\/bin/}"
@@ -73,7 +71,7 @@ unalias dy-d 2>/dev/null
 unalias dy-r 2>/dev/null
 
 # Restore original PS1 if it was saved
-if [[ -n "$ORIG_PS1" ]]; then
+if [[ -n "${ORIG_PS1:-}" ]]; then
     export PS1="$ORIG_PS1"
     unset ORIG_PS1
 else
@@ -84,7 +82,7 @@ fi
 reset
 
 # Unset environment variables unless called with 'activate'
-if [[ "$1" != "activate" ]]; then
+if [[ "$day_deactivate_arg" != "activate" ]]; then
     unset DAY_ROOT
     unset DAY_PROFILE
     unset DAY_BIOME
@@ -106,15 +104,23 @@ else
 fi
 
 # Final message
-if [[ "$1" != "activate" ]]; then
+if [[ "$day_deactivate_arg" != "activate" ]]; then
     echo "Successfully cleared DAY_ROOT, DAY_BIOME, and DAY_PROFILE."
 fi
 
 # Suggest reset if needed
-if [[ "$1" != "activate" && "$1" != "reset" ]]; then
+if [[ "$day_deactivate_arg" != "activate" && "$day_deactivate_arg" != "reset" ]]; then
     echo ""
     echo "If the deactivate command did not fully reset your shell prompt, try:"
     echo "  source dyoainit; day-deactivate reset"
 fi
 
 return 0
+}
+
+_day_deactivate_main "$@"
+_day_deactivate_status=$?
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    exit "$_day_deactivate_status"
+fi
+return "$_day_deactivate_status"

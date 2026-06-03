@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import os
 import re
 import subprocess
@@ -7,10 +8,45 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+DAYOA_CLI_SCRIPT_PATHS = {
+    "bin/day_activate",
+    "bin/day_deactivate",
+    "bin/day_help",
+    "bin/day_monitor",
+    "bin/day_run",
+    "bin/day_set_genome_build",
+    "bin/day-activate",
+    "bin/day-deactivate",
+    "bin/day-help",
+    "bin/day-monitor",
+    "bin/day-run",
+    "bin/day-set-genome-build",
+    "bin/dy-a",
+    "bin/dy-d",
+    "bin/dy-g",
+    "bin/dy-h",
+    "bin/dy-m",
+    "bin/dy-r",
+}
 
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
+
+
+def _setup_cli_scripts() -> set[str]:
+    tree = ast.parse(_read("setup.py"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "DAYOA_CLI_SCRIPTS":
+                    value = ast.literal_eval(node.value)
+                    return set(value)
+    raise AssertionError("DAYOA_CLI_SCRIPTS is missing from setup.py")
+
+
+def test_pip_install_installs_dayoa_cli_commands_into_environment_path() -> None:
+    assert _setup_cli_scripts() == DAYOA_CLI_SCRIPT_PATHS
 
 
 def test_openai_token_helper_copies_to_ubuntu_path_and_exports_env(
@@ -261,8 +297,8 @@ def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     assert "${PS1:-}" in dyoainit
     assert "${SHELL:-}" in dyoainit
     assert "${1:-}" in dyoainit
-    assert 'alias day-help="bin/day_run help"' in dyoainit
-    assert 'alias dy-h="bin/day_run help"' in dyoainit
+    assert "alias dy-" not in dyoainit
+    assert "alias day-" not in dyoainit
     assert 'alias dy-h="echo hello"' not in dyoainit
 
 
@@ -367,6 +403,9 @@ def test_shell_wrappers_have_valid_bash_syntax() -> None:
     for path in (
         "bin/day_run",
         "bin/day_activate",
+        "bin/day_deactivate",
+        "bin/day_set_genome_build",
+        "bin/day_help",
         "bin/util/profile_freshness_warn.bash",
         "dyoainit",
     ):

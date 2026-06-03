@@ -1,12 +1,25 @@
 #!/usr/bin/env bash
 
 
+_day_set_genome_build_main() {
+day_genome_build_arg="${1:-}"
 
-if [[ "$1" == "b37" ]]; then
+if ! command -v colr >/dev/null 2>&1; then
+    colr() {
+        if [[ "${1:-}" == "-n" ]]; then
+            shift
+            printf "%s" "${1:-}"
+        else
+            printf "%s\n" "${1:-}"
+        fi
+    }
+fi
+
+if [[ "$day_genome_build_arg" == "b37" ]]; then
     export DAY_GENOME_BUILD="b37"
-elif [[ "$1" == "hg38" ]]; then
+elif [[ "$day_genome_build_arg" == "hg38" ]]; then
     export DAY_GENOME_BUILD="hg38"
-elif [[ "$1" == "hg38_broad" ]]; then
+elif [[ "$day_genome_build_arg" == "hg38_broad" ]]; then
     export DAY_GENOME_BUILD="hg38_broad"
 else
     unset DAY_GENOME_BUILD
@@ -16,3 +29,25 @@ fi
 
 colr -n " > >> >>> " "$DY_IB0" "$DY_IT0" "$DY_IS0" 1>&2
 colr "  genome build set to ::: $DAY_GENOME_BUILD  " "$DY_IT0" "$DY_IB0" "$DY_IS1" 1>&2
+
+if [[ -n "${DAY_ROOT:-}" ]]; then
+    dayoa_state_file="$DAY_ROOT/.dayoa_env.bash"
+    if [[ -f "$dayoa_state_file" ]]; then
+        tmp_state_file="${dayoa_state_file}.tmp"
+        grep -v '^export DAY_GENOME_BUILD=' "$dayoa_state_file" > "$tmp_state_file" || true
+        printf 'export DAY_GENOME_BUILD=%q\n' "$DAY_GENOME_BUILD" >> "$tmp_state_file" || return 3
+        mv "$tmp_state_file" "$dayoa_state_file" || return 3
+    else
+        printf 'export DAY_ROOT=%q\nexport DAY_GENOME_BUILD=%q\n' "$DAY_ROOT" "$DAY_GENOME_BUILD" > "$dayoa_state_file" || return 3
+    fi
+fi
+
+return 0
+}
+
+_day_set_genome_build_main "$@"
+_day_set_genome_build_status=$?
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    exit "$_day_set_genome_build_status"
+fi
+return "$_day_set_genome_build_status"
