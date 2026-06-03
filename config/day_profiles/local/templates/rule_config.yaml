@@ -136,6 +136,8 @@ bclconvert:
     decompression_threads: 1
     tile_shard_level: "lane"
     tile_shard_lanes: ""
+    tile_shard_tile_limit: 0
+    tile_shard_tile_names: ""
     tile_shard_threads: 7
     tile_shard_mem_mb: 16000
     tile_parallel_tiles: 1

@@ -575,6 +575,9 @@ assert "workflow/scripts/merge_bclconvert_lanes.py" in text
 assert "workflow/scripts/merge_bclconvert_tile_shards.py" in text
 assert "run_bclconvert_lane_fastqs_ready" in text
 assert "BCL_TILE_SHARD_LEVEL" in text
+assert "BCL_TILE_SHARD_TILE_LIMIT" in text
+assert "BCL_TILE_SHARD_TILE_NAMES_RAW" in text
+assert "tile_smoke" in text
 assert "BCL_TILE_SHARD_REGEX" in text
 assert "BCL_TILE_REGEX_BY_KEY" in text
 assert "BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES" in text

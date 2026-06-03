@@ -50,6 +50,10 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in rule
     assert "DAYOA_BCLCONVERT_TILE_SHARDS = True" in rule
     assert 'BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane")' in rule
+    assert "BCL_TILE_SHARD_TILE_LIMIT = _optional_nonnegative_int" in rule
+    assert 'BCL_TILE_SHARD_TILE_NAMES_RAW = BCLCFG.get("tile_shard_tile_names", "")' in rule
+    assert 'if BCL_TILE_SHARD_LEVEL in {"tile_smoke", "tiles", "selected_tiles"}:' in rule
+    assert "bclconvert.tile_shard_level=tile_smoke requires tile_shard_tile_limit" in rule
     assert 'return "+".join(re.escape(name) for name in tile_names)' in rule
     assert 'BCL_TILE_SHARD_REGEX = "|".join(re.escape(row["shard"])' in rule
     assert 'BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)' in rule
@@ -212,6 +216,8 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert profile["bclconvert"]["merge_tile_fastqs"] is False
         assert profile["bclconvert"]["tile_shard_level"] == "lane"
         assert profile["bclconvert"]["tile_shard_lanes"] == ""
+        assert profile["bclconvert"]["tile_shard_tile_limit"] == 0
+        assert profile["bclconvert"]["tile_shard_tile_names"] == ""
         assert profile["bclconvert"]["constraint"] == ""
         assert profile["bclconvert"]["scratch_output_root"] == ""
         assert "tile_shard_threads" in profile["bclconvert"]

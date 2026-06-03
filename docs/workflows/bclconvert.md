@@ -52,6 +52,8 @@ bclconvert:
 
 DayOA discovers exact tile names from `Data/Intensities/BaseCalls/L###/*.filter`, balances them across zero-padded shard names such as `0001_tiles0001-0020`, and passes the exact shard tile set to BCL Convert with `--tiles`. After every shard for a lane finishes, `merge_bclconvert_tile_shards` aggregates lane-level reports and writes a lane-level `fastq_list.csv` that references the unmerged tile-shard FASTQs. Generated units collapse those rows into comma-separated R1/R2 FASTQ path lists per sample/lane. Downstream generated units, demux metrics, FastQC, and MultiQC continue to consume the lane-level reports.
 
+For small diagnostic BCL Convert probes, set `tile_shard_level: "tile_smoke"` with either `tile_shard_tile_limit` or `tile_shard_tile_names`. `tile_smoke` creates exactly one tile-shard job for the selected lane tiles and fails at DAG construction if no explicit tile selection is configured.
+
 Set `bclconvert.merge_tile_fastqs: true` only when a consumer explicitly needs one R1/R2 FASTQ pair per sample/lane. In that mode `merge_bclconvert_tile_shards` concatenates shard FASTQs in shard-name order before writing the lane-level `fastq_list.csv`.
 
 `bclconvert.shared_thread_odirect_output` defaults to `auto`: DayOA passes `--shared-thread-odirect-output true` when tile sharding is active and `false` for direct whole-lane BCL Convert. Set `shared_thread_odirect_output: true` or `false` to override the auto choice.

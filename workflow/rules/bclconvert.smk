@@ -19,6 +19,18 @@ def _intish(value, default):
         return default
 
 
+def _optional_nonnegative_int(value, *, name):
+    if value in (None, "", "None"):
+        return 0
+    try:
+        parsed = int(str(value).strip())
+    except Exception as exc:
+        raise WorkflowError(f"bclconvert.{name} must be a non-negative integer") from exc
+    if parsed < 0:
+        raise WorkflowError(f"bclconvert.{name} must be a non-negative integer")
+    return parsed
+
+
 def _sanitize_run_id(value):
     text = str(value or "").strip()
     if text == "":
@@ -262,6 +274,11 @@ BCL_LANE_REPORT_DIRS = expand(f"{BCL_LANE_FASTQ_ROOT}/{{lane}}/Reports", lane=BC
 DAYOA_BCLCONVERT_TILE_SHARDS = True
 BCL_TILE_SHARD_LEVEL = str(BCLCFG.get("tile_shard_level", "lane") or "lane").strip().lower()
 BCL_TILE_SHARD_LANES_RAW = BCLCFG.get("tile_shard_lanes", "")
+BCL_TILE_SHARD_TILE_LIMIT = _optional_nonnegative_int(
+    BCLCFG.get("tile_shard_tile_limit", 0),
+    name="tile_shard_tile_limit",
+)
+BCL_TILE_SHARD_TILE_NAMES_RAW = BCLCFG.get("tile_shard_tile_names", "")
 BCL_TILE_SHARD_THREADS = _intish(BCLCFG.get("tile_shard_threads", BCL_THREADS), BCL_THREADS)
 BCL_TILE_SHARD_MEM_MB = _intish(
     BCLCFG.get("tile_shard_mem_mb", max(3000, BCL_MEM_MB // 4)),
@@ -331,12 +348,56 @@ def _bcl_lane_tile_names(lane):
     return names
 
 
+def _bcl_config_tile_names(raw, lane):
+    if raw in (None, "", "None", []):
+        return []
+    values = [part.strip() for part in raw.split(",") if part.strip()] if isinstance(raw, str) else list(raw)
+    lane_num = int(lane[1:])
+    names = []
+    for value in values:
+        text = str(value or "").strip()
+        if not text:
+            continue
+        if re.fullmatch(r"[0-9]+", text):
+            text = f"s_{lane_num}_{int(text):04d}"
+        if not re.fullmatch(rf"s_{lane_num}_[0-9]{{4}}", text):
+            raise WorkflowError(
+                "bclconvert.tile_shard_tile_names entries must be numeric tile ids "
+                f"or exact {lane} tile names like s_{lane_num}_0001"
+            )
+        names.append(text)
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    if duplicates:
+        raise WorkflowError("bclconvert.tile_shard_tile_names contains duplicates: " + ",".join(duplicates))
+    return names
+
+
+def _bcl_selected_tile_names(lane, discovered_tile_names):
+    configured = _bcl_config_tile_names(BCL_TILE_SHARD_TILE_NAMES_RAW, lane)
+    if configured:
+        missing = sorted(set(configured) - set(discovered_tile_names))
+        if missing:
+            raise WorkflowError(
+                "bclconvert.tile_shard_tile_names includes absent tiles for "
+                f"{lane}: " + ",".join(missing)
+            )
+        return configured
+    if BCL_TILE_SHARD_TILE_LIMIT:
+        if BCL_TILE_SHARD_TILE_LIMIT > len(discovered_tile_names):
+            raise WorkflowError(
+                f"bclconvert.tile_shard_tile_limit={BCL_TILE_SHARD_TILE_LIMIT} exceeds "
+                f"{lane} discovered tile count {len(discovered_tile_names)}"
+            )
+        return discovered_tile_names[:BCL_TILE_SHARD_TILE_LIMIT]
+    return discovered_tile_names
+
+
 def _bcl_exact_tile_regex(tile_names):
     return "+".join(re.escape(name) for name in tile_names)
 
 
 def _bcl_balanced_tile_shards(lane, shard_count):
-    tile_names = _bcl_lane_tile_names(lane)
+    tile_names = _bcl_selected_tile_names(lane, _bcl_lane_tile_names(lane))
     tile_count = len(tile_names)
     if shard_count < 2:
         return []
@@ -365,6 +426,19 @@ def _bcl_balanced_tile_shards(lane, shard_count):
 def _bcl_tile_shards_for_lane(lane):
     if BCL_TILE_SHARD_LEVEL in {"", "0", "1", "lane", "none", "false"}:
         return []
+    if BCL_TILE_SHARD_LEVEL in {"tile_smoke", "tiles", "selected_tiles"}:
+        tile_names = _bcl_selected_tile_names(lane, _bcl_lane_tile_names(lane))
+        if not (BCL_TILE_SHARD_TILE_LIMIT or _bcl_config_tile_names(BCL_TILE_SHARD_TILE_NAMES_RAW, lane)):
+            raise WorkflowError(
+                "bclconvert.tile_shard_level=tile_smoke requires tile_shard_tile_limit "
+                "or tile_shard_tile_names"
+            )
+        return [
+            {
+                "shard": f"0001_tiles0001-{len(tile_names):04d}",
+                "tiles": _bcl_exact_tile_regex(tile_names),
+            }
+        ]
     if BCL_TILE_SHARD_LEVEL.isdigit():
         return _bcl_balanced_tile_shards(lane, int(BCL_TILE_SHARD_LEVEL))
     if BCL_TILE_SHARD_LEVEL in {"2", "surface"}:
@@ -374,7 +448,7 @@ def _bcl_tile_shards_for_lane(lane):
     if BCL_TILE_SHARD_LEVEL in {"8", "swath", "surface_swath", "surface-swath"}:
         return _bcl_balanced_tile_shards(lane, 8)
     raise WorkflowError(
-        "bclconvert.tile_shard_level must be lane, none, surface, surface_swath, "
+        "bclconvert.tile_shard_level must be lane, none, tile_smoke, surface, surface_swath, "
         "or an integer shard count no larger than the discovered lane tile count"
     )
 
