@@ -54,8 +54,11 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert 'BCL_TILE_SHARD_REGEX = "|".join(re.escape(row["shard"])' in rule
     assert 'BCL_MERGE_LANE_FASTQS = _bool(BCLCFG.get("merge_lane_fastqs", False), False)' in rule
     assert 'BCL_MERGE_TILE_FASTQS = _bool(BCLCFG.get("merge_tile_fastqs", False), False)' in rule
-    assert 'BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW = BCLCFG.get("shared_thread_odirect_output", "auto")' in rule
-    assert "BCL_SHARED_THREAD_ODIRECT_OUTPUT = BCL_TILE_SHARDING_ACTIVE" in rule
+    assert 'BCL_CONSTRAINT = str(BCLCFG.get("constraint", "") or "")' in rule
+    assert 'BCL_SCRATCH_OUTPUT_ROOT = str(BCLCFG.get("scratch_output_root", "") or "").rstrip("/")' in rule
+    assert 'BCL_SCRATCH_AVAILABLE_BYTES_MIN = _intish(BCLCFG.get("scratch_available_bytes_min", 0), 0)' in rule
+    assert 'BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW = BCLCFG.get("shared_thread_odirect_output", False)' in rule
+    assert "BCL_SHARED_THREAD_ODIRECT_OUTPUT = False" in rule
     assert "rule run_bclconvert_lane:" in rule
     assert "rule run_bclconvert_tile_shard:" in rule
     assert "rule merge_bclconvert_tile_shards:" in rule
@@ -73,6 +76,15 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "--output-legacy-stats" in lane_helper
     assert "--num-unknown-barcodes-reported" in lane_helper
     assert "--bind /fsx:/fsx" in lane_helper
+    assert 'scratch_output_root="${27:-}"' in lane_helper
+    assert 'scratch_available_bytes_min="${28:-0}"' in lane_helper
+    assert 'if [[ "$#" -ne 28 ]]; then' in lane_helper
+    assert "pass __dayoa_no_force__ or -f for the force argument" in lane_helper
+    assert 'if [[ "$force_arg" == "__dayoa_no_force__" ]]; then' in lane_helper
+    assert "BCL output directory is not empty; refusing to overwrite" in lane_helper
+    assert "bclconvert.scratch_output_root must be an absolute path" in lane_helper
+    assert "BCL scratch output root free bytes below required minimum" in lane_helper
+    assert 'rsync -a --remove-source-files --human-readable --stats "$run_output_dir/" "$final_output_dir/"' in lane_helper
     assert "ALLOWED_SETTINGS" in samplesheet_helper
     assert "BCL_LANE_ROOT = Path(BCL_RUN_DIR)" in rule
     assert "sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON" in rule
@@ -81,6 +93,13 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "BCL_OUTPUT_LEGACY_STATS" in rule
     assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in rule
     assert "exclusive=\"--exclusive\"" in rule
+    assert 'force_arg="-f" if BCL_FORCE else "__dayoa_no_force__"' in rule
+    assert "{params.force_arg:q} {threads:q} {log:q}" in rule
+    assert "{params.force:q} {threads:q} {log:q}" not in rule
+    tile_shard_block = rule[rule.index("rule run_bclconvert_tile_shard:") :]
+    tile_shard_block = tile_shard_block.split("\nrule ", 1)[0]
+    assert 'exclusive="--exclusive"' in tile_shard_block
+    assert "scratch_available_bytes_min=BCL_SCRATCH_AVAILABLE_BYTES_MIN" in tile_shard_block
     assert "rule bclconvert_demux_fastq_qc:" in rule
     assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in rule
     assert "BCL_DEMUX_FASTQC_MQC" in rule
@@ -186,6 +205,8 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert profile["bclconvert"]["merge_tile_fastqs"] is False
         assert profile["bclconvert"]["tile_shard_level"] == "lane"
         assert profile["bclconvert"]["tile_shard_lanes"] == ""
+        assert profile["bclconvert"]["constraint"] == ""
+        assert profile["bclconvert"]["scratch_output_root"] == ""
         assert "tile_shard_threads" in profile["bclconvert"]
         assert "tile_shard_mem_mb" in profile["bclconvert"]
         assert "tile_parallel_tiles" in profile["bclconvert"]
@@ -202,11 +223,12 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["threads"] == 192
     assert slurm_bcl["mem_mb"] == 360000
     assert slurm_bcl["partition"] == "i192mem,i192bigmem"
+    assert slurm_bcl["constraint"] == ""
     assert slurm_bcl["parallel_tiles"] == 24
     assert slurm_bcl["conversion_threads"] == 4
     assert slurm_bcl["compression_threads"] == 64
     assert slurm_bcl["decompression_threads"] == 32
-    assert slurm_bcl["shared_thread_odirect_output"] == "auto"
+    assert slurm_bcl["shared_thread_odirect_output"] is False
     assert slurm_bcl["demux_qc_threads"] == 32
     assert slurm_bcl["demux_qc_mem_mb"] == 64000
     assert slurm_bcl["tile_shard_threads"] == 48

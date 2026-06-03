@@ -562,6 +562,9 @@ assert "DAYOA_BCLCONVERT_LANE_SPLIT = True" in text
 assert "DAYOA_BCLCONVERT_TILE_SHARDS = True" in text
 assert "BCL_MERGE_LANE_FASTQS" in text
 assert "BCL_MERGE_TILE_FASTQS" in text
+assert "BCL_CONSTRAINT" in text
+assert "BCL_SCRATCH_OUTPUT_ROOT" in text
+assert "BCL_SCRATCH_AVAILABLE_BYTES_MIN" in text
 assert "BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW" in text
 assert "BCL_TILE_SHARDING_ACTIVE" in text
 assert "rule run_bclconvert_lane:" in text
@@ -581,6 +584,12 @@ assert "\"BarcodeMismatchesIndex1\": \"barcode_mismatches_index1\"" in text
 assert "\"BarcodeMismatchesIndex2\": \"barcode_mismatches_index2\"" in text
 assert "BCL_OUTPUT_LEGACY_STATS" in text
 assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in text
+assert "force_arg=\"-f\" if BCL_FORCE else \"__dayoa_no_force__\"" in text
+assert "{params.force_arg:q} {threads:q} {log:q}" in text
+assert "{params.force:q} {threads:q} {log:q}" not in text
+helper_text = Path("workflow/scripts/run_bclconvert_lane.sh").read_text()
+assert "expected 28 arguments" in helper_text
+assert "__dayoa_no_force__" in helper_text
 assert "rule bclconvert_demux_fastq_qc:" in text
 assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in text
 assert "BCL_DEMUX_FASTQC_MQC" in text

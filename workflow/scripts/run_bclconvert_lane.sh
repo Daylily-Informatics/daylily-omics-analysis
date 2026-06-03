@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "$#" -ne 28 ]]; then
+  echo "run_bclconvert_lane.sh expected 28 arguments, got $#; pass __dayoa_no_force__ or -f for the force argument" >&2
+  exit 2
+fi
+
 container_uri="$1"
 run_dir="$2"
 lane_output_dir="$3"
@@ -27,14 +32,63 @@ fastq_list="${23}"
 demux_stats="${24}"
 done_path="${25}"
 tile_regex="${26:-}"
+scratch_output_root="${27:-}"
+scratch_available_bytes_min="${28:-0}"
 
-mkdir -p "$lane_output_dir" "$(dirname "$lane_sample_sheet")" "$(dirname "$log_path")"
+final_output_dir="$lane_output_dir"
+run_output_dir="$final_output_dir"
+scratch_work_dir=""
+
+mkdir -p "$(dirname "$final_output_dir")" "$(dirname "$lane_sample_sheet")" "$(dirname "$log_path")"
 : > "$log_path"
+if [[ "$force_arg" == "__dayoa_no_force__" ]]; then
+  force_arg=""
+elif [[ "$force_arg" != "-f" ]]; then
+  echo "BCL force argument must be __dayoa_no_force__ or -f: $force_arg" >> "$log_path"
+  exit 2
+fi
 export TMPDIR="${TMPDIR:-/dev/shm}"
 mkdir -p "$TMPDIR"
 if [[ ! -d "$run_dir" ]]; then
   echo "BCL input directory does not exist: $run_dir" >> "$log_path"
   exit 2
+fi
+if [[ -d "$final_output_dir" ]] && find "$final_output_dir" -mindepth 1 -print -quit | grep -q .; then
+  echo "BCL output directory is not empty; refusing to overwrite: $final_output_dir" >> "$log_path"
+  exit 2
+fi
+if [[ -n "$scratch_output_root" ]]; then
+  if [[ "$scratch_output_root" != /* ]]; then
+    echo "bclconvert.scratch_output_root must be an absolute path: $scratch_output_root" >> "$log_path"
+    exit 2
+  fi
+  if [[ ! "$scratch_available_bytes_min" =~ ^[0-9]+$ ]]; then
+    echo "bclconvert.scratch_available_bytes_min must be a non-negative integer: $scratch_available_bytes_min" >> "$log_path"
+    exit 2
+  fi
+  safe_output_id="$(printf '%s' "$final_output_dir" | sed -e 's#^/##' -e 's#[^A-Za-z0-9._-]#_#g')"
+  scratch_work_dir="${scratch_output_root%/}/dayoa_bclconvert_${SLURM_JOB_ID:-manual_$$}/${safe_output_id}"
+  run_output_dir="${scratch_work_dir}/output"
+  if [[ -e "$scratch_work_dir" ]]; then
+    echo "Scratch work directory already exists; refusing to overwrite: $scratch_work_dir" >> "$log_path"
+    exit 2
+  fi
+  mkdir -p "$run_output_dir"
+  if [[ "$scratch_available_bytes_min" -gt 0 ]]; then
+    scratch_available_bytes="$(df -PB1 "$scratch_output_root" | awk 'NR == 2 {print $4}')"
+    echo "scratch_available_bytes: ${scratch_available_bytes:-<unknown>}" >> "$log_path"
+    echo "scratch_available_bytes_min: $scratch_available_bytes_min" >> "$log_path"
+    if [[ -z "$scratch_available_bytes" || ! "$scratch_available_bytes" =~ ^[0-9]+$ ]]; then
+      echo "Unable to determine free bytes for BCL scratch output root: $scratch_output_root" >> "$log_path"
+      exit 2
+    fi
+    if [[ "$scratch_available_bytes" -lt "$scratch_available_bytes_min" ]]; then
+      echo "BCL scratch output root free bytes below required minimum: available=$scratch_available_bytes required=$scratch_available_bytes_min path=$scratch_output_root" >> "$log_path"
+      exit 2
+    fi
+  fi
+else
+  mkdir -p "$run_output_dir"
 fi
 
 python workflow/scripts/prepare_bclconvert_lane_samplesheet.py \
@@ -49,8 +103,12 @@ echo "run_bclconvert_lane L$(printf '%03d' "$lane_number") started: $(date -Is)"
 echo "host: $(hostname)" >> "$log_path"
 echo "threads: $threads" >> "$log_path"
 echo "TMPDIR: $TMPDIR" >> "$log_path"
+echo "scratch_output_root: ${scratch_output_root:-<none>}" >> "$log_path"
+echo "scratch_available_bytes_min: $scratch_available_bytes_min" >> "$log_path"
+echo "run_output_dir: $run_output_dir" >> "$log_path"
+echo "final_output_dir: $final_output_dir" >> "$log_path"
 echo "bcl_input_directory: $run_dir" >> "$log_path"
-echo "output_directory: $lane_output_dir" >> "$log_path"
+echo "output_directory: $run_output_dir" >> "$log_path"
 echo "sample_sheet: $lane_sample_sheet" >> "$log_path"
 echo "bcl_only_lane: $lane_number" >> "$log_path"
 echo "tile_regex: ${tile_regex:-<none>}" >> "$log_path"
@@ -59,9 +117,12 @@ echo "sample_sheet_settings_by_lane_json: $sample_sheet_settings_by_lane_json" >
 echo "output_legacy_stats: $output_legacy_stats" >> "$log_path"
 echo "num_unknown_barcodes_reported: $num_unknown_barcodes_reported" >> "$log_path"
 nproc >> "$log_path" 2>&1 || true
-df -h "$TMPDIR" "$run_dir" "$lane_output_dir" >> "$log_path" 2>&1 || true
+df -h "$TMPDIR" "$run_dir" "$run_output_dir" "$(dirname "$final_output_dir")" >> "$log_path" 2>&1 || true
 command -v singularity >> "$log_path" 2>&1
 singularity_bind_args=(--bind /fsx:/fsx)
+if [[ -n "$scratch_output_root" ]]; then
+  singularity_bind_args+=(--bind "$scratch_output_root:$scratch_output_root")
+fi
 echo "singularity_bind_args: ${singularity_bind_args[*]}" >> "$log_path"
 singularity exec "${singularity_bind_args[@]}" "$container_uri" bcl-convert --version >> "$log_path" 2>&1
 
@@ -83,7 +144,7 @@ echo "bcl_cpu_heavy_threads: $heavy_threads" >> "$log_path"
 
 bcl_flags=(
   --bcl-input-directory "$run_dir"
-  --output-directory "$lane_output_dir"
+  --output-directory "$run_output_dir"
   --sample-sheet "$lane_sample_sheet"
   --strict-mode "$strict_mode"
   --first-tile-only "$first_tile_only"
@@ -111,8 +172,20 @@ printf ' %q' singularity exec "${singularity_bind_args[@]}" "$container_uri" bcl
 printf '\n' >> "$log_path"
 singularity exec "${singularity_bind_args[@]}" "$container_uri" bcl-convert "${bcl_flags[@]}" >> "$log_path" 2>&1
 
+run_fastq_list="$run_output_dir/Reports/fastq_list.csv"
+run_demux_stats="$run_output_dir/Reports/Demultiplex_Stats.csv"
+test -s "$run_fastq_list"
+test -s "$run_demux_stats"
+if [[ -n "$scratch_work_dir" ]]; then
+  echo "moving BCL Convert output from scratch to final output directory: $(date -Is)" >> "$log_path"
+  mkdir -p "$final_output_dir"
+  rsync -a --remove-source-files --human-readable --stats "$run_output_dir/" "$final_output_dir/" >> "$log_path" 2>&1
+  find "$run_output_dir" -depth -type d -empty -delete 2>/dev/null || true
+  find "$scratch_work_dir" -depth -type d -empty -delete 2>/dev/null || true
+fi
 test -s "$fastq_list"
 test -s "$demux_stats"
 mkdir -p "$(dirname "$done_path")"
 touch "$done_path"
+df -h "$TMPDIR" "$run_dir" "$final_output_dir" >> "$log_path" 2>&1 || true
 echo "run_bclconvert_lane L$(printf '%03d' "$lane_number") finished: $(date -Is)" >> "$log_path"

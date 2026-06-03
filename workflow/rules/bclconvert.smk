@@ -148,13 +148,16 @@ SAMPLES_TABLE = str(
 BCL_THREADS = _intish(BCLCFG.get("threads", 1), 1)
 BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 3000), 3000)
 BCL_PARTITION = str(BCLCFG.get("partition", "i192mem,i192bigmem") or "i192mem,i192bigmem")
+BCL_CONSTRAINT = str(BCLCFG.get("constraint", "") or "")
 BCL_TMPDIR = str(BCLCFG.get("tmpdir", "/dev/shm") or "/dev/shm")
+BCL_SCRATCH_OUTPUT_ROOT = str(BCLCFG.get("scratch_output_root", "") or "").rstrip("/")
+BCL_SCRATCH_AVAILABLE_BYTES_MIN = _intish(BCLCFG.get("scratch_available_bytes_min", 0), 0)
 BCL_PARALLEL_TILES = _intish(BCLCFG.get("parallel_tiles", 1), 1)
 BCL_CONVERSION_THREADS = _intish(BCLCFG.get("conversion_threads", BCL_THREADS), BCL_THREADS)
 BCL_COMPRESSION_THREADS = _intish(BCLCFG.get("compression_threads", BCL_THREADS), BCL_THREADS)
 BCL_DECOMPRESSION_THREADS = _intish(BCLCFG.get("decompression_threads", max(1, BCL_THREADS // 2)), max(1, BCL_THREADS // 2))
 BCL_FASTQ_GZIP_COMPRESSION_LEVEL = _intish(BCLCFG.get("fastq_gzip_compression_level", 1), 1)
-BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW = BCLCFG.get("shared_thread_odirect_output", "auto")
+BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW = BCLCFG.get("shared_thread_odirect_output", False)
 BCL_OUTPUT_LEGACY_STATS = _bool(BCLCFG.get("output_legacy_stats", True), True)
 BCL_NUM_UNKNOWN_BARCODES_REPORTED = _intish(BCLCFG.get("num_unknown_barcodes_reported", 1000), 1000)
 BCL_DEMUX_QC_THREADS = _intish(BCLCFG.get("demux_qc_threads", min(max(BCL_THREADS, 1), 32)), min(max(BCL_THREADS, 1), 32))
@@ -389,7 +392,7 @@ BCL_TILE_SHARDS_BY_LANE = {
 }
 BCL_TILE_SHARDING_ACTIVE = bool(BCL_TILE_SHARD_ROWS)
 if str(BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW).strip().lower() in {"", "auto", "none"}:
-    BCL_SHARED_THREAD_ODIRECT_OUTPUT = BCL_TILE_SHARDING_ACTIVE
+    BCL_SHARED_THREAD_ODIRECT_OUTPUT = False
 else:
     BCL_SHARED_THREAD_ODIRECT_OUTPUT = _bool(BCL_SHARED_THREAD_ODIRECT_OUTPUT_RAW, False)
 BCL_REQUESTED_LANES = [lane for lane in BCL_LANES if lane in BCL_TILE_SHARD_LANE_SET]
@@ -512,6 +515,7 @@ rule run_bclconvert_lane:
         BCL_THREADS
     resources:
         partition=BCL_PARTITION,
+        constraint=BCL_CONSTRAINT,
         vcpu=BCL_THREADS,
         threads=BCL_THREADS,
         mem_mb=BCL_MEM_MB,
@@ -522,6 +526,8 @@ rule run_bclconvert_lane:
         run_dir=BCL_RUN_DIR,
         container_uri=BCL_CONTAINER_URI,
         tmpdir=BCL_TMPDIR,
+        scratch_output_root=BCL_SCRATCH_OUTPUT_ROOT,
+        scratch_available_bytes_min=BCL_SCRATCH_AVAILABLE_BYTES_MIN,
         lane_number=lambda wildcards: str(int(wildcards.lane[1:])),
         lane_output_dir=lambda wildcards: f"{BCL_LANE_FASTQ_ROOT}/{wildcards.lane}",
         parallel_tiles=BCL_PARALLEL_TILES,
@@ -534,7 +540,7 @@ rule run_bclconvert_lane:
         num_unknown_barcodes_reported=BCL_NUM_UNKNOWN_BARCODES_REPORTED,
         sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON,
         sample_sheet_settings_by_lane_json=BCL_SAMPLE_SHEET_SETTINGS_BY_LANE_JSON,
-        force="-f" if BCL_FORCE else "",
+        force_arg="-f" if BCL_FORCE else "__dayoa_no_force__",
         strict_mode="true" if BCL_STRICT_MODE else "false",
         first_tile_only="true" if BCL_FIRST_TILE_ONLY else "false",
         sampleproject_subdirectories="true" if BCL_SAMPLEPROJECT_SUBDIRS else "false",
@@ -552,8 +558,9 @@ rule run_bclconvert_lane:
         "{params.decompression_threads:q} {params.shared_thread_odirect_output:q} "
         "{params.output_legacy_stats:q} {params.num_unknown_barcodes_reported:q} "
         "{params.sample_sheet_settings_json:q} {params.sample_sheet_settings_by_lane_json:q} "
-        "{params.force:q} {threads:q} {log:q} {output.fastq_list:q} "
-        "{output.demux_stats:q} {output.done:q} \"\""
+        "{params.force_arg:q} {threads:q} {log:q} {output.fastq_list:q} "
+        "{output.demux_stats:q} {output.done:q} \"\" {params.scratch_output_root:q} "
+        "{params.scratch_available_bytes_min:q}"
 
 
 rule run_bclconvert_tile_shard:
@@ -572,15 +579,19 @@ rule run_bclconvert_tile_shard:
         BCL_TILE_SHARD_THREADS
     resources:
         partition=BCL_PARTITION,
+        constraint=BCL_CONSTRAINT,
         vcpu=BCL_TILE_SHARD_THREADS,
         threads=BCL_TILE_SHARD_THREADS,
         mem_mb=BCL_TILE_SHARD_MEM_MB,
         tmpdir=BCL_TMPDIR,
+        exclusive="--exclusive",
     params:
         cluster_sample=lambda wildcards: f"run_bclconvert_{wildcards.lane}_{wildcards.shard}",
         run_dir=BCL_RUN_DIR,
         container_uri=BCL_CONTAINER_URI,
         tmpdir=BCL_TMPDIR,
+        scratch_output_root=BCL_SCRATCH_OUTPUT_ROOT,
+        scratch_available_bytes_min=BCL_SCRATCH_AVAILABLE_BYTES_MIN,
         lane_number=lambda wildcards: str(int(wildcards.lane[1:])),
         lane_output_dir=lambda wildcards: f"{BCL_TILE_FASTQ_ROOT}/{wildcards.lane}/{wildcards.shard}",
         tile_regex=lambda wildcards: BCL_TILE_REGEX_BY_KEY[f"{wildcards.lane}/{wildcards.shard}"],
@@ -594,7 +605,7 @@ rule run_bclconvert_tile_shard:
         num_unknown_barcodes_reported=BCL_NUM_UNKNOWN_BARCODES_REPORTED,
         sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON,
         sample_sheet_settings_by_lane_json=BCL_SAMPLE_SHEET_SETTINGS_BY_LANE_JSON,
-        force="-f" if BCL_FORCE else "",
+        force_arg="-f" if BCL_FORCE else "__dayoa_no_force__",
         strict_mode="true" if BCL_STRICT_MODE else "false",
         first_tile_only="true" if BCL_FIRST_TILE_ONLY else "false",
         sampleproject_subdirectories="true" if BCL_SAMPLEPROJECT_SUBDIRS else "false",
@@ -612,8 +623,9 @@ rule run_bclconvert_tile_shard:
         "{params.decompression_threads:q} {params.shared_thread_odirect_output:q} "
         "{params.output_legacy_stats:q} {params.num_unknown_barcodes_reported:q} "
         "{params.sample_sheet_settings_json:q} {params.sample_sheet_settings_by_lane_json:q} "
-        "{params.force:q} {threads:q} {log:q} {output.fastq_list:q} "
-        "{output.demux_stats:q} {output.done:q} {params.tile_regex:q}"
+        "{params.force_arg:q} {threads:q} {log:q} {output.fastq_list:q} "
+        "{output.demux_stats:q} {output.done:q} {params.tile_regex:q} {params.scratch_output_root:q} "
+        "{params.scratch_available_bytes_min:q}"
 
 
 rule merge_bclconvert_tile_shards:
@@ -645,6 +657,7 @@ rule merge_bclconvert_tile_shards:
         1
     resources:
         partition=BCL_PARTITION,
+        constraint=BCL_CONSTRAINT,
         vcpu=1,
         threads=1,
         mem_mb=3000,
@@ -694,6 +707,7 @@ if BCL_MERGE_LANE_FASTQS:
             1
         resources:
             partition=BCL_PARTITION,
+            constraint=BCL_CONSTRAINT,
             vcpu=1,
             threads=1,
             mem_mb=3000,
@@ -733,6 +747,7 @@ else:
             1
         resources:
             partition=BCL_PARTITION,
+            constraint=BCL_CONSTRAINT,
             vcpu=1,
             threads=1,
             mem_mb=3000,
@@ -890,6 +905,7 @@ rule bclconvert_demux_fastq_qc:
         FASTQC_ENV
     resources:
         partition=BCL_PARTITION,
+        constraint=BCL_CONSTRAINT,
         vcpu=BCL_DEMUX_QC_THREADS,
         threads=BCL_DEMUX_QC_THREADS,
         mem_mb=BCL_DEMUX_QC_MEM_MB,
