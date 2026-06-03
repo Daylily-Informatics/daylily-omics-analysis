@@ -103,13 +103,13 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert '"BarcodeMismatchesIndex2": "barcode_mismatches_index2"' in rule
     assert "BCL_OUTPUT_LEGACY_STATS" in rule
     assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in rule
-    assert "exclusive=\"--exclusive\"" in rule
+    assert 'BCL_EXCLUSIVE = str(BCLCFG.get("exclusive", "--exclusive") or "")' in rule
     assert 'force_arg="-f" if BCL_FORCE else "__dayoa_no_force__"' in rule
     assert "{params.force_arg:q} {threads:q} {log:q}" in rule
     assert "{params.force:q} {threads:q} {log:q}" not in rule
     tile_shard_block = rule[rule.index("rule run_bclconvert_tile_shard:") :]
     tile_shard_block = tile_shard_block.split("\nrule ", 1)[0]
-    assert 'exclusive="--exclusive"' in tile_shard_block
+    assert "exclusive=BCL_EXCLUSIVE" in tile_shard_block
     assert "scratch_available_bytes_min=BCL_SCRATCH_AVAILABLE_BYTES_MIN" in tile_shard_block
     assert "rule bclconvert_demux_fastq_qc:" in rule
     assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in rule
@@ -237,6 +237,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["mem_mb"] == 360000
     assert slurm_bcl["partition"] == "i192mem,i192bigmem"
     assert slurm_bcl["constraint"] == ""
+    assert slurm_bcl["exclusive"] == "--exclusive"
     assert slurm_bcl["parallel_tiles"] == 24
     assert slurm_bcl["conversion_threads"] == 4
     assert slurm_bcl["compression_threads"] == 64

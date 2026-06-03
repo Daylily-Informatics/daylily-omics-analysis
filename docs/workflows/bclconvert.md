@@ -91,6 +91,7 @@ bclconvert:
   threads: 192
   mem_mb: 360000
   partition: "i192mem,i192bigmem"
+  exclusive: "--exclusive"
   merge_lane_fastqs: false
   merge_tile_fastqs: false
   parallel_tiles: 24
@@ -100,6 +101,7 @@ bclconvert:
   tile_shard_level: "lane"
   tile_shard_lanes: ""
   tile_shard_threads: 48
+  exclusive: ""
   tile_shard_mem_mb: 180000
   tile_parallel_tiles: 8
   tile_conversion_threads: 2

@@ -128,6 +128,7 @@ bclconvert:
     mem_mb: 360000
     partition: "i192mem,i192bigmem"
     constraint: ""
+    exclusive: "--exclusive"
     tmpdir: "/dev/shm"
     scratch_output_root: ""
     parallel_tiles: 24

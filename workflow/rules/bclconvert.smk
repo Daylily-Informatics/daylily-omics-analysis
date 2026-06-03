@@ -161,6 +161,7 @@ BCL_THREADS = _intish(BCLCFG.get("threads", 1), 1)
 BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 3000), 3000)
 BCL_PARTITION = str(BCLCFG.get("partition", "i192mem,i192bigmem") or "i192mem,i192bigmem")
 BCL_CONSTRAINT = str(BCLCFG.get("constraint", "") or "")
+BCL_EXCLUSIVE = str(BCLCFG.get("exclusive", "--exclusive") or "")
 BCL_TMPDIR = str(BCLCFG.get("tmpdir", "/dev/shm") or "/dev/shm")
 BCL_SCRATCH_OUTPUT_ROOT = str(BCLCFG.get("scratch_output_root", "") or "").rstrip("/")
 BCL_SCRATCH_AVAILABLE_BYTES_MIN = _intish(BCLCFG.get("scratch_available_bytes_min", 0), 0)
@@ -594,7 +595,7 @@ rule run_bclconvert_lane:
         threads=BCL_THREADS,
         mem_mb=BCL_MEM_MB,
         tmpdir=BCL_TMPDIR,
-        exclusive="--exclusive",
+        exclusive=BCL_EXCLUSIVE,
     params:
         cluster_sample=lambda wildcards: f"run_bclconvert_{wildcards.lane}",
         run_dir=BCL_RUN_DIR,
@@ -658,7 +659,7 @@ rule run_bclconvert_tile_shard:
         threads=BCL_TILE_SHARD_THREADS,
         mem_mb=BCL_TILE_SHARD_MEM_MB,
         tmpdir=BCL_TMPDIR,
-        exclusive="--exclusive",
+        exclusive=BCL_EXCLUSIVE,
     params:
         cluster_sample=lambda wildcards: f"run_bclconvert_{wildcards.lane}_{wildcards.shard}",
         run_dir=BCL_RUN_DIR,
