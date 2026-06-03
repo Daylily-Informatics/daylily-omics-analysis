@@ -186,5 +186,3 @@ rule produce_sentmm2ont_align_sort:  # DEPRECATED TARGET: use produce_sentmm2ont
         expand(MDIR + "{sample}/align/sentmm2ont/{sample}.sentmm2ont.cram", sample=ONT_SENTMM2ONT_SAMPS)
     log:
         MDIR + "logs/produce_sentmm2ont_align_sort.log"
-    benchmark:
-        MDIR + "benchmarks/produce_sentmm2ont_align_sort.bench.tsv"

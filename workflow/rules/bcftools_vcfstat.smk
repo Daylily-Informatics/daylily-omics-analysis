@@ -122,5 +122,3 @@ rule produce_bcfvcfstats:  # TARGET:  jusg genvcfstats
         MDIR + "other_reports/bcftools_variant_stats_mqc.tsv",
     log:
         MDIR + "logs/produce_bcfvcfstats.log"
-    benchmark:
-        MDIR + "benchmarks/produce_bcfvcfstats.bench.tsv"

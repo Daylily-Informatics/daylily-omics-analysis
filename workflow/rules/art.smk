@@ -42,7 +42,5 @@ rule art:  # TARGET: A visual derrive.
         "logs/made.art",
     log:
         MDIR + "logs/art.log"
-    benchmark:
-        MDIR + "benchmarks/art.bench.tsv"
     shell:
         "rm {input};"

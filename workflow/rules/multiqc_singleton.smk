@@ -115,5 +115,3 @@ rule produce_multiqc_singleton:  # TARGET : Generated All WGS Reports
         MDIR+ "reports/multiqc_singleton.html"
     log:
         MDIR + "logs/produce_multiqc_singleton.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_singleton.bench.tsv"

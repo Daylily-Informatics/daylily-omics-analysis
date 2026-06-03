@@ -143,8 +143,6 @@ rule util_print_targets:  # TARGET : Return a List of All Targets
         c=get_ccmd(),
     log:
         MDIR + "logs/util_print_targets.log"
-    benchmark:
-        MDIR + "benchmarks/util_print_targets.bench.tsv"
     shell:
         """
         set +euo pipefail; echo AAAAAA$?;
@@ -202,8 +200,6 @@ rule initm:
     """ Internal use. runs after mod-activate to force creation of template files for a new profile. """
     log:
         MDIR + "logs/initm.log"
-    benchmark:
-        MDIR + "benchmarks/initm.bench.tsv"
     shell:
         "echo profile:$DAY_PROFILE.initialized;"
 
@@ -245,8 +241,6 @@ rule test_benchmark:
         partition="i8,i128,i192,i192mem,bcl2fq-i384-nvme-test"
     log:
         MDIR + "logs/test_benchmark.log"
-    benchmark:
-        "logs/test_bench.tsv"
     shell:
         """
 	sleep 3;
@@ -264,8 +258,6 @@ rule help:
         partition="i8,i192,i192mem",
     log:
         MDIR + "logs/help.log"
-    benchmark:
-        MDIR + "benchmarks/help.bench.tsv"
     shell:
         """
 

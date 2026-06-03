@@ -167,8 +167,6 @@ rule clear_combined_sentdpb_vcf:  # TARGET:  clear combined sentdpb vcf so the c
         ),
     log:
         MDIR + "logs/clear_combined_sentdpb_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_sentdpb_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -196,8 +194,6 @@ rule produce_sentdpb_vcf:  # DEPRECATED TARGET: use produce_sentdpb_snv_vcf
     threads: 1
     log:
         "gatheredall.sentdpb.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdpb_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

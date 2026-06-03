@@ -529,8 +529,6 @@ rule produce_illumina_run_qc_and_bclconvert:  # TARGET: mounted Illumina run QC 
 
     log:
         MDIR + "logs/produce_illumina_run_qc_and_bclconvert.log"
-    benchmark:
-        MDIR + "benchmarks/produce_illumina_run_qc_and_bclconvert.bench.tsv"
 rule ont_run_qc_collect_summaries:
     output:
         summary_list=RUNQC_ONT_SUMMARY_LIST,
@@ -1012,8 +1010,6 @@ rule produce_illumina_run_qc:  # TARGET: separate Illumina run-level QC report
 
     log:
         MDIR + "logs/produce_illumina_run_qc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_illumina_run_qc.bench.tsv"
 rule produce_ont_run_qc:  # TARGET: mounted ONT run-level QC plus demux FASTQ QC
     input:
         RUNQC_ONT_TARGET_INPUTS,
@@ -1021,8 +1017,6 @@ rule produce_ont_run_qc:  # TARGET: mounted ONT run-level QC plus demux FASTQ QC
 
     log:
         MDIR + "logs/produce_ont_run_qc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_ont_run_qc.bench.tsv"
 rule produce_ont_demux_fastq_qc:  # TARGET: mounted ONT demux FASTQ QC and focused MultiQC report
     input:
         RUNQC_ONT_DEMUX_MULTIQC_HTML,
@@ -1030,8 +1024,6 @@ rule produce_ont_demux_fastq_qc:  # TARGET: mounted ONT demux FASTQ QC and focus
 
     log:
         MDIR + "logs/produce_ont_demux_fastq_qc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_ont_demux_fastq_qc.bench.tsv"
 rule produce_ont_run_qc_and_demux_multiqc:  # TARGET: mounted ONT run QC plus demux FASTQ MultiQC
     input:
         RUNQC_ONT_TARGET_INPUTS,
@@ -1039,8 +1031,6 @@ rule produce_ont_run_qc_and_demux_multiqc:  # TARGET: mounted ONT run QC plus de
 
     log:
         MDIR + "logs/produce_ont_run_qc_and_demux_multiqc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_ont_run_qc_and_demux_multiqc.bench.tsv"
 rule produce_ultima_run_qc:  # TARGET: mounted Ultima run-level QC plus demux FASTQ QC
     input:
         RUNQC_UG_TARGET_INPUTS,
@@ -1048,8 +1038,6 @@ rule produce_ultima_run_qc:  # TARGET: mounted Ultima run-level QC plus demux FA
 
     log:
         MDIR + "logs/produce_ultima_run_qc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_ultima_run_qc.bench.tsv"
 rule produce_ultima_demux_fastq_qc:  # TARGET: mounted Ultima demux FASTQ QC and focused MultiQC report
     input:
         RUNQC_UG_DEMUX_MULTIQC_HTML,
@@ -1057,8 +1045,6 @@ rule produce_ultima_demux_fastq_qc:  # TARGET: mounted Ultima demux FASTQ QC and
 
     log:
         MDIR + "logs/produce_ultima_demux_fastq_qc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_ultima_demux_fastq_qc.bench.tsv"
 rule produce_ultima_run_qc_and_demux_multiqc:  # TARGET: mounted Ultima run QC plus demux FASTQ MultiQC
     input:
         RUNQC_UG_TARGET_INPUTS,
@@ -1066,8 +1052,6 @@ rule produce_ultima_run_qc_and_demux_multiqc:  # TARGET: mounted Ultima run QC p
 
     log:
         MDIR + "logs/produce_ultima_run_qc_and_demux_multiqc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_ultima_run_qc_and_demux_multiqc.bench.tsv"
 rule produce_read_fate_river:  # TARGET: Illumina read-fate RIVER report
     input:
         RUNQC_ILMN_RIVER_HTML,
@@ -1075,8 +1059,6 @@ rule produce_read_fate_river:  # TARGET: Illumina read-fate RIVER report
 
     log:
         MDIR + "logs/produce_read_fate_river.log"
-    benchmark:
-        MDIR + "benchmarks/produce_read_fate_river.bench.tsv"
 rule produce_run_qc_reports:  # TARGET: all run-level QC reports, separate from final WGS MultiQC
     input:
         RUNQC_ILMN_REPORT_DIR + "/summary.html",
@@ -1085,5 +1067,3 @@ rule produce_run_qc_reports:  # TARGET: all run-level QC reports, separate from 
         RUNQC_UG_TARGET_INPUTS,
     log:
         MDIR + "logs/produce_run_qc_reports.log"
-    benchmark:
-        MDIR + "benchmarks/produce_run_qc_reports.bench.tsv"

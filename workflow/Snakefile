@@ -390,8 +390,6 @@ rule day:  # TARGET: Synonym for all
 rule all:  # TARGET: Prompt user to run help
     log:
         "logs/all.log"
-    benchmark:
-        "logs/benchmarks/all.bench.tsv"
     shell:
         """
         echo 'Hello!  To learn how to run daylily, execute the following:' ;

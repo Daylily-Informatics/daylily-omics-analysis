@@ -181,7 +181,5 @@ rule produce_quickmer2:  # TARGET : Produce QuicK-mer2 copy-number results
         touch(MDIR + "other_reports/quickmer2_gather.done"),
     log:
         MDIR + "logs/produce_quickmer2.log"
-    benchmark:
-        MDIR + "benchmarks/produce_quickmer2.bench.tsv"
     shell:
         "touch {output};"

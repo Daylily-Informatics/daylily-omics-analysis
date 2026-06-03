@@ -1087,8 +1087,6 @@ rule produce_unmapped_metagenomics_quick:  # TARGET: quick Kraken2 screen of pas
 
     log:
         MDIR + "logs/produce_unmapped_metagenomics_quick.log"
-    benchmark:
-        MDIR + "benchmarks/produce_unmapped_metagenomics_quick.bench.tsv"
 rule produce_unmapped_metagenomics_ganon2_quick:  # TARGET: quick Ganon2 screen of pass-QC human-unmapped reads
     input:
         MDIR + "reports/unmapped_metagenomics_ganon2.multiqc.html",
@@ -1096,8 +1094,6 @@ rule produce_unmapped_metagenomics_ganon2_quick:  # TARGET: quick Ganon2 screen 
 
     log:
         MDIR + "logs/produce_unmapped_metagenomics_ganon2_quick.log"
-    benchmark:
-        MDIR + "benchmarks/produce_unmapped_metagenomics_ganon2_quick.bench.tsv"
 rule produce_unmapped_metagenomics_sourmash_gather:  # TARGET: sourmash gather fingerprint of pass-QC human-unmapped reads
     input:
         MDIR + "reports/unmapped_metagenomics_sourmash.multiqc.html",
@@ -1105,8 +1101,6 @@ rule produce_unmapped_metagenomics_sourmash_gather:  # TARGET: sourmash gather f
 
     log:
         MDIR + "logs/produce_unmapped_metagenomics_sourmash_gather.log"
-    benchmark:
-        MDIR + "benchmarks/produce_unmapped_metagenomics_sourmash_gather.bench.tsv"
 rule produce_metagenomics:  # TARGET: run Kraken2, Ganon2, and sourmash gather metagenomics evidence
     input:
         MDIR + "reports/unmapped_metagenomics.multiqc.html",
@@ -1114,5 +1108,3 @@ rule produce_metagenomics:  # TARGET: run Kraken2, Ganon2, and sourmash gather m
         MDIR + "reports/unmapped_metagenomics_sourmash.multiqc.html",
     log:
         MDIR + "logs/produce_metagenomics.log"
-    benchmark:
-        MDIR + "benchmarks/produce_metagenomics.bench.tsv"

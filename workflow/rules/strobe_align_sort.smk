@@ -196,8 +196,6 @@ localrules: produce_strobe_align_sort_bam,
 rule produce_strobe_align_sort_bam:  # DEPRECATED TARGET: use produce_strobe_align
     log:
         MDIR + "logs/produce_strobe_align_sort_bam.log"
-    benchmark:
-        MDIR + "benchmarks/produce_strobe_align_sort_bam.bench.tsv"
     input:
         expand(MDIR + "{sample}/align/strobe/{sample}.strobe.sort.bam", sample=SAMPS)
  

@@ -273,8 +273,6 @@ rule clear_combined_sentdug_vcf:  # TARGET:  clear combined sentdug vcf so the c
         ),
     log:
         MDIR + "logs/clear_combined_sentdug_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_sentdug_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -302,8 +300,6 @@ rule produce_sentdug_vcf:  # DEPRECATED TARGET: use produce_sentdug_snv_vcf
     threads: 1
     log:
         "gatheredall.sentdug.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdug_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

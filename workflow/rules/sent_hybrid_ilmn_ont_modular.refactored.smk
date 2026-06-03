@@ -1650,8 +1650,6 @@ rule clear_combined_sentdhiomr_vcf:  # TARGET: clear combined sentdhiomr vcf so 
         ),
     log:
         MDIR + "logs/clear_combined_sentdhiomr_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_sentdhiomr_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -1680,8 +1678,6 @@ rule produce_sentdhiomr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
     threads: 1
     log:
         "gatheredall.sentdhiomr.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhiomr_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
@@ -1784,8 +1780,6 @@ rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modul
     threads: 1
     log:
         "gatheredall.sentdhiomr.sv.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhiomr_sv.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -1889,8 +1883,6 @@ rule produce_sentdhiomr_cnv:  # TARGET: sentieon cnv hybrid ilmn+ont modular cnv
     threads: 1
     log:
         "gatheredall.sentdhiomr.cnv.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhiomr_cnv.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -2128,8 +2120,6 @@ rule produce_sentdhiomr_segdup:  # TARGET: sentieon segdup hybrid ilmn+ont modul
     threads: 1
     log:
         "gatheredall.sentdhiomr.segdup.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhiomr_segdup.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;
@@ -2306,8 +2296,6 @@ rule produce_sentdhiomr_mito:  # TARGET: sentieon mito hybrid ilmn+ont modular m
     threads: 1
     log:
         "gatheredall.sentdhiomr.mito.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhiomr_mito.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;

@@ -1195,8 +1195,6 @@ rule clear_combined_sentdhupmr_vcf:  # TARGET: clear combined sentdhupmr vcf so 
         ),
     log:
         MDIR + "logs/clear_combined_sentdhupmr_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_sentdhupmr_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -1224,8 +1222,6 @@ rule produce_sentdhupmr_vcf:  # TARGET: sentieon dnascope hybrid ultima+ont modu
     threads: 1
     log:
         "gatheredall.sentdhupmr.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhupmr_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
@@ -1328,8 +1324,6 @@ rule produce_sentdhupmr_sv:  # TARGET: sentieon longreadsv hybrid ultima+pb modu
     threads: 1
     log:
         "gatheredall.sentdhupmr.sv.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentdhupmr_sv.bench.tsv"
     shell:
         """( touch {output} ;
         ls {output} ) >> {log} 2>&1;

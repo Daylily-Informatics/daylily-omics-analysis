@@ -397,8 +397,6 @@ rule produce_expansion_hunter:  # TARGET: run ExpansionHunter for ILMN, Complete
 
     log:
         MDIR + "logs/produce_expansion_hunter.log"
-    benchmark:
-        MDIR + "benchmarks/produce_expansion_hunter.bench.tsv"
 rule produce_expansionhunter:  # TARGET: alias for produce_expansion_hunter
     input:
         lambda wildcards: _expansionhunter_target_paths("tsv")
@@ -406,12 +404,8 @@ rule produce_expansionhunter:  # TARGET: alias for produce_expansion_hunter
 
     log:
         MDIR + "logs/produce_expansionhunter.log"
-    benchmark:
-        MDIR + "benchmarks/produce_expansionhunter.bench.tsv"
 rule produce_expansionhunter_multiqc:  # TARGET: run ExpansionHunter and focused MultiQC report
     input:
         MDIR + "reports/expansionhunter.multiqc.html"
     log:
         MDIR + "logs/produce_expansionhunter_multiqc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_expansionhunter_multiqc.bench.tsv"

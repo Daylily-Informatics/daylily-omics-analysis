@@ -21,8 +21,6 @@ rule produce_deduplicated_crams:  # TARGET : Generate CRAMs with all configured 
         expand(MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.ddupgen.complete",sample=SAMPS, alnr=ALIGNERS, ddup=DDUP)
     log:
         MDIR + "logs/produce_deduplicated_crams.log"
-    benchmark:
-        MDIR + "benchmarks/produce_deduplicated_crams.bench.tsv"
     threads: 1
     shell:
         "touch {output};"

@@ -224,8 +224,6 @@ rule produce_dvsom_vcf:  # TARGET : Produce DeepSomatic VCFs
     priority: 48
     log:
         "gatheredall.dvsom.log",
-    benchmark:
-        MDIR + "benchmarks/produce_dvsom_vcf.bench.tsv"
     params:
         cluster_sample=ret_sample,
     conda:

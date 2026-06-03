@@ -304,8 +304,6 @@ rule clear_combined_clair3_vcf:  # TARGET : Clear combined Clair3 VCFs for re-ev
         ),
     log:
         MDIR + "logs/clear_combined_clair3_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_clair3_vcf.bench.tsv"
     priority: 42
     shell:
         "(rm {input.vcf}*  1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
@@ -332,8 +330,6 @@ rule produce_clair3_vcf:  # DEPRECATED TARGET: use produce_clair3_snv_vcf
     priority: 48
     log:
         "gatheredall.clair3.log",
-    benchmark:
-        MDIR + "benchmarks/produce_clair3_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:

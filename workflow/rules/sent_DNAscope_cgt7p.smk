@@ -245,8 +245,6 @@ rule clear_combined_cgt7p_vcf:  # TARGET: clear combined cgt7p vcf so chunks can
         ),
     log:
         MDIR + "logs/clear_combined_cgt7p_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_cgt7p_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -274,8 +272,6 @@ rule produce_cgt7p_vcf:  # DEPRECATED TARGET: use produce_cgt7p_snv_vcf
     threads: 1
     log:
         "gatheredall.cgt7p.log",
-    benchmark:
-        MDIR + "benchmarks/produce_cgt7p_vcf.bench.tsv"
     shell:
         """( touch {output};
         ls {output} ) >> {log} 2>&1;

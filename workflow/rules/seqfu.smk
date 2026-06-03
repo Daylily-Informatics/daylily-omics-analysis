@@ -121,7 +121,5 @@ rule produce_seqfu:  # TARGET: seqfu output
         MDIR + "logs/seqfu.done",
     log:
         MDIR + "logs/produce_seqfu.log"
-    benchmark:
-        MDIR + "benchmarks/produce_seqfu.bench.tsv"
     container:
         None

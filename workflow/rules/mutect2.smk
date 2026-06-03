@@ -295,8 +295,6 @@ rule produce_mutect2_vcf:  # TARGET : Produce Mutect2 VCFs
     priority: 48
     log:
         "gatheredall.mutect2.log",
-    benchmark:
-        MDIR + "benchmarks/produce_mutect2_vcf.bench.tsv"
     conda:
         config['mutect2']['conda']
     params:

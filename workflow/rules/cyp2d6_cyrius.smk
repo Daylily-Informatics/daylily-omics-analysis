@@ -76,7 +76,5 @@ rule produce_cyrius:  # TARGET : Produce CYP2D6 Cyrius results
         "logs/cyrius.done"
     log:
         MDIR + "logs/produce_cyrius.log"
-    benchmark:
-        MDIR + "benchmarks/produce_cyrius.bench.tsv"
     shell:
         "touch {output}"

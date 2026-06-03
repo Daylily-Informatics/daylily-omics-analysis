@@ -181,8 +181,6 @@ rule clear_combined_sentpg_vcf:  # TARGET: clear combined sentpg vcf
         ),
     log:
         MDIR + "logs/clear_combined_sentpg_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_sentpg_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -208,8 +206,6 @@ rule produce_sentpg_vcf:  # TARGET: sentieon pangenome vcf
     threads: 1
     log:
         "gatheredall.sentpg.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sentpg_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

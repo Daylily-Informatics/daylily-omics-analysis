@@ -276,8 +276,6 @@ rule produce_sent_TNscope_vcf:  # TARGET : Produce Sentieon TNscope somatic VCFs
     priority: 48
     log:
         "gatheredall.senttn.log",
-    benchmark:
-        MDIR + "benchmarks/produce_sent_TNscope_vcf.bench.tsv"
     conda:
         config['senttn']['conda']
     params:

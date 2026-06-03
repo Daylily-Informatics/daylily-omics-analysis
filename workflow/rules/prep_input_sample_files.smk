@@ -170,8 +170,6 @@ else:
                 singletons=MDIR + "{sample}/{sample_lane}.singletons.fastq.gz",
             conda:
                 "../envs/biobambam2_v0.1.yaml" if 'conda_env' not in config['produce_fastqs_from_bams'] else config['produce_fastqs_from_bams']['conda_env']
-            benchmark:
-                MDIR + "{sample}/benchmarks/{sample_lane}.bench.tsv"
             params:
                 cluster_sample=ret_sample,
                 rc_config=config['rclone_conf_file'],
@@ -222,8 +220,6 @@ else:
                 log:
                     MDIR + "{sample}/align/bwa2af/logs/{sample}.bwa2af_sort.log",
                 threads: config["bwa_mem2a_aln_sort"]["threads"]
-                benchmark:
-                    MDIR + "{sample}/benchmarks/{sample}.bwa2af.sort.bench.tsv"
                 params:
                     mdir=MDIR,
                     rc_config=config['rclone_conf_file'],

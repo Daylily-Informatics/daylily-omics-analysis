@@ -184,8 +184,6 @@ rule clear_combined_pangenome_ug_vcf:  # TARGET: clear combined pangenome ug vcf
         ),
     log:
         MDIR + "logs/clear_combined_pangenome_ug_vcf.log"
-    benchmark:
-        MDIR + "benchmarks/clear_combined_pangenome_ug_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -211,8 +209,6 @@ rule produce_pangenome_ug_vcf:  # TARGET: sentieon pangenome ug vcf
     threads: 1
     log:
         "gatheredall.pangenome_ug.log",
-    benchmark:
-        MDIR + "benchmarks/produce_pangenome_ug_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

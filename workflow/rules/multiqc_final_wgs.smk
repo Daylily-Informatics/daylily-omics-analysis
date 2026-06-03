@@ -835,8 +835,6 @@ rule produce_multiqc_input_data:  # TARGET: canonical input sequence-data QC rep
 
     log:
         MDIR + "logs/produce_multiqc_input_data.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_input_data.bench.tsv"
 rule produce_multiqc_cram:  # TARGET: canonical CRAM/alignment QC report
     input:
         MDIR + "reports/DAY_alignment_multiqc.html"
@@ -844,8 +842,6 @@ rule produce_multiqc_cram:  # TARGET: canonical CRAM/alignment QC report
 
     log:
         MDIR + "logs/produce_multiqc_cram.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_cram.bench.tsv"
 rule produce_multiqc_snv:  # TARGET: canonical SNV QC report
     input:
         MDIR + "reports/DAY_variants_multiqc.html"
@@ -853,8 +849,6 @@ rule produce_multiqc_snv:  # TARGET: canonical SNV QC report
 
     log:
         MDIR + "logs/produce_multiqc_snv.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_snv.bench.tsv"
 rule produce_multiqc_sv:  # TARGET: canonical SV QC report
     input:
         MDIR + "reports/DAY_variants_multiqc.html"
@@ -862,8 +856,6 @@ rule produce_multiqc_sv:  # TARGET: canonical SV QC report
 
     log:
         MDIR + "logs/produce_multiqc_sv.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_sv.bench.tsv"
 rule produce_multiqc_sample_qc:  # TARGET: canonical sample-level QC report
     input:
         MDIR + "reports/DAY_alignment_multiqc.html"
@@ -871,8 +863,6 @@ rule produce_multiqc_sample_qc:  # TARGET: canonical sample-level QC report
 
     log:
         MDIR + "logs/produce_multiqc_sample_qc.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_sample_qc.bench.tsv"
 rule produce_multiqc_variant_annotation:  # TARGET: canonical variant annotation QC report
     input:
         MDIR + "reports/DAY_variants_multiqc.html"
@@ -880,8 +870,6 @@ rule produce_multiqc_variant_annotation:  # TARGET: canonical variant annotation
 
     log:
         MDIR + "logs/produce_multiqc_variant_annotation.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_variant_annotation.bench.tsv"
 rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
     input:
         MDIR + "reports/DAY_final_multiqc.html",
@@ -890,8 +878,6 @@ rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
 
     log:
         MDIR + "logs/produce_multiqc_all.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_all.bench.tsv"
 rule produce_multiqc_stage_final:  # TARGET: stage final MultiQC input tree
     input:
         MDIR + "reports/multiqc_inputs/final/.stage.done"
@@ -899,8 +885,6 @@ rule produce_multiqc_stage_final:  # TARGET: stage final MultiQC input tree
 
     log:
         MDIR + "logs/produce_multiqc_stage_final.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_stage_final.bench.tsv"
 rule produce_multiqc_seq_data:  # DEPRECATED TARGET: use produce_multiqc_input_data
     input:
         MDIR + "reports/DAY_seq_data_multiqc.html"
@@ -908,8 +892,6 @@ rule produce_multiqc_seq_data:  # DEPRECATED TARGET: use produce_multiqc_input_d
 
     log:
         MDIR + "logs/produce_multiqc_seq_data.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_seq_data.bench.tsv"
 rule produce_multiqc_alignment:  # DEPRECATED TARGET: use produce_multiqc_cram
     input:
         MDIR + "reports/DAY_alignment_multiqc.html"
@@ -917,8 +899,6 @@ rule produce_multiqc_alignment:  # DEPRECATED TARGET: use produce_multiqc_cram
 
     log:
         MDIR + "logs/produce_multiqc_alignment.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_alignment.bench.tsv"
 rule produce_multiqc_variants:  # DEPRECATED TARGET: use produce_multiqc_snv / produce_multiqc_variant_annotation
     input:
         MDIR + "reports/DAY_variants_multiqc.html"
@@ -926,8 +906,6 @@ rule produce_multiqc_variants:  # DEPRECATED TARGET: use produce_multiqc_snv / p
 
     log:
         MDIR + "logs/produce_multiqc_variants.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_variants.bench.tsv"
 rule produce_multiqc_final:  # DEPRECATED TARGET: use produce_multiqc_all
     input:
         MDIR + "reports/DAY_final_multiqc.html"
@@ -935,12 +913,8 @@ rule produce_multiqc_final:  # DEPRECATED TARGET: use produce_multiqc_all
 
     log:
         MDIR + "logs/produce_multiqc_final.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_final.bench.tsv"
 rule produce_multiqc_final_wgs:  # DEPRECATED TARGET: use produce_multiqc_all
     input:
         MDIR + "reports/DAY_final_multiqc.html"
     log:
         MDIR + "logs/produce_multiqc_final_wgs.log"
-    benchmark:
-        MDIR + "benchmarks/produce_multiqc_final_wgs.bench.tsv"

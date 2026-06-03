@@ -188,7 +188,5 @@ rule produce_peddy:  # TARGET: just produce peddy results
         "logs/peddy_gathered.done",
     log:
         MDIR + "logs/produce_peddy.log"
-    benchmark:
-        MDIR + "benchmarks/produce_peddy.bench.tsv"
     shell:
         "touch {output};"
