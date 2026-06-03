@@ -5,7 +5,7 @@ set -euo pipefail
 
 BASE_DIR="/fsx/analysis_results/ubuntu/agbt-1x-3x"
 BRANCH="feat/modular-hybrid-workflows"
-REPO="git@github.com:Daylily-Informatics/daylily-omics-analysis.git"
+REPO="git@github.com:lsmc-bio/daylily-omics-analysis.git"
 MANIFEST_DIR=".test_data/data/agbt_2026/1x_3x"
 
 # Workflow definitions: name, target, config_args, units_dir

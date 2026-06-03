@@ -1,6 +1,6 @@
 # Daylily Omics Analysis
 
-**Daylily execution requires the broader Daylily ecosystem.** `daylily-omics-analysis` is the Snakemake 7 execution-plane repository. It consumes manifests and staged data prepared by [`daylily-ephemeral-cluster`](https://github.com/Daylily-Informatics/daylily-ephemeral-cluster), runs analysis on prepared AWS ParallelCluster headnodes, and emits evidence. Ursa and Bloom are also key Daylily services: Bloom manages upstream sequencing/run objects, and Ursa brokers operator worksets and DayOA launches. DayOA does not create AWS infrastructure, interpret QC, release results, or own canonical artifact registration.
+**Daylily execution requires the broader Daylily ecosystem.** `daylily-omics-analysis` is the Snakemake 7 execution-plane repository. It consumes manifests and staged data prepared by [`daylily-ephemeral-cluster`](https://github.com/lsmc-bio/daylily-ephemeral-cluster), runs analysis on prepared AWS ParallelCluster headnodes, and emits evidence. Ursa and Bloom are also key Daylily services: Bloom manages upstream sequencing/run objects, and Ursa brokers operator worksets and DayOA launches. DayOA does not create AWS infrastructure, interpret QC, release results, or own canonical artifact registration.
 
 DayOA produces local evidence and workflow provenance. External orchestration handles artifact registration and downstream evidence import after export.
 

@@ -100,7 +100,7 @@ report_header_info:
         --ignore "*/norm_cov_eveness/*" \
         --filename {output[0]} \
         -i '{params.rtitle} Multiqc Report' \
-        -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
+        -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
         $(dirname {input} )/../ >> {log} 2>&1;
         ls -lt {output[0]} {output[1]}  >> {log} 2>&1;
         """

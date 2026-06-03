@@ -629,7 +629,7 @@ rule multiqc_seq_data:  # TARGET: sequence-data QC MultiQC report
           --template default \
           --filename {output:q} \
           -i 'Sequence Data MultiQC Report' \
-          -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
           {params.stage_dir:q} > {log:q} 2>&1
         python workflow/scripts/validate_multiqc_sample_ids.py \
           --manifest {input.stage_manifest:q} \
@@ -678,7 +678,7 @@ rule multiqc_alignment:  # TARGET: sequence plus alignment QC MultiQC report
           --template default \
           --filename {output:q} \
           -i 'Alignment MultiQC Report' \
-          -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
           {params.stage_dir:q} > {log:q} 2>&1
         python workflow/scripts/validate_multiqc_sample_ids.py \
           --manifest {input.stage_manifest:q} \
@@ -727,7 +727,7 @@ rule multiqc_variants:  # TARGET: sequence, alignment, and variant QC MultiQC re
           --template default \
           --filename {output:q} \
           -i 'Variant QC MultiQC Report' \
-          -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
           {params.stage_dir:q} > {log:q} 2>&1
         python workflow/scripts/validate_multiqc_sample_ids.py \
           --manifest {input.stage_manifest:q} \
@@ -816,7 +816,7 @@ report_header_info:
         --template default \
         --filename {output.html:q} \
         -i '{params.rtitle} Multiqc Report ' \
-        -b 'https://github.com/Daylily-Informatics/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
+        -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \
         {params.stage_dir:q} >> {log:q} 2>&1;
         python workflow/scripts/force_multiqc_dark_mode.py \
           --html {output.html:q} \

@@ -266,7 +266,7 @@ rule help:
         {params.c} 'Welcome to daylily. 
 
         Complete docs can be found here: 
-              https://github.com/Daylily-Informatics/daylily-omics-analysis and  https://github.com/Daylily-Informatics/daylily-ephemeral-cluster
+              https://github.com/lsmc-bio/daylily-omics-analysis and  https://github.com/lsmc-bio/daylily-ephemeral-cluster
      
 
         ========================================================================
