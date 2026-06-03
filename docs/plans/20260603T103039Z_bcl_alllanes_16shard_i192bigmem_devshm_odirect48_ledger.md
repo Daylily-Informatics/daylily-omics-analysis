@@ -51,10 +51,12 @@ Run the full `20260514_LH01106_0009_B23TVLGLT4` flowcell through DayOA BCL Conve
 | Gate 0 `/fsx` space check | `PASS` | `/fsx` available `6122330521600` bytes |
 | Gate 0 run-dir check | `PASS` | all `L001`-`L008` directories and `SampleSheet.csv` present |
 | Local DayOA tests for default/profile changes | `PASS` | `python -m pytest tests/test_bclconvert_multiqc.py -q`: `13 passed` |
-| Fresh headnode workset | `PENDING` |  |
-| Config written | `PENDING` |  |
-| Dry-run | `PENDING` | expect `128` `run_bclconvert_tile_shard` jobs |
-| Live run | `PENDING` |  |
+| Fresh headnode workset | `PASS` | `/fsx/analysis_results/dyec0602bcl/bcl_alllanes_16shard_i192bigmem_devshm_odirect48_20260603T103039Z/daylily-omics-analysis` at `ddb3db6` |
+| Config written | `PASS` | `config/bclconvert_alllanes_16shard_i192bigmem_devshm_odirect48_20260603T103039Z.yaml` |
+| DayOA init retry with explicit license | `PASS` | `SENTIEON_LICENSE=/fsx/references/runtime_assets/cached_envs/Life_Sciences_Manufacturing_Corporation_eval.lic` after initial stale `x.lic` config blocker |
+| Headnode Daylily global license config | `PASS` | corrected `~/.config/daylily/daylily_cli_global.yaml` from missing `x.lic` to existing eval license; timestamped backup preserved |
+| Dry-run | `PASS` | `RC=0`; `128` `run_bclconvert_tile_shard`, `8` `merge_bclconvert_tile_shards`, `0` `run_bclconvert_lane`; `16` shards each for `L001`-`L008` |
+| Live run | `LAUNCHED` | `dy-r produce_bclconvert_fastqs -p -k -j 300 -T 0 --rerun-triggers mtime --configfile config/bclconvert_alllanes_16shard_i192bigmem_devshm_odirect48_20260603T103039Z.yaml` |
 | Acceptance | `PENDING` |  |
 
 ## Non-Intervention Boundary
