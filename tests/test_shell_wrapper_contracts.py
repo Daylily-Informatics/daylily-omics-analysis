@@ -345,25 +345,22 @@ def test_mac_local_activation_contracts() -> None:
     assert 'sed -i.bak "$sed_expr" "$target_file"' in profile_warn
 
 
-def test_sentieon_license_detection_contracts_are_explicit() -> None:
+def test_sentieon_license_contracts_fail_hard_without_explicit_config() -> None:
     dyoainit = _read("dyoainit")
     day_activate = _read("bin/day_activate")
     readme = _read("README.md")
 
     for shell_source in (dyoainit, day_activate):
-        assert "/fsx/references/runtime_assets/cached_envs" in shell_source
-        assert (
-            "find \"$sentieon_license_dir\" -maxdepth 1 -type f -name '*.lic' -print0"
-            in shell_source
-        )
-        assert "sort -z" in shell_source
-        assert "longest filename" in shell_source
-        assert "auto assigning a detected Sentieon license" in shell_source
+        assert "find \"$sentieon_license_dir\"" not in shell_source
+        assert "auto assigning a detected Sentieon license" not in shell_source
         assert "ls /fsx/references/runtime_assets/cached_envs/*lic" not in shell_source
+        assert "daylily.sentieon_lic_path" in shell_source
+        assert "return 3" in shell_source
 
     assert "Sentieon License Configuration" in readme
     assert "sentieon_lic_path" in readme
-    assert "/fsx/references/runtime_assets/cached_envs/*.lic" in readme
+    assert "/fsx/references/runtime_assets/sentieon/license.lic" in readme
+    assert "DayOA does not scan" in readme
 
 
 def test_shell_wrappers_have_valid_bash_syntax() -> None:

@@ -480,6 +480,7 @@ def test_active_dayoa_tree_has_no_registration_surfaces() -> None:
             ":(exclude)quarantine/**",
             ":(exclude)resources/**",
             ":(exclude)docs/plans/**",
+            ":(exclude)docs/jem_working_docs/**",
         ],
         text=True,
         capture_output=True,

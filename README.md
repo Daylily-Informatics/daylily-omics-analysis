@@ -19,6 +19,12 @@ DayOA produces local evidence and workflow provenance. External orchestration ha
 
 DayOA expects references under `/fsx/references` on a configured headnode. Cluster lifecycle, FSx mounts, reference staging, data staging, and production manifest creation belong to `daylily-ephemeral-cluster` and the `daylily-ec` CLI.
 
+## Design Philosophy
+
+DayOA is intentionally narrow. It owns reproducible workflow execution and local evidence generation; it does not own cluster provisioning, sample identity authority, registry writes, QC disposition, release decisions, or long-lived service state. Inputs are explicit manifests and configured references. Outputs are deterministic files under the analysis workdir. Missing config, missing credentials, missing references, missing licenses, malformed manifests, or absent runtime assets are hard failures.
+
+Snakemake is the execution engine here because it gives DayOA a transparent DAG, rule-level benchmarks, provenance-friendly file targets, and direct operator dry-runs. DayOA is not meant to become a universal platform monolith. New work should enter as focused pipeline modules with explicit config, tests, and evidence contracts. If a pipeline is better maintained in another workflow system, DYEC can provision the cluster and FSx/export contract while that external workflow runs in its own repository.
+
 ## Ecosystem Planes
 
 ```mermaid
@@ -85,7 +91,7 @@ Sentieon workflows require `SENTIEON_LICENSE` to point at a valid license file o
 
 ```yaml
 daylily:
-  sentieon_lic_path: /fsx/references/runtime_assets/cached_envs/Life_Sciences_Manufacturing_Corporation_eval.lic
+  sentieon_lic_path: /fsx/references/runtime_assets/sentieon/license.lic
 ```
 
 After initialization and activation, verify the resolved license before launching Sentieon targets:
@@ -96,7 +102,7 @@ dy-a slurm hg38
 test -f "$SENTIEON_LICENSE" && echo "$SENTIEON_LICENSE"
 ```
 
-If the configured license path is absent, DayOA scans `/fsx/references/runtime_assets/cached_envs/*.lic`. One detected license is assigned to `SENTIEON_LICENSE` with a warning. If multiple licenses are detected, DayOA assigns the file with the longest filename and prints a clear warning that it auto assigned a detected license. If no license is detected, Sentieon tools fail until `sentieon_lic_path` or `SENTIEON_LICENSE` points to a valid file. Do not commit license files to this repository.
+DayOA does not scan runtime-asset directories for license files and does not choose a license automatically. If `SENTIEON_LICENSE` is set to a missing file, if `daylily.sentieon_lic_path` is absent, or if the configured file does not exist, initialization fails before Sentieon targets can launch. Do not commit license files to this repository.
 
 ## Common Targets
 
@@ -114,6 +120,12 @@ If the configured license path is absent, DayOA scans `/fsx/references/runtime_a
 | `produce_ultima_run_qc` | Mounted Ultima run QC plus demux FastQC/SeqKit and focused MultiQC when demux FASTQs are present under `RUN_DIR`. |
 | `produce_bclconvert_fastqs_and_metrics` | Lane-split Illumina BCL Convert demultiplexing plus generated units and demux metrics. |
 | `produce_illumina_run_qc_and_bclconvert` | Mounted Illumina run QC plus lane-split BCL Convert in one run-context workflow. |
+
+## Workflow Families And Tool Inventory
+
+DayOA workflows are grouped around input/demux, FASTQ QC, alignment, deduplication, SNV/indel calling, SV/CNV/STR evidence, contamination/identity, metagenomics screening, concordance benchmarking, annotation, and MultiQC/evidence manifest generation. The authoritative inventory for tools, targets, rule files, outputs, environment/version evidence, tests, and public tool references is [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md). Keep that catalog repo-grounded: add a row only when the tool exists in rules, scripts, config, fixtures, or tests.
+
+The routine HG003 short-read SNV evidence path uses configured HG003 FASTQs, Sentieon alignment/markdup/DNAscope targets, RTG/GIAB concordance, alignstats, and final MultiQC/evidence manifest targets. nf-core/Nextflow comparison runs are intentionally not added to DayOA; DYEC can stage the same data and run an nf-core repository beside DayOA when the pipeline honors the same FSx analysis-root and export contract.
 
 ## Mounted Run Directories And BCL Convert
 
@@ -162,6 +174,17 @@ See [`docs/ops/multiqc_qc_targets.md`](docs/ops/multiqc_qc_targets.md).
 | [`docs/ops/multiqc_qc_targets.md`](docs/ops/multiqc_qc_targets.md) | MultiQC staging, runtime gating, and local evidence boundaries. |
 | [`docs/ops/results_directory_structure.md`](docs/ops/results_directory_structure.md) | Analysis, `results/day`, `results/runs`, run QC, and BCL Convert output layout. |
 | [`docs/examples/multiqc/README.md`](docs/examples/multiqc/README.md) | Example MultiQC report handling and cluster-dependent example guidance. |
+
+## Contributing
+
+Contributions should keep the execution contract explicit and testable:
+
+- Add focused rules or scripts instead of expanding a single all-purpose DayOA path.
+- Put required inputs in manifests or named config keys; do not infer buckets, references, licenses, sample identities, or runtime assets.
+- Make new targets callable through `dy-r <target>` and document expected outputs under `results/day/<build>/` or `results/runs/<RUNID>/`.
+- Add or update catalog rows in [`docs/catalog_of_tools.md`](docs/catalog_of_tools.md) for every enabled tool.
+- Add focused pytest or shell coverage for parser-visible docs, command rendering, MultiQC/evidence outputs, and hard-failure behavior.
+- Keep HTML reports as navigational artifacts; parser-relevant data belongs in source manifests, `_mqc.tsv` files, logs, benchmarks, and `dayoa_evidence_manifest.json`.
 
 ## Validation
 

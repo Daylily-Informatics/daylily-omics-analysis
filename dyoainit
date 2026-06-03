@@ -358,41 +358,44 @@ else
     export SENTIEON_TMPDIR='/dev/shm/'
     export SENTIEON_INSTALL_DIR='/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02'
     export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
+    sentieon_config_file="${DAYLILY_CLI_GLOBAL_CONFIG:-$HOME/.config/daylily/daylily_cli_global.yaml}"
 
-    sentieon_license_dir="/fsx/references/runtime_assets/cached_envs"
     if [[ -n "${SENTIEON_LICENSE:-}" && -f "$SENTIEON_LICENSE" ]]; then
         echo "Using explicit SENTIEON_LICENSE: $SENTIEON_LICENSE"
     else
         if [[ -n "${SENTIEON_LICENSE:-}" ]]; then
-            echo "WARNING: SENTIEON_LICENSE is set but the file does not exist: $SENTIEON_LICENSE"
+            echo "ERROR: SENTIEON_LICENSE is set but the file does not exist: $SENTIEON_LICENSE"
+            return 3
         fi
 
-        sentieon_detected_license=""
-        sentieon_detected_count=0
-        sentieon_longest_filename_len=-1
-        if [[ -d "$sentieon_license_dir" ]]; then
-            while IFS= read -r -d '' sentieon_candidate; do
-                sentieon_detected_count=$((sentieon_detected_count + 1))
-                sentieon_filename="$(basename "$sentieon_candidate")"
-                if (( ${#sentieon_filename} > sentieon_longest_filename_len )); then
-                    sentieon_longest_filename_len=${#sentieon_filename}
-                    sentieon_detected_license="$sentieon_candidate"
-                fi
-            done < <(find "$sentieon_license_dir" -maxdepth 1 -type f -name '*.lic' -print0 | sort -z)
+        if [[ ! -f "$sentieon_config_file" ]]; then
+            echo "ERROR: Daylily config not found: $sentieon_config_file"
+            echo "Set SENTIEON_LICENSE to an explicit license file or configure daylily.sentieon_lic_path."
+            return 3
         fi
 
-        if [[ "$sentieon_detected_count" -eq 1 ]]; then
-            export SENTIEON_LICENSE="$sentieon_detected_license"
-            echo "WARNING: SENTIEON_LICENSE was not configured with a valid file; auto assigning a detected Sentieon license: $SENTIEON_LICENSE"
-        elif [[ "$sentieon_detected_count" -gt 1 ]]; then
-            export SENTIEON_LICENSE="$sentieon_detected_license"
-            echo "WARNING: SENTIEON_LICENSE was not configured with a valid file; found $sentieon_detected_count license files under $sentieon_license_dir."
-            echo "WARNING: Auto assigning a detected Sentieon license with the longest filename: $SENTIEON_LICENSE"
-        else
-            export SENTIEON_LICENSE=""
-            echo "WARNING: SENTIEON_LICENSE is not configured and no *.lic file was detected under $sentieon_license_dir."
-            echo "WARNING: Sentieon tools will fail until SENTIEON_LICENSE points to a valid license file."
+        sentieon_configured_license="$(awk '
+            $1 == "sentieon_lic_path:" {
+                $1 = ""
+                sub(/^[[:space:]]+/, "")
+                gsub(/^["'\'']|["'\'']$/, "")
+                print
+                found = 1
+                exit
+            }
+            END { exit(found ? 0 : 1) }
+        ' "$sentieon_config_file" 2>/dev/null || true)"
+        if [[ -z "$sentieon_configured_license" || "$sentieon_configured_license" == "null" ]]; then
+            echo "ERROR: daylily.sentieon_lic_path is missing from $sentieon_config_file"
+            echo "Set SENTIEON_LICENSE to an explicit license file or configure daylily.sentieon_lic_path."
+            return 3
         fi
+        if [[ ! -f "$sentieon_configured_license" ]]; then
+            echo "ERROR: daylily.sentieon_lic_path does not exist: $sentieon_configured_license"
+            return 3
+        fi
+        export SENTIEON_LICENSE="$sentieon_configured_license"
+        echo "Using configured Sentieon license file: $SENTIEON_LICENSE"
     fi
 fi
 

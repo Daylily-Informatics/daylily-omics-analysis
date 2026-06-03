@@ -80,15 +80,8 @@ if [[ "$?" == "3" ]]; then
 fi
 
 if ! which yq &>/dev/null; then
-  if [[ "${DAY_BIOME:-}" == "MAC" ]]; then
-    echo "ERROR: yq is required in the DAY-EC environment for macOS local mode."
-    return 3
-  fi
-  echo "yq not found. Installing via conda in base environment..."
-  conda install -c conda-forge yq -y || {
-    echo "Failed to install yq."
-    return 3
-  }
+  echo "ERROR: yq is required in the active DAYOA environment."
+  return 3
 else
   echo "yq is already installed."
 fi
@@ -112,37 +105,13 @@ else
     export SENTIEON_LICENSE_YAM=$(yq -r '.daylily.sentieon_lic_path' "$CONFIG_FILE")
     export SENTIEON_INSTALL_DIR=$(yq -r '.daylily.sentieon_install_dir' "$CONFIG_FILE")
     export PATH="$PATH:$SENTIEON_INSTALL_DIR/bin/"
-    export SENTIEON_LICENSE=''
-
+    if [[ -z "$SENTIEON_LICENSE_YAM" || "$SENTIEON_LICENSE_YAM" == "null" ]]; then
+        echo "ERROR: daylily.sentieon_lic_path is missing from $CONFIG_FILE."
+        return 3
+    fi
     if [[ ! -f "$SENTIEON_LICENSE_YAM" ]]; then
-        echo "WARNING: sentieon lic file $SENTIEON_LICENSE_YAM not found."
-
-        sentieon_license_dir="/fsx/references/runtime_assets/cached_envs"
-        sentieon_detected_license=""
-        sentieon_detected_count=0
-        sentieon_longest_filename_len=-1
-        if [[ -d "$sentieon_license_dir" ]]; then
-            while IFS= read -r -d '' sentieon_candidate; do
-                sentieon_detected_count=$((sentieon_detected_count + 1))
-                sentieon_filename="$(basename "$sentieon_candidate")"
-                if (( ${#sentieon_filename} > sentieon_longest_filename_len )); then
-                    sentieon_longest_filename_len=${#sentieon_filename}
-                    sentieon_detected_license="$sentieon_candidate"
-                fi
-            done < <(find "$sentieon_license_dir" -maxdepth 1 -type f -name '*.lic' -print0 | sort -z)
-        fi
-
-        if [[ "$sentieon_detected_count" -eq 1 ]]; then
-            export SENTIEON_LICENSE="$sentieon_detected_license"
-            echo "WARNING: SENTIEON_LICENSE was not configured with a valid file; auto assigning a detected Sentieon license: $SENTIEON_LICENSE"
-        elif [[ "$sentieon_detected_count" -gt 1 ]]; then
-            export SENTIEON_LICENSE="$sentieon_detected_license"
-            echo "WARNING: SENTIEON_LICENSE was not configured with a valid file; found $sentieon_detected_count license files under $sentieon_license_dir."
-            echo "WARNING: Auto assigning a detected Sentieon license with the longest filename: $SENTIEON_LICENSE"
-        else
-            echo "WARNING: sentieon lic file not detected in '$sentieon_license_dir/*.lic'."
-            echo "If you try to use any of the sentieon tools, you will get an error."
-        fi
+        echo "ERROR: daylily.sentieon_lic_path does not exist: $SENTIEON_LICENSE_YAM"
+        return 3
     else
         echo "Using sentieon license file: $SENTIEON_LICENSE_YAM from ~/.config/daylily/daylily_cli_global.yaml"
         export SENTIEON_LICENSE=$SENTIEON_LICENSE_YAM

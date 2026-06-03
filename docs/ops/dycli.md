@@ -1,12 +1,12 @@
 # DayOA CLI Notes
 
-DayOA CLI work starts in the `DAY-EC` conda environment:
+DayOA CLI work starts in the `DAY-EC` conda environment. On a Mac, activate it before touching this repo:
 
 ```bash
 eval "$(conda shell.zsh hook)" && conda activate DAY-EC
 ```
 
-Initialize a workset clone, activate a profile, then run targets:
+Every DayOA command session has three explicit steps. Run them as separate commands so shell functions, aliases, profile variables, and error codes are visible:
 
 ```bash
 source dyoainit
@@ -15,13 +15,40 @@ dy-r help
 dy-r produce_multiqc_all -n -p -j 1
 ```
 
-Useful commands:
+## Command Model
 
-- `dy-r --version` prints the DayOA command wrapper version.
-- `day-monitor` inspects workflow state from an active analysis directory.
-- `dy-r <target> -n -p -j 1` performs a dry-run with printed commands.
+`source dyoainit` initializes the repository shell state and defines DayOA helper aliases. `dy-a <profile> <build>` activates one configured profile such as `local hg38`, `slurm hg38`, or `slurm hg38_broad`. `dy-r <target> <flags>` is the supported DayOA wrapper for workflow execution; it passes targets and flags through to Snakemake after applying the DayOA profile contract.
 
-On a headnode, connect only through `daylily-ec`/SSM and use a login bash shell before invoking `source dyoainit`, `dy-a`, `dy-r`, or `day-monitor`.
+Agent/headnode workflow instructions must use `dy-r` instead of calling `snakemake` directly. Direct Snakemake invocations bypass the wrapper contract that operators use for profile, logging, benchmark, and Slurm behavior.
+
+Useful commands and patterns:
+
+| Command | Purpose |
+|---|---|
+| `dy-r --version` | Print the DayOA command wrapper version. |
+| `dy-r help -p -k -j 1 -n` | Validate wrapper help through the active profile without running jobs. |
+| `dy-r <target> -n -p -j 1` | Dry-run a target with printed commands. |
+| `dy-r produce_alignstats -p -j 20 -k` | Run alignment-stat evidence after manifests and references are present. |
+| `dy-r produce_snv_concordances -p -j 20 -k` | Run configured SNV concordance evidence. |
+| `dy-r produce_multiqc_all -p -j 20 -k` | Build final MultiQC aggregation after source evidence exists. |
+| `day-monitor` | Inspect workflow state from an active analysis directory. |
+
+Missing config, manifests, references, licenses, or runtime assets are errors. DayOA does not infer sample identity, scan for alternate references, or choose replacement runtime assets.
+
+## Headnode Pattern
+
+On a headnode, connect only through `daylily-ec`/SSM and use an interactive login bash shell before invoking `source dyoainit`, `dy-a`, `dy-r`, or `day-monitor`. Long workflow work should run inside a persistent, meaningfully named `tmux` session as `ubuntu`.
+
+```bash
+exec bash -l
+tmux new -s hg003_5x_snv_benchmark
+cd /fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis
+source dyoainit
+dy-a slurm hg38
+dy-r produce_alignstats produce_snv_concordances -p -j 100 -k
+```
+
+Monitoring commands such as `squeue`, `sacct`, `day-monitor`, and log inspection are read-only. Scheduler, node, Slurm service, drain/resume, cancel, requeue, or repair actions require separate operator approval.
 
 ## BCL Convert Run-Context Pattern
 
