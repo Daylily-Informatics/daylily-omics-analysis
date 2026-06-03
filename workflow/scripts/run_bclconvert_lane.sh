@@ -53,8 +53,8 @@ if [[ ! -d "$run_dir" ]]; then
   echo "BCL input directory does not exist: $run_dir" >> "$log_path"
   exit 2
 fi
-if [[ -d "$final_output_dir" ]] && find "$final_output_dir" -mindepth 1 -print -quit | grep -q .; then
-  echo "BCL output directory is not empty; refusing to overwrite: $final_output_dir" >> "$log_path"
+if [[ -d "$final_output_dir" ]] && find "$final_output_dir" -mindepth 1 ! -type d -print -quit | grep -q .; then
+  echo "BCL output directory contains existing files; refusing to overwrite: $final_output_dir" >> "$log_path"
   exit 2
 fi
 if [[ -n "$scratch_output_root" ]]; then

@@ -590,6 +590,8 @@ assert "{params.force:q} {threads:q} {log:q}" not in text
 helper_text = Path("workflow/scripts/run_bclconvert_lane.sh").read_text()
 assert "expected 28 arguments" in helper_text
 assert "__dayoa_no_force__" in helper_text
+assert "find \"$final_output_dir\" -mindepth 1 ! -type d -print -quit" in helper_text
+assert "BCL output directory contains existing files; refusing to overwrite" in helper_text
 assert "rule bclconvert_demux_fastq_qc:" in text
 assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in text
 assert "BCL_DEMUX_FASTQC_MQC" in text
