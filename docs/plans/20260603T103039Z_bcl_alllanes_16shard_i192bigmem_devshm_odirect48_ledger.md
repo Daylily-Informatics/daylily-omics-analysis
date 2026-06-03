@@ -62,7 +62,7 @@ Run the full `20260514_LH01106_0009_B23TVLGLT4` flowcell through DayOA BCL Conve
 | All-lane samples.tsv | `PASS` | wrote `42` sample rows: default `ANA0-HG002` plus `41` BCLConvert SampleSheet IDs; previous file backed up as `config/samples.tsv.before_alllanes_20260603T103039Z` |
 | Live run retry 2 | `FAILED` | `RC=1`; no compute jobs submitted; stale Snakemake lock after prior failed local attempts |
 | Workdir unlock | `PASS` | `dy-r --unlock --configfile ...`, `RC=0`; no same-workset controller process before unlock |
-| Live run retry 3 | `SUBMITTED` | same `dy-r` command; `128` `i192bigmem` shard jobs submitted; snapshot: `4 CONFIGURING`, `124 PENDING`; log `live_bclconvert_alllanes_16shard_retry3_20260603T103039Z.log` |
+| Live run retry 3 | `FAILED` | same `dy-r` command; `128` `i192bigmem` shard jobs submitted; later snapshot at `2026-06-03T11:13:28Z`: `RC=1`, no same-workset controller process, no active `i192bigmem` jobs, `validated=1`, `tile_done=0`, `bench=0`; log reports failed shard cluster job ids including `205`-`208` |
 | Acceptance | `PENDING` |  |
 
 ## Non-Intervention Boundary
