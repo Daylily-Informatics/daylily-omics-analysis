@@ -1,0 +1,124 @@
+diff --git a/config/day_profiles/slurm/templates/rule_config.yaml b/config/day_profiles/slurm/templates/rule_config.yaml
+index 5f721b1..8aa0d56 100755
+--- a/config/day_profiles/slurm/templates/rule_config.yaml
++++ b/config/day_profiles/slurm/templates/rule_config.yaml
+@@ -160,17 +160,17 @@ bcl2fq_by_lane:
+
+ bwa_mem2a_aln_sort:
+     env_yaml: "../envs/bwasamtools_v0.1.yaml"
+-    partition: "i192mem"
+-    threads: 192
+-    bwa_threads: 192 # from 128
+-    orig_threads: 2
+-    sort_threads: 192 # from 48
++    partition: "bcl2fq-i384-nvme-test-dy-c8id384"
++    threads: 384
++    bwa_threads: 220 # from 128
++    orig_threads: 8
++    sort_threads: 80 # from 48
+     mem_mb: 200000
+     igz: "  igzip -cd -T 64 " #  Consider OMP_BIND_PROC=spread was OMP_BIND_PROC=TRUE
+     benchmark_runs: 0
+-    cmd: " OMP_NUM_THREADS=192 OMP_PLACES=threads OMP_PROC_BIND=close OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE  resources/bwa-mem2/bwa-mem2 "  # removed  OMP_PROC_BIND=close
++    cmd: " OMP_NUM_THREADS=384 OMP_PLACES=threads4OMP_PROC_BIND=close OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE  resources/bwa-mem2/bwa-mem2 "  # removed  OMP_PROC_BIND=close
+     bwa_opts: "  -k 19 -Y -M -K 1000000000  "
+-    sort_thread_mem: "1024M"
++    sort_thread_mem: "425M"
+     mbuffer: " | mbuffer -m 128G -q -s 2M  "  #| mbuffer -m 10G -q -s 1M "
+     constraint: ""  # --constraint 'm7gb768|r7gb1536'
+
+@@ -304,12 +304,12 @@ duphold:
+     partition: "i192,i192mem"
+
+ doppelmark:
+-    threads: 192
+-    doppelmark_threads: 192
+-    view_threads: 8
+-    view_mem: "2G"
++    threads: 384
++    doppelmark_threads: 384
++    view_threads: 16
++    view_mem: "1G"
+     mbuffer_mem: "1G"
+-    partition: "i192mem,i192bigmem"
++    partition: "bcl2fq-i384-nvme-test-dy-c8id384"
+     mem_mb: 200000 ## potentially this can be set to by dynamic by input bam size
+     clip_padding: 800  # 600000
+     shard_size: 50000000
+@@ -317,11 +317,11 @@ doppelmark:
+     queue_length: 1250  # 5000
+     cram_compression: 1
+     ld_preload: "  "
+-    compress_threads: 96
++    compress_threads: 186
+     compress_mem: "2750M"
+     env_yaml: "../envs/vanilla_v0.1.yaml"
+     dop_opts:  " -max-depth 3000 "
+-    numa: " OMP_NUM_THREADS=192 OMP_PROC_BIND=close OMP_PLACES=threads OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
++    numa: " OMP_NUM_THREADS=384 OMP_PROC_BIND=close OMP_PLACES=threads OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE "
+     constraint: ""  # " --constraint 'm7gb768|r7gb1536' "
+
+ sent_dedup:
+diff --git a/workflow/rules/bwa_mem2a_align_sort.smk b/workflow/rules/bwa_mem2a_align_sort.smk
+index caa52f7..7303c0d 100755
+--- a/workflow/rules/bwa_mem2a_align_sort.smk
++++ b/workflow/rules/bwa_mem2a_align_sort.smk
+@@ -16,12 +16,12 @@ rule bwa_mem2_sort:
+     log:
+         MDIR + "{sample}/align/bwa2a/logs/{sample}.bwa2a_sort.log",
+     resources:
+-        threads=config['bwa_mem2a_aln_sort']['threads'],
++        threads=380,
+         mem_mb=config['bwa_mem2a_aln_sort']['mem_mb'],
+-        partition=config['bwa_mem2a_aln_sort']['partition'],
+-        vcpu=config['bwa_mem2a_aln_sort']['threads'],
++        partition="bcl2fq-i384-nvme-test",
++        vcpu=380,
+         constraint=config['bwa_mem2a_aln_sort']['constraint'],
+-    threads: config['bwa_mem2a_aln_sort']['threads']
++    threads: 384
+     benchmark:
+         MDIR + "{sample}/benchmarks/{sample}.bwa2a.alNsort.bench.tsv"
+     params:
+diff --git a/workflow/rules/doppel_mrkdups.smk b/workflow/rules/doppel_mrkdups.smk
+index cff7753..6fef3d0 100755
+--- a/workflow/rules/doppel_mrkdups.smk
++++ b/workflow/rules/doppel_mrkdups.smk
+@@ -26,21 +26,21 @@ rule doppelmark_dups:
+         crai=MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram.crai",
+     wildcard_constraints:
+         alnr="|".join(OG_ALIGNERS) if OG_ALIGNERS else r"(?!x)x"
+-    threads: config["doppelmark"]["threads"]
++    threads: 380
+     benchmark:
+         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.dmd.mrkdup.bench.tsv", 0)
+     conda:
+         "../envs/doppelmark_v0.1.yaml"
+     resources:
+-        threads=config["doppelmark"]["threads"],
+-        partition=config["doppelmark"]["partition"],
+-        vcpu=config["doppelmark"]["threads"],
++        threads=360,
++        partition="bcl2fq-i384-nvme-test",
++        vcpu=360,
+         mem_mb=config["doppelmark"]["mem_mb"],
+         constraint=config["doppelmark"]["constraint"],
+     params:
+         cluster_sample=ret_sample,
+         numa=config['doppelmark']['numa'],
+-        doppelmark_threads=config['doppelmark']['doppelmark_threads'],
++        doppelmark_threads=300,
+         cram_compression=config["doppelmark"]["cram_compression"],
+         shard_size=config['doppelmark']['shard_size'],
+         clip_padding=config['doppelmark']['clip_padding'],
+@@ -49,8 +49,8 @@ rule doppelmark_dups:
+         queue_length=config['doppelmark']['queue_length'],
+         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+         compress_mem=config["doppelmark"]["compress_mem"],
+-        compress_threads=config["doppelmark"]["compress_threads"],
+-        view_threads=config["doppelmark"]["view_threads"],
++        compress_threads=40,
++        view_threads=40,
+         view_mem=config["doppelmark"]["view_mem"],
+         mbuffer_mem=config["doppelmark"]["mbuffer_mem"],
+     log:
