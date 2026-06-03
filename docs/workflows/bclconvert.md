@@ -35,14 +35,14 @@ If a consumer explicitly needs the merged legacy tree, set `bclconvert.merge_lan
 
 ## Tile Sharding
 
-Tile sharding is off by default with `bclconvert.tile_shard_level: "lane"`. To split selected lanes into scheduler-visible BCL Convert jobs, set `tile_shard_level` to an integer shard count and optionally set `tile_shard_lanes` to a comma-separated lane list:
+The Slurm profile defaults to scheduler-visible tile sharding with `bclconvert.tile_shard_level: "16"`. To restrict the run to selected lanes, set `tile_shard_lanes` to a comma-separated lane list:
 
 ```yaml
 bclconvert:
-  tile_shard_level: "40"
+  tile_shard_level: "16"
   tile_shard_lanes: "L003"
   tile_shard_threads: 48
-  tile_shard_mem_mb: 180000
+  tile_shard_mem_mb: 500000
   tile_parallel_tiles: 8
   tile_conversion_threads: 2
   tile_compression_threads: 24
@@ -56,7 +56,7 @@ For small diagnostic BCL Convert probes, set `tile_shard_level: "tile_smoke"` wi
 
 Set `bclconvert.merge_tile_fastqs: true` only when a consumer explicitly needs one R1/R2 FASTQ pair per sample/lane. In that mode `merge_bclconvert_tile_shards` concatenates shard FASTQs in shard-name order before writing the lane-level `fastq_list.csv`.
 
-`bclconvert.shared_thread_odirect_output` defaults to `auto`: DayOA passes `--shared-thread-odirect-output true` when tile sharding is active and `false` for direct whole-lane BCL Convert. Set `shared_thread_odirect_output: true` or `false` to override the auto choice.
+The Slurm profile defaults `bclconvert.shared_thread_odirect_output: true` so BCL Convert uses the shared-thread O_DIRECT output path. Set it to `false` only for a specific experiment or capacity investigation.
 
 After demultiplexing, `bclconvert_demux_fastq_qc` prepares one FastQC input link for every demultiplexed FASTQ listed by the selected report set. Link names are composed as:
 
@@ -84,31 +84,33 @@ The focused report includes `bclconvert`, `fastqc`, and `custom_content` modules
 
 ## Default Demux Settings
 
-The Slurm profile targets solo 192-vCPU BCL Convert jobs:
+The Slurm profile targets the observed successful `i192bigmem` BCL Convert profile: 16 tile shards per lane, 48 threads per shard, non-exclusive placement, `/dev/shm` staging, and O_DIRECT output.
 
 ```yaml
 bclconvert:
-  threads: 192
-  mem_mb: 360000
-  partition: "i192mem,i192bigmem"
-  exclusive: "--exclusive"
+  threads: 48
+  mem_mb: 500000
+  partition: "i192bigmem"
+  exclusive: ""
+  tmpdir: "/dev/shm/dayoa_bclconvert_tmp"
+  scratch_output_root: "/dev/shm/dayoa_bclconvert"
+  scratch_available_bytes_min: 100000000000
   merge_lane_fastqs: false
   merge_tile_fastqs: false
-  parallel_tiles: 24
-  conversion_threads: 4
-  compression_threads: 64
-  decompression_threads: 32
-  tile_shard_level: "lane"
+  parallel_tiles: 8
+  conversion_threads: 2
+  compression_threads: 24
+  decompression_threads: 8
+  tile_shard_level: "16"
   tile_shard_lanes: ""
   tile_shard_threads: 48
-  exclusive: ""
-  tile_shard_mem_mb: 180000
+  tile_shard_mem_mb: 500000
   tile_parallel_tiles: 8
   tile_conversion_threads: 2
   tile_compression_threads: 24
   tile_decompression_threads: 8
   fastq_gzip_compression_level: 1
-  shared_thread_odirect_output: auto
+  shared_thread_odirect_output: true
   output_legacy_stats: true
   num_unknown_barcodes_reported: 1000
   demux_qc_threads: 32

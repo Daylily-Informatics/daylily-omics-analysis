@@ -131,6 +131,7 @@ bclconvert:
     exclusive: ""
     tmpdir: "/dev/shm"
     scratch_output_root: ""
+    scratch_available_bytes_min: 0
     parallel_tiles: 1
     conversion_threads: 3
     compression_threads: 3

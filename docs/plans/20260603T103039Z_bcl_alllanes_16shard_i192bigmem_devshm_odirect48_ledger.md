@@ -1,0 +1,62 @@
+# BCL Convert All-Lanes 16-Shard Ledger
+
+Created: `2026-06-03T10:30:39Z`
+
+## Objective
+
+Run the full `20260514_LH01106_0009_B23TVLGLT4` flowcell through DayOA BCL Convert with all lanes enabled, `16` tile shards per lane, `/dev/shm` staging, O_DIRECT output enabled, and `dy-r ... -j 300`.
+
+## Gate 0 Inventory
+
+| Field | Value |
+|---|---|
+| Cluster | `dyec0602bcl` |
+| Region | `us-west-2` |
+| Headnode | `i-0c36c39770c533c8e` |
+| Headnode hostname | `ip-10-0-0-235` |
+| AWS profile | `lsmc` |
+| Run directory | `/fsx/run_dir_mounts/20260514_LH01106_0009_B23TVLGLT4` |
+| Sample sheet | `/fsx/run_dir_mounts/20260514_LH01106_0009_B23TVLGLT4/SampleSheet.csv` |
+| Lanes observed | `L001,L002,L003,L004,L005,L006,L007,L008` |
+| `/fsx` available | `6122330521600` bytes |
+| Prior L003 output size | `601951490190` bytes |
+| Estimated 8-lane output | `~4.8T` |
+| Destination | `/fsx/run_dir_mounts/20260514_LH01106_0009_B23TVLGLT4/fasts_from_bclconvert_alllanes_16shard_i192bigmem_devshm_odirect48_20260603T103039Z` |
+
+## Execution Contract
+
+| Setting | Value |
+|---|---|
+| Wrapper | `dy-r` only |
+| Target | `produce_bclconvert_fastqs` |
+| Jobs | `-j 300` |
+| Retries | `-T 0` |
+| Partition | `i192bigmem` |
+| Tile shards | `16` per lane |
+| Lane filter | empty, all lanes |
+| Shard threads | `48` |
+| Shard memory | `500000 MB` |
+| Slurm exclusive | empty |
+| Staging root | `/dev/shm/dayoa_bclconvert` |
+| TMPDIR | `/dev/shm/dayoa_bclconvert_tmp` |
+| Scratch minimum | `100000000000` bytes |
+| O_DIRECT | `shared_thread_odirect_output: true` |
+| Merge tile FASTQs | `false` |
+| Merge lane FASTQs | `false` |
+
+## Status Ledger
+
+| Row | Status | Evidence |
+|---|---|---|
+| Gate 0 `/fsx` space check | `PASS` | `/fsx` available `6122330521600` bytes |
+| Gate 0 run-dir check | `PASS` | all `L001`-`L008` directories and `SampleSheet.csv` present |
+| Local DayOA tests for default/profile changes | `PASS` | `python -m pytest tests/test_bclconvert_multiqc.py -q`: `13 passed` |
+| Fresh headnode workset | `PENDING` |  |
+| Config written | `PENDING` |  |
+| Dry-run | `PENDING` | expect `128` `run_bclconvert_tile_shard` jobs |
+| Live run | `PENDING` |  |
+| Acceptance | `PENDING` |  |
+
+## Non-Intervention Boundary
+
+Do not cancel, requeue, drain/resume, restart Slurm services, or alter partitions while this run is pending or running unless explicitly approved in the current thread.

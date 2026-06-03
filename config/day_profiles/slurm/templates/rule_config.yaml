@@ -124,29 +124,30 @@ bclconvert:
     strict_mode: false
     first_tile_only: false
     extra_args: ""
-    threads: 192
-    mem_mb: 360000
-    partition: "i192mem,i192bigmem"
+    threads: 48
+    mem_mb: 500000
+    partition: "i192bigmem"
     constraint: ""
-    exclusive: "--exclusive"
-    tmpdir: "/dev/shm"
-    scratch_output_root: ""
-    parallel_tiles: 24
-    conversion_threads: 4
-    compression_threads: 64
-    decompression_threads: 32
-    tile_shard_level: "lane"
+    exclusive: ""
+    tmpdir: "/dev/shm/dayoa_bclconvert_tmp"
+    scratch_output_root: "/dev/shm/dayoa_bclconvert"
+    scratch_available_bytes_min: 100000000000
+    parallel_tiles: 8
+    conversion_threads: 2
+    compression_threads: 24
+    decompression_threads: 8
+    tile_shard_level: "16"
     tile_shard_lanes: ""
     tile_shard_tile_limit: 0
     tile_shard_tile_names: ""
     tile_shard_threads: 48
-    tile_shard_mem_mb: 180000
+    tile_shard_mem_mb: 500000
     tile_parallel_tiles: 8
     tile_conversion_threads: 2
     tile_compression_threads: 24
     tile_decompression_threads: 8
     fastq_gzip_compression_level: 1
-    shared_thread_odirect_output: false
+    shared_thread_odirect_output: true
     output_legacy_stats: true
     num_unknown_barcodes_reported: 1000
     demux_qc_threads: 32
