@@ -294,6 +294,11 @@ def test_dayoa_environment_declares_mermaid_cli_for_pipeline_reports() -> None:
     assert '"$CONDA_PREFIX/bin/npm" install --global --prefix "$CONDA_PREFIX" "$DAYOA_MERMAID_CLI_PACKAGE"' in installer
     assert '[[ ! -x "$CONDA_PREFIX/bin/mmdc" ]]' in installer
     assert '"$CONDA_PREFIX/bin/mmdc" --version >/dev/null' in installer
+    assert '[[ ! -x "$CONDA_PREFIX/bin/npx" ]]' in installer
+    assert "Could not find Chrome" in installer
+    assert '@puppeteer/browsers' in installer
+    assert 'install "chrome-headless-shell@$mermaid_chrome_version"' in installer
+    assert 'mmdc smoke render failed after installing Chrome headless shell.' in installer
 
 
 def test_mmdc_is_not_called_inside_snakemake_rules() -> None:

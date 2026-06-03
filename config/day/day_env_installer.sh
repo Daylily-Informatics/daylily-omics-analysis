@@ -113,6 +113,54 @@ install_mermaid_cli() {
         echo "mmdc is installed but failed to execute."
         return 1
     }
+    if [[ ! -x "$CONDA_PREFIX/bin/npx" ]]; then
+        echo "npx is missing from $DY_ENVNAME; cannot install Mermaid browser payload."
+        return 1
+    fi
+    local mermaid_smoke_dir mermaid_smoke_log mermaid_chrome_version
+    mermaid_smoke_dir="$(mktemp -d)"
+    mermaid_smoke_log="$mermaid_smoke_dir/mmdc.log"
+    printf 'flowchart TD\n  A-->B\n' > "$mermaid_smoke_dir/smoke.mmd"
+    if ! "$CONDA_PREFIX/bin/mmdc" \
+        -i "$mermaid_smoke_dir/smoke.mmd" \
+        -o "$mermaid_smoke_dir/smoke.pdf" \
+        > "$mermaid_smoke_log" 2>&1; then
+        mermaid_chrome_version="$(
+            sed -nE 's/.*Could not find Chrome \(ver\. ([^)]+)\).*/\1/p' \
+                "$mermaid_smoke_log" | head -1
+        )"
+        if [[ -z "$mermaid_chrome_version" ]]; then
+            cat "$mermaid_smoke_log"
+            rm -rf "$mermaid_smoke_dir"
+            echo "mmdc smoke render failed and did not report a missing Chrome version."
+            return 1
+        fi
+        echo "Installing Mermaid Chrome headless shell payload: $mermaid_chrome_version"
+        rm -rf "$HOME/.cache/puppeteer/chrome-headless-shell/linux-$mermaid_chrome_version"
+        "$CONDA_PREFIX/bin/npx" --yes @puppeteer/browsers \
+            install "chrome-headless-shell@$mermaid_chrome_version" \
+            --path "$HOME/.cache/puppeteer" || {
+            rm -rf "$mermaid_smoke_dir"
+            echo "Failed to install chrome-headless-shell@$mermaid_chrome_version."
+            return 1
+        }
+        "$CONDA_PREFIX/bin/mmdc" \
+            -i "$mermaid_smoke_dir/smoke.mmd" \
+            -o "$mermaid_smoke_dir/smoke.pdf" \
+            > "$mermaid_smoke_log" 2>&1 || {
+            cat "$mermaid_smoke_log"
+            rm -rf "$mermaid_smoke_dir"
+            echo "mmdc smoke render failed after installing Chrome headless shell."
+            return 1
+        }
+    fi
+    if [[ ! -s "$mermaid_smoke_dir/smoke.pdf" ]]; then
+        cat "$mermaid_smoke_log"
+        rm -rf "$mermaid_smoke_dir"
+        echo "mmdc smoke render did not create a non-empty PDF."
+        return 1
+    fi
+    rm -rf "$mermaid_smoke_dir"
 }
 
 #conda install -y conda=25.5.1

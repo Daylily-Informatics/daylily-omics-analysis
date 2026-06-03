@@ -4,6 +4,7 @@
 - For AWS EC2, ParallelCluster, and other remote Linux hosts, default to an interactive `bash` login shell as `ubuntu`. Do not use `root` unless the user explicitly grants permission for that specific work; use targeted `sudo` from `ubuntu` when escalation is required.
 - For Daylily/DayOA/DAY-EC headnode workflow work, use an interactive `ubuntu` tmux/login-shell pane for controllers and workflow commands. Run setup as separate commands in that pane (`source dyoainit`, then `dy-a ...`, then `dy-r ...`) so aliases/functions are defined before use.
 - SSM Run Command is for simple inspection or for writing helper scripts through the supported helpers. Do not launch workflow controllers or rely on `dy-*` aliases from non-interactive SSM scripts.
+- Before any DayOA workflow work, read `AGENTS-HOW-TO-RUN-DAYOA.md`. Never invoke `snakemake` directly for DayOA work. Always use `dy-r` inside a persistent, meaningfully named `tmux` session running an interactive bash login shell as `ubuntu`; `dy-r` passes all targets and flags through to Snakemake for you.
 
 # CRITICAL - HEADNODE ACCESS (READ FIRST)
 **SSM is the only supported access model for AWS ParallelCluster headnodes.**
@@ -164,8 +165,8 @@ tmux send-keys -t agbt_ug_ultima_rerun_20260422 'dy-a slurm hg38_broad' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'dy-r produce_sentdug_vcf produce_alignstats produce_snv_concordances -p -j 20 -k -T 1 &' Enter
 ```
 
-## Wrapper Script (alternative to dy-r)
-`bin/augment_setup_and_run_dayoa.bash` combines init, activate, and run into a single sourced command. Useful for tmux sessions and automation.
+## Wrapper Script (not for agents unless explicitly approved)
+Agents must use `dy-r` from an initialized persistent tmux pane. `bin/augment_setup_and_run_dayoa.bash` is historical/local helper documentation and is not an agent workflow execution path unless the user explicitly approves it in the current thread.
 
 ```bash
 source bin/augment_setup_and_run_dayoa.bash <executor> <genome_build> "<targets>" "<snakemake_flags>" ["<dry_run_flag>"]
