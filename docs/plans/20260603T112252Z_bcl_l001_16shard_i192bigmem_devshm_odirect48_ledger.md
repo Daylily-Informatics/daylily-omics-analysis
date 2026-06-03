@@ -92,9 +92,9 @@ bclconvert:
 | 2 | Headnode | create fresh L001 workset and mirror patched files | `/fsx/analysis_results/dyec0602bcl/bcl_l001_16shard_i192bigmem_devshm_odirect48_20260603T112252Z/daylily-omics-analysis`; dirty files match source patch/config/ledger | PASS |
 | 3 | Headnode | write L001 config and SampleSheet-derived `samples.tsv` | `config/samples.tsv`: 42 lines, 41 SampleSheet IDs plus header; destination empty | PASS |
 | 4 | Runner | `dy-r ... -n -T 0` dry-run via tmux | `__DRY_L001_RC__0`; 16 `run_bclconvert_tile_shard` rules; 0 full-lane rules; 0 L002-L008 wildcards | PASS |
-| 5 | Runner | live `dy-r ... -T 0` via tmux | submitted Slurm jobs `209-224` from `dayoa_bcl_l001_16shard_48devshm_20260603` | RUNNING |
-| 6 | Monitor | record `squeue`, tmux tail, logs, benchmark state | first snapshot: jobs `209-212` `CONFIGURING`, jobs `213-224` `PENDING`; no rule logs/benchmarks yet | RUNNING |
-| 7 | Acceptance | confirm 16 L001 shard outputs or terminal blocker | pending | PENDING |
+| 5 | Runner | live `dy-r ... -T 0` via tmux | submitted Slurm jobs `209-224` from `dayoa_bcl_l001_16shard_48devshm_20260603` | FAILED |
+| 6 | Monitor | record `squeue`, tmux tail, logs, benchmark state | controller logged cluster errors for jobs `209-212`; 8 shard outputs had completed by 2026-06-03T12:07Z while later shards continued under keep-going | FAILED |
+| 7 | Acceptance | confirm 16 L001 shard outputs or terminal blocker | failed shards `0002`, `0007`, `0012`, `0016` aborted with DRAGEN WatchDog `rc=134` | BLOCKED |
 
 ## Live Snapshot 2026-06-03T11:32Z
 
@@ -108,6 +108,22 @@ bclconvert:
 | first `squeue` state | `209-212 CONFIGURING`, `213 PENDING(Resources)`, `214-224 PENDING(Priority)` |
 | output count | `done=0`, `bench=0`, `fastq_lists=0` |
 | first Slurm stderr | none yet |
+
+## Failure Snapshot 2026-06-03T12:07Z
+
+| Check | Value |
+| --- | --- |
+| `/fsx` | `6.6T` size, `1.7T` used, `4.9T` available, `25%` |
+| submitted jobs | `16` |
+| completed shard outputs | `done=8`, `bench=8`, `fastq_lists=8` |
+| output size at failure snapshot | `237G` |
+| still running at snapshot | jobs `221`, `222`, `223`, `224` on `i192bigmem-dy-all-1` |
+| failed external jobs | `209`, `210`, `211`, `212` |
+| failed shards | `L001/0002_tiles0050-0098`, `L001/0007_tiles0295-0343`, `L001/0012_tiles0540-0588`, `L001/0016_tiles0736-0784` |
+| failure text | `The DRAGEN WatchDog service has detected a fault: Hang detected - there has been no system activity for 600 seconds` |
+| failure exit | `cleaning BCL scratch work directory after exit rc=134` |
+
+Classification: `FAILED/BLOCKED`. Remaining-lanes launch is blocked because the gate requires terminal L001 success.
 
 ## DayOA Contract
 

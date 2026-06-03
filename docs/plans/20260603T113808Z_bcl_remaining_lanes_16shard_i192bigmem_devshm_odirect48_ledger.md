@@ -16,8 +16,8 @@ Final output for this run:
 
 | Gate | Requirement | Current Evidence | State |
 | --- | --- | --- | --- |
-| G1 | L001 run reaches terminal success | `dayoa_bcl_l001_16shard_48devshm_20260603`, jobs `209-224` submitted; jobs `209-212` running at first live poll | PENDING |
-| G2 | `/fsx` has capacity after L001 completes | `/fsx` had `5.6T` available before L001 outputs landed; accepted L003 output is `562G`; remaining 6-lane estimate is about `3.3T` | PENDING |
+| G1 | L001 run reaches terminal success | failed shards `0002`, `0007`, `0012`, `0016` hit DRAGEN WatchDog `rc=134`; terminal success gate not met | BLOCKED |
+| G2 | `/fsx` has capacity after L001 completes | `/fsx` had `4.9T` available at failure snapshot; accepted L003 output is `562G`; remaining 6-lane estimate is about `3.3T`, but launch blocked by G1 | BLOCKED |
 | G3 | destination is absent or empty and writable | pending | PENDING |
 | G4 | dry-run plans exactly 96 `run_bclconvert_tile_shard` jobs | pending | PENDING |
 
@@ -67,13 +67,24 @@ dy-r produce_bclconvert_fastqs -p -k -j 300 -T 0 --rerun-triggers mtime --config
 
 | Row | Action | Evidence | State |
 | --- | --- | --- | --- |
-| 0 | Wait for L001 terminal success | pending | PENDING |
-| 1 | Recheck `/fsx` free space and L001/L003 output sizes | pending | PENDING |
-| 2 | Prepare fresh workset and mirror current pushed branch/config | pending | PENDING |
-| 3 | Generate SampleSheet-derived `config/samples.tsv` | pending | PENDING |
-| 4 | Dry-run remaining lanes | pending | PENDING |
-| 5 | Launch live run if G1-G4 pass | pending | PENDING |
-| 6 | Monitor Slurm and outputs | pending | PENDING |
+| 0 | Wait for L001 terminal success | L001 failed with DRAGEN WatchDog `rc=134` on four shards | BLOCKED |
+| 1 | Recheck `/fsx` free space and L001/L003 output sizes | `/fsx` `4.9T` available at failure snapshot; L001 partial output `237G`; L003 accepted output `562G` | BLOCKED |
+| 2 | Prepare fresh workset and mirror current pushed branch/config | not run because G1 failed | BLOCKED |
+| 3 | Generate SampleSheet-derived `config/samples.tsv` | not run because G1 failed | BLOCKED |
+| 4 | Dry-run remaining lanes | not run because G1 failed | BLOCKED |
+| 5 | Launch live run if G1-G4 pass | not launched | BLOCKED |
+| 6 | Monitor Slurm and outputs | not launched | BLOCKED |
+
+## Blocker 2026-06-03T12:07Z
+
+Remaining-lanes launch was not attempted. L001 did not satisfy the success gate:
+
+| Failed external job | Shard | Evidence |
+| --- | --- | --- |
+| `209` | `L001/0002_tiles0050-0098` | `DRAGEN WatchDog service has detected a fault`; scratch cleanup `rc=134` |
+| `210` | `L001/0007_tiles0295-0343` | `DRAGEN WatchDog service has detected a fault`; scratch cleanup `rc=134` |
+| `211` | `L001/0012_tiles0540-0588` | `DRAGEN WatchDog service has detected a fault`; scratch cleanup `rc=134` |
+| `212` | `L001/0016_tiles0736-0784` | `DRAGEN WatchDog service has detected a fault`; scratch cleanup `rc=134` |
 
 ## Boundaries
 
