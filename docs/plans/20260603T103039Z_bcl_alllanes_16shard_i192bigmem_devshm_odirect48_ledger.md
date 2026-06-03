@@ -60,7 +60,9 @@ Run the full `20260514_LH01106_0009_B23TVLGLT4` flowcell through DayOA BCL Conve
 | DRA output dir precreate | `PASS` | `sudo mkdir -p` and `sudo chown ubuntu:ubuntu` for the new empty destination only |
 | Live run retry 1 | `FAILED` | `RC=1`; no compute jobs submitted; `bclconvert_validate_inputs` failed because all-lane SampleSheet IDs were absent from default one-row `samples.tsv` |
 | All-lane samples.tsv | `PASS` | wrote `42` sample rows: default `ANA0-HG002` plus `41` BCLConvert SampleSheet IDs; previous file backed up as `config/samples.tsv.before_alllanes_20260603T103039Z` |
-| Live run retry 2 | `LAUNCHED` | same `dy-r` command; log `live_bclconvert_alllanes_16shard_retry2_20260603T103039Z.log` |
+| Live run retry 2 | `FAILED` | `RC=1`; no compute jobs submitted; stale Snakemake lock after prior failed local attempts |
+| Workdir unlock | `PASS` | `dy-r --unlock --configfile ...`, `RC=0`; no same-workset controller process before unlock |
+| Live run retry 3 | `LAUNCHED` | same `dy-r` command; log `live_bclconvert_alllanes_16shard_retry3_20260603T103039Z.log` |
 | Acceptance | `PENDING` |  |
 
 ## Non-Intervention Boundary
