@@ -97,6 +97,8 @@ _has_sv_callers_config=false
 _is_dry_run=false
 _sentieon_start_jitter=false
 _sentieon_start_jitter_jobs=""
+_isolated_conda_prefix=false
+_has_user_conda_prefix=false
 _dy_forward_args=()
 _DY_TARGET_REGISTRY="${DAY_ROOT:-.}/config/workflow_target_aliases.tsv"
 
@@ -146,6 +148,27 @@ _dy_require_positive_int() {
 while [[ "$#" -gt 0 ]]; do
     _arg="$1"
     case "$_arg" in
+        --isolated-conda-prefix)
+            _isolated_conda_prefix=true
+            shift
+            continue
+            ;;
+        --conda-prefix)
+            if [[ "$#" -lt 2 ]]; then
+                colr "ERROR: --conda-prefix requires a value." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+                exit 64
+            fi
+            _has_user_conda_prefix=true
+            _dy_forward_args+=("$_arg" "$2")
+            shift 2
+            continue
+            ;;
+        --conda-prefix=*)
+            _has_user_conda_prefix=true
+            _dy_forward_args+=("$_arg")
+            shift
+            continue
+            ;;
         --sentieon-start-jitter)
             _sentieon_start_jitter=true
             shift
@@ -194,6 +217,17 @@ if [[ "$_sentieon_start_jitter" == "true" ]]; then
     colr "...SENTIEON-JITTER: max_seconds=${DAYOA_SENTIEON_START_JITTER_MAX_SECONDS} (jobs=${_sentieon_start_jitter_jobs})" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
 else
     unset DAYOA_SENTIEON_START_JITTER_MAX_SECONDS
+fi
+
+if [[ "$_isolated_conda_prefix" == "true" ]]; then
+    if [[ "$_has_user_conda_prefix" == "true" ]]; then
+        colr "ERROR: --isolated-conda-prefix cannot be combined with --conda-prefix." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+        exit 64
+    fi
+    _dayoa_isolated_conda_prefix="$PWD/.snakemake/conda"
+    mkdir -p "$_dayoa_isolated_conda_prefix"
+    _dy_forward_args=("--conda-prefix" "$_dayoa_isolated_conda_prefix" "${_dy_forward_args[@]}")
+    colr "...CONDA-PREFIX: isolated=${_dayoa_isolated_conda_prefix}" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
 fi
 
 for _arg in "${_dy_forward_args[@]}"; do

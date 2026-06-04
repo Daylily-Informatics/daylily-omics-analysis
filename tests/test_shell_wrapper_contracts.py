@@ -372,6 +372,150 @@ DY_IS1=
     assert "requires an explicit -j/--jobs/--cores positive integer" in result.stderr
 
 
+def test_day_run_isolated_conda_prefix_strips_flag_and_forwards_prefix(
+    tmp_path: Path,
+) -> None:
+    fakebin = tmp_path / "fakebin"
+    profile = tmp_path / "profile"
+    capture = tmp_path / "capture"
+    fake_tmp = tmp_path / "daytmp"
+    fakebin.mkdir()
+    profile.mkdir()
+    capture.mkdir()
+    (tmp_path / "bin").symlink_to(REPO_ROOT / "bin", target_is_directory=True)
+
+    (fakebin / "yq").write_text(
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$DAY_TEST_TMPDIR"\n',
+        encoding="utf-8",
+    )
+    (fakebin / "snakemake").write_text(
+        """#!/usr/bin/env bash
+for arg in "$@"; do
+    if [[ "$arg" == "--unlock" ]]; then
+        exit 0
+    fi
+done
+printf '%s\\n' "$@" > "$DAY_TEST_CAPTURE/args.txt"
+exit 0
+""",
+        encoding="utf-8",
+    )
+    (fakebin / "yq").chmod(0o755)
+    (fakebin / "snakemake").chmod(0o755)
+
+    (profile / "profile_env.bash").write_text(
+        """colr() { printf '%s\\n' "$1" >&2; }
+DY_WT0=
+DY_WB0=
+DY_WS1=
+DY_IT0=
+DY_IB0=
+DY_IS0=
+DY_IS1=
+DY_IT1=
+DY_IB1=
+""",
+        encoding="utf-8",
+    )
+
+    env = {
+        **os.environ,
+        "PATH": f"{fakebin}:{os.environ['PATH']}",
+        "DAY_ROOT": str(tmp_path),
+        "DAY_PROFILE": "test",
+        "DAY_PROFILE_DIR": str(profile),
+        "DAY_GENOME_BUILD": "hg38",
+        "DAY_TEST_TMPDIR": str(fake_tmp),
+        "DAY_TEST_CAPTURE": str(capture),
+    }
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "bin/day_run"),
+            "--isolated-conda-prefix",
+            "produce_test",
+            "-j",
+            "100",
+            "-n",
+        ],
+        cwd=tmp_path,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    args = (capture / "args.txt").read_text(encoding="utf-8").splitlines()
+    assert "--isolated-conda-prefix" not in args
+    assert "--conda-prefix" in args
+    prefix_index = args.index("--conda-prefix") + 1
+    assert args[prefix_index] == str(tmp_path / ".snakemake/conda")
+    assert "produce_test" in args
+
+
+def test_day_run_isolated_conda_prefix_rejects_user_conda_prefix(
+    tmp_path: Path,
+) -> None:
+    fakebin = tmp_path / "fakebin"
+    profile = tmp_path / "profile"
+    fake_tmp = tmp_path / "daytmp"
+    fakebin.mkdir()
+    profile.mkdir()
+    (tmp_path / "bin").symlink_to(REPO_ROOT / "bin", target_is_directory=True)
+
+    (fakebin / "yq").write_text(
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$DAY_TEST_TMPDIR"\n',
+        encoding="utf-8",
+    )
+    (fakebin / "snakemake").write_text("#!/usr/bin/env bash\nexit 99\n", encoding="utf-8")
+    (fakebin / "yq").chmod(0o755)
+    (fakebin / "snakemake").chmod(0o755)
+
+    (profile / "profile_env.bash").write_text(
+        """colr() { printf '%s\\n' "$1" >&2; }
+DY_WT0=
+DY_WB0=
+DY_WS1=
+DY_IT1=
+DY_IB1=
+DY_IS1=
+""",
+        encoding="utf-8",
+    )
+
+    env = {
+        **os.environ,
+        "PATH": f"{fakebin}:{os.environ['PATH']}",
+        "DAY_ROOT": str(tmp_path),
+        "DAY_PROFILE": "test",
+        "DAY_PROFILE_DIR": str(profile),
+        "DAY_GENOME_BUILD": "hg38",
+        "DAY_TEST_TMPDIR": str(fake_tmp),
+    }
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "bin/day_run"),
+            "--isolated-conda-prefix",
+            "--conda-prefix",
+            "/tmp/other",
+            "help",
+            "-n",
+        ],
+        cwd=tmp_path,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 64
+    assert "cannot be combined with --conda-prefix" in result.stderr
+
+
 def test_dayoa_sentieon_wrapper_executes_configured_binary(tmp_path: Path) -> None:
     fake_sentieon = tmp_path / "sentieon"
     capture = tmp_path / "sentieon_args.txt"
