@@ -95,6 +95,9 @@ _has_aligners_config=false
 _has_snv_callers_config=false
 _has_sv_callers_config=false
 _is_dry_run=false
+_sentieon_start_jitter=false
+_sentieon_start_jitter_jobs=""
+_dy_forward_args=()
 _DY_TARGET_REGISTRY="${DAY_ROOT:-.}/config/workflow_target_aliases.tsv"
 
 _dy_add_auto_code() {
@@ -131,7 +134,69 @@ _dy_unique_csv() {
     printf '%s\n' "$@" | awk 'NF && !seen[$0]++' | paste -sd, -
 }
 
-for _arg in "$@"; do
+_dy_require_positive_int() {
+    local _value="$1"
+    local _name="$2"
+    if [[ ! "$_value" =~ ^[1-9][0-9]*$ ]]; then
+        colr "ERROR: $_name must be a positive integer; got '$_value'." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+        exit 64
+    fi
+}
+
+while [[ "$#" -gt 0 ]]; do
+    _arg="$1"
+    case "$_arg" in
+        --sentieon-start-jitter)
+            _sentieon_start_jitter=true
+            shift
+            continue
+            ;;
+        -j|--jobs|--cores)
+            if [[ "$#" -lt 2 ]]; then
+                colr "ERROR: $_arg requires a positive integer value." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+                exit 64
+            fi
+            _dy_require_positive_int "$2" "$_arg"
+            _sentieon_start_jitter_jobs="$2"
+            _dy_forward_args+=("$_arg" "$2")
+            shift 2
+            continue
+            ;;
+        -j[1-9]*)
+            _sentieon_start_jitter_jobs="${_arg#-j}"
+            _dy_require_positive_int "$_sentieon_start_jitter_jobs" "-j"
+            _dy_forward_args+=("$_arg")
+            shift
+            continue
+            ;;
+        --jobs=*|--cores=*)
+            _sentieon_start_jitter_jobs="${_arg#*=}"
+            _dy_require_positive_int "$_sentieon_start_jitter_jobs" "${_arg%%=*}"
+            _dy_forward_args+=("$_arg")
+            shift
+            continue
+            ;;
+    esac
+    _dy_forward_args+=("$_arg")
+    shift
+done
+
+if [[ "$_sentieon_start_jitter" == "true" ]]; then
+    if [[ -z "$_sentieon_start_jitter_jobs" ]]; then
+        colr "ERROR: --sentieon-start-jitter requires an explicit -j/--jobs/--cores positive integer." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+        exit 64
+    fi
+    _sentieon_start_jitter_max=$(( _sentieon_start_jitter_jobs / 50 ))
+    if [[ "$_sentieon_start_jitter_max" -lt 1 ]]; then
+        _sentieon_start_jitter_max=1
+    fi
+    export DAYOA_SENTIEON_START_JITTER_MAX_SECONDS="$_sentieon_start_jitter_max"
+    colr "...SENTIEON-JITTER: max_seconds=${DAYOA_SENTIEON_START_JITTER_MAX_SECONDS} (jobs=${_sentieon_start_jitter_jobs})" "$DY_IT1" "$DY_IB1" "$DY_IS1" 1>&2
+else
+    unset DAYOA_SENTIEON_START_JITTER_MAX_SECONDS
+fi
+
+for _arg in "${_dy_forward_args[@]}"; do
     _dy_add_registry_target_codes "$_arg" aligner
     _dy_add_registry_target_codes "$_arg" deduper
     _dy_add_registry_target_codes "$_arg" snv_caller
@@ -176,7 +241,7 @@ if [[ ${#_sv_caller_codes[@]} -gt 0 ]] && [[ "$_has_sv_callers_config" == "false
 fi
 
 # Build the snakemake command — targets pass through unchanged.
-snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "$@")
+snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "${_dy_forward_args[@]}")
 
 snakecmd="${snakecmd_init[@]//\-\-keep-temp/\-\-notemp}"
 

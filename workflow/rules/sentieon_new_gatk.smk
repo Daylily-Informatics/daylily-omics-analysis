@@ -97,7 +97,7 @@ rule sentieon_gatk_bsqr:
         fi
 
         # --- QualCal (BSQR) ---
-        LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD bin/dayoa_sentieon driver \
             -t {threads} \
             -r {params.huref} \
             -i {input.cram} \
@@ -108,7 +108,7 @@ rule sentieon_gatk_bsqr:
             {output.recal_data_table} >> {log} 2>&1;
 
         # --- ReadWriter (apply recalibration) ---
-        LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD bin/dayoa_sentieon driver \
             -t {threads} \
             -r {params.huref} \
             -i {input.cram} \
@@ -232,7 +232,7 @@ rule sentieon_gatk_snv:
         echo "CRAM validation passed ($_sq_count reference sequences)" >> {log} 2>&1;
 
         # --- HaplotypeCaller (per-chrm, confident mode) ---
-        /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver \
+        bin/dayoa_sentieon driver \
             --thread_count {threads} \
             --interval {params.schrm_mod} \
             --reference {params.huref} \

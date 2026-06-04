@@ -2,7 +2,7 @@ import os
 
 ####### Sentieon Pangenome – align + sort + call in one step
 #
-# Uses sentieon-cli sentieon-pangenome which performs pangenome-aware
+# Uses bin/dayoa_sentieon_cli sentieon-pangenome which performs pangenome-aware
 # alignment (via graph reference) and variant calling for Illumina
 # paired-end WGS data.  Outputs a single VCF.gz with SNVs/indels.
 #
@@ -121,15 +121,15 @@ rule sent_aln_sort_snv:
             pcr_flag="--pcr_free";
         fi
 
-        # --- sentieon-cli sentieon-pangenome ---
+        # --- bin/dayoa_sentieon_cli sentieon-pangenome ---
         cli_out="$TMPDIR/{wildcards.sample}.sentpg";
 
-        echo "sentieon-cli sentieon-pangenome starting" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli sentieon-pangenome starting" >> {log} 2>&1;
         echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
         set +e;
-        sentieon-cli sentieon-pangenome \
+        bin/dayoa_sentieon_cli sentieon-pangenome \
             -r {params.huref} \
             --hapl "{params.hapl}" \
             --gbz "{params.gbz}" \
@@ -147,7 +147,7 @@ rule sent_aln_sort_snv:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: sentieon-cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: bin/dayoa_sentieon_cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 

@@ -3,7 +3,7 @@ import os
 
 #
 # This pipeline will use the ONT aligned cram directly and call variants
-# using sentieon-cli dnascope-longread --tech ONT
+# using bin/dayoa_sentieon_cli dnascope-longread --tech ONT
 #
 
 ALIGNERS_ONT = ["ont", "sentmm2ont"]
@@ -36,7 +36,7 @@ def get_sentdont_crai(wildcards):
 
 # ---------------------------------------------------------------------------
 # sent_snv_ont: Sentieon DNAscope LongRead pipeline (Oxford Nanopore)
-# Uses sentieon-cli dnascope-longread which implements the full two-pass
+# Uses bin/dayoa_sentieon_cli dnascope-longread which implements the full two-pass
 # phased variant calling pipeline (DNAscope → VariantPhaser → RepeatModel →
 # DNAscopeHP per-haplotype → merge).  Outputs SNV/indel VCF + SV VCF.
 # ---------------------------------------------------------------------------
@@ -133,15 +133,15 @@ rule sent_snv_ont:
             echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
 
-        # --- sentieon-cli dnascope-longread (ONT) ---
+        # --- bin/dayoa_sentieon_cli dnascope-longread (ONT) ---
         # The CLI runs the full two-pass phased pipeline internally.
         # Outputs: <basename>.vcf.gz (SNV/indel) and <basename>.sv.vcf.gz (SV)
         cli_out="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sentdont";
 
-        echo "sentieon-cli dnascope-longread starting: model={params.model} tech=ONT" >> {log} 2>&1;
-        echo "sentieon-cli dnascope-longread retain_tmpdir enabled; TMPDIR=$TMPDIR" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli dnascope-longread starting: model={params.model} tech=ONT" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli dnascope-longread retain_tmpdir enabled; TMPDIR=$TMPDIR" >> {log} 2>&1;
         set +e;
-        sentieon-cli dnascope-longread \
+        bin/dayoa_sentieon_cli dnascope-longread \
             -r {params.huref} \
             -i {input.cram} \
             -m "{params.model}" \
@@ -156,7 +156,7 @@ rule sent_snv_ont:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: sentieon-cli dnascope-longread failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: bin/dayoa_sentieon_cli dnascope-longread failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 

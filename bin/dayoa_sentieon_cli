@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/day_sentieon_jitter.bash"
+
+sentieon_cli_bin="${DAYOA_SENTIEON_CLI_BIN:-sentieon-cli}"
+dayoa_require_executable "$sentieon_cli_bin"
+dayoa_sentieon_start_jitter "$sentieon_cli_bin $*"
+"$sentieon_cli_bin" "$@"

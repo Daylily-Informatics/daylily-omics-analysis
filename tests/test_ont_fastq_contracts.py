@@ -50,7 +50,7 @@ def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     rule = _read("workflow/rules/sent_snv_ont.smk")
 
     assert 'ALIGNERS_ONT = ["ont", "sentmm2ont"]' in rule
-    assert "sentieon-cli dnascope-longread" in rule
+    assert "bin/dayoa_sentieon_cli dnascope-longread" in rule
     assert "--tech ONT" in rule
     assert "--retain_tmpdir" in rule
     assert 'keep_tmp_dirs=config["sentdont"]["keep_tmp_dirs"]' in rule

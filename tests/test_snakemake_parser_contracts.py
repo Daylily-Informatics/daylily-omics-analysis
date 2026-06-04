@@ -13,6 +13,14 @@ RESERVED_ASSIGNMENT_RE = re.compile(r"^\s*(module)\s*=", re.MULTILINE)
 BARE_SENTIEON_CLI_PYTHON_LOOKUP_RE = re.compile(
     r"\bpython\s+-c\s+[\"'][^\"'\n]*sentieon_cli\.scripts"
 )
+RAW_SENTIEON_COMMAND_RE = re.compile(
+    r"(?<![A-Za-z0-9_./-])(?:/[^ \t;|&<>]*sentieon|sentieon)\s+"
+    r"(?:driver|bwa|util|pyexec)\b"
+)
+RAW_SENTIEON_CLI_COMMAND_RE = re.compile(
+    r"(?<![A-Za-z0-9_./-])sentieon-cli\s+"
+    r"(?:dnascope|sentieon-pangenome)\b"
+)
 
 
 def _resolve_include(current_file: Path, include_path: str) -> Path:
@@ -84,6 +92,24 @@ def test_active_hybrid_rules_resolve_sentieon_cli_scripts_with_rule_env_python()
     )
 
 
+def test_active_sentieon_rules_route_executable_calls_through_jitter_wrappers() -> None:
+    offenders: list[str] = []
+    for path in sorted(_active_snakemake_files()):
+        if "sent" not in path.name:
+            continue
+        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            executable_part = line.split("#", 1)[0]
+            if RAW_SENTIEON_COMMAND_RE.search(executable_part):
+                offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {line.strip()}")
+            if RAW_SENTIEON_CLI_COMMAND_RE.search(executable_part):
+                offenders.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {line.strip()}")
+
+    assert not offenders, (
+        "Active Sentieon executable calls must use bin/dayoa_sentieon or bin/dayoa_sentieon_cli:\n"
+        + "\n".join(offenders)
+    )
+
+
 def test_sentdhiomr_stage1_handles_empty_merged_diff_beds() -> None:
     path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ilmn_ont_modular.refactored.smk"
     text = path.read_text(encoding="utf-8")
@@ -132,7 +158,7 @@ def test_sentdhuomr_stage1_uses_sequential_driver_outputs() -> None:
     required_fragments = [
         "Match sentieon-cli hybrid_stage1(): run HAP + INS drivers sequentially",
         'unset bwt_max_mem || true',
-        'sentieon driver \\',
+        'bin/dayoa_sentieon driver \\',
         '2>> {log} > "$TMPDIR/hap_stdout.sam"',
         '2>> {log} > "$TMPDIR/ins_stdout.sam"',
         'cat "$TMPDIR/hap_stdout.sam" "$TMPDIR/ins_stdout.sam"',

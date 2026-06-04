@@ -71,12 +71,12 @@ rule sent_DNAscope:
         echo "INSTANCE TYPE: $itype";
         start_time=$(date +%s);
 
-        /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver --thread_count {threads} \
+        bin/dayoa_sentieon driver --thread_count {threads} \
         --interval {params.schrm_mod} --reference {params.huref} --input {input.c} \
         --algo DNAscope -d {params.pop_vcf} --pcr_indel_model none --emit_mode variant \
         --model {params.model}  {output.tvcf} >> {log} 2>&1;
 
-        /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon driver -t {threads} \
+        bin/dayoa_sentieon driver -t {threads} \
         -r {params.huref} --algo DNAModelApply --model {params.model} -v {output.tvcf} {output.vcf} >> {log} 2>&1;
 
 

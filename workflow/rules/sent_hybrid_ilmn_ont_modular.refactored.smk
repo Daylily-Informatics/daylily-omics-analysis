@@ -1,7 +1,7 @@
 """
 Modular Sentieon DNAscope Hybrid Workflow: Illumina + ONT
 
-This file decomposes the monolithic sentieon-cli dnascope-hybrid call into
+This file decomposes the monolithic bin/dayoa_sentieon_cli dnascope-hybrid call into
 discrete Snakemake rules for better restart capability, debuggability, and
 observability.
 
@@ -60,10 +60,10 @@ def _dhiomr_tmp(wildcards):
     return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiomr/vcfs/{wildcards.dchrm}/tmp"
 
 # ---------------------------------------------------------------------------
-# Rule 1: SR Alignment - Align Illumina FASTQs with sentieon bwa mem
+# Rule 1: SR Alignment - Align Illumina FASTQs with bin/dayoa_sentieon bwa mem
 # ---------------------------------------------------------------------------
 rule sentdhiomr_sr_align:
-    """Align Illumina short-read FASTQs with sentieon bwa mem | util sort"""
+    """Align Illumina short-read FASTQs with bin/dayoa_sentieon bwa mem | util sort"""
     input:
         r1=getR1s,
         r2=getR2s,
@@ -166,7 +166,7 @@ rule sentdhiomr_sr_align:
         R2_FILES="{input.r2}"
 
         # Align with bwa mem → util sort
-        LD_PRELOAD=$LD_PRELOAD sentieon bwa mem \
+        LD_PRELOAD=$LD_PRELOAD bin/dayoa_sentieon bwa mem \
             -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:ILLUMINA" \
             -t {params.bwa_threads} \
             -x {params.model}/bwa.model \
@@ -175,7 +175,7 @@ rule sentdhiomr_sr_align:
              <( {params.igz} -q  {input.r1} {params.trim_head} )   \
              <( {params.igz} -q  {input.r2} {params.trim_head} )   \
              {params.mbuffer}  2>> {log} | \
-        sentieon util sort \
+        bin/dayoa_sentieon util sort \
             -i - \
             -t {params.use_threads} \
             --reference {params.huref} \
@@ -326,7 +326,7 @@ rule sentdhiomr_pass1:
             SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS $SR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
@@ -411,13 +411,13 @@ rule sentdhiomr_sr_markdup:
             exit 5;
         fi;
 
-        LD_PRELOAD=$LD_PRELOAD sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD bin/dayoa_sentieon driver \
         -r {params.huref} \
         -t {threads} \
         -i {input.bam} \
         --algo LocusCollector --fun score_info "$score_file" >> {log} 2>&1;
 
-        LD_PRELOAD=$LD_PRELOAD sentieon driver \
+        LD_PRELOAD=$LD_PRELOAD bin/dayoa_sentieon driver \
         -r {params.huref} \
         -t {threads} \
         -i {input.bam} \
@@ -495,7 +495,7 @@ rule sentdhiomr_hybrid_select:
 
         # Pipeline: hybrid_select.py -> bcftools view -> bcftools query -> bedtools slop
         # This replicates sentieon-cli's cmd_pyexec_hybrid_select() function
-        sentieon pyexec "$HYBRID_SELECT" \
+        bin/dayoa_sentieon pyexec "$HYBRID_SELECT" \
             -v {input.vcf} \
             -t {params.use_threads} \
             - 2>> {log} \
@@ -591,7 +591,7 @@ rule sentdhiomr_mapq0_bed:
             SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS $SR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
@@ -768,7 +768,7 @@ rule sentdhiomr_stage1:
             samtools index {output.hap_bam} >> {log} 2>&1
 
             echo "Starting INS driver for scoped shard at $(date)" >> {log}
-            sentieon driver \
+            bin/dayoa_sentieon driver \
                 $LR_RG_ARGS --input {input.lr_cram} \
                 --reference {params.huref} \
                 --thread_count {params.use_threads} \
@@ -781,13 +781,13 @@ rule sentdhiomr_stage1:
             echo "INS driver finished at $(date)" >> {log}
 
             cat "$TMPDIR/ins_stdout.sam" \
-            | sentieon bwa mem \
+            | bin/dayoa_sentieon bwa mem \
                 -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
                 -t {params.use_threads} \
                 -x {params.model}/HybridStage1_bwa.model \
                 {params.huref} \
                 - 2>> {log} \
-            | sentieon util sort \
+            | bin/dayoa_sentieon util sort \
                 -i - \
                 -t {params.use_threads} \
                 -o {output.bam} \
@@ -809,7 +809,7 @@ rule sentdhiomr_stage1:
 
             # 1. Haplotype assembly driver → stdout to temp file, side-outputs written directly
             echo "Starting HAP driver at $(date)" >> {log}
-            sentieon driver \
+            bin/dayoa_sentieon driver \
                 $LR_RG_ARGS --input {input.lr_cram} \
                 --reference {params.huref} \
                 --thread_count {params.use_threads} \
@@ -824,7 +824,7 @@ rule sentdhiomr_stage1:
 
             # 2. Insertion detection driver → stdout to temp file, side-outputs written directly
             echo "Starting INS driver at $(date)" >> {log}
-            sentieon driver \
+            bin/dayoa_sentieon driver \
                 $LR_RG_ARGS --input {input.lr_cram} \
                 --reference {params.huref} \
                 --thread_count {params.use_threads} \
@@ -838,13 +838,13 @@ rule sentdhiomr_stage1:
 
             # 3. Cat both driver outputs → bwa mem → util sort
             cat "$TMPDIR/hap_stdout.sam" "$TMPDIR/ins_stdout.sam" \
-            | sentieon bwa mem \
+            | bin/dayoa_sentieon bwa mem \
                 -R "@RG\\tID:hybrid-18893\\tSM:{params.cluster_sample}" \
                 -t {params.use_threads} \
                 -x {params.model}/HybridStage1_bwa.model \
                 {params.huref} \
                 - 2>> {log} \
-            | sentieon util sort \
+            | bin/dayoa_sentieon util sort \
                 -i - \
                 -t {params.use_threads} \
                 -o {output.bam} \
@@ -926,7 +926,7 @@ rule sentdhiomr_stage2:
 
         echo "Starting Stage 2 at $(date)" >> {log}
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             -i {input.stage1_bam} -i {input.hap_bam} \
             --algo HybridStage2 \
@@ -1053,7 +1053,7 @@ rule sentdhiomr_stage3:
             SR_RG_ARGS="$SR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}"
         done
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS $SR_RG_ARGS -i {input.lr_cram} \
             -i {input.sr_bam} \
@@ -1063,7 +1063,7 @@ rule sentdhiomr_stage3:
             --algo HybridStage3 \
             --model {params.model}/HybridStage3.model \
             - 2>> {log} | \
-        sentieon util sort \
+        bin/dayoa_sentieon util sort \
             -i - -t {params.use_threads} \
             --temp_dir $TMPDIR \
             -o {output.bam} >> {log} 2>&1
@@ -1101,7 +1101,7 @@ rule sentdhiomr_pass2:
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
-        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for sentieon driver
+        diploid_bed=get_diploid_bed_interval_arg,  # Use --interval for bin/dayoa_sentieon driver
         use_threads=config["sentdhiomr"]["use_threads"],
         cluster_sample=ret_sample,
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
@@ -1144,7 +1144,7 @@ rule sentdhiomr_pass2:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
-        sentieon driver \
+        bin/dayoa_sentieon driver \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS --input {input.lr_cram} \
             --input {input.stage3_bam} \
@@ -1199,12 +1199,12 @@ rule sentdhiomr_subset:
         # If stage2 BED is empty, just copy; otherwise subset
         if [ -s {input.bed} ]; then
             bcftools view --threads {threads} -T ^{input.bed} {input.vcf} 2>> {log} | \
-            sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
+            bin/dayoa_sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
         else
-            sentieon util vcfconvert -t {threads} {input.vcf} {output.vcf} >> {log} 2>&1
+            bin/dayoa_sentieon util vcfconvert -t {threads} {input.vcf} {output.vcf} >> {log} 2>&1
         fi
 
-        # Ensure index exists (sentieon util vcfconvert should create it, but verify)
+        # Ensure index exists (bin/dayoa_sentieon util vcfconvert should create it, but verify)
         if [ ! -f {output.tbi} ]; then
             tabix -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
         fi
@@ -1288,7 +1288,7 @@ rule sentdhiomr_anno:
         # Find hybrid_anno.py script
         HYBRID_ANNO=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('hybrid_anno.py'))")
 
-        sentieon pyexec "$HYBRID_ANNO" \
+        bin/dayoa_sentieon pyexec "$HYBRID_ANNO" \
             -v {input.vcf} \
             -b {input.hap_bed} \
             -t {params.use_threads} \
@@ -1368,7 +1368,7 @@ rule sentdhiomr_transfer:
         bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
             --regions {params.regions} \
             "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {params.pop_vcf} 2>> {log} | \
-        sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
+        bin/dayoa_sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
         bgzip -c -@ {threads} > {output.vcf} 2>> {log}
 
         # Create tabix index
@@ -1480,7 +1480,7 @@ rule sentdhiomr_model_apply:
             --fai "{params.huref}.fai" \
             --output "$scoped_diploid_bed" >> {log} 2>&1
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             --interval "$scoped_diploid_bed" \
             --algo DNAModelApply \
@@ -1528,7 +1528,7 @@ rule sentdhiomr_final_norm:
 
         bcftools view --threads {threads} -a -e 'GT="0/0"' {input.vcf} 2>> {log} | \
         bcftools norm --threads {threads} -f {params.huref} 2>> {log} | \
-        sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
+        bin/dayoa_sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
 
         echo "Final normalization completed at $(date)" >> {log}
         """
@@ -1747,7 +1747,7 @@ rule sentdhiomr_call_svs:
             LR_RG_ARGS="$LR_RG_ARGS --replace_rg ${{rgid}}=ID:${{rgid}}\\tSM:{params.cluster_sample}\\tLR:1"
         done
 
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             $LR_RG_ARGS -i {input.lr_cram} \
             {params.diploid_bed} \
@@ -1788,7 +1788,7 @@ rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modul
 
 # ===========================================================================
 # CNV CALLING: Copy-number variant calling (whole-genome, not chunked)
-# Uses sentieon driver --algo CNV with the model bundle's cnv.model
+# Uses bin/dayoa_sentieon driver --algo CNV with the model bundle's cnv.model
 # ===========================================================================
 
 rule sentdhiomr_call_cnvs:
@@ -1841,7 +1841,7 @@ rule sentdhiomr_call_cnvs:
         TMP_CNV_VCF="$TMPDIR/cnvscope_tmp.vcf.gz"
 
         # Step 1: CNVscope - read-depth profiling on SR data
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             -i {input.sr_bam} \
             --algo CNVscope \
@@ -1851,7 +1851,7 @@ rule sentdhiomr_call_cnvs:
         echo "CNVscope step completed at $(date)" >> {log}
 
         # Step 2: CNVModelApply - ML-based filtering
-        sentieon driver -r {params.huref} -t {params.use_threads} \
+        bin/dayoa_sentieon driver -r {params.huref} -t {params.use_threads} \
             --temp_dir $TMPDIR \
             --algo CNVModelApply \
             --model {params.model}/cnv.model \
@@ -2200,26 +2200,26 @@ rule sentdhiomr_mito_call:
         # --- Helper: AlignAndCall on a chrM reference ---
         align_and_call() {{
             local ref="$1" interval="$2" prefix="$3"
-            sentieon bwa mem \
+            bin/dayoa_sentieon bwa mem \
                 -R "@RG\\tID:${{SAMPLE}}\\tSM:${{SAMPLE}}\\tPL:Illumina" \
                 -K 100000000 -v 3 -t $NT -Y "$ref" \
                 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" \
                 "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq" 2>>{log} | \
-            sentieon util sort -t $NT -i - --sam2bam \
+            bin/dayoa_sentieon util sort -t $NT -i - --sam2bam \
                 -o "$TMPDIR/${{prefix}}.sorted.bam" >> {log} 2>&1
 
-            sentieon driver -t $NT \
+            bin/dayoa_sentieon driver -t $NT \
                 -i "$TMPDIR/${{prefix}}.sorted.bam" \
                 --algo LocusCollector --fun score_info \
                 "$TMPDIR/${{prefix}}.score.txt" >> {log} 2>&1
 
-            sentieon driver -t $NT \
+            bin/dayoa_sentieon driver -t $NT \
                 -i "$TMPDIR/${{prefix}}.sorted.bam" \
                 --algo Dedup --score_info "$TMPDIR/${{prefix}}.score.txt" \
                 --metrics "$TMPDIR/${{prefix}}.dedup_metrics.txt" \
                 "$TMPDIR/${{prefix}}.deduped.bam" >> {log} 2>&1
 
-            sentieon driver -t $NT \
+            bin/dayoa_sentieon driver -t $NT \
                 -i "$TMPDIR/${{prefix}}.deduped.bam" \
                 -r "$ref" --interval "$interval" \
                 --algo TNscope --tumor_sample "$SAMPLE" \
@@ -2269,7 +2269,7 @@ rule sentdhiomr_mito_call:
         # --- Step 4: Blacklist filter + strand bias annotation ---
         bcftools view -T ^{params.mt_blacklist_bed} "$TMPDIR/all.tnscope.vcf.gz" 2>>{log} | \
             bcftools filter -s "Strand_bias" -e "INFO/SOR>=10" 2>>{log} | \
-            sentieon util vcfconvert - {output.mito_vcf} >> {log} 2>&1
+            bin/dayoa_sentieon util vcfconvert - {output.mito_vcf} >> {log} 2>&1
 
         bcftools index -t -f {output.mito_vcf} >> {log} 2>&1
 

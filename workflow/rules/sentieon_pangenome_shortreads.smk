@@ -2,7 +2,7 @@ import os
 
 ####### Sentieon Pangenome (accelerated) – short-read pipeline
 #
-# Uses sentieon-cli sentieon-pangenome which performs pangenome-aware
+# Uses bin/dayoa_sentieon_cli sentieon-pangenome which performs pangenome-aware
 # alignment (via GBZ graph reference) and variant calling for Illumina
 # paired-end WGS data.  No vg/XG/snarls dependencies required.
 #
@@ -124,15 +124,15 @@ rule sentieon_pangenome_sr:
             pcr_flag="--pcr_free";
         fi
 
-        # --- sentieon-cli sentieon-pangenome (accelerated pipeline) ---
+        # --- bin/dayoa_sentieon_cli sentieon-pangenome (accelerated pipeline) ---
         cli_out="$TMPDIR/{wildcards.sample}.pangenome_sr";
 
-        echo "sentieon-cli sentieon-pangenome starting" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli sentieon-pangenome starting" >> {log} 2>&1;
         echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
         set +e;
-        sentieon-cli sentieon-pangenome \
+        bin/dayoa_sentieon_cli sentieon-pangenome \
             -r {params.huref} \
             --hapl "{params.hapl}" \
             --gbz "{params.gbz}" \
@@ -150,7 +150,7 @@ rule sentieon_pangenome_sr:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: sentieon-cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: bin/dayoa_sentieon_cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 
@@ -161,7 +161,7 @@ rule sentieon_pangenome_sr:
             bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
             bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
         else
-            echo "ERROR: VCF not produced by sentieon-cli sentieon-pangenome" >> {log} 2>&1;
+            echo "ERROR: VCF not produced by bin/dayoa_sentieon_cli sentieon-pangenome" >> {log} 2>&1;
             exit 20;
         fi
 

@@ -230,6 +230,175 @@ DY_IS0=
     assert (tmp_path / "pipeline_workflow_planned.pdf").is_file()
 
 
+def test_day_run_sentieon_start_jitter_strips_flag_and_exports_budget(
+    tmp_path: Path,
+) -> None:
+    fakebin = tmp_path / "fakebin"
+    profile = tmp_path / "profile"
+    capture = tmp_path / "capture"
+    fake_tmp = tmp_path / "daytmp"
+    fakebin.mkdir()
+    profile.mkdir()
+    capture.mkdir()
+    (tmp_path / "bin").symlink_to(REPO_ROOT / "bin", target_is_directory=True)
+
+    (fakebin / "yq").write_text(
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$DAY_TEST_TMPDIR"\n',
+        encoding="utf-8",
+    )
+    (fakebin / "snakemake").write_text(
+        """#!/usr/bin/env bash
+for arg in "$@"; do
+    if [[ "$arg" == "--unlock" ]]; then
+        exit 0
+    fi
+done
+printf '%s\\n' "$@" > "$DAY_TEST_CAPTURE/args.txt"
+printf '%s\\n' "${DAYOA_SENTIEON_START_JITTER_MAX_SECONDS:-}" > "$DAY_TEST_CAPTURE/jitter.txt"
+exit 0
+""",
+        encoding="utf-8",
+    )
+    (fakebin / "yq").chmod(0o755)
+    (fakebin / "snakemake").chmod(0o755)
+
+    (profile / "profile_env.bash").write_text(
+        """colr() { printf '%s\\n' "$1" >&2; }
+DY_WT0=
+DY_WB0=
+DY_WS1=
+DY_IT0=
+DY_IB0=
+DY_IS0=
+DY_IS1=
+DY_IT1=
+DY_IB1=
+""",
+        encoding="utf-8",
+    )
+
+    env = {
+        **os.environ,
+        "PATH": f"{fakebin}:{os.environ['PATH']}",
+        "DAY_ROOT": str(tmp_path),
+        "DAY_PROFILE": "test",
+        "DAY_PROFILE_DIR": str(profile),
+        "DAY_GENOME_BUILD": "hg38",
+        "DAY_TEST_TMPDIR": str(fake_tmp),
+        "DAY_TEST_CAPTURE": str(capture),
+    }
+
+    result = subprocess.run(
+        [
+            "bash",
+            str(REPO_ROOT / "bin/day_run"),
+            "--sentieon-start-jitter",
+            "produce_test",
+            "-j",
+            "100",
+            "-p",
+            "-k",
+            "-n",
+        ],
+        cwd=tmp_path,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    args = (capture / "args.txt").read_text(encoding="utf-8").splitlines()
+    assert "--sentieon-start-jitter" not in args
+    assert "produce_test" in args
+    assert "-j" in args
+    assert "100" in args
+    assert (capture / "jitter.txt").read_text(encoding="utf-8").strip() == "2"
+
+
+def test_day_run_sentieon_start_jitter_requires_explicit_jobs(
+    tmp_path: Path,
+) -> None:
+    fakebin = tmp_path / "fakebin"
+    profile = tmp_path / "profile"
+    fake_tmp = tmp_path / "daytmp"
+    fakebin.mkdir()
+    profile.mkdir()
+    (tmp_path / "bin").symlink_to(REPO_ROOT / "bin", target_is_directory=True)
+
+    (fakebin / "yq").write_text(
+        '#!/usr/bin/env bash\nprintf "%s\\n" "$DAY_TEST_TMPDIR"\n',
+        encoding="utf-8",
+    )
+    (fakebin / "snakemake").write_text(
+        "#!/usr/bin/env bash\nexit 99\n",
+        encoding="utf-8",
+    )
+    (fakebin / "yq").chmod(0o755)
+    (fakebin / "snakemake").chmod(0o755)
+
+    (profile / "profile_env.bash").write_text(
+        """colr() { printf '%s\\n' "$1" >&2; }
+DY_WT0=
+DY_WB0=
+DY_WS1=
+DY_IT1=
+DY_IB1=
+DY_IS1=
+""",
+        encoding="utf-8",
+    )
+
+    env = {
+        **os.environ,
+        "PATH": f"{fakebin}:{os.environ['PATH']}",
+        "DAY_ROOT": str(tmp_path),
+        "DAY_PROFILE": "test",
+        "DAY_PROFILE_DIR": str(profile),
+        "DAY_GENOME_BUILD": "hg38",
+        "DAY_TEST_TMPDIR": str(fake_tmp),
+    }
+
+    result = subprocess.run(
+        ["bash", str(REPO_ROOT / "bin/day_run"), "--sentieon-start-jitter", "help", "-n"],
+        cwd=tmp_path,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 64
+    assert "requires an explicit -j/--jobs/--cores positive integer" in result.stderr
+
+
+def test_dayoa_sentieon_wrapper_executes_configured_binary(tmp_path: Path) -> None:
+    fake_sentieon = tmp_path / "sentieon"
+    capture = tmp_path / "sentieon_args.txt"
+    fake_sentieon.write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$@\" > {str(capture)!r}\n",
+        encoding="utf-8",
+    )
+    fake_sentieon.chmod(0o755)
+
+    env = {
+        **os.environ,
+        "DAYOA_SENTIEON_BIN": str(fake_sentieon),
+        "DAYOA_SENTIEON_START_JITTER_MAX_SECONDS": "0",
+    }
+    result = subprocess.run(
+        [str(REPO_ROOT / "bin/dayoa_sentieon"), "driver", "-t", "2"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert capture.read_text(encoding="utf-8").splitlines() == ["driver", "-t", "2"]
+
+
 def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     dyoainit = _read("dyoainit")
 
@@ -367,6 +536,9 @@ def test_shell_wrappers_have_valid_bash_syntax() -> None:
     for path in (
         "bin/day_run",
         "bin/day_activate",
+        "bin/day_sentieon_jitter.bash",
+        "bin/dayoa_sentieon",
+        "bin/dayoa_sentieon_cli",
         "bin/util/profile_freshness_warn.bash",
         "dyoainit",
     ):
