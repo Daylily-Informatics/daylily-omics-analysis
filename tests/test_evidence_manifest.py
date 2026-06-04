@@ -187,6 +187,37 @@ def test_multiqc_evidence_manifest_classifies_key_files_and_preserves_unknowns(
     assert by_path[data_extra_rel]["parser_relevant"] is False
 
 
+def test_multiqc_evidence_manifest_allows_symlinked_paths_inside_root(
+    tmp_path: Path,
+) -> None:
+    paths = _make_multiqc_fixture(tmp_path)
+    external_root = tmp_path.parent / f"{tmp_path.name}_external"
+    external_mqc = _write(external_root / "symlinked_mqc.tsv", "Sample\tmetric\nHG002\t2\n")
+    external_fastq = _write(external_root / "HG002.R1.fastq.gz", "not-gzipped-test-data\n")
+    symlinked_mqc = tmp_path / "results/day/hg38/other_reports/symlinked_mqc.tsv"
+    symlinked_fastq = tmp_path / "results/day/hg38/HG002/HG002.R1.fastq.gz"
+    symlinked_mqc.symlink_to(external_mqc)
+    symlinked_fastq.parent.mkdir(parents=True, exist_ok=True)
+    symlinked_fastq.symlink_to(external_fastq)
+
+    manifest = build_multiqc_final_evidence_manifest(
+        analysis_root=tmp_path,
+        html_path=paths["html"],
+        multiqc_data_dir=paths["data_dir"],
+        stage_manifest=paths["stage_manifest"],
+        parser_relevant_paths=[paths["custom"], paths["benchmark"]],
+        output_manifest=tmp_path / "manifest.json",
+        metadata=_metadata(),
+        generated_at=FIXED_TIME,
+    )
+
+    by_path = {record["relative_path"]: record for record in manifest["files"]}
+    assert by_path["results/day/hg38/other_reports/symlinked_mqc.tsv"]["sha256"] == sha256_file(
+        external_mqc
+    )
+    assert "results/day/hg38/HG002/HG002.R1.fastq.gz" not in by_path
+
+
 def test_file_classification_covers_analysis_outputs_and_indexes() -> None:
     cases = {
         "results/day/hg38/HG002/calls/HG002.vcf": ("variant_vcf", False),

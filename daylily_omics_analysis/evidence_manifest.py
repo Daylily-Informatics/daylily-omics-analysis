@@ -4,6 +4,7 @@ import argparse
 import csv
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -492,9 +493,18 @@ def include_discovered_evidence(relative_path: str) -> bool:
     return classification not in GENERIC_NON_DISCOVERY_CLASSIFICATIONS
 
 
+def lexical_absolute_path(path: Path, root: Path) -> Path:
+    """Return an absolute path without resolving symlink targets."""
+    root_abs = Path(os.path.abspath(root))
+    candidate = path if path.is_absolute() else root_abs / path
+    return Path(os.path.abspath(candidate))
+
+
 def relative_to_root(path: Path, root: Path) -> str:
+    root_abs = Path(os.path.abspath(root))
+    path_abs = lexical_absolute_path(path, root_abs)
     try:
-        rel_path = path.resolve().relative_to(root.resolve()).as_posix()
+        rel_path = path_abs.relative_to(root_abs).as_posix()
     except ValueError as exc:
         raise EvidenceManifestError(f"Evidence path is outside analysis root: {path}") from exc
     if rel_path == ".." or rel_path.startswith("../") or Path(rel_path).is_absolute():
@@ -509,7 +519,7 @@ def discover_first_class_evidence_files(
 ) -> list[Path]:
     excluded: set[Path] = set()
     if output_manifest is not None:
-        excluded.add(output_manifest.resolve())
+        excluded.add(lexical_absolute_path(output_manifest, analysis_root))
 
     discovered: dict[str, Path] = {}
     for root_name in FIRST_CLASS_DISCOVERY_ROOTS:
@@ -521,12 +531,12 @@ def discover_first_class_evidence_files(
         for path in sorted(root.rglob("*")):
             if not path.is_file():
                 continue
-            resolved = path.resolve()
-            if resolved in excluded:
+            local_path = lexical_absolute_path(path, analysis_root)
+            if local_path in excluded:
                 continue
             rel_path = relative_to_root(path, analysis_root)
             if include_discovered_evidence(rel_path):
-                discovered[rel_path] = resolved
+                discovered[rel_path] = local_path
     return [discovered[key] for key in sorted(discovered)]
 
 
@@ -549,7 +559,7 @@ def collect_inventory(
     candidates: dict[str, Path] = {}
     for path in file_paths:
         if path.is_file():
-            candidates[relative_to_root(path, analysis_root)] = path.resolve()
+            candidates[relative_to_root(path, analysis_root)] = lexical_absolute_path(path, analysis_root)
         elif path in required_paths:
             raise EvidenceManifestError(f"Required evidence file is missing: {path}")
 
@@ -558,7 +568,7 @@ def collect_inventory(
             raise EvidenceManifestError(f"Required evidence directory is missing: {directory}")
         for path in sorted(directory.rglob("*")):
             if path.is_file():
-                candidates[relative_to_root(path, analysis_root)] = path.resolve()
+                candidates[relative_to_root(path, analysis_root)] = lexical_absolute_path(path, analysis_root)
 
     records: list[dict[str, Any]] = []
     tag_context = build_manifest_tag_context(analysis_root)
