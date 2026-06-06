@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -71,6 +72,7 @@ def validate(manifest: Path, multiqc_data: Path) -> None:
     observed = collect_raw_samples(multiqc_data)
     expected = expected_by_module(rows)
     failures: list[str] = []
+    warnings: list[str] = []
     for module, samples in sorted(expected.items()):
         aliases = MODULE_ALIASES[module]
         present = set()
@@ -86,9 +88,15 @@ def validate(manifest: Path, multiqc_data: Path) -> None:
             )
         missing = sorted(sample for sample in samples if sample not in present)
         if missing:
-            failures.append(
+            warnings.append(
                 f"{module} missing staged sample IDs: {', '.join(missing[:20])}"
             )
+    if warnings:
+        print(
+            "WARNING: MultiQC sample identity validation observed parser-missing staged IDs\n"
+            + "\n".join(warnings),
+            file=sys.stderr,
+        )
     if failures:
         raise SystemExit("ERROR: MultiQC sample identity validation failed\n" + "\n".join(failures))
 

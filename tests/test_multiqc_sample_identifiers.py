@@ -875,6 +875,7 @@ def test_multiqc_module_exclude_file_renders_empty_args_by_default(tmp_path: Pat
 
 def test_validate_multiqc_sample_ids_rejects_collapsed_native_outputs(
     tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     module = _load_module(
         REPO_ROOT / "workflow/scripts/validate_multiqc_sample_ids.py",
@@ -913,6 +914,24 @@ def test_validate_multiqc_sample_ids_rejects_collapsed_native_outputs(
         encoding="utf-8",
     )
     module.validate(manifest, valid)
+
+    partial = tmp_path / "partial.json"
+    partial.write_text(
+        json.dumps(
+            {
+                "report_saved_raw_data": {
+                    "multiqc_peddy": {
+                        "HG001.sent.na.sentd": {},
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    module.validate(manifest, partial)
+    assert "WARNING: MultiQC sample identity validation observed parser-missing staged IDs" in (
+        capsys.readouterr().err
+    )
 
 
 def test_rtg_vcfeval_requests_explicit_memory() -> None:
