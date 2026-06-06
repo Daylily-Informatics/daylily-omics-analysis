@@ -54,7 +54,7 @@ rule hisat2_align_sort:
         """
         export epocsec=$(date +'%s');
         {params.ldpre} hisat2 -p {threads}  -x {params.huref} \
-        --rg-id 'ID:{params.rgid}_$epocsec' \
+        --rg-id "ID:{params.rgid}_$epocsec" \
         --rg 'SM:{params.rgsm}' \
         --rg 'LB:{params.rgsm}{params.rglb}' \
         --rg 'PL:{params.rgpl}' \

@@ -178,7 +178,7 @@ rule sentmm2ont_align_sort:
         ) {params.longread_trim_head} {params.longread_trim_tail} \
         | LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
         {params.minimap2_opts} \
-        -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
+        -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}" \
         -t {params.minimap2_threads} \
         {params.huref} \
         - {params.mbuffer} \

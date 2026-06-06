@@ -117,7 +117,7 @@ rule sentmm2_align_sort:
         samtools fastq -@ 4 -T MM,ML {input.bam} \
         | LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
         {params.minimap2_opts} \
-        -R '@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}' \
+        -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}" \
         -t {params.minimap2_threads} \
         {params.huref} \
         - {params.mbuffer} \

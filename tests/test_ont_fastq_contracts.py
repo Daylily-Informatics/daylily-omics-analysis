@@ -52,6 +52,21 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
         assert cfg["sentmm2ont_align_sort"]["minimap2_opts"].strip() == "-ax map-ont"
 
 
+def test_read_group_epoch_suffixes_are_shell_expanded() -> None:
+    rg_rules = (
+        "workflow/rules/sentmm2ont_align_sort.smk",
+        "workflow/rules/sentmm2_align_sort.smk",
+        "workflow/rules/bwa_mem2a_align_sort.smk",
+        "workflow/rules/hisat2.smk",
+    )
+
+    for path in rg_rules:
+        rule = _read(path)
+        assert "'@RG" not in rule, path
+        assert "'ID:" not in rule, path
+        assert "$epocsec" in rule, path
+
+
 def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     rule = _read("workflow/rules/sent_snv_ont.smk")
 
