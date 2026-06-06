@@ -17,7 +17,15 @@ ONT_SENTMM2ONT_SAMPS = list(
 def get_sentmm2ont_reads(wildcards):
     row = samples[samples["sample_lane"] == wildcards.sample].iloc[0]
     if _is_ont_fastq_unit(row):
-        return os.path.abspath(_clean_component(row.get("ONT_R1_PATH", "")))
+        reads = [
+            os.path.abspath(path)
+            for path in _split_fastq_path_list(row.get("ONT_R1_PATH", ""))
+        ]
+        if not reads:
+            raise WorkflowError(
+                f"sample {wildcards.sample} has no ONT FASTQ reads for sentmm2ont."
+            )
+        return reads
     bam_inputs = get_ont_bam(wildcards)
     if not bam_inputs:
         raise WorkflowError(f"sample {wildcards.sample} has no ONT reads for sentmm2ont.")
@@ -144,13 +152,15 @@ rule sentmm2ont_align_sort:
 
         (
             if [[ "{params.input_kind}" == "fastq" ]]; then
-                if [[ "{input.reads}" == *.gz || "{input.reads}" == *.bgz ]]; then
-                    gzip -dc -- {input.reads};
-                else
-                    cat -- {input.reads};
-                fi
+                for read_path in {input.reads:q}; do
+                    if [[ "$read_path" == *.gz || "$read_path" == *.bgz ]]; then
+                        gzip -dc -- "$read_path";
+                    else
+                        cat -- "$read_path";
+                    fi
+                done;
             elif [[ "{params.input_kind}" == "ubam" ]]; then
-                samtools fastq -@ 4 -T MM,ML {input.reads};
+                samtools fastq -@ 4 -T MM,ML {input.reads:q};
             else
                 echo "ERROR: unsupported sentmm2ont input kind: {params.input_kind}" >> {log} 2>&1;
                 exit 8;

@@ -33,12 +33,15 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
 
     assert "_is_ont_fastq_unit(row)" in rule
     assert "def get_sentmm2ont_reads(wildcards):" in rule
-    assert 'return os.path.abspath(_clean_component(row.get("ONT_R1_PATH", "")))' in rule
+    assert '_split_fastq_path_list(row.get("ONT_R1_PATH", ""))' in rule
+    assert "return reads" in rule
     assert "reads=get_sentmm2ont_reads" in rule
     assert "input_kind=get_sentmm2ont_input_kind" in rule
     assert 'if [[ "{params.input_kind}" == "fastq" ]]' in rule
-    assert "gzip -dc -- {input.reads}" in rule
-    assert "cat -- {input.reads}" in rule
+    assert "for read_path in {input.reads:q}; do" in rule
+    assert 'gzip -dc -- "$read_path"' in rule
+    assert 'cat -- "$read_path"' in rule
+    assert "samtools fastq -@ 4 -T MM,ML {input.reads:q}" in rule
     assert "{params.minimap2_opts}" in rule
 
     for profile in ("local", "slurm"):
