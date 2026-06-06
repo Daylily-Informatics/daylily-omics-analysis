@@ -1,6 +1,6 @@
 ---
 daylily:
-  git_tag: 5.0.1
+  git_tag: 5.0.3
   git_repo: https://github.com/lsmc-bio/daylily-omics-analysis.git
   git_repo_ssh: git@github.com:lsmc-bio/daylily-omics-analysis.git
   analysis_root: /fsx/analysis_results/
