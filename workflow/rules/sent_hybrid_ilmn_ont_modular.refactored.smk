@@ -60,9 +60,14 @@ def _sentdhiomr_clean(value):
     return str(value or "").strip().lower()
 
 
+def _sentdhiomr_has_ont_fastq_input(row):
+    ont_r1_path = _sentdhiomr_clean(row.get("ONT_R1_PATH", ""))
+    return _is_ont_fastq_unit(row) or ont_r1_path not in {"", "na", "none"}
+
+
 def _sentdhiomr_row_longread_aligner(row):
     candidates = []
-    if _is_ont_fastq_unit(row):
+    if _sentdhiomr_has_ont_fastq_input(row):
         candidates.append("sentmm2ont")
     if _sentdhiomr_clean(row.get("ONT_BAM_ALIGNER", "")) == "sentmm2ont":
         candidates.append("sentmm2ont")
@@ -94,6 +99,7 @@ for _, _row in samples.iterrows():
 
 ALIGNERS_DHIOMR = sorted({alnr for _, alnr in SENTDHIOMR_SAMPLE_ALIGNER_PAIRS})
 ALIGNERS_DHIOMR_REGEX = "|".join(ALIGNERS_DHIOMR) if ALIGNERS_DHIOMR else r"(?!x)x"
+SENTDHIOMR_MISSING_LONGREAD_MARKER = MDIR + "logs/sentdhiomr_no_longread_source.required"
 
 
 def _sentdhiomr_expected_aligner(sample):
@@ -131,10 +137,7 @@ def _sentdhiomr_lr_crai(wildcards):
 
 def _sentdhiomr_expand(pattern, **wildcards):
     if not SENTDHIOMR_SAMPLE_ALIGNER_PAIRS:
-        raise WorkflowError(
-            "sentdhiomr targets require at least one sample with ONT_R1_PATH, "
-            "ONT_BAM_ALIGNER=sentmm2ont, or ONT_CRAM_ALIGNER=ont."
-        )
+        return [SENTDHIOMR_MISSING_LONGREAD_MARKER]
     outputs = []
     for sample, alnr in SENTDHIOMR_SAMPLE_ALIGNER_PAIRS:
         values = dict(wildcards)

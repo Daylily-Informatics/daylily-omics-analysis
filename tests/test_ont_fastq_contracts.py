@@ -32,6 +32,9 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
     rule = _read("workflow/rules/sentmm2ont_align_sort.smk")
 
     assert "_is_ont_fastq_unit(row)" in rule
+    assert "def _has_sentmm2ont_fastq_input(row):" in rule
+    assert '_sentmm2ont_clean(row.get("ONT_R1_PATH", ""))' in rule
+    assert "_has_sentmm2ont_fastq_input(row)" in rule
     assert "def get_sentmm2ont_reads(wildcards):" in rule
     assert '_split_fastq_path_list(row.get("ONT_R1_PATH", ""))' in rule
     assert "return reads" in rule
@@ -73,6 +76,8 @@ def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:
     rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
 
     assert "SENTDHIOMR_SAMPLE_ALIGNER_PAIRS" in rule
+    assert "def _sentdhiomr_has_ont_fastq_input(row):" in rule
+    assert '_sentdhiomr_clean(row.get("ONT_R1_PATH", ""))' in rule
     assert 'candidates.append("sentmm2ont")' in rule
     assert "def _sentdhiomr_lr_cram(wildcards):" in rule
     assert (
@@ -83,5 +88,8 @@ def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:
     assert "cram=_sentdhiomr_lr_cram" in rule
     assert "lr_cram=_sentdhiomr_lr_cram" in rule
     assert "lr_crai=_sentdhiomr_lr_crai" in rule
+    assert "SENTDHIOMR_MISSING_LONGREAD_MARKER" in rule
+    assert "return [SENTDHIOMR_MISSING_LONGREAD_MARKER]" in rule
+    assert "sentdhiomr targets require at least one sample" not in rule
     assert "sample=SSAMPS,\n            alnr=ALIGNERS_DHIOMR" not in rule
     assert 'lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram"' not in rule

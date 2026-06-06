@@ -3,11 +3,21 @@
 # Optional long-read trimming via LONGREADTRIM_READ_LENGTH / LONGREADTRIM_MODE.
 # No deduplication step: ONT long reads do not require it.
 
+
+def _sentmm2ont_clean(value):
+    return str(value or "").strip()
+
+
+def _has_sentmm2ont_fastq_input(row):
+    ont_r1_path = _sentmm2ont_clean(row.get("ONT_R1_PATH", ""))
+    return _is_ont_fastq_unit(row) or ont_r1_path.lower() not in {"", "na", "none"}
+
+
 ONT_SENTMM2ONT_SAMPS = list(
     samples[
         samples.apply(
-            lambda row: _is_ont_fastq_unit(row)
-            or str(row.get("ONT_BAM_ALIGNER", "") or "").strip() == "sentmm2ont",
+            lambda row: _has_sentmm2ont_fastq_input(row)
+            or _sentmm2ont_clean(row.get("ONT_BAM_ALIGNER", "")) == "sentmm2ont",
             axis=1,
         )
     ]["sample_lane"].unique()
@@ -16,7 +26,7 @@ ONT_SENTMM2ONT_SAMPS = list(
 
 def get_sentmm2ont_reads(wildcards):
     row = samples[samples["sample_lane"] == wildcards.sample].iloc[0]
-    if _is_ont_fastq_unit(row):
+    if _has_sentmm2ont_fastq_input(row):
         reads = [
             os.path.abspath(path)
             for path in _split_fastq_path_list(row.get("ONT_R1_PATH", ""))
@@ -34,9 +44,9 @@ def get_sentmm2ont_reads(wildcards):
 
 def get_sentmm2ont_input_kind(wildcards):
     row = samples[samples["sample_lane"] == wildcards.sample].iloc[0]
-    if _is_ont_fastq_unit(row):
+    if _has_sentmm2ont_fastq_input(row):
         return "fastq"
-    if str(row.get("ONT_BAM_ALIGNER", "") or "").strip() == "sentmm2ont":
+    if _sentmm2ont_clean(row.get("ONT_BAM_ALIGNER", "")) == "sentmm2ont":
         return "ubam"
     raise WorkflowError(
         f"sample {wildcards.sample} is not a sentmm2ont ONT FASTQ/uBAM unit."
