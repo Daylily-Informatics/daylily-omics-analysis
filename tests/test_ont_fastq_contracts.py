@@ -67,6 +67,17 @@ def test_read_group_epoch_suffixes_are_shell_expanded() -> None:
         assert "$epocsec" in rule, path
 
 
+def test_fastq_derived_long_read_crams_emit_physical_lr_read_group_tag() -> None:
+    lr_cram_rules = (
+        "workflow/rules/sentmm2ont_align_sort.smk",
+        "workflow/rules/sentmm2_align_sort.smk",
+    )
+
+    for path in lr_cram_rules:
+        rule = _read(path)
+        assert r'\\tPG:{params.rgpg}\\tLR:1"' in rule, path
+
+
 def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     rule = _read("workflow/rules/sent_snv_ont.smk")
 
