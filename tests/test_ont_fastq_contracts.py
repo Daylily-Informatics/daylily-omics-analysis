@@ -67,3 +67,21 @@ def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     for profile in ("local", "slurm"):
         cfg = _rule_config(profile)
         assert cfg["sentdont"]["keep_tmp_dirs"] is False
+
+
+def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:
+    rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
+
+    assert "SENTDHIOMR_SAMPLE_ALIGNER_PAIRS" in rule
+    assert 'candidates.append("sentmm2ont")' in rule
+    assert "def _sentdhiomr_lr_cram(wildcards):" in rule
+    assert (
+        'return MDIR + f"{wildcards.sample}/align/sentmm2ont/'
+        '{wildcards.sample}.sentmm2ont.cram"'
+    ) in rule
+    assert "def _sentdhiomr_expand(pattern, **wildcards):" in rule
+    assert "cram=_sentdhiomr_lr_cram" in rule
+    assert "lr_cram=_sentdhiomr_lr_cram" in rule
+    assert "lr_crai=_sentdhiomr_lr_crai" in rule
+    assert "sample=SSAMPS,\n            alnr=ALIGNERS_DHIOMR" not in rule
+    assert 'lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram"' not in rule

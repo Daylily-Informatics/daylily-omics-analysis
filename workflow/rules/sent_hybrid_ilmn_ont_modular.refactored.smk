@@ -27,6 +27,8 @@ Uses model bundle: HybridIlluminaONT2.0.bundle
 import os
 import sys
 
+from snakemake.exceptions import WorkflowError
+
 # Ensure config keys exist for shell-block {config[sentdhiomr][...]} access
 if "sentdhiomr" not in config:
     config["sentdhiomr"] = {}
@@ -52,8 +54,94 @@ config["sentdhiomr"].setdefault("mt_shifted_fasta", "")
 config["sentdhiomr"].setdefault("mt_shift_back_chain", "")
 config["sentdhiomr"].setdefault("mt_blacklist_bed", "")
 
-# Aligner constraint: ONT for long reads
-ALIGNERS_DHIOMR = ["ont"]
+# Long-read aligner selection for HioMR. Mounted ONT FASTQ rows must first build
+# the sentmm2ont CRAM; pre-aligned ONT CRAM rows keep the legacy ont path.
+def _sentdhiomr_clean(value):
+    return str(value or "").strip().lower()
+
+
+def _sentdhiomr_row_longread_aligner(row):
+    candidates = []
+    if _is_ont_fastq_unit(row):
+        candidates.append("sentmm2ont")
+    if _sentdhiomr_clean(row.get("ONT_BAM_ALIGNER", "")) == "sentmm2ont":
+        candidates.append("sentmm2ont")
+
+    ont_cram_aligner = _sentdhiomr_clean(row.get("ONT_CRAM_ALIGNER", ""))
+    if ont_cram_aligner == "ont":
+        candidates.append("ont")
+    elif ont_cram_aligner not in {"", "na", "none"}:
+        raise WorkflowError(
+            f"sentdhiomr does not support ONT_CRAM_ALIGNER='{ont_cram_aligner}' "
+            f"for sample {row.get('sample_lane', row.get('sample', 'unknown'))}."
+        )
+
+    candidates = sorted(set(candidates))
+    if len(candidates) > 1:
+        raise WorkflowError(
+            "sentdhiomr found multiple ONT long-read input modes for "
+            f"sample {row.get('sample_lane', row.get('sample', 'unknown'))}: "
+            f"{', '.join(candidates)}. Provide exactly one ONT FASTQ/uBAM or ONT CRAM source."
+        )
+    return candidates[0] if candidates else None
+
+
+SENTDHIOMR_SAMPLE_ALIGNER_PAIRS = []
+for _, _row in samples.iterrows():
+    _alnr = _sentdhiomr_row_longread_aligner(_row)
+    if _alnr:
+        SENTDHIOMR_SAMPLE_ALIGNER_PAIRS.append((_row["sample_lane"], _alnr))
+
+ALIGNERS_DHIOMR = sorted({alnr for _, alnr in SENTDHIOMR_SAMPLE_ALIGNER_PAIRS})
+ALIGNERS_DHIOMR_REGEX = "|".join(ALIGNERS_DHIOMR) if ALIGNERS_DHIOMR else r"(?!x)x"
+
+
+def _sentdhiomr_expected_aligner(sample):
+    matches = [alnr for samp, alnr in SENTDHIOMR_SAMPLE_ALIGNER_PAIRS if samp == sample]
+    if not matches:
+        raise WorkflowError(
+            "sentdhiomr requires an ONT long-read source for "
+            f"sample {sample}: set ONT_R1_PATH/ONT_BAM for sentmm2ont or ONT_CRAM_ALIGNER=ont."
+        )
+    return matches[0]
+
+
+def _sentdhiomr_require_aligner(wildcards):
+    expected = _sentdhiomr_expected_aligner(wildcards.sample)
+    if wildcards.alnr != expected:
+        raise WorkflowError(
+            f"sentdhiomr sample {wildcards.sample} is configured for {expected}, "
+            f"but requested alnr={wildcards.alnr}."
+        )
+    return expected
+
+
+def _sentdhiomr_lr_cram(wildcards):
+    alnr = _sentdhiomr_require_aligner(wildcards)
+    if alnr == "sentmm2ont":
+        return MDIR + f"{wildcards.sample}/align/sentmm2ont/{wildcards.sample}.sentmm2ont.cram"
+    if alnr == "ont":
+        return MDIR + f"{wildcards.sample}/align/ont/{wildcards.sample}.cram"
+    raise WorkflowError(f"Unsupported sentdhiomr long-read aligner: {alnr}")
+
+
+def _sentdhiomr_lr_crai(wildcards):
+    return _sentdhiomr_lr_cram(wildcards) + ".crai"
+
+
+def _sentdhiomr_expand(pattern, **wildcards):
+    if not SENTDHIOMR_SAMPLE_ALIGNER_PAIRS:
+        raise WorkflowError(
+            "sentdhiomr targets require at least one sample with ONT_R1_PATH, "
+            "ONT_BAM_ALIGNER=sentmm2ont, or ONT_CRAM_ALIGNER=ont."
+        )
+    outputs = []
+    for sample, alnr in SENTDHIOMR_SAMPLE_ALIGNER_PAIRS:
+        values = dict(wildcards)
+        values["sample"] = [sample]
+        values["alnr"] = [alnr]
+        outputs.extend(expand(pattern, **values))
+    return outputs
 
 # Base temp directory prefix for intermediate files
 def _dhiomr_tmp(wildcards):
@@ -67,14 +155,14 @@ rule sentdhiomr_sr_align:
     input:
         r1=getR1s,
         r2=getR2s,
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",  # ONT CRAM must exist
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=_sentdhiomr_lr_cram,
+        crai=_sentdhiomr_lr_crai,
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_aligned.bam",
         bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_aligned.bam.bai",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_align.log",
     threads: config['sentdhiomr']['threads']
@@ -201,13 +289,13 @@ rule sentdhiomr_pass1:
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_dedup.bam",
         sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_dedup.bam.bai",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        lr_cram=_sentdhiomr_lr_cram,
+        lr_crai=_sentdhiomr_lr_crai,
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.pass1.log",
     threads: config['sentdhiomr']['threads']
@@ -447,7 +535,7 @@ rule sentdhiomr_hybrid_select:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/selected.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.hybrid_select.log",
     threads: config['sentdhiomr']['threads_light']
@@ -515,11 +603,11 @@ rule sentdhiomr_mapq0_bed:
     """Detect MAPQ0 regions with HybridStage2 region model"""
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_dedup.bam",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=_sentdhiomr_lr_cram,
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_bed.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -615,7 +703,7 @@ rule sentdhiomr_mapq0_slop:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_slop.log",
     benchmark:
@@ -652,7 +740,7 @@ rule sentdhiomr_merge_beds:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/merged_diff.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.merge_beds.log",
     benchmark:
@@ -684,7 +772,7 @@ rule sentdhiomr_merge_beds:
 rule sentdhiomr_stage1:
     """Stage1: insertion detection + haplotype assembly piped through bwa"""
     input:
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=_sentdhiomr_lr_cram,
         diff_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/merged_diff.bed",
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage1.bam",
@@ -694,7 +782,7 @@ rule sentdhiomr_stage1:
         ins_fa=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_ins.fa",
         ins_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_ins.bed",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
     threads: config['sentdhiomr']['threads']
@@ -895,7 +983,7 @@ rule sentdhiomr_stage2:
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage2.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -947,14 +1035,14 @@ rule sentdhiomr_stage3:
     """Stage3: HybridStage3 on all reads + stage2 BAMs → sorted BAM"""
     input:
         sr_bam = MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_dedup.bam",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=_sentdhiomr_lr_cram,
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
     threads: config['sentdhiomr']['threads']  # Full node: stage3 pipes driver → util sort (2 concurrent processes)
@@ -1077,7 +1165,7 @@ rule sentdhiomr_stage3:
 rule sentdhiomr_pass2:
     """Second-pass variant calling on stage3 BAM + LR reads"""
     input:
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
+        lr_cram=_sentdhiomr_lr_cram,
         stage3_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2.bed",
         initial_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
@@ -1085,7 +1173,7 @@ rule sentdhiomr_pass2:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.pass2.log",
     threads: config['sentdhiomr']['threads']
@@ -1174,7 +1262,7 @@ rule sentdhiomr_subset:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
     benchmark:
@@ -1226,7 +1314,7 @@ rule sentdhiomr_concat_pass:
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
     benchmark:
@@ -1262,7 +1350,7 @@ rule sentdhiomr_anno:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
     benchmark:
@@ -1317,7 +1405,7 @@ rule sentdhiomr_transfer:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/transfer_shards/transfer.{tchrm}.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/transfer_shards/transfer.{tchrm}.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR),
+        alnr=ALIGNERS_DHIOMR_REGEX,
         tchrm="|".join(SENTDHIOMR_CHRMS_TRANSFER),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer.{tchrm}.log",
@@ -1403,7 +1491,7 @@ rule sentdhiomr_transfer_merge:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer_merge.log",
     threads: config['sentdhiomr']['threads_light']
@@ -1440,7 +1528,7 @@ rule sentdhiomr_model_apply:
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.model_apply.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -1503,7 +1591,7 @@ rule sentdhiomr_final_norm:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.snv.sort.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.snv.sort.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.final_norm.log",
     threads: config['sentdhiomr']['threads_light']
@@ -1559,7 +1647,7 @@ rule sentdhiomr_concat_fofn:
             ),
         ),
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     priority: 44
     output:
         fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn",
@@ -1591,7 +1679,7 @@ rule sentdhiomr_concat_index_chunks:
     input:
         fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     output:
         vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
         vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.temp.vcf.gz",
@@ -1642,10 +1730,8 @@ localrules:
 
 rule clear_combined_sentdhiomr_vcf:  # TARGET: clear combined sentdhiomr vcf so chunks can be re-evaluated if needed.
     input:
-        expand(
+        _sentdhiomr_expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
-            sample=SSAMPS,
-            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     log:
@@ -1665,11 +1751,9 @@ localrules:
 
 rule produce_sentdhiomr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
     input:
-        expand(
+        _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz.tbi",
-            sample=SSAMPS,
-            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
@@ -1692,13 +1776,13 @@ rule produce_sentdhiomr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
 rule sentdhiomr_call_svs:
     """Call structural variants using LongReadSV on ONT long reads"""
     input:
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        lr_cram=_sentdhiomr_lr_cram,
+        lr_crai=_sentdhiomr_lr_crai,
     output:
         sv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz",
         sv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.sv.log",
     threads: config['sentdhiomr']['threads']
@@ -1767,11 +1851,9 @@ localrules:
 
 rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modular sv vcf
     input:
-        expand(
+        _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz.tbi",
-            sample=SSAMPS,
-            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
@@ -1806,7 +1888,7 @@ rule sentdhiomr_call_cnvs:
         cnv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz",
         cnv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -1870,11 +1952,9 @@ localrules:
 
 rule produce_sentdhiomr_cnv:  # TARGET: sentieon cnv hybrid ilmn+ont modular cnv vcf
     input:
-        expand(
+        _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
-            sample=SSAMPS,
-            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
@@ -1903,7 +1983,7 @@ rule sentdhiomr_export_sr_cram:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_dedup.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_dedup.cram.crai",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_export.log",
     benchmark:
@@ -1946,15 +2026,15 @@ rule prep_sentdhiomr_chunkdirs:
         DR=MDIR + "{sample}/{sample}.dirsetup.ready",
         r1=getR1s,
         r2=getR2s,
-        cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        cram=_sentdhiomr_lr_cram,
+        crai=_sentdhiomr_lr_crai,
     output:
         expand(
             MDIR + "{{sample}}/align/{{alnr}}/{{ddup}}/snv/sentdhiomr/vcfs/{dchrm}/{{sample}}.ready",
             dchrm=SENTDHIOMR_CHRMS
         ),
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
@@ -1983,7 +2063,7 @@ rule sentdhiomr_merge_sr_bams:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
         bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_merge.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -2017,12 +2097,12 @@ rule sentdhiomr_call_segdup_gene:
     input:
         sr_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
         sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
-        lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram",
-        lr_crai=MDIR + "{sample}/align/{alnr}/{sample}.cram.crai",
+        lr_cram=_sentdhiomr_lr_cram,
+        lr_crai=_sentdhiomr_lr_crai,
     output:
         done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.done",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR),
+        alnr=ALIGNERS_DHIOMR_REGEX,
         gene="|".join(SEGDUP_GENES),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.log",
@@ -2092,7 +2172,7 @@ rule sentdhiomr_call_segdup:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr_call_segdup.bench.tsv"
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     threads: 1
     shell:
         """
@@ -2107,11 +2187,9 @@ localrules:
 
 rule produce_sentdhiomr_segdup:  # TARGET: sentieon segdup hybrid ilmn+ont modular segdup
     input:
-        expand(
+        _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
-            sample=SSAMPS,
-            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
@@ -2142,7 +2220,7 @@ rule sentdhiomr_mito_call:
         mito_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz",
         mito_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz.tbi",
     wildcard_constraints:
-        alnr="|".join(ALIGNERS_DHIOMR)
+        alnr=ALIGNERS_DHIOMR_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.mito.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -2283,11 +2361,9 @@ localrules:
 
 rule produce_sentdhiomr_mito:  # TARGET: sentieon mito hybrid ilmn+ont modular mito vcf
     input:
-        expand(
+        _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz.tbi",
-            sample=SSAMPS,
-            alnr=ALIGNERS_DHIOMR,
             ddup=DDUP,
         ),
     output:
