@@ -1339,9 +1339,9 @@ haplocheck:
     cloudgene_command: "cloudgene"
     cloudgene_app: "haplocheck@1.2.2"
     input_modes: ["vcf"]
-    threads: 8
+    threads: 96
     mem_mb: 16000
-    partition: "i192,i192mem,i128"
+    partition: "i192,i192mem,i192bigmem"
 
 read_haps:
     env_yaml: "../envs/read_haps_v0.1.yaml"

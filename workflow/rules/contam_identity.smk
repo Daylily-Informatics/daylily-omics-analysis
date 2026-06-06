@@ -269,6 +269,8 @@ rule haplocheck_bam_contam_identity:
         r"""
         set -euo pipefail
         test {params.sample_ok:q} = ok
+        export HAPLOCHECK_THREADS={threads}
+        export JAVA_TOOL_OPTIONS="-XX:ActiveProcessorCount={threads} -XX:+UseParallelGC -XX:ParallelGCThreads={threads} -Djava.util.concurrent.ForkJoinPool.common.parallelism={threads} ${{JAVA_TOOL_OPTIONS:-}}"
         outdir="$(dirname {output.contamination:q})"
         mkdir -p "$outdir" "$(dirname {log:q})"
         command -v {params.cloudgene:q} > /dev/null
@@ -319,6 +321,8 @@ rule haplocheck_vcf_contam_identity:
         r"""
         set -euo pipefail
         test {params.sample_ok:q} = ok
+        export HAPLOCHECK_THREADS={threads}
+        export JAVA_TOOL_OPTIONS="-XX:ActiveProcessorCount={threads} -XX:+UseParallelGC -XX:ParallelGCThreads={threads} -Djava.util.concurrent.ForkJoinPool.common.parallelism={threads} ${{JAVA_TOOL_OPTIONS:-}}"
         outdir="$(dirname {output.contamination:q})"
         mkdir -p "$outdir" "$(dirname {log:q})"
         command -v {params.command:q} > /dev/null

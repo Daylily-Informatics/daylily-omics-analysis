@@ -214,6 +214,9 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
             assert config[section]["env_yaml"].startswith("../envs/")
             assert config[section]["partition"]
         assert config["haplocheck"]["input_modes"] == ["vcf"]
+        if path == "config/day_profiles/slurm/templates/rule_config.yaml":
+            assert config["haplocheck"]["threads"] == 96
+            assert config["haplocheck"]["partition"] == "i192,i192mem,i192bigmem"
         assert config["read_haps"]["read_haps_command"].endswith("/read_haps/read_haps")
         assert config["read_haps"]["reliable_snp_file"].endswith(
             "high_quality_markers_deCODE_2015.txt.gz"
@@ -638,6 +641,13 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         assert retired not in contam_identity
     assert 'result_prefix="$result_dir/contamination.txt"' in contam_identity
     assert '{params.command:q} --out "$result_prefix" --raw {input.vcf:q}' in contam_identity
+    assert "{params.command:q} --threads" not in contam_identity
+    assert "export HAPLOCHECK_THREADS={threads}" in contam_identity
+    assert "-XX:ActiveProcessorCount={threads}" in contam_identity
+    assert "-XX:ParallelGCThreads={threads}" in contam_identity
+    assert "-Djava.util.concurrent.ForkJoinPool.common.parallelism={threads}" in contam_identity
+    assert "{params.cloudgene:q} run {params.app:q}" in contam_identity
+    assert "--threads {threads}" in contam_identity
     assert 'cp "$result_dir/contamination.html" {output.html:q}' in contam_identity
     for expected in (
         "IDENTITY_FIELDS",
