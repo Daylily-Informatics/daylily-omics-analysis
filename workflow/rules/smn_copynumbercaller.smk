@@ -33,6 +33,7 @@ rule smn_copynumbercaller:
     params:
         cluster_sample=ret_sample,
         reference=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        data_dir="workflow/resources/smn12",
         genome=SMN12_GENOME_ARG,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/logs/{sample}.{alnr}.{ddup}.smn12.log",
@@ -46,9 +47,16 @@ rule smn_copynumbercaller:
         mkdir -p $(dirname {log});
         rm -f {output.summary} {output.done}
         manifest=$(mktemp)
-        trap 'rm -f "$manifest"' EXIT
+        smn_workdir=$(mktemp -d)
+        trap 'rm -f "$manifest"; rm -rf "$smn_workdir"' EXIT
         realpath {input.cram} > "$manifest"
-        smn_caller.py \
+        test -s {params.data_dir}/SMN_region_{params.genome}.bed
+        test -s {params.data_dir}/SMN_SNP_{params.genome}.txt
+        test -s {params.data_dir}/SMN_target_variant_{params.genome}.txt
+        test -s {params.data_dir}/SMN_gmm.txt
+        cp "$(command -v smn_caller.py)" "$smn_workdir/smn_caller.py"
+        ln -s "$PWD/{params.data_dir}" "$smn_workdir/data"
+        "$CONDA_PREFIX/bin/python" "$smn_workdir/smn_caller.py" \
             --manifest "$manifest" \
             --genome {params.genome} \
             --outDir $(dirname {output.summary}) \

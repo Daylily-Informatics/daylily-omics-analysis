@@ -195,6 +195,12 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
         "done=MDIR",
         "rm -f {output.summary} {output.done}",
         "smn_caller.py",
+        'data_dir="workflow/resources/smn12"',
+        "test -s {params.data_dir}/SMN_region_{params.genome}.bed",
+        "test -s {params.data_dir}/SMN_gmm.txt",
+        "smn_workdir=$(mktemp -d)",
+        'ln -s "$PWD/{params.data_dir}" "$smn_workdir/data"',
+        '"$CONDA_PREFIX/bin/python" "$smn_workdir/smn_caller.py"',
         "--manifest \"$manifest\"",
         "--genome {params.genome}",
         "--prefix {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.smn12.summary",
@@ -206,6 +212,16 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
         assert expected in smn12
     assert "SMNCopyNumberCaller \\" not in smn12
     assert 'echo "{}" > {output.summary}' not in smn12
+
+
+def test_smn12_resource_bundle_contains_required_files() -> None:
+    data_dir = REPO_ROOT / "workflow" / "resources" / "smn12"
+
+    for genome in ("19", "37", "38"):
+        assert (data_dir / f"SMN_region_{genome}.bed").is_file()
+        assert (data_dir / f"SMN_SNP_{genome}.txt").is_file()
+        assert (data_dir / f"SMN_target_variant_{genome}.txt").is_file()
+    assert (data_dir / "SMN_gmm.txt").is_file()
 
 
 def test_final_multiqc_and_multiqc_config_include_htd_when_selected() -> None:
