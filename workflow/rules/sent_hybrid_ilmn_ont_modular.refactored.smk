@@ -2125,8 +2125,9 @@ rule sentdhiomr_call_segdup_gene:
         lr_cram=_sentdhiomr_lr_cram,
         lr_crai=_sentdhiomr_lr_crai,
     output:
-        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz",
-        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz.tbi",
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.result.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.result.vcf.gz.tbi",
+        yaml=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.yaml",
         done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.done",
     wildcard_constraints:
         alnr=ALIGNERS_DHIOMR_REGEX,
@@ -2147,7 +2148,8 @@ rule sentdhiomr_call_segdup_gene:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         sr_model=config["sentdhiomr"]["segdup_sr_model"],
         lr_model=config["sentdhiomr"]["segdup_lr_model"],
-        outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results",
+        outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}",
+        caller_yaml=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}/{wildcards.sample}.yaml",
         cluster_sample=ret_sample,
     shell:
         """
@@ -2156,7 +2158,7 @@ rule sentdhiomr_call_segdup_gene:
 
         mkdir -p $(dirname {log})
         mkdir -p {params.outdir}
-        rm -f {output.done} {output.vcf} {output.tbi}
+        rm -f {output.done} {output.vcf} {output.tbi} {output.yaml} {params.caller_yaml}
         echo "Starting segdup-caller for gene {wildcards.gene} at $(date)" >> {log}
 
         if ! command -v segdup-caller &>/dev/null; then
@@ -2177,9 +2179,14 @@ rule sentdhiomr_call_segdup_gene:
             --genes {wildcards.gene} \
             --sample_name "{params.cluster_sample}" \
             --outdir {params.outdir} \
+            --keep_temp \
             --threads {threads} \
             --workers 1 >> {log} 2>&1
 
+        test -s {params.caller_yaml}
+        mv {params.caller_yaml} {output.yaml}
+        test -s {output.yaml}
+        grep -Eq '^[[:space:]]*{wildcards.gene}:' {output.yaml}
         test -s {output.vcf}
         test -s {output.tbi}
         gzip -t {output.vcf}

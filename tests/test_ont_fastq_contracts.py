@@ -127,8 +127,14 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
 
     assert "pip install git+https://github.com/Sentieon/segdup-caller.git" not in rule
     assert "ERROR: segdup-caller not found in pinned conda env" in rule
-    assert 'vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz"' in rule
+    assert 'vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.result.vcf.gz"' in rule
+    assert 'yaml=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.yaml"' in rule
+    assert 'outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}"' in rule
+    assert 'caller_yaml=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}/{wildcards.sample}.yaml"' in rule
     assert "--sample_name \"{params.cluster_sample}\"" in rule
+    assert "--keep_temp" in rule
+    assert "mv {params.caller_yaml} {output.yaml}" in rule
+    assert "grep -Eq '^[[:space:]]*{wildcards.gene}:' {output.yaml}" in rule
     assert "gzip -t {output.vcf}" in rule
     assert "bcftools view -h {output.vcf} >/dev/null" in rule
     assert "bcftools view -H {output.vcf} >/dev/null" in rule
