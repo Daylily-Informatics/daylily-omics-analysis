@@ -81,6 +81,27 @@ OLD primary priced benchmark rows by instance:
 | `r7i.metal-48xl` | 192 | 27 | 0.87 | 103.30 | $2.07 |
 | `c7i.48xlarge` | 192 | 129 | 3.85 | 94.80 | $1.52 |
 
+## Active Cluster Spot Snapshot
+
+Observed on `hyb-only` at approximately 2026-06-07 11:35Z from the active Slurm
+nodes and `/fsx/scratch/*_spot_price.log`. This is active EC2 spot compute only;
+it excludes FSx, storage, controller/headnode overhead, and license costs.
+
+| Nodes | Instance type | Count | vCPU/node | Spot $/node-hr | $/vCPU-hr |
+|---|---|---:|---:|---:|---:|
+| `bcl2fq...c8id384-{1,2}` | `c8id.96xlarge` | 2 | 384 | $3.5207 | $0.00917 |
+| `bcl2fq...mr8id384-1` | `r8id.metal-96xl` | 1 | 384 | $3.6668 | $0.00955 |
+| `bcl2fq...mr8id384-{2,3,4}` | `m8id.metal-96xl` | 3 | 384 | $4.1495 | $0.01081 |
+| `i192-dy-all-1` | `c7i.metal-48xl` | 1 | 192 | $2.4837 | $0.01294 |
+| `i192mem-dy-all-{1..4}` | `m7i.metal-48xl` | 4 | 192 | $3.2102 | $0.01672 |
+
+| Aggregate active spot compute | Value |
+|---|---:|
+| Active nodes | 11 |
+| Active vCPUs | 3,264 |
+| Spot compute burn | $38.48/hr |
+| Weighted avg | $0.01179/vCPU-hr |
+
 ## Follow-up ILMN 20x Dry-run
 
 The follow-up short-read-only dry-run should use the four 20x ILMN NA samples:
@@ -104,4 +125,3 @@ bash bin/util/benchmarks/collect_day_benchmark_data.sh hg38_broad
 `produce_dmd_dedup_cram` is the current target for doppelmark/dmd dedup. The
 deprecated `dedup_doppelmark` target and legacy `dppl` deduper spelling are not
 the preferred command surface.
-

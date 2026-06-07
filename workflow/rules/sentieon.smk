@@ -75,9 +75,12 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         main_bashpid=${{BASHPID:-}};
-        tmp_root=$(dirname {log})/../tmp;
+        tmp_root=/scratch/dayoa_sentieon_$timestamp;
         mkdir -p "$tmp_root";
         export TMPDIR="$tmp_root";
+        export TMP="$TMPDIR";
+        export TEMP="$TMPDIR";
+        export TEMPDIR="$TMPDIR";
         meta_tmp=$TMPDIR/sentieon_meta_$timestamp;
         sort_tmp=$TMPDIR/sentieon_sort_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR/sentieon_driver_tmp_$timestamp;
@@ -209,9 +212,12 @@ rule sentieon_cgt7p_bwa_sort:  # TARGET: Complete Genomics / MGI Sentieon bwa so
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         main_bashpid=${{BASHPID:-}};
-        tmp_root=$(dirname {log})/../tmp;
+        tmp_root=/scratch/dayoa_sentieon_$timestamp;
         mkdir -p "$tmp_root";
         export TMPDIR="$tmp_root";
+        export TMP="$TMPDIR";
+        export TEMP="$TMPDIR";
+        export TEMPDIR="$TMPDIR";
         meta_tmp=$TMPDIR/sentieon_meta_$timestamp;
         sort_tmp=$TMPDIR/sentieon_sort_$timestamp;
         export SENTIEON_TMPDIR=$TMPDIR/sentieon_driver_tmp_$timestamp;

@@ -59,9 +59,13 @@ rule bwa_mem2_sort:
 
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        TMPDIR=/scratch/bwa2a_tmp_$timestamp;
+        export TMPDIR=/scratch/bwa2a_tmp_$timestamp;
+        export TMP="$TMPDIR";
+        export TEMP="$TMPDIR";
+        export TEMPDIR="$TMPDIR";
+        export APPTAINER_TMPDIR="$TMPDIR";
         mkdir -p $TMPDIR;
-        APPTAINER_HOME=$TMPDIR;
+        export APPTAINER_HOME=$TMPDIR;
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         tdir=$TMPDIR;

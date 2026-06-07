@@ -69,7 +69,10 @@ rule doppelmark_dups:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
 
-        export TMPDIR=/dev/shm/doppel_tmp_$timestamp;
+        export TMPDIR=/scratch/doppel_tmp_$timestamp;
+        export TMP="$TMPDIR";
+        export TEMP="$TMPDIR";
+        export TEMPDIR="$TMPDIR";
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;

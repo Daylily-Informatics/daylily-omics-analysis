@@ -46,7 +46,10 @@ rule sent_DNAscope:
         """
         export bwt_max_mem={params.max_mem} ;
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR=/dev/shm/sentd_tmp_$timestamp;
+        export TMPDIR=/scratch/sentd_tmp_$timestamp;
+        export TMP="$TMPDIR";
+        export TEMP="$TMPDIR";
+        export TEMPDIR="$TMPDIR";
         export SENTIEON_TMPDIR=$TMPDIR;
         mkdir -p $TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
@@ -111,7 +114,7 @@ rule sentD_sort_index_chunk_vcf:
     resources:
         vcpu=1,
         threads=1,
-        partition="i192,i192mem"
+        partition="bcl2fq-i384-nvme-test"
     params:
         x='y',
         cluster_sample=ret_sample,
@@ -187,7 +190,7 @@ rule sentD_concat_index_chunks:
     resources:
         vcpu=4,
         threads=4,
-        partition="i192,i192mem"
+        partition="bcl2fq-i384-nvme-test"
     priority: 47
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
