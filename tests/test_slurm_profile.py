@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shlex
 from pathlib import Path
 from types import SimpleNamespace
@@ -56,3 +57,15 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
         "partition=i192,i128,i192mem,bcl2fq-i384-nvme-test"
         in profile["default-resources"]
     )
+
+
+def test_slurm_rule_config_uses_valid_openmp_env_vars() -> None:
+    path = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
+    text = path.read_text(encoding="utf-8")
+    rule_config = yaml.safe_load(text)
+
+    assert re.search(r"\bOMP_THREADS=", text) is None
+    assert re.search(r"\bOMP_BIND_PROC=", text) is None
+    assert "OMP_NUM_THREADS=128" in rule_config["deepvariant_1_9_roche"]["numa"]
+    assert "OMP_NUM_THREADS=42" in rule_config["deepsomatic"]["numa"]
+    assert "OMP_NUM_THREADS=42" in rule_config["senttn"]["numa"]
