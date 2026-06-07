@@ -143,6 +143,8 @@ rule util_print_targets:  # TARGET : Return a List of All Targets
         c=get_ccmd(),
     log:
         MDIR + "logs/util_print_targets.log"
+    benchmark:
+        "logs/benchmarks/util_print_targets.bench.tsv"
     shell:
         """
         set +euo pipefail; echo AAAAAA$?;
@@ -162,7 +164,7 @@ rule util_env_check:  # TARGET : Will create a few files in the results dir, use
         cluster_sample="na",
         cluster_slots=get_slots,
     resources:
-        partition="i8,i192,i192mem",  # if partition is not set in rule, default from profile config is used
+        partition="i8,i192",  # if partition is not set in rule, default from profile config is used
         threads=get_slots,  # if threads is not set in rule, default from profile config is used
     conda:
         "../envs/vanilla_v0.1.yaml"  # oddity- the conda envs are declared relative to the rules directory, not like everything else which is from the execution directory.
@@ -200,6 +202,8 @@ rule initm:
     """ Internal use. runs after mod-activate to force creation of template files for a new profile. """
     log:
         MDIR + "logs/initm.log"
+    benchmark:
+        "logs/benchmarks/initm.bench.tsv"
     shell:
         "echo profile:$DAY_PROFILE.initialized;"
 
@@ -238,9 +242,11 @@ rule test_benchmark:
     resources:
         vcpu=2,
         threads=2,
-        partition="i8,i128,i192,i192mem,bcl2fq-i384-nvme-test"
+        partition="i8,i128,i192,i192nvme,i384nvme"
     log:
         MDIR + "logs/test_benchmark.log"
+    benchmark:
+        "logs/benchmarks/test_benchmark.bench.tsv"
     shell:
         """
 	sleep 3;
@@ -255,9 +261,11 @@ rule help:
     resources:
         vcpu=1,
         threads=1,
-        partition="i8,i192,i192mem",
+        partition="i8,i192",
     log:
         MDIR + "logs/help.log"
+    benchmark:
+        "logs/benchmarks/help.bench.tsv"
     shell:
         """
 

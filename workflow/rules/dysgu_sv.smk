@@ -95,3 +95,5 @@ rule produce_dysgu:  # DEPRECATED TARGET: use produce_dysgu_sv_vcf
         expand(MDIR +"{sample}/align/{alnr}/{ddup}/sv/dysgu/{sample}.{alnr}.dysgu.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
     log:
         MDIR + "logs/produce_dysgu.log"
+    benchmark:
+        "logs/benchmarks/produce_dysgu.bench.tsv"

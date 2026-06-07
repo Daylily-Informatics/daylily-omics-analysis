@@ -37,6 +37,8 @@ rule smn_copynumbercaller:
         genome=SMN12_GENOME_ARG,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/logs/{sample}.{alnr}.{ddup}.smn12.log",
+    benchmark:
+        MDIR + "benchmarks/smn_copynumbercaller.{alnr}.{ddup}.{sample}.bench.tsv"
     threads: config["go_left"]["threads"]
     conda:
         "../envs/smn12_v0.1.yaml"
@@ -81,5 +83,9 @@ rule produce_smn12:  # TARGET : Produce SMN1/SMN2 copy-number results
         )
     output:
         "./logs/smn12.done"
+    log:
+        "./logs/produce_smn12.log"
+    benchmark:
+        "./logs/benchmarks/produce_smn12.bench.tsv"
     shell:
         "touch {output}"

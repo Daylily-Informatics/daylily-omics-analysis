@@ -103,5 +103,7 @@ localrules: produce_bwa_mem2_sort_bam,
 rule produce_bwa_mem2_sort_bam:  # DEPRECATED TARGET: use produce_bwa2a_align
     log:
         MDIR + "logs/produce_bwa_mem2_sort_bam.log"
+    benchmark:
+        "logs/benchmarks/produce_bwa_mem2_sort_bam.bench.tsv"
     input:
         expand(MDIR + "{sample}/align/bwa2a/{sample}.bwa2a.sort.bam", sample=SAMPS)

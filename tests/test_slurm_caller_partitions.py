@@ -5,7 +5,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SLURM_RULE_CONFIG = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
-NVME_PARTITION = "bcl2fq-i384-nvme-test"
+FIRST_SCRATCH_PARTITIONS = {"i384nvme", "i192hugenvme"}
 
 
 CALLER_SECTIONS = {
@@ -71,11 +71,11 @@ def test_slurm_hybrid_snv_sv_callers_try_nvme_partition_first() -> None:
             parts = _partition_list(value)
             if not parts:
                 missing.append(f"{section}.{key}")
-            elif parts[0] != NVME_PARTITION:
+            elif parts[0] not in FIRST_SCRATCH_PARTITIONS:
                 wrong_first.append(f"{section}.{key}={value}")
 
     assert not missing, "Missing caller partition config(s): " + ", ".join(missing)
     assert not wrong_first, (
-        "Caller partitions must try bcl2fq-i384-nvme-test first: "
+        "Caller partitions must try i384nvme or i192hugenvme first: "
         + ", ".join(wrong_first)
     )

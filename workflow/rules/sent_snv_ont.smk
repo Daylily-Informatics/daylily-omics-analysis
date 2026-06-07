@@ -201,6 +201,8 @@ rule clear_combined_sentdont_vcf:  # TARGET:  clear combined sentdont vcf so the
         ),
     log:
         MDIR + "logs/clear_combined_sentdont_vcf.log"
+    benchmark:
+        "logs/benchmarks/clear_combined_sentdont_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -226,6 +228,8 @@ rule produce_sentdont_vcf:  # DEPRECATED TARGET: use produce_sentdont_snv_vcf
     threads: 1
     log:
         "gatheredall.sentdont.log",
+    benchmark:
+        "logs/benchmarks/produce_sentdont_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

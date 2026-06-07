@@ -131,3 +131,5 @@ rule produce_tiddit:  # DEPRECATED TARGET: use produce_tiddit_sv_vcf
         expand(MDIR +"{sample}/align/{alnr}/{ddup}/sv/tiddit/{sample}.{alnr}.tiddit.sv.sort.vcf.gz.tbi", sample=SSAMPS, alnr=ALIGNERS, ddup=DDUP)
     log:
         MDIR + "logs/produce_tiddit.log"
+    benchmark:
+        "logs/benchmarks/produce_tiddit.bench.tsv"

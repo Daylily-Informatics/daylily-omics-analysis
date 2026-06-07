@@ -53,10 +53,32 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
         )
     )
 
-    assert (
-        "partition=i192,i128,i192mem,bcl2fq-i384-nvme-test"
-        in profile["default-resources"]
-    )
+    assert "partition=i192,i128,i384nvme,i192nvme" in profile["default-resources"]
+
+
+def test_slurm_rule_config_uses_v8_partitions_and_explicit_memory() -> None:
+    path = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
+    rule_config = yaml.safe_load(path.read_text(encoding="utf-8"))
+    allowed = {"i8", "i128", "i192", "i128nvme", "i192nvme", "i384nvme", "i192hugenvme"}
+    retired = {"i192mem", "i192bigmem", "bcl-convert", "bcl2fq-i192-nvme-test", "bcl2fq-i384-nvme-test"}
+
+    def walk(value, context: str) -> None:
+        if isinstance(value, dict):
+            has_partition = False
+            for key, child in value.items():
+                if key == "partition" or key.endswith("_partition"):
+                    has_partition = True
+                    parts = {part for part in str(child).split(",") if part}
+                    assert not (parts & retired), context
+                    assert parts <= allowed, (context, parts - allowed)
+                walk(child, f"{context}.{key}")
+            if has_partition:
+                assert "mem_mb" in value, context
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                walk(item, f"{context}[{index}]")
+
+    walk(rule_config, "rule_config")
 
 
 def test_slurm_rule_config_uses_valid_openmp_env_vars() -> None:

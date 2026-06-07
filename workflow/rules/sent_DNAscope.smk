@@ -236,6 +236,8 @@ rule clear_combined_sentD_vcf:  # TARGET:  clear combined sentD vcf so the chunk
         ),
     log:
         MDIR + "logs/clear_combined_sentD_vcf.log"
+    benchmark:
+        "logs/benchmarks/clear_combined_sentD_vcf.bench.tsv"
     threads: 2
     priority: 42
     shell:
@@ -263,6 +265,8 @@ rule produce_sentD_vcf:  # DEPRECATED TARGET: use produce_sentd_snv_vcf
     threads: 1
     log:
         "gatheredall.sentd.log",
+    benchmark:
+        "logs/benchmarks/produce_sentD_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

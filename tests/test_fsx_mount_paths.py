@@ -6,7 +6,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-HISTORICAL_PREFIXES = ("docs/plans/", "quarantine/")
+HISTORICAL_PREFIXES = ("docs/plans/", "docs/jem_working_docs/plans/", "quarantine/")
 RETIRED_PATHS = (
     "/fsx/" + "data",
     "/fsx/" + "runtime_assets",

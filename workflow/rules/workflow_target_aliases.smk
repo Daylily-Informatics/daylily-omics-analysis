@@ -209,6 +209,8 @@ rule produce_kitchen_sink:  # TARGET: canonical broad evidence-producing kitchen
 
     log:
         MDIR + "logs/produce_kitchen_sink.log"
+    benchmark:
+        "logs/benchmarks/produce_kitchen_sink.bench.tsv"
 rule produce_sent_align:  # TARGET: canonical Sentieon BWA aligner selector
     input:
         lambda wildcards: _workflow_target_alias_inputs("aligner", "produce_sent_align")
@@ -216,6 +218,8 @@ rule produce_sent_align:  # TARGET: canonical Sentieon BWA aligner selector
         _workflow_target_alias_marker("produce_sent_align")
     log:
         MDIR + "logs/produce_sent_align.log"
+    benchmark:
+        "logs/benchmarks/produce_sent_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -227,6 +231,8 @@ rule produce_bwa2a_align:  # TARGET: canonical BWA-MEM2 aligner selector
         _workflow_target_alias_marker("produce_bwa2a_align")
     log:
         MDIR + "logs/produce_bwa2a_align.log"
+    benchmark:
+        "logs/benchmarks/produce_bwa2a_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -238,6 +244,8 @@ rule produce_strobe_align:  # TARGET: canonical Strobealign aligner selector
         _workflow_target_alias_marker("produce_strobe_align")
     log:
         MDIR + "logs/produce_strobe_align.log"
+    benchmark:
+        "logs/benchmarks/produce_strobe_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -249,6 +257,8 @@ rule produce_sentcg_align:  # TARGET: canonical Complete Genomics/MGI aligner se
         _workflow_target_alias_marker("produce_sentcg_align")
     log:
         MDIR + "logs/produce_sentcg_align.log"
+    benchmark:
+        "logs/benchmarks/produce_sentcg_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -260,6 +270,8 @@ rule produce_sentmm2_align:  # TARGET: canonical PacBio minimap2 aligner selecto
         _workflow_target_alias_marker("produce_sentmm2_align")
     log:
         MDIR + "logs/produce_sentmm2_align.log"
+    benchmark:
+        "logs/benchmarks/produce_sentmm2_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -271,6 +283,8 @@ rule produce_sentmm2ont_align:  # TARGET: canonical ONT minimap2 aligner selecto
         _workflow_target_alias_marker("produce_sentmm2ont_align")
     log:
         MDIR + "logs/produce_sentmm2ont_align.log"
+    benchmark:
+        "logs/benchmarks/produce_sentmm2ont_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -282,6 +296,8 @@ rule produce_all_align:  # TARGET: canonical all-aligners selector
         _workflow_target_alias_marker("produce_all_align")
     log:
         MDIR + "logs/produce_all_align.log"
+    benchmark:
+        "logs/benchmarks/produce_all_align.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -293,6 +309,8 @@ rule produce_dmd_dedup_cram:  # TARGET: canonical Doppelmark dedup CRAM selector
         _workflow_target_alias_marker("produce_dmd_dedup_cram")
     log:
         MDIR + "logs/produce_dmd_dedup_cram.log"
+    benchmark:
+        "logs/benchmarks/produce_dmd_dedup_cram.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -304,6 +322,8 @@ rule produce_smd_dedup_cram:  # TARGET: canonical Sentieon dedup CRAM selector
         _workflow_target_alias_marker("produce_smd_dedup_cram")
     log:
         MDIR + "logs/produce_smd_dedup_cram.log"
+    benchmark:
+        "logs/benchmarks/produce_smd_dedup_cram.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -315,6 +335,8 @@ rule produce_na_dedup_cram:  # TARGET: canonical no-dedup CRAM selector
         _workflow_target_alias_marker("produce_na_dedup_cram")
     log:
         MDIR + "logs/produce_na_dedup_cram.log"
+    benchmark:
+        "logs/benchmarks/produce_na_dedup_cram.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -326,6 +348,8 @@ rule produce_all_dedup_cram:  # TARGET: canonical all-dedupers CRAM selector
         _workflow_target_alias_marker("produce_all_dedup_cram")
     log:
         MDIR + "logs/produce_all_dedup_cram.log"
+    benchmark:
+        "logs/benchmarks/produce_all_dedup_cram.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -337,6 +361,8 @@ rule produce_sentd_snv_vcf:  # TARGET: canonical Sentieon DNAscope SNV selector
         _workflow_target_alias_marker("produce_sentd_snv_vcf")
     log:
         MDIR + "logs/produce_sentd_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentd_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -348,6 +374,8 @@ rule produce_cgt7p_snv_vcf:  # TARGET: canonical Complete Genomics/MGI SNV selec
         _workflow_target_alias_marker("produce_cgt7p_snv_vcf")
     log:
         MDIR + "logs/produce_cgt7p_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_cgt7p_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -359,6 +387,8 @@ rule produce_sentdpb_snv_vcf:  # TARGET: canonical PacBio Sentieon SNV selector
         _workflow_target_alias_marker("produce_sentdpb_snv_vcf")
     log:
         MDIR + "logs/produce_sentdpb_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdpb_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -370,6 +400,8 @@ rule produce_sentdont_snv_vcf:  # TARGET: canonical ONT Sentieon SNV selector
         _workflow_target_alias_marker("produce_sentdont_snv_vcf")
     log:
         MDIR + "logs/produce_sentdont_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdont_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -381,6 +413,8 @@ rule produce_sentdug_snv_vcf:  # TARGET: canonical Ultima Sentieon SNV selector
         _workflow_target_alias_marker("produce_sentdug_snv_vcf")
     log:
         MDIR + "logs/produce_sentdug_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdug_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -392,6 +426,8 @@ rule produce_sentdhiomr_snv_vcf:  # TARGET: canonical refactored Illumina+ONT hy
         _workflow_target_alias_marker("produce_sentdhiomr_snv_vcf")
     log:
         MDIR + "logs/produce_sentdhiomr_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdhiomr_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -403,6 +439,8 @@ rule produce_sentdhipmr_snv_vcf:  # TARGET: canonical refactored Illumina+PacBio
         _workflow_target_alias_marker("produce_sentdhipmr_snv_vcf")
     log:
         MDIR + "logs/produce_sentdhipmr_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdhipmr_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -414,6 +452,8 @@ rule produce_sentdhuomr_snv_vcf:  # TARGET: canonical refactored Ultima+ONT hybr
         _workflow_target_alias_marker("produce_sentdhuomr_snv_vcf")
     log:
         MDIR + "logs/produce_sentdhuomr_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdhuomr_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -425,6 +465,8 @@ rule produce_sentdhupmr_snv_vcf:  # TARGET: canonical refactored Ultima+PacBio h
         _workflow_target_alias_marker("produce_sentdhupmr_snv_vcf")
     log:
         MDIR + "logs/produce_sentdhupmr_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentdhupmr_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -436,6 +478,8 @@ rule produce_sentpg_snv_vcf:  # TARGET: canonical Sentieon pangenome SNV selecto
         _workflow_target_alias_marker("produce_sentpg_snv_vcf")
     log:
         MDIR + "logs/produce_sentpg_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_sentpg_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -447,6 +491,8 @@ rule produce_gatk_snv_vcf:  # TARGET: canonical Sentieon GATK SNV selector
         _workflow_target_alias_marker("produce_gatk_snv_vcf")
     log:
         MDIR + "logs/produce_gatk_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_gatk_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -458,6 +504,8 @@ rule produce_deep19_snv_vcf:  # TARGET: canonical DeepVariant 1.9 SNV selector
         _workflow_target_alias_marker("produce_deep19_snv_vcf")
     log:
         MDIR + "logs/produce_deep19_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_deep19_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -469,6 +517,8 @@ rule produce_deep19r_snv_vcf:  # TARGET: canonical DeepVariant 1.9 Roche SNV sel
         _workflow_target_alias_marker("produce_deep19r_snv_vcf")
     log:
         MDIR + "logs/produce_deep19r_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_deep19r_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -480,6 +530,8 @@ rule produce_deep15_snv_vcf:  # TARGET: canonical DeepVariant 1.5 SNV selector
         _workflow_target_alias_marker("produce_deep15_snv_vcf")
     log:
         MDIR + "logs/produce_deep15_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_deep15_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -491,6 +543,8 @@ rule produce_oct_snv_vcf:  # TARGET: canonical Octopus SNV selector
         _workflow_target_alias_marker("produce_oct_snv_vcf")
     log:
         MDIR + "logs/produce_oct_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_oct_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -502,6 +556,8 @@ rule produce_clair3_snv_vcf:  # TARGET: canonical Clair3 SNV selector
         _workflow_target_alias_marker("produce_clair3_snv_vcf")
     log:
         MDIR + "logs/produce_clair3_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_clair3_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -513,6 +569,8 @@ rule produce_lfq2_snv_vcf:  # TARGET: canonical LoFreq2 SNV selector
         _workflow_target_alias_marker("produce_lfq2_snv_vcf")
     log:
         MDIR + "logs/produce_lfq2_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_lfq2_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -524,6 +582,8 @@ rule produce_varn_snv_vcf:  # TARGET: canonical VarNet SNV selector
         _workflow_target_alias_marker("produce_varn_snv_vcf")
     log:
         MDIR + "logs/produce_varn_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_varn_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -535,6 +595,8 @@ rule produce_aiv_snv_vcf:  # TARGET: canonical AIVariant SNV selector
         _workflow_target_alias_marker("produce_aiv_snv_vcf")
     log:
         MDIR + "logs/produce_aiv_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_aiv_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -546,6 +608,8 @@ rule produce_mutect2_snv_vcf:  # TARGET: canonical Mutect2 SNV selector
         _workflow_target_alias_marker("produce_mutect2_snv_vcf")
     log:
         MDIR + "logs/produce_mutect2_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_mutect2_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -557,6 +621,8 @@ rule produce_dvsom_snv_vcf:  # TARGET: canonical DeepSomatic SNV selector
         _workflow_target_alias_marker("produce_dvsom_snv_vcf")
     log:
         MDIR + "logs/produce_dvsom_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_dvsom_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -568,6 +634,8 @@ rule produce_slk2g_snv_vcf:  # TARGET: canonical Strelka2 germline SNV selector
         _workflow_target_alias_marker("produce_slk2g_snv_vcf")
     log:
         MDIR + "logs/produce_slk2g_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_slk2g_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -579,6 +647,8 @@ rule produce_slk2s_snv_vcf:  # TARGET: canonical Strelka2 somatic SNV selector
         _workflow_target_alias_marker("produce_slk2s_snv_vcf")
     log:
         MDIR + "logs/produce_slk2s_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_slk2s_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -590,6 +660,8 @@ rule produce_senttn_snv_vcf:  # TARGET: canonical Sentieon TNscope SNV selector
         _workflow_target_alias_marker("produce_senttn_snv_vcf")
     log:
         MDIR + "logs/produce_senttn_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_senttn_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -601,6 +673,8 @@ rule produce_rochehc_snv_vcf:  # TARGET: canonical Roche HaplotypeCaller SNV sel
         _workflow_target_alias_marker("produce_rochehc_snv_vcf")
     log:
         MDIR + "logs/produce_rochehc_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_rochehc_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -612,6 +686,8 @@ rule produce_all_snv_vcf:  # TARGET: canonical all-SNV-callers selector
         _workflow_target_alias_marker("produce_all_snv_vcf")
     log:
         MDIR + "logs/produce_all_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_all_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -623,6 +699,8 @@ rule produce_tiddit_sv_vcf:  # TARGET: canonical TIDDIT SV selector
         _workflow_target_alias_marker("produce_tiddit_sv_vcf")
     log:
         MDIR + "logs/produce_tiddit_sv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_tiddit_sv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -634,6 +712,8 @@ rule produce_manta_sv_vcf:  # TARGET: canonical Manta SV selector
         _workflow_target_alias_marker("produce_manta_sv_vcf")
     log:
         MDIR + "logs/produce_manta_sv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_manta_sv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -645,6 +725,8 @@ rule produce_dysgu_sv_vcf:  # TARGET: canonical Dysgu SV selector
         _workflow_target_alias_marker("produce_dysgu_sv_vcf")
     log:
         MDIR + "logs/produce_dysgu_sv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_dysgu_sv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 
@@ -656,5 +738,7 @@ rule produce_all_sv_vcf:  # TARGET: canonical all-SV-callers selector
         _workflow_target_alias_marker("produce_all_sv_vcf")
     log:
         MDIR + "logs/produce_all_sv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_all_sv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"

@@ -1081,6 +1081,8 @@ rule produce_bclconvert_fastqs:
         touch(BCL_FASTQS_COMPLETE),
     log:
         MDIR + "logs/produce_bclconvert_fastqs.log"
+    benchmark:
+        "logs/benchmarks/produce_bclconvert_fastqs.bench.tsv"
     shell:
         "touch {output}"
 
@@ -1094,6 +1096,8 @@ rule produce_bclconvert_metrics:  # TARGET: gather BCL Convert metrics into geno
 
     log:
         MDIR + "logs/produce_bclconvert_metrics.log"
+    benchmark:
+        "logs/benchmarks/produce_bclconvert_metrics.bench.tsv"
 rule produce_bclconvert_multiqc:  # TARGET: gather BCL Convert metrics and build a focused MultiQC report
     input:
         f"{BCL_REPORT_OUT_DIR}/multiqc_report.html" if BCL_RUN_CONTEXT is not None else f"{BCL_REPORT_OUT_DIR}/bclconvert.multiqc.html",
@@ -1101,6 +1105,8 @@ rule produce_bclconvert_multiqc:  # TARGET: gather BCL Convert metrics and build
 
     log:
         MDIR + "logs/produce_bclconvert_multiqc.log"
+    benchmark:
+        "logs/benchmarks/produce_bclconvert_multiqc.bench.tsv"
 rule produce_bclconvert_fastqs_and_metrics:
     input:
         BCL_VALIDATE_OK,
@@ -1119,5 +1125,7 @@ rule produce_bclconvert_fastqs_and_metrics:
         touch(BCL_BOOTSTRAP_COMPLETE),
     log:
         MDIR + "logs/produce_bclconvert_fastqs_and_metrics.log"
+    benchmark:
+        "logs/benchmarks/produce_bclconvert_fastqs_and_metrics.bench.tsv"
     shell:
         "touch {output}"

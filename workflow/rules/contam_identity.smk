@@ -422,6 +422,8 @@ rule produce_haplocheck_contam_identity:  # TARGET: run Haplocheck mtDNA contami
 
     log:
         MDIR + "logs/produce_haplocheck_contam_identity.log"
+    benchmark:
+        "logs/benchmarks/produce_haplocheck_contam_identity.bench.tsv"
 rule produce_read_haps_contam_identity:  # TARGET: run read_haps haplotype contamination evidence
     input:
         lambda wildcards: _read_haps_outputs("read_haps.txt"),
@@ -429,6 +431,8 @@ rule produce_read_haps_contam_identity:  # TARGET: run read_haps haplotype conta
 
     log:
         MDIR + "logs/produce_read_haps_contam_identity.log"
+    benchmark:
+        "logs/benchmarks/produce_read_haps_contam_identity.bench.tsv"
 rule produce_global_contam_check:  # TARGET: run global contamination and identity evidence bundle
     input:
         MDIR + "other_reports/contamination_mqc.tsv",
@@ -441,3 +445,5 @@ rule produce_global_contam_check:  # TARGET: run global contamination and identi
         MDIR + "other_reports/read_haps_mqc.tsv",
     log:
         MDIR + "logs/produce_global_contam_check.log"
+    benchmark:
+        "logs/benchmarks/produce_global_contam_check.bench.tsv"

@@ -76,3 +76,5 @@ rule produce_alignstats:  # TARGET - only takes path to produce alignstats
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
     log:
         MDIR + "logs/produce_alignstats.log"
+    benchmark:
+        "logs/benchmarks/produce_alignstats.bench.tsv"

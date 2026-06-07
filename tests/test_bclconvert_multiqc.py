@@ -238,11 +238,11 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     slurm_bcl = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")["bclconvert"]
     assert slurm_bcl["threads"] == 48
     assert slurm_bcl["mem_mb"] == 500000
-    assert slurm_bcl["partition"] == "i192bigmem"
+    assert slurm_bcl["partition"] == "i192hugenvme"
     assert slurm_bcl["constraint"] == ""
     assert slurm_bcl["exclusive"] == ""
-    assert slurm_bcl["tmpdir"] == "/dev/shm/dayoa_bclconvert_tmp"
-    assert slurm_bcl["scratch_output_root"] == "/dev/shm/dayoa_bclconvert"
+    assert slurm_bcl["tmpdir"] == "/scratch/dayoa_bclconvert_tmp"
+    assert slurm_bcl["scratch_output_root"] == "/scratch/dayoa_bclconvert"
     assert slurm_bcl["scratch_available_bytes_min"] == 100000000000
     assert slurm_bcl["parallel_tiles"] == 8
     assert slurm_bcl["conversion_threads"] == 2

@@ -294,6 +294,8 @@ rule produce_varn_vcf:  # TARGET: varn vcf
     priority: 48,
     log:
         "gatheredall.varn.log",
+    benchmark:
+        "logs/benchmarks/produce_varn_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml",
     params:

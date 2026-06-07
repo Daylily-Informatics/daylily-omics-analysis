@@ -62,3 +62,5 @@ rule produce_mosdepth:  # TARGET:  jusg gen mosdepth
         + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.region.dist.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
     log:
         MDIR + "logs/produce_mosdepth.log"
+    benchmark:
+        "logs/benchmarks/produce_mosdepth.bench.tsv"

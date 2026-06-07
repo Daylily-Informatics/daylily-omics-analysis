@@ -84,16 +84,16 @@ The focused report includes `bclconvert`, `fastqc`, and `custom_content` modules
 
 ## Default Demux Settings
 
-The Slurm profile targets the observed successful `i192bigmem` BCL Convert profile: 16 tile shards per lane, 48 threads per shard, non-exclusive placement, `/dev/shm` staging, and O_DIRECT output.
+The Slurm profile targets the observed successful `i192hugenvme` BCL Convert profile: 16 tile shards per lane, 48 threads per shard, non-exclusive placement, `/dev/shm` staging, and O_DIRECT output.
 
 ```yaml
 bclconvert:
   threads: 48
   mem_mb: 500000
-  partition: "i192bigmem"
+  partition: "i192hugenvme"
   exclusive: ""
-  tmpdir: "/dev/shm/dayoa_bclconvert_tmp"
-  scratch_output_root: "/dev/shm/dayoa_bclconvert"
+  tmpdir: "/scratch/dayoa_bclconvert_tmp"
+  scratch_output_root: "/scratch/dayoa_bclconvert"
   scratch_available_bytes_min: 100000000000
   merge_lane_fastqs: false
   merge_tile_fastqs: false

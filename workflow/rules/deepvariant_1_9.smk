@@ -234,6 +234,8 @@ rule clear_combined_deep19_vcf:  # TARGET:  clear combined deep vcf so the chunk
         ),
     log:
         MDIR + "logs/clear_combined_deep19_vcf.log"
+    benchmark:
+        "logs/benchmarks/clear_combined_deep19_vcf.bench.tsv"
     priority: 42
     conda:
         config['deepvariant']['deep19_conda'] 
@@ -281,6 +283,8 @@ rule produce_deep19_vcf:  # DEPRECATED TARGET: use produce_deep19_snv_vcf
     priority: 48
     log:
         "gatheredall.deep19.log",
+    benchmark:
+        "logs/benchmarks/produce_deep19_vcf.bench.tsv"
     conda:
         config['deepvariant']['deep19_conda']
     params:

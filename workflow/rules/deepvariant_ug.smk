@@ -308,6 +308,8 @@ rule clear_combined_deepug_vcf:  # TARGET:  clear combined deep vcf so the chunk
         ),
     log:
         MDIR + "logs/clear_combined_deepug_vcf.log"
+    benchmark:
+        "logs/benchmarks/clear_combined_deepug_vcf.bench.tsv"
     priority: 42
     conda:
         config['deepvariant']['deepug_conda']
@@ -355,6 +357,8 @@ rule produce_deepug_vcf:  # TARGET: deep variant vcf
     priority: 48
     log:
         "gatheredall.deepug.log",
+    benchmark:
+        "logs/benchmarks/produce_deepug_vcf.bench.tsv"
     conda:
         config['deepvariant']['deepug_conda']
     params:

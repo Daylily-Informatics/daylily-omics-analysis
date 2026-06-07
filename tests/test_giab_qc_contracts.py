@@ -244,15 +244,16 @@ def test_gatk_contam_rule_sets_heap_and_dense_interval_mode() -> None:
     assert "--disable-bam-index-caching" in text
 
     expected_exclusive = {
-        "config/day_profiles/slurm/templates/rule_config.yaml": 'exclusive: "--exclusive"',
-        "config/day_profiles/local/templates/rule_config.yaml": 'exclusive: ""',
+        "config/day_profiles/slurm/templates/rule_config.yaml": "--exclusive",
+        "config/day_profiles/local/templates/rule_config.yaml": "",
     }
     for config_path, exclusive in expected_exclusive.items():
-        config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
-        gatk_config = config_text[config_text.index("gatk_contam:") :]
-        assert "mem_mb: 80000" in gatk_config[:240]
-        assert "java_heap_mb: 64000" in gatk_config[:240]
-        assert exclusive in gatk_config[:240]
+        gatk_config = yaml.safe_load((REPO_ROOT / config_path).read_text(encoding="utf-8"))[
+            "gatk_contam"
+        ]
+        assert gatk_config["mem_mb"] == 80000
+        assert gatk_config["java_heap_mb"] == 64000
+        assert gatk_config["exclusive"] == exclusive
 
 
 def test_gatk_contam_uses_sparse_chr_prefixed_af_sites() -> None:
@@ -375,11 +376,12 @@ def test_site_mix_contam_rule_is_target_genotype_free() -> None:
         "config/day_profiles/slurm/templates/rule_config.yaml",
         "config/day_profiles/local/templates/rule_config.yaml",
     ):
-        config_text = (REPO_ROOT / config_path).read_text(encoding="utf-8")
-        section = config_text[config_text.index("site_mix_contam:") :]
-        assert 'candidate_manifest: ""' in section[:800]
-        assert "sites_vcf:" in section[:800]
-        assert "pileup_region_size: 25000000" in section[:800]
+        site_mix_config = yaml.safe_load(
+            (REPO_ROOT / config_path).read_text(encoding="utf-8")
+        )["site_mix_contam"]
+        assert site_mix_config["candidate_manifest"] == ""
+        assert "sites_vcf" in site_mix_config
+        assert site_mix_config["pileup_region_size"] == 25000000
 
 
 def test_synthetic_contamination_manifest_levels_and_count_calculations(tmp_path: Path) -> None:

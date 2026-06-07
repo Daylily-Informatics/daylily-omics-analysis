@@ -386,6 +386,8 @@ rule produce_sentieon_gatk_vcf:  # TARGET: sentieon GATK HaplotypeCaller per-sam
     threads: 1
     log:
         "gatheredall.gatk.log",
+    benchmark:
+        "logs/benchmarks/produce_sentieon_gatk_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 

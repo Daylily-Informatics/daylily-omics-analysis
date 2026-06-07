@@ -216,3 +216,5 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
         MDIR + "other_reports/site_mix_contam_mqc.tsv",
     log:
         MDIR + "logs/produce_site_mix_contam_estimate.log"
+    benchmark:
+        "logs/benchmarks/produce_site_mix_contam_estimate.bench.tsv"

@@ -72,8 +72,12 @@ def test_target_wrapper_rules_do_not_introduce_log_only_wildcards() -> None:
         (final_wgs, "aggregate_report_components"),
     ):
         block = _rule_block(text, rule_name)
-        log_block = block.split("log:", 1)[1].split("benchmark:", 1)[0]
-        benchmark_block = block.split("benchmark:", 1)[1].split("shell:", 1)[0]
+        log_block = block.split("log:", 1)[1].split("benchmark:", 1)[0].split("shell:", 1)[0]
+        benchmark_block = (
+            block.split("benchmark:", 1)[1].split("shell:", 1)[0]
+            if "benchmark:" in block
+            else ""
+        )
         assert "{sample}" not in log_block
         assert "{alnr}" not in log_block
         assert "{ddup}" not in log_block
@@ -215,7 +219,7 @@ def test_multiqc_runtime_gate_config_defaults() -> None:
         assert config["haplocheck"]["input_modes"] == ["vcf"]
         if path == "config/day_profiles/slurm/templates/rule_config.yaml":
             assert config["haplocheck"]["threads"] == 96
-            assert config["haplocheck"]["partition"] == "i192,i192mem,i192bigmem"
+            assert config["haplocheck"]["partition"] == "i192"
         assert config["read_haps"]["read_haps_command"].endswith("/read_haps/read_haps")
         assert config["read_haps"]["reliable_snp_file"].endswith(
             "high_quality_markers_deCODE_2015.txt.gz"
@@ -746,10 +750,10 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "does not match input count" in vep
     assert slurm_config["vep"]["threads"] == 16
     assert slurm_config["vep"]["mem_mb"] == 64000
-    assert slurm_config["vep"]["partition"] == "i192,i192mem,i128"
+    assert slurm_config["vep"]["partition"] == "i192,i128"
     assert slurm_config["vep"]["concat_threads"] == 16
     assert slurm_config["vep"]["concat_mem_mb"] == 32000
-    assert slurm_config["vep"]["concat_partition"] == "i192,i192mem,i128"
+    assert slurm_config["vep"]["concat_partition"] == "i192,i128"
     assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"

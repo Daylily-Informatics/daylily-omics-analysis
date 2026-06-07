@@ -83,3 +83,5 @@ rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estima
         )
     log:
         MDIR + "logs/produce_gatk_contam_estimate.log"
+    benchmark:
+        "logs/benchmarks/produce_gatk_contam_estimate.bench.tsv"

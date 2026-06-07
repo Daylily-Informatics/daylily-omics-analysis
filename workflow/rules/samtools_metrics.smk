@@ -46,3 +46,5 @@ rule produce_samtools_metrics:  # TARGET : Produce samtools BAM metrics
         touch(MDIR + "other_reports/samtools_metrics_gather.done"),
     log:
         MDIR + "logs/produce_samtools_metrics.log"
+    benchmark:
+        "logs/benchmarks/produce_samtools_metrics.bench.tsv"

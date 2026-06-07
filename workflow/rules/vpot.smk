@@ -51,5 +51,7 @@ rule produce_vpot:  # TARGET: run VPOT across all samples
         "logs/vpot_gathered.done",
     log:
         MDIR + "logs/produce_vpot.log"
+    benchmark:
+        "logs/benchmarks/produce_vpot.bench.tsv"
     shell:
         "touch {output};"

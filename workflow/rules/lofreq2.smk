@@ -296,6 +296,8 @@ rule produce_lofreq2_vcf:  # DEPRECATED TARGET: use produce_lfq2_snv_vcf
     priority: 48
     log:
         "gatheredall.lfq2.log",
+    benchmark:
+        "logs/benchmarks/produce_lofreq2_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml"
     params:

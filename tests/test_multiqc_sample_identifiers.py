@@ -9,6 +9,7 @@ from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
 import pytest
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -946,7 +947,7 @@ def test_manta_converts_cram_to_bam_before_calling() -> None:
     gatk_rule = _read("workflow/rules/gatk_contam.smk")
     compat_rule = _read("workflow/rules/legacy_cram_compat_bam.smk")
     snakefile = _read("workflow/Snakefile")
-    slurm_config = _read("config/day_profiles/slurm/templates/rule_config.yaml")
+    slurm_config = yaml.safe_load(_read("config/day_profiles/slurm/templates/rule_config.yaml"))
 
     assert 'include: "rules/legacy_cram_compat_bam.smk"' in snakefile
     assert "bam=temp(" in compat_rule
@@ -958,8 +959,10 @@ def test_manta_converts_cram_to_bam_before_calling() -> None:
     assert "gatk_cram_compat.sh" not in gatk_rule
     assert "configManta.py --bam {input.bam}" in manta_rule
     assert 'mem_mb=config["manta"].get("mem_mb", 128000)' in manta_rule
-    assert "manta:\n    threads: 128\n    mem_mb: 128000" in slurm_config
-    assert "legacy_cram_compat_bam:\n    threads: 32\n    mem_mb: 64000" in slurm_config
+    assert slurm_config["manta"]["threads"] == 128
+    assert slurm_config["manta"]["mem_mb"] == 128000
+    assert slurm_config["legacy_cram_compat_bam"]["threads"] == 32
+    assert slurm_config["legacy_cram_compat_bam"]["mem_mb"] == 64000
 
 
 def test_native_multiqc_modules_are_enabled_and_stage_cleaned() -> None:

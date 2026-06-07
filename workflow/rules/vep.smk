@@ -357,5 +357,7 @@ rule produce_vep:  # TARGET: just produce vep results
         "logs/vep_gathered.done",
     log:
         MDIR + "logs/produce_vep.log"
+    benchmark:
+        "logs/benchmarks/produce_vep.bench.tsv"
     shell:
         "touch {output};"

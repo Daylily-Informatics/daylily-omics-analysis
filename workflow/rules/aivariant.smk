@@ -355,6 +355,8 @@ rule produce_aiv_vcf:  # TARGET: aiv vcf
     priority: 48,
     log:
         "gatheredall.aiv.log",
+    benchmark:
+        "logs/benchmarks/produce_aiv_vcf.bench.tsv"
     conda:
         "../envs/vanilla_v0.1.yaml",
     params:

@@ -13,6 +13,8 @@ rule manta_get_centos_env:
         "../envs/vanilla_v0.1.yaml"  #  "../envs/manta_uge_v0.2.yaml"
     log:
         MDIR + "logs/manta_get_centos_env.log"
+    benchmark:
+        "logs/benchmarks/manta_get_centos_env.bench.tsv"
     params:
         cluster_sample="manta_get_centos_env",
     shell:
@@ -140,3 +142,5 @@ rule produce_manta:   # DEPRECATED TARGET: use produce_manta_sv_vcf
         expand(MDIR + "{sample}/align/{alnr}/{ddup}/sv/manta/{sample}.{alnr}.manta.sv.sort.vcf.gz.tbi",sample=SSAMPS,alnr=ALIGNERS,ddup=DDUP)
     log:
         MDIR + "logs/produce_manta.log"
+    benchmark:
+        "logs/benchmarks/produce_manta.bench.tsv"

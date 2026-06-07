@@ -76,5 +76,7 @@ rule produce_htd_calls:  # TARGET : Produce selected HTD caller outputs
         "logs/htd_calls.done"
     log:
         MDIR + "logs/produce_htd_calls.log"
+    benchmark:
+        "logs/benchmarks/produce_htd_calls.bench.tsv"
     shell:
         "mkdir -p $(dirname {output}); touch {output}"

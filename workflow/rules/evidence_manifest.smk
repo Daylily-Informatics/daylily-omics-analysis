@@ -93,3 +93,5 @@ rule produce_dayoa_evidence_manifest:
         MDIR + "reports/dayoa_evidence_manifest.json",
     log:
         MDIR + "logs/produce_dayoa_evidence_manifest.log"
+    benchmark:
+        "logs/benchmarks/produce_dayoa_evidence_manifest.bench.tsv"

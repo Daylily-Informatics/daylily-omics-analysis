@@ -95,3 +95,5 @@ rule produce_surveyor:  # TARGET : Produce SurVeyor SV VCFs
         )
     log:
         MDIR + "logs/produce_surveyor.log"
+    benchmark:
+        "logs/benchmarks/produce_surveyor.bench.tsv"

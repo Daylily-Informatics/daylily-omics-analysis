@@ -261,6 +261,8 @@ rule clear_combined_octovcf:  # TARGET:  clear combined octo vcf so the chunks c
         ),
     log:
         MDIR + "logs/clear_combined_octovcf.log"
+    benchmark:
+        "logs/benchmarks/clear_combined_octovcf.bench.tsv"
     priority: 42
     threads: 2
     shell:
@@ -286,6 +288,8 @@ rule produce_oct_vcf:  # DEPRECATED TARGET: use produce_oct_snv_vcf
     threads: 2
     log:
         "gatheredall.oct.log",
+    benchmark:
+        "logs/benchmarks/produce_oct_vcf.bench.tsv"
     shell:
         """( touch {output} ;
 
