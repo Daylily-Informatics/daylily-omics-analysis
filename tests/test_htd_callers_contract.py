@@ -194,12 +194,17 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
         "sentdhiomr.sr_dedup.cram",
         "done=MDIR",
         "rm -f {output.summary} {output.done}",
+        "smn_caller.py",
+        "--manifest \"$manifest\"",
+        "--genome {params.genome}",
+        "--prefix {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.smn12.summary",
         "test -s {output.summary}",
         '"$CONDA_PREFIX/bin/python" -m json.tool {output.summary} >/dev/null',
         "touch {output.done}",
         '"../envs/smn12_v0.1.yaml"',
     ):
         assert expected in smn12
+    assert "SMNCopyNumberCaller \\" not in smn12
     assert 'echo "{}" > {output.summary}' not in smn12
 
 

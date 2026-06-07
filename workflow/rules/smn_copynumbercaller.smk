@@ -1,6 +1,9 @@
 """Rules for running SMNCopyNumberCaller."""
 
 
+SMN12_GENOME_ARG = "37" if config["genome_build"] == "b37" else "38"
+
+
 def smn12_cram(wildcards):
     if wildcards.alnr in globals().get("ALIGNERS_DHIOMR", []):
         return (
@@ -30,6 +33,7 @@ rule smn_copynumbercaller:
     params:
         cluster_sample=ret_sample,
         reference=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
+        genome=SMN12_GENOME_ARG,
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/logs/{sample}.{alnr}.{ddup}.smn12.log",
     threads: config["go_left"]["threads"]
@@ -41,11 +45,15 @@ rule smn_copynumbercaller:
         mkdir -p $(dirname {output.summary});
         mkdir -p $(dirname {log});
         rm -f {output.summary} {output.done}
-        SMNCopyNumberCaller \
-            --sample-id {wildcards.sample} \
-            --cram {input.cram} \
+        manifest=$(mktemp)
+        trap 'rm -f "$manifest"' EXIT
+        realpath {input.cram} > "$manifest"
+        smn_caller.py \
+            --manifest "$manifest" \
+            --genome {params.genome} \
+            --outDir $(dirname {output.summary}) \
+            --prefix {wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.smn12.summary \
             --reference {params.reference} \
-            --output-dir $(dirname {output.summary}) \
             --threads {threads} \
             > {log} 2>&1;
         test -s {output.summary}
