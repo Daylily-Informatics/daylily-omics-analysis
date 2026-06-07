@@ -26,6 +26,11 @@ MANIFEST_FIELDS = [
     "group_id",
 ]
 
+METAGENOMICS_READ_SETS = {
+    "s",
+    "p",
+}
+
 
 @dataclass(frozen=True)
 class StageParts:
@@ -228,6 +233,26 @@ def parse_alignment_parts(path: Path) -> StageParts:
     )
 
 
+def detect_metagenomics_read_set(path: Path) -> str:
+    name = path.name
+    for read_set in sorted(METAGENOMICS_READ_SETS):
+        if f".{read_set}." in name:
+            return read_set
+    raise StagingError(f"could not determine metagenomics read set from {path}")
+
+
+def with_metagenomics_read_set(parts: StageParts, read_set: str) -> StageParts:
+    if read_set not in METAGENOMICS_READ_SETS:
+        raise StagingError(f"unsupported metagenomics read set: {read_set}")
+    return StageParts(
+        sample=parts.sample,
+        aligner=parts.aligner,
+        deduper=parts.deduper,
+        caller=read_set,
+        stage=parts.stage,
+    )
+
+
 def parse_variant_parts(path: Path, token: str = "snv") -> StageParts:
     parts = path_parts(path)
     try:
@@ -417,7 +442,14 @@ def stage_ganon2_sources_from_custom_row(
         raise StagingError(f"Ganon2 custom row is missing ganon2_rep: {custom_source}")
     report = Path(report_value)
     rep = Path(rep_value)
-    parts = parse_alignment_parts(report)
+    row_read_set = row.get("read_set", "").strip()
+    path_read_set = detect_metagenomics_read_set(report)
+    if row_read_set != path_read_set:
+        raise StagingError(
+            f"Ganon2 read_set mismatch for {custom_source}: "
+            f"row={row_read_set!r} path={path_read_set!r}"
+        )
+    parts = with_metagenomics_read_set(parse_alignment_parts(report), row_read_set)
     custom_group = f"{custom_source}:{row.get('Sample', '')}"
     for source, suffix, input_kind in (
         (report, ".ganon2.quick.tre", "ganon2_tree_report"),
@@ -448,7 +480,14 @@ def stage_sourmash_sources_from_custom_row(
         )
     signature = Path(signature_value)
     gather_csv = Path(gather_value)
-    parts = parse_alignment_parts(gather_csv)
+    row_read_set = row.get("read_set", "").strip()
+    path_read_set = detect_metagenomics_read_set(gather_csv)
+    if row_read_set != path_read_set:
+        raise StagingError(
+            f"sourmash read_set mismatch for {custom_source}: "
+            f"row={row_read_set!r} path={path_read_set!r}"
+        )
+    parts = with_metagenomics_read_set(parse_alignment_parts(gather_csv), row_read_set)
     custom_group = f"{custom_source}:{row.get('Sample', '')}"
     for source, suffix, input_kind in (
         (signature, ".sourmash.sig", "sourmash_signature"),
@@ -618,7 +657,8 @@ def stage_mosdepth_summary(stager: Stager, source: Path) -> None:
 
 
 def stage_kraken2_report(stager: Stager, source: Path) -> None:
-    parts = parse_alignment_parts(source)
+    read_set = detect_metagenomics_read_set(source)
+    parts = with_metagenomics_read_set(parse_alignment_parts(source), read_set)
     stager.copy_file(
         source,
         Path("native/kraken") / f"{parts.stage_sample}.kraken2.quick.report.txt",

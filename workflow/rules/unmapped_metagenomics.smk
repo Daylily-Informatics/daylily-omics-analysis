@@ -3,6 +3,12 @@
 from snakemake.exceptions import WorkflowError
 
 
+UNMAPPED_METAGENOMICS_READ_SETS = (
+    "s",
+    "p",
+)
+
+
 def _unmapped_metagenomics_config():
     cfg = config.get("unmapped_metagenomics")
     if not isinstance(cfg, dict):
@@ -12,8 +18,10 @@ def _unmapped_metagenomics_config():
             "unmapped_metagenomics.kraken2_db, "
             "unmapped_metagenomics.threads, "
             "unmapped_metagenomics.mem_mb, "
-            "unmapped_metagenomics.partition, and "
-            "unmapped_metagenomics.read_limit='all' values."
+            "unmapped_metagenomics.partition, "
+            "unmapped_metagenomics.read_limit='all', "
+            "unmapped_metagenomics.read_set, and "
+            "unmapped_metagenomics.permissive_mapq_lt values."
         )
     return cfg
 
@@ -76,6 +84,50 @@ def unmapped_metagenomics_read_limit(wildcards):
     return "all"
 
 
+def unmapped_metagenomics_read_set():
+    value = str(_unmapped_metagenomics_required("read_set")).strip()
+    if value not in UNMAPPED_METAGENOMICS_READ_SETS:
+        raise WorkflowError(
+            "unmapped_metagenomics.read_set must be one of: "
+            + ", ".join(UNMAPPED_METAGENOMICS_READ_SETS)
+            + f"; saw {value!r}."
+        )
+    return value
+
+
+def unmapped_metagenomics_selected_read_sets():
+    return [unmapped_metagenomics_read_set()]
+
+
+def unmapped_metagenomics_permissive_mapq_lt(wildcards):
+    value = _unmapped_metagenomics_positive_int("permissive_mapq_lt", minimum=1)
+    if value > 60:
+        raise WorkflowError(
+            "unmapped_metagenomics.permissive_mapq_lt must be <= 60; "
+            f"saw {value}."
+        )
+    return value
+
+
+def unmapped_metagenomics_samtools_view_filter(wildcards):
+    if wildcards.read_set == "s":
+        return "-f 4 -F 0xB00"
+    if wildcards.read_set == "p":
+        mapq_lt = unmapped_metagenomics_permissive_mapq_lt(wildcards)
+        return f"-F 0xB00 -e 'flag.unmap || mapq < {mapq_lt}'"
+    raise WorkflowError(
+        "Unsupported unmapped metagenomics read set: "
+        f"{wildcards.read_set!r}"
+    )
+
+
+def unmapped_metagenomics_sample_id(wildcards):
+    return (
+        f"{day_stage_sample_id(wildcards.sample, wildcards.alnr, wildcards.ddup)}"
+        f".{wildcards.read_set}"
+    )
+
+
 def unmapped_metagenomics_memory_mapping_flag(wildcards):
     if _unmapped_metagenomics_bool("memory_mapping", default=False):
         return "--memory-mapping"
@@ -95,8 +147,10 @@ def _unmapped_metagenomics_ganon2_config():
             "unmapped_metagenomics.ganon2_db_prefixes, "
             "unmapped_metagenomics.threads, "
             "unmapped_metagenomics.mem_mb, "
-            "unmapped_metagenomics.partition, and "
-            "unmapped_metagenomics.read_limit='all' values."
+            "unmapped_metagenomics.partition, "
+            "unmapped_metagenomics.read_limit='all', "
+            "unmapped_metagenomics.read_set, and "
+            "unmapped_metagenomics.permissive_mapq_lt values."
         )
     return cfg
 
@@ -177,8 +231,10 @@ def _unmapped_metagenomics_sourmash_config():
             "unmapped_metagenomics.sourmash_threshold_bp, "
             "unmapped_metagenomics.threads, "
             "unmapped_metagenomics.mem_mb, "
-            "unmapped_metagenomics.partition, and "
-            "unmapped_metagenomics.read_limit='all' values."
+            "unmapped_metagenomics.partition, "
+            "unmapped_metagenomics.read_limit='all', "
+            "unmapped_metagenomics.read_set, and "
+            "unmapped_metagenomics.permissive_mapq_lt values."
         )
     return cfg
 
@@ -317,10 +373,11 @@ def unmapped_metagenomics_stage_mqcs(wildcards):
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_mqc.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_mqc.tsv",
         sample=SSAMPS,
         alnr=aligners,
         ddup=dedupers,
+        read_set=unmapped_metagenomics_selected_read_sets(),
     )
 
 
@@ -332,10 +389,11 @@ def unmapped_metagenomics_kraken_reports(wildcards):
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.kraken2.quick.report.txt",
+        + "{sample}.{alnr}.{ddup}.{read_set}.kraken2.quick.report.txt",
         sample=SSAMPS,
         alnr=aligners,
         ddup=dedupers,
+        read_set=unmapped_metagenomics_selected_read_sets(),
     )
 
 
@@ -355,10 +413,11 @@ def unmapped_metagenomics_ganon2_stage_mqcs(wildcards):
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_ganon2_mqc.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_mqc.tsv",
         sample=SSAMPS,
         alnr=aligners,
         ddup=dedupers,
+        read_set=unmapped_metagenomics_selected_read_sets(),
     )
 
 
@@ -370,10 +429,11 @@ def unmapped_metagenomics_ganon2_reports(wildcards):
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.ganon2.quick.tre",
+        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick.tre",
         sample=SSAMPS,
         alnr=aligners,
         ddup=dedupers,
+        read_set=unmapped_metagenomics_selected_read_sets(),
     )
 
 
@@ -393,10 +453,11 @@ def unmapped_metagenomics_sourmash_stage_mqcs(wildcards):
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_sourmash_mqc.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_mqc.tsv",
         sample=SSAMPS,
         alnr=aligners,
         ddup=dedupers,
+        read_set=unmapped_metagenomics_selected_read_sets(),
     )
 
 
@@ -408,10 +469,11 @@ def unmapped_metagenomics_sourmash_gather_csvs(wildcards):
     return expand(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.sourmash.gather.csv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.sourmash.gather.csv",
         sample=SSAMPS,
         alnr=aligners,
         ddup=dedupers,
+        read_set=unmapped_metagenomics_selected_read_sets(),
     )
 
 
@@ -435,19 +497,20 @@ rule unmapped_metagenomics_kraken2_quick:
     output:
         fastq=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.human_unmapped.quick.fastq.gz",
+        + "{sample}.{alnr}.{ddup}.{read_set}.quick.fastq.gz",
         report=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.kraken2.quick.report.txt",
+        + "{sample}.{alnr}.{ddup}.{read_set}.kraken2.quick.report.txt",
         kraken=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.kraken2.quick.output.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.kraken2.quick.output.tsv",
         mqc=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_mqc.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_mqc.tsv",
     wildcard_constraints:
         alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
         ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
+        read_set="|".join(UNMAPPED_METAGENOMICS_READ_SETS),
     threads: unmapped_metagenomics_threads
     resources:
         threads=unmapped_metagenomics_threads,
@@ -456,21 +519,21 @@ rule unmapped_metagenomics_kraken2_quick:
         partition=unmapped_metagenomics_partition,
     benchmark:
         MDIR
-        + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.unmapped_metagenomics_kraken2_quick.bench.tsv"
+        + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_kraken2_quick.bench.tsv"
     params:
         cluster_sample=ret_sample,
         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         kraken2_db=unmapped_metagenomics_kraken2_db,
         read_limit=unmapped_metagenomics_read_limit,
+        read_set=lambda wildcards: wildcards.read_set,
+        view_filter=unmapped_metagenomics_samtools_view_filter,
         memory_mapping_flag=unmapped_metagenomics_memory_mapping_flag,
         fastq_threads=unmapped_metagenomics_fastq_threads,
-        sample_id=lambda wildcards: day_stage_sample_id(
-            wildcards.sample, wildcards.alnr, wildcards.ddup
-        ),
+        sample_id=unmapped_metagenomics_sample_id,
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/logs/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_kraken2_quick.log"
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_kraken2_quick.log"
     conda:
         "../envs/unmapped_metagenomics_v0.1.yaml"
     shell:
@@ -489,8 +552,7 @@ rule unmapped_metagenomics_kraken2_quick:
 	            -@ {threads} \
 	            -T {params.huref_fasta:q} \
             -u \
-            -f 4 \
-            -F 0xB00 \
+            {params.view_filter} \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
 	          | gzip -c > {output.fastq:q}
@@ -508,9 +570,10 @@ rule unmapped_metagenomics_kraken2_quick:
 	            python workflow/scripts/summarize_unmapped_metagenomics.py \
 	                --sample {params.sample_id:q} \
 	                --base-sample {wildcards.sample:q} \
-	                --aligner {wildcards.alnr:q} \
-	                --deduper {wildcards.ddup:q} \
-	                --database {params.kraken2_db:q} \
+		                --aligner {wildcards.alnr:q} \
+		                --deduper {wildcards.ddup:q} \
+		                --read-set {params.read_set:q} \
+		                --database {params.kraken2_db:q} \
 	                --read-limit {params.read_limit:q} \
 	                --unmapped-fastq {output.fastq:q} \
 	                --kraken-report {output.report:q} \
@@ -539,6 +602,7 @@ rule unmapped_metagenomics_kraken2_quick:
             --base-sample {wildcards.sample:q} \
             --aligner {wildcards.alnr:q} \
             --deduper {wildcards.ddup:q} \
+            --read-set {params.read_set:q} \
             --database {params.kraken2_db:q} \
             --read-limit {params.read_limit:q} \
             --unmapped-fastq {output.fastq:q} \
@@ -556,19 +620,20 @@ rule unmapped_metagenomics_ganon2_quick:
     output:
         fastq=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.human_unmapped.ganon2.quick.fastq.gz",
+        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick.fastq.gz",
         tre=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.ganon2.quick.tre",
+        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick.tre",
         rep=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.ganon2.quick.rep",
+        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick.rep",
         mqc=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_ganon2_mqc.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_mqc.tsv",
     wildcard_constraints:
         alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
         ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
+        read_set="|".join(UNMAPPED_METAGENOMICS_READ_SETS),
     threads: unmapped_metagenomics_ganon2_threads
     resources:
         threads=unmapped_metagenomics_ganon2_threads,
@@ -577,24 +642,24 @@ rule unmapped_metagenomics_ganon2_quick:
         partition=unmapped_metagenomics_ganon2_partition,
     benchmark:
         MDIR
-        + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.unmapped_metagenomics_ganon2_quick.bench.tsv"
+        + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_quick.bench.tsv"
     params:
         cluster_sample=ret_sample,
         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         ganon2_db_prefixes=unmapped_metagenomics_ganon2_db_prefixes,
         ganon2_database_label=unmapped_metagenomics_ganon2_database_label,
         read_limit=unmapped_metagenomics_ganon2_read_limit,
+        read_set=lambda wildcards: wildcards.read_set,
+        view_filter=unmapped_metagenomics_samtools_view_filter,
         fastq_threads=unmapped_metagenomics_ganon2_fastq_threads,
         output_prefix=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.ganon2.quick",
-        sample_id=lambda wildcards: day_stage_sample_id(
-            wildcards.sample, wildcards.alnr, wildcards.ddup
-        ),
+        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick",
+        sample_id=unmapped_metagenomics_sample_id,
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/logs/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_ganon2_quick.log"
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_quick.log"
     conda:
         "../envs/unmapped_metagenomics_ganon2_v0.1.yaml"
     shell:
@@ -619,8 +684,7 @@ rule unmapped_metagenomics_ganon2_quick:
             -@ {threads} \
             -T {params.huref_fasta:q} \
             -u \
-            -f 4 \
-            -F 0xB00 \
+            {params.view_filter} \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
 	          | gzip -c > {output.fastq:q}
@@ -638,9 +702,10 @@ rule unmapped_metagenomics_ganon2_quick:
 	            python workflow/scripts/summarize_unmapped_ganon2.py \
 	                --sample {params.sample_id:q} \
 	                --base-sample {wildcards.sample:q} \
-	                --aligner {wildcards.alnr:q} \
-	                --deduper {wildcards.ddup:q} \
-	                --database {params.ganon2_database_label:q} \
+		                --aligner {wildcards.alnr:q} \
+		                --deduper {wildcards.ddup:q} \
+		                --read-set {params.read_set:q} \
+		                --database {params.ganon2_database_label:q} \
 	                --read-limit {params.read_limit:q} \
 	                --unmapped-fastq {output.fastq:q} \
 	                --ganon2-report {output.tre:q} \
@@ -665,6 +730,7 @@ rule unmapped_metagenomics_ganon2_quick:
             --base-sample {wildcards.sample:q} \
             --aligner {wildcards.alnr:q} \
             --deduper {wildcards.ddup:q} \
+            --read-set {params.read_set:q} \
             --database {params.ganon2_database_label:q} \
             --read-limit {params.read_limit:q} \
             --unmapped-fastq {output.fastq:q} \
@@ -682,19 +748,20 @@ rule unmapped_metagenomics_sourmash_gather:
     output:
         fastq=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.human_unmapped.sourmash.fastq.gz",
+        + "{sample}.{alnr}.{ddup}.{read_set}.sourmash.fastq.gz",
         sig=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.sourmash.sig",
+        + "{sample}.{alnr}.{ddup}.{read_set}.sourmash.sig",
         gather_csv=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.sourmash.gather.csv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.sourmash.gather.csv",
         mqc=MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_sourmash_mqc.tsv",
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_mqc.tsv",
     wildcard_constraints:
         alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
         ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
+        read_set="|".join(UNMAPPED_METAGENOMICS_READ_SETS),
     threads: unmapped_metagenomics_sourmash_threads
     resources:
         threads=unmapped_metagenomics_sourmash_threads,
@@ -703,7 +770,7 @@ rule unmapped_metagenomics_sourmash_gather:
         partition=unmapped_metagenomics_sourmash_partition,
     benchmark:
         MDIR
-        + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.unmapped_metagenomics_sourmash_gather.bench.tsv"
+        + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_gather.bench.tsv"
     params:
         cluster_sample=ret_sample,
         huref_fasta=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -714,14 +781,14 @@ rule unmapped_metagenomics_sourmash_gather:
         sourmash_moltype=unmapped_metagenomics_sourmash_moltype,
         sourmash_threshold_bp=unmapped_metagenomics_sourmash_threshold_bp,
         read_limit=unmapped_metagenomics_sourmash_read_limit,
+        read_set=lambda wildcards: wildcards.read_set,
+        view_filter=unmapped_metagenomics_samtools_view_filter,
         fastq_threads=unmapped_metagenomics_sourmash_fastq_threads,
-        sample_id=lambda wildcards: day_stage_sample_id(
-            wildcards.sample, wildcards.alnr, wildcards.ddup
-        ),
+        sample_id=unmapped_metagenomics_sample_id,
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/logs/"
-        + "{sample}.{alnr}.{ddup}.unmapped_metagenomics_sourmash_gather.log"
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_gather.log"
     conda:
         "../envs/unmapped_metagenomics_sourmash_v0.1.yaml"
     shell:
@@ -746,8 +813,7 @@ rule unmapped_metagenomics_sourmash_gather:
             -@ {threads} \
             -T {params.huref_fasta:q} \
             -u \
-            -f 4 \
-            -F 0xB00 \
+            {params.view_filter} \
             {input.alignment:q} \
           | samtools fastq -@ {params.fastq_threads} -n - \
 	          | gzip -c > {output.fastq:q}
@@ -765,9 +831,10 @@ rule unmapped_metagenomics_sourmash_gather:
 	            python workflow/scripts/summarize_unmapped_sourmash.py \
 	                --sample {params.sample_id:q} \
 	                --base-sample {wildcards.sample:q} \
-	                --aligner {wildcards.alnr:q} \
-	                --deduper {wildcards.ddup:q} \
-	                --database {params.sourmash_database_label:q} \
+		                --aligner {wildcards.alnr:q} \
+		                --deduper {wildcards.ddup:q} \
+		                --read-set {params.read_set:q} \
+		                --database {params.sourmash_database_label:q} \
 	                --read-limit {params.read_limit:q} \
 	                --unmapped-fastq {output.fastq:q} \
 	                --sourmash-signature {output.sig:q} \
@@ -803,6 +870,7 @@ rule unmapped_metagenomics_sourmash_gather:
             --base-sample {wildcards.sample:q} \
             --aligner {wildcards.alnr:q} \
             --deduper {wildcards.ddup:q} \
+            --read-set {params.read_set:q} \
             --database {params.sourmash_database_label:q} \
             --read-limit {params.read_limit:q} \
             --unmapped-fastq {output.fastq:q} \

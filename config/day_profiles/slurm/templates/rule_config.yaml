@@ -373,6 +373,8 @@ unmapped_metagenomics:
     mem_mb: 64000
     partition: "i192mem,i192bigmem"
     read_limit: "all"
+    read_set: "p"
+    permissive_mapq_lt: 20
     memory_mapping: false
 
 truvari_sv_benchmark:

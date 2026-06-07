@@ -91,6 +91,9 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_kraken2() -> 
         "samtools view",
         "-f 4",
         "-F 0xB00",
+        "-e 'flag.unmap || mapq < {mapq_lt}'",
+        "s",
+        "p",
         "samtools fastq",
         "kraken2",
         "--quick",
@@ -101,6 +104,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_kraken2() -> 
         "{params.memory_mapping_flag}",
         "workflow/scripts/summarize_unmapped_metagenomics.py",
         "--read-limit {params.read_limit:q}",
+        "--read-set {params.read_set:q}",
         "No human-unmapped reads; writing Kraken2 no_unmapped_reads sentinel outputs.",
         "fastq_lines=",
     ):
@@ -122,6 +126,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_ganon2() -> N
         "samtools view",
         "-f 4",
         "-F 0xB00",
+        "-e 'flag.unmap || mapq < {mapq_lt}'",
         "samtools fastq",
         "ganon classify",
         "--db-prefix {params.ganon2_db_prefixes:q}",
@@ -130,6 +135,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_ganon2() -> N
         "--threads {threads}",
         "workflow/scripts/summarize_unmapped_ganon2.py",
         "--read-limit {params.read_limit:q}",
+        "--read-set {params.read_set:q}",
         "No human-unmapped reads; writing Ganon2 no_unmapped_reads sentinel outputs.",
         "fastq_lines=",
         "for prefix in {params.ganon2_db_prefixes:q}; do",
@@ -139,7 +145,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_ganon2() -> N
     ):
         assert expected in rules
 
-    assert "human_unmapped.ganon2.quick.fastq.gz" in rules
+    assert "{read_set}.ganon2.quick.fastq.gz" in rules
     assert ".ganon2.quick.tre" in rules
     assert ".ganon2.quick.rep" in rules
     assert "--max-reads" not in rules
@@ -154,6 +160,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_sourmash() ->
         "samtools view",
         "-f 4",
         "-F 0xB00",
+        "-e 'flag.unmap || mapq < {mapq_lt}'",
         "samtools fastq",
         "sourmash sketch dna",
         "--name {params.sample_id:q}",
@@ -165,6 +172,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_sourmash() ->
         "--sourmash-signature {output.sig:q}",
         "--sourmash-gather-csv {output.gather_csv:q}",
         "--read-limit {params.read_limit:q}",
+        "--read-set {params.read_set:q}",
         "No human-unmapped reads; writing sourmash no_unmapped_reads sentinel outputs.",
         '{{"class":"sourmash_signature","signatures":[],"dayoa_status":"no_unmapped_reads"}}',
         "fastq_lines=",
@@ -172,7 +180,7 @@ def test_unmapped_metagenomics_extracts_pass_qc_unmapped_reads_for_sourmash() ->
     ):
         assert expected in rules
 
-    assert "human_unmapped.sourmash.fastq.gz" in rules
+    assert "{read_set}.sourmash.fastq.gz" in rules
     assert ".sourmash.sig" in rules
     assert ".sourmash.gather.csv" in rules
     assert "--max-reads" not in rules
@@ -188,6 +196,8 @@ def test_unmapped_metagenomics_requires_explicit_config_and_high_threads() -> No
         "unmapped_metagenomics.mem_mb",
         "unmapped_metagenomics.partition",
         "unmapped_metagenomics.read_limit='all'",
+        "unmapped_metagenomics.read_set",
+        "unmapped_metagenomics.permissive_mapq_lt",
         'minimum=16',
         "produce_unmapped_metagenomics_ganon2_quick requires an",
         "unmapped_metagenomics.ganon2_db_prefixes",
@@ -272,7 +282,8 @@ def test_unmapped_metagenomics_final_multiqc_is_explicitly_gated() -> None:
     assert "other_reports/unmapped_metagenomics_mqc.tsv" in final
     assert "other_reports/unmapped_metagenomics_ganon2_mqc.tsv" in final
     assert "other_reports/unmapped_metagenomics_sourmash_mqc.tsv" in final
-    assert ".kraken2.quick.report.txt" in final
+    assert "{read_set}.kraken2.quick.report.txt" in final
+    assert "_unmapped_metagenomics_multiqc_read_sets()" in final
     assert "enable_tools=['metagenomics']" in final
     assert "enable_tools=['unmapped_metagenomics_ganon2']" in final
     assert "enable_tools=['unmapped_metagenomics_sourmash']" in final
@@ -302,6 +313,16 @@ def test_unmapped_metagenomics_final_multiqc_is_explicitly_gated() -> None:
     assert "other_reports/unmapped_metagenomics_mqc.tsv" in config
     assert "other_reports/unmapped_metagenomics_ganon2_mqc.tsv" in config
     assert "other_reports/unmapped_metagenomics_sourmash_mqc.tsv" in config
+
+
+def test_unmapped_metagenomics_profiles_default_to_permissive_read_set() -> None:
+    for profile in ("slurm", "local"):
+        cfg = yaml.safe_load(
+            _read(f"config/day_profiles/{profile}/templates/rule_config.yaml")
+        )
+        metagenomics = cfg["unmapped_metagenomics"]
+        assert metagenomics["read_set"] == "p"
+        assert metagenomics["permissive_mapq_lt"] == 20
 
 
 def test_unmapped_metagenomics_envs_have_classifier_and_samtools() -> None:
@@ -370,13 +391,15 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
         module.main(
             [
                 "--sample",
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "--base-sample",
                 "HG002",
                 "--aligner",
                 "sent",
                 "--deduper",
                 "dmd",
+                "--read-set",
+                "s",
                 "--database",
                 "/refs/kraken2",
                 "--read-limit",
@@ -399,12 +422,13 @@ def test_summarize_unmapped_metagenomics_writes_mqc_style_tsv(tmp_path: Path) ->
 
     assert rows == [
         {
-            "Sample": "HG002.sent.dmd",
+            "Sample": "HG002.sent.dmd.s",
             "base_sample": "HG002",
             "aligner": "sent",
             "deduper": "dmd",
             "classifier": "kraken2",
             "status": "ok",
+            "read_set": "s",
             "database": "/refs/kraken2",
             "read_limit": "all",
             "input_fastq": str(fastq),
@@ -442,13 +466,15 @@ def test_summarize_unmapped_metagenomics_accepts_zero_read_sentinel(
         module.main(
             [
                 "--sample",
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "--base-sample",
                 "HG002",
                 "--aligner",
                 "sent",
                 "--deduper",
                 "dmd",
+                "--read-set",
+                "s",
                 "--database",
                 "/refs/kraken2",
                 "--read-limit",
@@ -489,10 +515,11 @@ def test_summarize_unmapped_metagenomics_rejects_empty_kraken_for_nonempty_fastq
     with pytest.raises(ValueError, match="Required Kraken2 output is empty"):
         module._build_row(
             SimpleNamespace(
-                sample="HG002.sent.dmd",
+                sample="HG002.sent.dmd.s",
                 base_sample="HG002",
                 aligner="sent",
                 deduper="dmd",
+                read_set="s",
                 database="/refs/kraken2",
                 read_limit="all",
                 unmapped_fastq=str(fastq),
@@ -563,13 +590,15 @@ def test_summarize_unmapped_ganon2_writes_mqc_style_tsv(tmp_path: Path) -> None:
         module.main(
             [
                 "--sample",
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "--base-sample",
                 "HG002",
                 "--aligner",
                 "sent",
                 "--deduper",
                 "dmd",
+                "--read-set",
+                "s",
                 "--database",
                 "/refs/ganon/bac;/refs/ganon/vir",
                 "--read-limit",
@@ -592,12 +621,13 @@ def test_summarize_unmapped_ganon2_writes_mqc_style_tsv(tmp_path: Path) -> None:
 
     assert rows == [
         {
-            "Sample": "HG002.sent.dmd",
+            "Sample": "HG002.sent.dmd.s",
             "base_sample": "HG002",
             "aligner": "sent",
             "deduper": "dmd",
             "classifier": "ganon2",
             "status": "ok",
+            "read_set": "s",
             "database": "/refs/ganon/bac;/refs/ganon/vir",
             "read_limit": "all",
             "input_fastq": str(fastq),
@@ -638,13 +668,15 @@ def test_summarize_unmapped_ganon2_accepts_zero_read_sentinel(
         module.main(
             [
                 "--sample",
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "--base-sample",
                 "HG002",
                 "--aligner",
                 "sent",
                 "--deduper",
                 "dmd",
+                "--read-set",
+                "s",
                 "--database",
                 "/refs/ganon/dayoa",
                 "--read-limit",
@@ -688,10 +720,11 @@ def test_summarize_unmapped_ganon2_rejects_zero_counts_for_nonempty_fastq(
     with pytest.raises(ValueError, match="non-empty FASTQ"):
         module._build_row(
             SimpleNamespace(
-                sample="HG002.sent.dmd",
+                sample="HG002.sent.dmd.s",
                 base_sample="HG002",
                 aligner="sent",
                 deduper="dmd",
+                read_set="s",
                 database="/refs/ganon/dayoa",
                 read_limit="all",
                 unmapped_fastq=str(fastq),
@@ -730,7 +763,7 @@ def test_summarize_unmapped_sourmash_writes_mqc_style_tsv(tmp_path: Path) -> Non
     _write_fastq(fastq, 4)
 
     sig.write_text(
-        '{"class":"sourmash_signature","signatures":[{"name":"HG002.sent.dmd"}]}\n',
+        '{"class":"sourmash_signature","signatures":[{"name":"HG002.sent.dmd.s"}]}\n',
         encoding="utf-8",
     )
     gather_csv.write_text(
@@ -795,13 +828,15 @@ def test_summarize_unmapped_sourmash_writes_mqc_style_tsv(tmp_path: Path) -> Non
         module.main(
             [
                 "--sample",
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "--base-sample",
                 "HG002",
                 "--aligner",
                 "sent",
                 "--deduper",
                 "dmd",
+                "--read-set",
+                "s",
                 "--database",
                 "/refs/sourmash/dayoa_qc.zip",
                 "--read-limit",
@@ -832,12 +867,13 @@ def test_summarize_unmapped_sourmash_writes_mqc_style_tsv(tmp_path: Path) -> Non
 
     assert rows == [
         {
-            "Sample": "HG002.sent.dmd",
+            "Sample": "HG002.sent.dmd.s",
             "base_sample": "HG002",
             "aligner": "sent",
             "deduper": "dmd",
             "classifier": "sourmash_gather",
             "status": "ok",
+            "read_set": "s",
             "database": "/refs/sourmash/dayoa_qc.zip",
             "read_limit": "all",
             "input_fastq": str(fastq),
@@ -888,13 +924,15 @@ def test_summarize_unmapped_sourmash_accepts_zero_read_sentinel(
         module.main(
             [
                 "--sample",
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "--base-sample",
                 "HG002",
                 "--aligner",
                 "sent",
                 "--deduper",
                 "dmd",
+                "--read-set",
+                "s",
                 "--database",
                 "/refs/sourmash/dayoa_qc.zip",
                 "--read-limit",
@@ -949,10 +987,11 @@ def test_summarize_unmapped_sourmash_rejects_zero_signature_for_nonempty_fastq(
     with pytest.raises(ValueError, match="only valid when input FASTQ has zero reads"):
         module._build_row(
             SimpleNamespace(
-                sample="HG002.sent.dmd",
+                sample="HG002.sent.dmd.s",
                 base_sample="HG002",
                 aligner="sent",
                 deduper="dmd",
+                read_set="s",
                 database="/refs/sourmash/dayoa_qc.zip",
                 read_limit="all",
                 unmapped_fastq=str(fastq),

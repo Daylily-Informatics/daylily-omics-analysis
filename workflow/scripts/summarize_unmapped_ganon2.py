@@ -16,6 +16,7 @@ FIELDNAMES = [
     "deduper",
     "classifier",
     "status",
+    "read_set",
     "database",
     "read_limit",
     "input_fastq",
@@ -141,11 +142,24 @@ def _percent(numerator: int, denominator: int) -> str:
     return f"{(numerator / denominator) * 100:.4f}"
 
 
+def _read_set(value: str) -> str:
+    read_set = str(value).strip()
+    allowed = {"s", "p"}
+    if read_set not in allowed:
+        raise ValueError(
+            "--read-set must be one of "
+            + ", ".join(sorted(allowed))
+            + f"; saw {value!r}"
+        )
+    return read_set
+
+
 def _build_row(args: argparse.Namespace) -> dict[str, str]:
     if str(args.database).strip() in {"", "na", "NA", "None"}:
         raise ValueError("--database must be an explicit Ganon2 database prefix")
     if str(args.read_limit).strip() != "all":
         raise ValueError("--read-limit must be 'all' for full-unmapped mode")
+    read_set = _read_set(args.read_set)
 
     fastq = Path(args.unmapped_fastq)
     report = Path(args.ganon2_report)
@@ -168,6 +182,7 @@ def _build_row(args: argparse.Namespace) -> dict[str, str]:
         "deduper": args.deduper,
         "classifier": "ganon2",
         "status": "no_unmapped_reads" if fastq_reads == 0 else "ok",
+        "read_set": read_set,
         "database": args.database,
         "read_limit": "all",
         "input_fastq": str(fastq),
@@ -193,6 +208,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--base-sample", required=True)
     parser.add_argument("--aligner", required=True)
     parser.add_argument("--deduper", required=True)
+    parser.add_argument("--read-set", required=True)
     parser.add_argument("--database", required=True)
     parser.add_argument("--read-limit", required=True)
     parser.add_argument("--unmapped-fastq", required=True)

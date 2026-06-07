@@ -82,7 +82,14 @@ def _validate_unmapped_metagenomics_multiqc_config():
         )
     missing = [
         key
-        for key in ("kraken2_db", "threads", "mem_mb", "partition")
+        for key in (
+            "kraken2_db",
+            "threads",
+            "mem_mb",
+            "partition",
+            "read_set",
+            "permissive_mapq_lt",
+        )
         if str(cfg.get(key, "")).strip() in {"", "None", "none", "na", "NA"}
     ]
     if missing:
@@ -97,6 +104,17 @@ def _validate_unmapped_metagenomics_multiqc_config():
             "Final MultiQC unmapped metagenomics requires "
             "unmapped_metagenomics.read_limit='all'."
         )
+
+
+def _unmapped_metagenomics_multiqc_read_sets():
+    cfg = config.get("unmapped_metagenomics")
+    read_set = str(cfg.get("read_set", "")).strip() if isinstance(cfg, dict) else ""
+    if read_set not in {"s", "p"}:
+        raise WorkflowError(
+            "Final MultiQC unmapped metagenomics requires "
+            "unmapped_metagenomics.read_set to be one of: s, p."
+        )
+    return [read_set]
 
 
 def _unmapped_metagenomics_component_inputs(wildcards):
@@ -118,10 +136,11 @@ def _unmapped_metagenomics_component_inputs(wildcards):
         expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-            + "{sample}.{alnr}.{ddup}.kraken2.quick.report.txt",
+            + "{sample}.{alnr}.{ddup}.{read_set}.kraken2.quick.report.txt",
             sample=SSAMPS,
             alnr=aligners,
             ddup=dedupers,
+            read_set=_unmapped_metagenomics_multiqc_read_sets(),
         )
     )
     return paths
@@ -148,7 +167,14 @@ def _validate_unmapped_metagenomics_ganon2_multiqc_config():
         )
     missing = [
         key
-        for key in ("threads", "mem_mb", "partition", "read_limit")
+        for key in (
+            "threads",
+            "mem_mb",
+            "partition",
+            "read_limit",
+            "read_set",
+            "permissive_mapq_lt",
+        )
         if str(cfg.get(key, "")).strip() in {"", "None", "none", "na", "NA"}
     ]
     prefixes = _as_config_list(cfg.get("ganon2_db_prefixes", []))
@@ -215,6 +241,8 @@ def _validate_unmapped_metagenomics_sourmash_multiqc_config():
             "mem_mb",
             "partition",
             "read_limit",
+            "read_set",
+            "permissive_mapq_lt",
             "sourmash_ksize",
             "sourmash_scaled",
             "sourmash_moltype",

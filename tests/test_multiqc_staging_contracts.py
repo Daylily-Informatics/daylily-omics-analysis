@@ -100,7 +100,7 @@ def test_stage_multiqc_inputs_stages_native_kraken2_reports(tmp_path: Path) -> N
     report_path = (
         input_root
         / "HG002/align/sent/dmd/alignqc/unmapped_metagenomics"
-        / "HG002.sent.dmd.kraken2.quick.report.txt"
+        / "HG002.sent.dmd.s.kraken2.quick.report.txt"
     )
     output_dir = input_root / "reports/multiqc_inputs/final"
     manifest = output_dir / "manifest.tsv"
@@ -112,20 +112,23 @@ def test_stage_multiqc_inputs_stages_native_kraken2_reports(tmp_path: Path) -> N
     module.stage_known_input(stager, report_path)
     stager.finish()
 
-    staged = output_dir / "native/kraken/HG002.sent.dmd.kraken2.quick.report.txt"
+    staged = (
+        output_dir
+        / "native/kraken/HG002.sent.dmd.s.kraken2.quick.report.txt"
+    )
     assert staged.read_text(encoding="utf-8") == report_path.read_text(
         encoding="utf-8"
     )
     rows = _read_tsv(manifest)
     assert rows == [
         {
-            "Sample": "HG002.sent.dmd",
+            "Sample": "HG002.sent.dmd.s",
             "module": "kraken",
             "stage": "alignment",
             "base_sample": "HG002",
             "aligner": "sent",
             "deduper": "dmd",
-            "caller": "",
+            "caller": "s",
             "input_kind": "kraken2_report",
             "source_path": str(report_path),
             "staged_path": str(staged),
@@ -143,8 +146,8 @@ def test_stage_multiqc_inputs_stages_ganon2_sources_from_custom_rows(
     )
     input_root = tmp_path / "results/day/hg38"
     ganon_dir = input_root / "HG002/align/sent/dmd/alignqc/unmapped_metagenomics"
-    report_path = ganon_dir / "HG002.sent.dmd.ganon2.quick.tre"
-    rep_path = ganon_dir / "HG002.sent.dmd.ganon2.quick.rep"
+    report_path = ganon_dir / "HG002.sent.dmd.s.ganon2.quick.tre"
+    rep_path = ganon_dir / "HG002.sent.dmd.s.ganon2.quick.rep"
     mqc_path = input_root / "other_reports/unmapped_metagenomics_ganon2_mqc.tsv"
     output_dir = input_root / "reports/multiqc_inputs/final"
     manifest = output_dir / "manifest.tsv"
@@ -166,6 +169,7 @@ def test_stage_multiqc_inputs_stages_ganon2_sources_from_custom_rows(
                 "aligner",
                 "deduper",
                 "classifier",
+                "read_set",
                 "ganon2_report",
                 "ganon2_rep",
             ]
@@ -173,11 +177,12 @@ def test_stage_multiqc_inputs_stages_ganon2_sources_from_custom_rows(
         + "\n"
         + "\t".join(
             [
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "HG002",
                 "sent",
                 "dmd",
                 "ganon2",
+                "s",
                 str(report_path),
                 str(rep_path),
             ]
@@ -191,8 +196,12 @@ def test_stage_multiqc_inputs_stages_ganon2_sources_from_custom_rows(
     module.stage_known_input(stager, mqc_path)
     stager.finish()
 
-    staged_report = output_dir / "native/ganon2/HG002.sent.dmd.ganon2.quick.tre"
-    staged_rep = output_dir / "native/ganon2/HG002.sent.dmd.ganon2.quick.rep"
+    staged_report = (
+        output_dir / "native/ganon2/HG002.sent.dmd.s.ganon2.quick.tre"
+    )
+    staged_rep = (
+        output_dir / "native/ganon2/HG002.sent.dmd.s.ganon2.quick.rep"
+    )
     assert staged_report.read_text(encoding="utf-8") == report_path.read_text(
         encoding="utf-8"
     )
@@ -220,8 +229,8 @@ def test_stage_multiqc_inputs_stages_sourmash_sources_from_custom_rows(
     )
     input_root = tmp_path / "results/day/hg38"
     sourmash_dir = input_root / "HG002/align/sent/dmd/alignqc/unmapped_metagenomics"
-    sig_path = sourmash_dir / "HG002.sent.dmd.sourmash.sig"
-    gather_path = sourmash_dir / "HG002.sent.dmd.sourmash.gather.csv"
+    sig_path = sourmash_dir / "HG002.sent.dmd.s.sourmash.sig"
+    gather_path = sourmash_dir / "HG002.sent.dmd.s.sourmash.gather.csv"
     mqc_path = input_root / "other_reports/unmapped_metagenomics_sourmash_mqc.tsv"
     output_dir = input_root / "reports/multiqc_inputs/final"
     manifest = output_dir / "manifest.tsv"
@@ -242,6 +251,7 @@ def test_stage_multiqc_inputs_stages_sourmash_sources_from_custom_rows(
                 "aligner",
                 "deduper",
                 "classifier",
+                "read_set",
                 "sourmash_signature",
                 "sourmash_gather_csv",
             ]
@@ -249,11 +259,12 @@ def test_stage_multiqc_inputs_stages_sourmash_sources_from_custom_rows(
         + "\n"
         + "\t".join(
             [
-                "HG002.sent.dmd",
+                "HG002.sent.dmd.s",
                 "HG002",
                 "sent",
                 "dmd",
                 "sourmash_gather",
+                "s",
                 str(sig_path),
                 str(gather_path),
             ]
@@ -267,8 +278,11 @@ def test_stage_multiqc_inputs_stages_sourmash_sources_from_custom_rows(
     module.stage_known_input(stager, mqc_path)
     stager.finish()
 
-    staged_sig = output_dir / "native/sourmash/HG002.sent.dmd.sourmash.sig"
-    staged_gather = output_dir / "native/sourmash/HG002.sent.dmd.sourmash.gather.csv"
+    staged_sig = output_dir / "native/sourmash/HG002.sent.dmd.s.sourmash.sig"
+    staged_gather = (
+        output_dir
+        / "native/sourmash/HG002.sent.dmd.s.sourmash.gather.csv"
+    )
     assert staged_sig.read_text(encoding="utf-8") == sig_path.read_text(
         encoding="utf-8"
     )
