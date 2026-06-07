@@ -237,6 +237,40 @@ When jobs are running via the SLURM profile in `/fsx/analysis_results/ubuntu/<wo
 
 **Debugging Strategy**: Start with the Snakemake master log to identify which rules failed, then check the corresponding SLURM logs by job ID and timestamp to see detailed error messages.
 
+# Benchmark Collection
+
+For DayOA runtime, thread, instance, and task-cost comparisons, use the DayOA benchmark collector from the analysis repo root on the headnode as `ubuntu` in an interactive bash login shell. Initialize the DayOA shell first:
+
+```bash
+source dyoainit
+dy-a slurm <genome_build>
+bash bin/util/benchmarks/collect_day_benchmark_data.sh <genome_build>
+```
+
+For example, hybrid work on the Broad reference usually uses:
+
+```bash
+bash bin/util/benchmarks/collect_day_benchmark_data.sh hg38_broad
+```
+
+The collector writes the combined report to:
+
+```text
+results/day/<genome_build>/reports/benchmarks_summary.tsv
+```
+
+Prefer this combined report for comparisons because it derives the `sample` column from the benchmark file directory structure. Older summary files such as `etc/benchmarks_summary.tsv` may preserve cost fields but can lose the real DayOA sample/unit label.
+
+Raw per-rule benchmark TSVs live under:
+
+```text
+results/day/<genome_build>/**/benchmarks/*.bench.tsv
+```
+
+Benchmark/report fields include `sample`, `rule`, `s`, `h:m:s`, memory fields (`max_rss`, `max_vms`, `max_uss`, `max_pss`), IO fields (`io_in`, `io_out`), `mean_load`, `cpu_time`, `hostname`, `ip`, `nproc`, `cpu_efficiency`, `instance_type`, `region_az`, `spot_cost`, `snakemake_threads`, and `task_cost`.
+
+When reporting workflow cost/performance, aggregate from benchmark rows directly. Use `sum(s)` for task wall time, `sum(cpu_time)` for observed CPU time, `sum(s * snakemake_threads / 3600)` for allocated vCPU-hours, and `sum(task_cost)` for task cost. Do not substitute proxy AWS pricing when `task_cost` is present, and do not mix in cluster startup, Slurm pending/configuring time, or analysis-controller wall clock unless the user explicitly asks for that broader accounting.
+
 # Sentieon Info
 Some can be found here: https://github.com/Sentieon/sentieon-models?tab=readme-ov-file
 
