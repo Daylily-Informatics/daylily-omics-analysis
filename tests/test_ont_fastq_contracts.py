@@ -128,6 +128,7 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     assert "pip install git+https://github.com/Sentieon/segdup-caller.git" not in rule
     assert "ERROR: segdup-caller not found in pinned conda env" in rule
     assert 'vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz"' in rule
+    assert "--sample_name \"{params.cluster_sample}\"" in rule
     assert "gzip -t {output.vcf}" in rule
     assert "bcftools view -h {output.vcf} >/dev/null" in rule
     assert "bcftools view -H {output.vcf} >/dev/null" in rule
@@ -136,3 +137,16 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     assert "python=3.11" in env
     assert "sentieon-cli==1.6.1" in env
     assert "git+https://github.com/Sentieon/segdup-caller.git@v0.5.1" in env
+
+
+def test_sentdhiomr_transfer_matches_sentieon_cli_v161_merge_contract() -> None:
+    rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
+
+    assert 'subset_bed="$TMPDIR/transfer.{wildcards.tchrm}.bed"' in rule
+    assert '"{params.huref}.fai" > "$subset_bed"' in rule
+    assert "MERGE_RULES=$(bcftools view -h {params.pop_vcf}" in rule
+    assert 'ids.append(match.group(1) + ":sum")' in rule
+    assert "--regions-file \"$subset_bed\"" in rule
+    assert "-i \"$MERGE_RULES\"" in rule
+    assert "Population VCF lacks contig {params.regions}; carrying raw annotations for this shard" in rule
+    assert "bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf}" in rule

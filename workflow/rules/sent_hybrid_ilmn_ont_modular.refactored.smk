@@ -1424,6 +1424,7 @@ rule sentdhiomr_transfer:
         mem_mb=config['sentdhiomr']['mem_mb_light'],
     params:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
         regions=lambda wildcards: get_dchrm_day(type('obj', (object,), {'dchrm': wildcards.tchrm})()),
     shell:
@@ -1451,19 +1452,44 @@ rule sentdhiomr_transfer:
 
         TRIM_SCRIPT=$("$CONDA_PREFIX/bin/python" -c "from importlib.resources import files; print(files('sentieon_cli.scripts').joinpath('trimalt.py'))")
 
-        echo "Transferring annotations from pop_vcf: {params.pop_vcf} for regions: {params.regions}" >> {log}
+        subset_bed="$TMPDIR/transfer.{wildcards.tchrm}.bed"
+        awk -v contig="{params.regions}" 'BEGIN {{FS=OFS="\\t"}} $1 == contig {{print $1, 0, $2; found=1}} END {{if (!found) exit 2}}' \
+            "{params.huref}.fai" > "$subset_bed"
 
-        # bcftools merge transfers INFO annotations from sites-only pop_vcf to sample VCF
-        # --regions restricts to this chromosome shard
-        # Then trimalt processes the merged output (CLI-equivalent single-pipe pattern)
-        bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
-            --regions {params.regions} \
-            "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {params.pop_vcf} 2>> {log} | \
-        bin/dayoa_sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
-        bgzip -c -@ {threads} > {output.vcf} 2>> {log}
+        MERGE_RULES=$(bcftools view -h {params.pop_vcf} 2>> {log} | "$CONDA_PREFIX/bin/python" -c '
+import re
+import sys
+ids = []
+for line in sys.stdin:
+    if not line.startswith("##INFO") or ",Number=A" not in line:
+        continue
+    match = re.search(r"ID=([^,>]+)", line)
+    if match:
+        ids.append(match.group(1) + ":sum")
+if not ids:
+    raise SystemExit("No Number=A INFO fields found in population VCF header")
+print(",".join(ids))
+' 2>> {log})
 
-        # Create tabix index
-        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
+        echo "Transferring annotations from pop_vcf: {params.pop_vcf} for regions-file: $subset_bed" >> {log}
+
+        if bcftools view -h {params.pop_vcf} 2>> {log} | grep -q "^##contig=<ID={params.regions}[,>]"; then
+            # Match sentieon-cli v1.6.1 transfer: regions-file + dynamic Number=A INFO merge rules.
+            bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
+                --regions-file "$subset_bed" \
+                -i "$MERGE_RULES" \
+                "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {params.pop_vcf} 2>> {log} | \
+            bin/dayoa_sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
+            bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf} - 2>> {log}
+        else
+            echo "Population VCF lacks contig {params.regions}; carrying raw annotations for this shard" >> {log}
+            bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf} \
+                --regions-file "$subset_bed" \
+                "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" >> {log} 2>&1
+        fi
+
+        test -s {output.vcf}
+        test -s {output.tbi}
 
         # Cleanup temp files
         rm -f "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" \
@@ -2149,6 +2175,7 @@ rule sentdhiomr_call_segdup_gene:
             --sr_model {params.sr_model} \
             --reference {params.huref} \
             --genes {wildcards.gene} \
+            --sample_name "{params.cluster_sample}" \
             --outdir {params.outdir} \
             --threads {threads} \
             --workers 1 >> {log} 2>&1
