@@ -1,12 +1,32 @@
 """Rules for running SMNCopyNumberCaller."""
 
+
+def smn12_cram(wildcards):
+    if wildcards.alnr in globals().get("ALIGNERS_DHIOMR", []):
+        return (
+            MDIR
+            + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiomr/"
+            + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdhiomr.sr_dedup.cram"
+        )
+    return (
+        MDIR
+        + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
+        + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
+    )
+
+
+def smn12_crai(wildcards):
+    return smn12_cram(wildcards) + ".crai"
+
+
 rule smn_copynumbercaller:
     """Call SMN1/SMN2 copy number using SMNCopyNumberCaller."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        cram=smn12_cram,
+        crai=smn12_crai,
     output:
         summary=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
+        done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
     params:
         cluster_sample=ret_sample,
         reference=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -14,11 +34,13 @@ rule smn_copynumbercaller:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/logs/{sample}.{alnr}.{ddup}.smn12.log",
     threads: config["go_left"]["threads"]
     conda:
-        "workflow/envs/smn12_v0.1.yaml"
+        "../envs/smn12_v0.1.yaml"
     shell:
         """
+        set -euo pipefail
         mkdir -p $(dirname {output.summary});
         mkdir -p $(dirname {log});
+        rm -f {output.summary} {output.done}
         SMNCopyNumberCaller \
             --sample-id {wildcards.sample} \
             --cram {input.cram} \
@@ -26,9 +48,9 @@ rule smn_copynumbercaller:
             --output-dir $(dirname {output.summary}) \
             --threads {threads} \
             > {log} 2>&1;
-        if [ ! -s {output.summary} ]; then
-            echo "{}" > {output.summary};
-        fi;
+        test -s {output.summary}
+        "$CONDA_PREFIX/bin/python" -m json.tool {output.summary} >/dev/null
+        touch {output.done}
         """
 
 localrules: produce_smn12
@@ -36,7 +58,7 @@ localrules: produce_smn12
 rule produce_smn12:  # TARGET : Produce SMN1/SMN2 copy-number results
     input:
         expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
             sample=SSAMPS,
             alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,

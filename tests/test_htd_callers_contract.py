@@ -40,7 +40,7 @@ def test_common_declares_supported_htd_callers_and_validation() -> None:
     assert "produce_htd_calls requires a non-empty" in common
 
 
-def test_cyrius_included_and_stargazer_intentionally_excluded() -> None:
+def test_cyrius_and_smn12_included_and_stargazer_intentionally_excluded() -> None:
     snakefile = _read("workflow/Snakefile")
     active_includes = [
         line.strip()
@@ -59,9 +59,8 @@ def test_cyrius_included_and_stargazer_intentionally_excluded() -> None:
     assert 'include: "rules/smaca.smk"' not in active_includes
     assert '# include: "rules/smaca.smk"' in snakefile
     assert "SMACA is disabled until its runtime environment path" in snakefile
-    assert 'include: "rules/smn_copynumbercaller.smk"' not in active_includes
-    assert '# include: "rules/smn_copynumbercaller.smk"' in snakefile
-    assert "SMN12 is disabled until its runtime environment path" in snakefile
+    assert 'include: "rules/smn_copynumbercaller.smk"' in active_includes
+    assert "SMN12 is enabled for pinned SMNCopyNumberCaller execution" in snakefile
     assert 'include: "rules/genetocn.smk"' not in active_includes
     assert '# include: "rules/genetocn.smk"' in snakefile
     assert "GeneToCN is disabled until its upstream package/install surface" in snakefile
@@ -128,13 +127,14 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         '"logs/htd_calls.done"',
         "cyrius.tsv",
         "cyrius.json",
+        "smn12.summary.json",
+        "smn12.done",
     ):
         assert expected in htd
     assert "gauchian.done" not in htd
     assert "parascopy.done" not in htd
     assert "smaca.summary.tsv" not in htd
     assert "smaca.done" not in htd
-    assert "smn12.summary.json" not in htd
     assert "genetocn.done" not in htd
 
 
@@ -177,11 +177,30 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "htd/smaca" not in htd_calls
     assert "smaca.done" not in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json" in smn12
-    assert "htd/smn12" not in htd_calls
-    assert "smn12.summary.json" not in htd_calls
+    assert "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done" in smn12
+    assert "htd/smn12" in htd_calls
+    assert "smn12.summary.json" in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done" in genetocn
     assert "htd/genetocn" not in htd_calls
     assert "genetocn.done" not in htd_calls
+
+
+def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
+    smn12 = _read("workflow/rules/smn_copynumbercaller.smk")
+
+    for expected in (
+        "def smn12_cram",
+        "ALIGNERS_DHIOMR",
+        "sentdhiomr.sr_dedup.cram",
+        "done=MDIR",
+        "rm -f {output.summary} {output.done}",
+        "test -s {output.summary}",
+        '"$CONDA_PREFIX/bin/python" -m json.tool {output.summary} >/dev/null',
+        "touch {output.done}",
+        '"../envs/smn12_v0.1.yaml"',
+    ):
+        assert expected in smn12
+    assert 'echo "{}" > {output.summary}' not in smn12
 
 
 def test_final_multiqc_and_multiqc_config_include_htd_when_selected() -> None:

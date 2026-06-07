@@ -1973,12 +1973,11 @@ rule produce_sentdhiomr_cnv:  # TARGET: sentieon cnv hybrid ilmn+ont modular cnv
 
 
 # ===========================================================================
-# SR ALIGNMENT EXPORT: Optionally export SR dedup BAM → CRAM for retention
-# Controlled by config[sentdhiomr][keep_sr_alignment] (default: false)
+# SR ALIGNMENT EXPORT: export SR dedup BAM → CRAM when explicitly targeted
 # ===========================================================================
 
 rule sentdhiomr_export_sr_cram:
-    """Export the shared SR dedup BAM to a retained CRAM file (only when keep_sr_alignment=true)"""
+    """Export the shared SR dedup BAM to a retained CRAM file."""
     input:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_dedup.bam",
         bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_dedup.bam.bai",
@@ -2006,16 +2005,13 @@ rule sentdhiomr_export_sr_cram:
         """
         set -euo pipefail
 
-        KEEP_SR="{config[sentdhiomr][keep_sr_alignment]}"
-        if [ "$KEEP_SR" = "False" ] || [ "$KEEP_SR" = "false" ]; then
-            echo "keep_sr_alignment=false; creating empty placeholder" >> {log}
-            touch {output.cram} {output.crai}
-        else
-            echo "Converting SR dedup BAM → CRAM at $(date)" >> {log}
-            samtools view -@ {threads} -T {params.huref} -C -o {output.cram} {input.bam} >> {log} 2>&1
-            samtools index -@ {threads} {output.cram} >> {log} 2>&1
-            echo "SR CRAM export completed at $(date)" >> {log}
-        fi
+        rm -f {output.cram} {output.crai}
+        echo "Converting SR dedup BAM → CRAM at $(date)" >> {log}
+        samtools view -@ {threads} -T {params.huref} -C -o {output.cram} {input.bam} >> {log} 2>&1
+        samtools index -@ {threads} {output.cram} >> {log} 2>&1
+        test -s {output.cram}
+        test -s {output.crai}
+        echo "SR CRAM export completed at $(date)" >> {log}
         """
 
 
@@ -2103,6 +2099,8 @@ rule sentdhiomr_call_segdup_gene:
         lr_cram=_sentdhiomr_lr_cram,
         lr_crai=_sentdhiomr_lr_crai,
     output:
+        vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz",
+        tbi=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz.tbi",
         done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.done",
     wildcard_constraints:
         alnr=ALIGNERS_DHIOMR_REGEX,
@@ -2132,12 +2130,12 @@ rule sentdhiomr_call_segdup_gene:
 
         mkdir -p $(dirname {log})
         mkdir -p {params.outdir}
+        rm -f {output.done} {output.vcf} {output.tbi}
         echo "Starting segdup-caller for gene {wildcards.gene} at $(date)" >> {log}
 
-        # Ensure segdup-caller is installed (pip package from Sentieon)
         if ! command -v segdup-caller &>/dev/null; then
-            echo "segdup-caller not found — installing from GitHub" >> {log}
-            pip install git+https://github.com/Sentieon/segdup-caller.git >> {log} 2>&1
+            echo "ERROR: segdup-caller not found in pinned conda env" >> {log}
+            exit 127
         fi
 
         LR_ARGS=""
@@ -2154,6 +2152,12 @@ rule sentdhiomr_call_segdup_gene:
             --outdir {params.outdir} \
             --threads {threads} \
             --workers 1 >> {log} 2>&1
+
+        test -s {output.vcf}
+        test -s {output.tbi}
+        gzip -t {output.vcf}
+        bcftools view -h {output.vcf} >/dev/null
+        bcftools view -H {output.vcf} >/dev/null
 
         touch {output.done}
         echo "segdup-caller for gene {wildcards.gene} completed at $(date)" >> {log}

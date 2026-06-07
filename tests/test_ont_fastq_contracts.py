@@ -119,3 +119,17 @@ def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:
     assert "sentdhiomr targets require at least one sample" not in rule
     assert "sample=SSAMPS,\n            alnr=ALIGNERS_DHIOMR" not in rule
     assert 'lr_cram=MDIR + "{sample}/align/{alnr}/{sample}.cram"' not in rule
+
+
+def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
+    rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
+    env = _read("workflow/envs/segdup_v0.1.yaml")
+
+    assert "pip install git+https://github.com/Sentieon/segdup-caller.git" not in rule
+    assert "ERROR: segdup-caller not found in pinned conda env" in rule
+    assert 'vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{sample}.{gene}.result.vcf.gz"' in rule
+    assert "gzip -t {output.vcf}" in rule
+    assert "bcftools view -h {output.vcf} >/dev/null" in rule
+    assert "bcftools view -H {output.vcf} >/dev/null" in rule
+    assert "touch {output.done}" in rule
+    assert "git+https://github.com/Sentieon/segdup-caller.git@v0.6.0" in env

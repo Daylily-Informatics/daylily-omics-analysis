@@ -20,6 +20,18 @@ def htd_call_outputs(*, require_non_empty=False):
                 ddup=ddups,
             )
         )
+    if "smn12" in callers:
+        outputs.extend(
+            expand(
+                [
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
+                ],
+                sample=SSAMPS,
+                alnr=alnrs,
+                ddup=ddups,
+            )
+        )
     return outputs
 
 
