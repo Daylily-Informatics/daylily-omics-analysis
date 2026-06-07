@@ -123,7 +123,7 @@ def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:
 
 def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
-    env = _read("workflow/envs/segdup_v0.1.yaml")
+    env = _read("workflow/envs/segdup_v0.2.yaml")
 
     assert "pip install git+https://github.com/Sentieon/segdup-caller.git" not in rule
     assert "ERROR: segdup-caller not found in pinned conda env" in rule
@@ -132,4 +132,7 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     assert "bcftools view -h {output.vcf} >/dev/null" in rule
     assert "bcftools view -H {output.vcf} >/dev/null" in rule
     assert "touch {output.done}" in rule
+    assert '"../envs/segdup_v0.2.yaml"' in rule
+    assert "python=3.11" in env
+    assert "sentieon-cli==1.6.2" in env
     assert "git+https://github.com/Sentieon/segdup-caller.git@v0.6.0" in env

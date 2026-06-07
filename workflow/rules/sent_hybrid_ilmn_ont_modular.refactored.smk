@@ -2109,7 +2109,7 @@ rule sentdhiomr_call_segdup_gene:
         MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.log",
     threads: 48
     conda:
-        "../envs/segdup_v0.1.yaml"
+        "../envs/segdup_v0.2.yaml"
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.bench.tsv"
     resources:
