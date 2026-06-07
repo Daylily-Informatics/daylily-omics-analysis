@@ -134,5 +134,5 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     assert "touch {output.done}" in rule
     assert '"../envs/segdup_v0.2.yaml"' in rule
     assert "python=3.11" in env
-    assert "sentieon-cli==1.6.2" in env
-    assert "git+https://github.com/Sentieon/segdup-caller.git@v0.6.0" in env
+    assert "sentieon-cli==1.6.1" in env
+    assert "git+https://github.com/Sentieon/segdup-caller.git@v0.5.1" in env
