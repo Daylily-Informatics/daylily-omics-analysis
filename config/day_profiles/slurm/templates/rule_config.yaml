@@ -858,6 +858,22 @@ sentdhiomr:
     threads_light: 8
     use_threads_medium: 46
     use_threads_light: 6
+    # Conservative resource tuning from hyb-only 20x ILMN + ONT chip split benchmarks:
+    # keep the full profile for SR alignment/SV, but avoid reserving whole nodes
+    # for SNV-stage, utility, and segdup jobs that do not use them efficiently.
+    threads_snv: 96
+    use_threads_snv: 94
+    mem_mb_snv: 128000
+    threads_snv_medium: 32
+    use_threads_snv_medium: 30
+    mem_mb_snv_medium: 64000
+    threads_snv_light: 4
+    use_threads_snv_light: 3
+    mem_mb_snv_light: 8000
+    sr_markdup_threads: 64
+    sr_markdup_mem_mb: 64000
+    segdup_threads: 8
+    segdup_mem_mb: 32000
     max_mem: "140G"
     igz: "  igzip -cd -T 32 "
     keep_sr_alignment: false

@@ -853,6 +853,19 @@ sentdhiomr:
     threads_light: 2
     use_threads_medium: 4
     use_threads_light: 2
+    threads_snv: 4
+    use_threads_snv: 4
+    mem_mb_snv: 50000
+    threads_snv_medium: 2
+    use_threads_snv_medium: 2
+    mem_mb_snv_medium: 16000
+    threads_snv_light: 1
+    use_threads_snv_light: 1
+    mem_mb_snv_light: 8000
+    sr_markdup_threads: 4
+    sr_markdup_mem_mb: 16000
+    segdup_threads: 2
+    segdup_mem_mb: 16000
     max_mem: "4G"
     pop_vcf: ""
     keep_sr_alignment: false
