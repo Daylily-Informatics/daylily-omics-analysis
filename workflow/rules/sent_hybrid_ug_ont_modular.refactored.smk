@@ -69,7 +69,7 @@ rule sentdhuomr_pass1:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.pass1.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads'],
         vcpu=config['sentdhuomr']['threads'],
         mem_mb=config['sentdhuomr']['mem_mb'],
@@ -88,7 +88,7 @@ rule sentdhuomr_pass1:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_p1_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_p1_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
@@ -97,7 +97,7 @@ rule sentdhuomr_pass1:
         fi
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /dev/shm >> {log} 2>&1;
+        df -h /scratch >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
@@ -180,7 +180,7 @@ rule sentdhuomr_hybrid_select:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.hybrid_select.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -241,7 +241,7 @@ rule sentdhuomr_mapq0_bed:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.mapq0_bed.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_medium'],
         vcpu=config['sentdhuomr']['threads_medium'],
         mem_mb=config['sentdhuomr']['mem_mb_medium'],
@@ -258,7 +258,7 @@ rule sentdhuomr_mapq0_bed:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_mq_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_mq_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -315,7 +315,7 @@ rule sentdhuomr_mapq0_slop:
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=2,
         vcpu=2,
         mem_mb=4000,
@@ -351,7 +351,7 @@ rule sentdhuomr_merge_beds:
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=2,
         vcpu=2,
         mem_mb=4000,
@@ -394,7 +394,7 @@ rule sentdhuomr_stage1:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.stage1.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads'],
         vcpu=config['sentdhuomr']['threads'],
         mem_mb=config['sentdhuomr']['mem_mb'],
@@ -412,7 +412,7 @@ rule sentdhuomr_stage1:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_s1_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_s1_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
@@ -421,7 +421,7 @@ rule sentdhuomr_stage1:
         fi
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /dev/shm >> {log} 2>&1;
+        df -h /scratch >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
@@ -606,7 +606,7 @@ rule sentdhuomr_stage2:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.stage2.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_medium'],
         vcpu=config['sentdhuomr']['threads_medium'],
         mem_mb=config['sentdhuomr']['mem_mb_medium'],
@@ -621,7 +621,7 @@ rule sentdhuomr_stage2:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_s2_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_s2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -681,7 +681,7 @@ rule sentdhuomr_stage3:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.stage3.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads'],
         vcpu=config['sentdhuomr']['threads'],
         mem_mb=config['sentdhuomr']['mem_mb'],
@@ -696,7 +696,7 @@ rule sentdhuomr_stage3:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_s3_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_s3_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -791,7 +791,7 @@ rule sentdhuomr_pass2:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.pass2.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads'],
         vcpu=config['sentdhuomr']['threads'],
         mem_mb=config['sentdhuomr']['mem_mb'],
@@ -808,7 +808,7 @@ rule sentdhuomr_pass2:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_p2_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_p2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -868,7 +868,7 @@ rule sentdhuomr_subset:
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -919,7 +919,7 @@ rule sentdhuomr_concat_pass:
     conda:
         "../envs/vanilla_v0.1.yaml"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -956,7 +956,7 @@ rule sentdhuomr_anno:
     conda:
         "../envs/sentieon_v0.3.yaml"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -1012,7 +1012,7 @@ rule sentdhuomr_transfer:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.transfer.{tchrm}.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem,i192",
+        partition="i192hugenvme,i192nvme,i384nvme,i192",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -1095,7 +1095,7 @@ rule sentdhuomr_transfer_merge:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.transfer_merge.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem,i192",
+        partition="i192hugenvme,i192nvme,i384nvme,i192",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -1132,7 +1132,7 @@ rule sentdhuomr_model_apply:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.model_apply.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_medium'],
         vcpu=config['sentdhuomr']['threads_medium'],
         mem_mb=config['sentdhuomr']['mem_mb_medium'],
@@ -1149,7 +1149,7 @@ rule sentdhuomr_model_apply:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_ma_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_ma_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1195,7 +1195,7 @@ rule sentdhuomr_final_norm:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.{dchrm}.final_norm.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads_light'],
         vcpu=config['sentdhuomr']['threads_light'],
         mem_mb=config['sentdhuomr']['mem_mb_light'],
@@ -1283,7 +1283,7 @@ rule sentdhuomr_concat_index_chunks:
     resources:
         vcpu=config['sentdhuomr']['threads_light'],
         threads=config['sentdhuomr']['threads_light'],
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         mem_mb=config['sentdhuomr']['mem_mb_light'],
     priority: 47
     params:
@@ -1385,7 +1385,7 @@ rule sentdhuomr_call_svs:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhuomr.sv.bench.tsv"
     resources:
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
         threads=config['sentdhuomr']['threads'],
         vcpu=config['sentdhuomr']['threads'],
         mem_mb=config['sentdhuomr']['mem_mb'],
@@ -1401,7 +1401,7 @@ rule sentdhuomr_call_svs:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentdhuomr_sv_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentdhuomr_sv_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;

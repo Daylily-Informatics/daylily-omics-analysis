@@ -2531,7 +2531,7 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "sentdhrom": ["roche"],               # Modular Hybrid Roche+ONT → emits alnr=roche
     "sentdhrpm": ["roche"],               # Modular Hybrid Roche+PB  → emits alnr=roche
     # Hybrid modular refactored callers (r-suffix)
-    "sentdhiomr": ["ont"],                 # Modular Refactored Hybrid Ilmn+ONT  → emits alnr=ont
+    "sentdhiomr": ["sentmm2ont", "ont"],   # Modular Refactored Hybrid Ilmn+ONT  → emits alnr=sentmm2ont for ONT FASTQ/uBAM, ont for ONT CRAM
     "sentdhipmr": ["sentmm2"],            # Modular Refactored Hybrid Ilmn+PB   → emits alnr=sentmm2
     "sentdhuomr": ["ug"],                  # Modular Refactored Hybrid Ultima+ONT → emits alnr=ug
     "sentdhupmr": ["ug"],                  # Modular Refactored Hybrid Ultima+PB  → emits alnr=ug

@@ -98,6 +98,7 @@ report_header_info:
         --ignore "other_reports/logs/*" \
         --ignore "*_mqc.log" \
         --ignore "*/norm_cov_eveness/*" \
+        --ignore "*/align/*/na/alignqc/goleft/*" \
         --filename {output[0]} \
         -i '{params.rtitle} Multiqc Report' \
         -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash}) ' \

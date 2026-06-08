@@ -144,7 +144,7 @@ rule sentdug_sort_index_chunk_vcf:
     resources:
         vcpu=64,
         threads=64,
-        partition="i192,i192mem"
+        partition="i384nvme,i192nvme,i192,i128"
     params:
         x='y',
         cluster_sample=ret_sample,
@@ -226,7 +226,7 @@ rule sentdug_concat_index_chunks:
     resources:
         vcpu=64,
         threads=64,
-        partition="i192,i192mem,i128"
+        partition="i384nvme,i192nvme,i192,i128"
     priority: 47
     params:
         huref="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.fasta", #config["supporting_files"]["files"]["huref"]["fasta"]["name"],

@@ -170,7 +170,7 @@ rule deep19_r_concat_fofn:
     resources:
         vcpu=32,
         threads=32,
-        partition="i192mem,i192bigmem",
+        partition="i192hugenvme,i192nvme,i384nvme",
     params:
         fn_stub="{sample}.{alnr}.{ddup}.deep19r.",
         cluster_sample=ret_sample,
@@ -266,7 +266,7 @@ rule clear_combined_deep19_r_vcf:  # TARGET: clear combined deep19r vcf so chunk
     resources:
         vcpu=32,
         threads=32,
-        partition="i192,i192mem,i128",
+        partition="i384nvme,i192nvme,i192,i128",
     shell:
         "(rm {input.vcf}*   1> /dev/null  2> /dev/null ) || echo 'file not found for deletion: {input}';"
 

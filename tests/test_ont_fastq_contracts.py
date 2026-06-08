@@ -100,11 +100,13 @@ def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
 
 def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:
     rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
+    common = _read("workflow/rules/common.smk")
 
     assert "SENTDHIOMR_SAMPLE_ALIGNER_PAIRS" in rule
     assert "def _sentdhiomr_has_ont_fastq_input(row):" in rule
     assert '_sentdhiomr_clean(row.get("ONT_R1_PATH", ""))' in rule
     assert 'candidates.append("sentmm2ont")' in rule
+    assert '"sentdhiomr": ["sentmm2ont", "ont"]' in common
     assert "def _sentdhiomr_lr_cram(wildcards):" in rule
     assert (
         'return MDIR + f"{wildcards.sample}/align/sentmm2ont/'

@@ -59,7 +59,7 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
             start_time=$(date +%s);
 
             timestamp=$(date +%Y%m%d%H%M%S)_$$;
-            export TMPDIR=/dev/shm/strobe_tmp_$timestamp;
+            export TMPDIR=/scratch/strobe_tmp_$timestamp;
             export SENTIEON_TMPDIR=$TMPDIR;
             mkdir -p $TMPDIR;
             export APPTAINER_HOME=$TMPDIR;
@@ -153,7 +153,7 @@ else:
             start_time=$(date +%s);
 
             timestamp=$(date +%Y%m%d%H%M%S)_$$;
-            export TMPDIR=/dev/shm/strobe_tmp_$timestamp;
+            export TMPDIR=/scratch/strobe_tmp_$timestamp;
             mkdir -p $TMPDIR;
             export APPTAINER_HOME=$TMPDIR;
             trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;

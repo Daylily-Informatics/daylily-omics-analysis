@@ -9,6 +9,46 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SLURM_RULE_CONFIG = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
+ACTIVE_RULES_DIR = REPO_ROOT / "workflow/rules"
+V8_PARTITIONS = {
+    "i8",
+    "i128",
+    "i192",
+    "i128nvme",
+    "i192nvme",
+    "i384nvme",
+    "i192hugenvme",
+}
+RETIRED_PARTITIONS = {
+    "i192mem",
+    "i192bigmem",
+    "bcl-convert",
+    "bcl2fq-i192-nvme-test",
+    "bcl2fq-i384-nvme-test",
+}
+ALIGN_DEDUP_CONFIG_SECTIONS = {
+    "bwa_mem2a_aln_sort",
+    "sentmm2_align_sort",
+    "sentmm2ont_align_sort",
+    "strobe_align_sort",
+    "doppelmark",
+    "sent_dedup",
+}
+ALIGN_DEDUP_RULE_FILES = {
+    "bwa_mem2a_align_sort.smk",
+    "sentmm2_align_sort.smk",
+    "sentmm2ont_align_sort.smk",
+    "strobe_align_sort.smk",
+    "sent_aln_sort_snv.smk",
+    "sentieon_markdups.smk",
+    "doppel_mrkdups.smk",
+    "sentieon_pangenome_shortreads.smk",
+    "sent_hybrid_ilmn_ont_modular.refactored.smk",
+    "sent_hybrid_ilmn_pb_modular.refactored.smk",
+    "sent_hybrid_ug_ont_modular.refactored.smk",
+    "sent_hybrid_ug_pb_modular.refactored.smk",
+}
 
 
 def test_slurm_profile_routes_job_stdout_and_stderr_to_logs() -> None:
@@ -57,10 +97,7 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
 
 
 def test_slurm_rule_config_uses_v8_partitions_and_explicit_memory() -> None:
-    path = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
-    rule_config = yaml.safe_load(path.read_text(encoding="utf-8"))
-    allowed = {"i8", "i128", "i192", "i128nvme", "i192nvme", "i384nvme", "i192hugenvme"}
-    retired = {"i192mem", "i192bigmem", "bcl-convert", "bcl2fq-i192-nvme-test", "bcl2fq-i384-nvme-test"}
+    rule_config = yaml.safe_load(SLURM_RULE_CONFIG.read_text(encoding="utf-8"))
 
     def walk(value, context: str) -> None:
         if isinstance(value, dict):
@@ -69,8 +106,8 @@ def test_slurm_rule_config_uses_v8_partitions_and_explicit_memory() -> None:
                 if key == "partition" or key.endswith("_partition"):
                     has_partition = True
                     parts = {part for part in str(child).split(",") if part}
-                    assert not (parts & retired), context
-                    assert parts <= allowed, (context, parts - allowed)
+                    assert not (parts & RETIRED_PARTITIONS), context
+                    assert parts <= V8_PARTITIONS, (context, parts - V8_PARTITIONS)
                 walk(child, f"{context}.{key}")
             if has_partition:
                 assert "mem_mb" in value, context
@@ -79,6 +116,39 @@ def test_slurm_rule_config_uses_v8_partitions_and_explicit_memory() -> None:
                 walk(item, f"{context}[{index}]")
 
     walk(rule_config, "rule_config")
+
+
+def test_active_rule_files_do_not_hardcode_retired_partitions() -> None:
+    hits: list[str] = []
+    for path in sorted(ACTIVE_RULES_DIR.glob("*.smk")):
+        text = path.read_text(encoding="utf-8")
+        for retired in RETIRED_PARTITIONS:
+            if retired in text:
+                hits.append(f"{path.name}: {retired}")
+
+    assert not hits
+
+
+def test_align_and_dedup_config_use_nvme_partitions_and_scratch_tmp() -> None:
+    rule_config = yaml.safe_load(SLURM_RULE_CONFIG.read_text(encoding="utf-8"))
+    expected = {"i384nvme", "i192nvme"}
+
+    for section in sorted(ALIGN_DEDUP_CONFIG_SECTIONS):
+        value = rule_config[section]["partition"]
+        parts = {part for part in str(value).split(",") if part}
+        assert expected <= parts, f"{section}.partition={value}"
+
+    assert rule_config["sent_dedup"]["tmp_base"] == "/scratch"
+
+
+def test_align_and_dedup_rule_shells_do_not_use_dev_shm_tmpdirs() -> None:
+    hits: list[str] = []
+    for filename in sorted(ALIGN_DEDUP_RULE_FILES):
+        text = (ACTIVE_RULES_DIR / filename).read_text(encoding="utf-8")
+        if "/dev/shm" in text:
+            hits.append(filename)
+
+    assert not hits
 
 
 def test_slurm_rule_config_uses_valid_openmp_env_vars() -> None:

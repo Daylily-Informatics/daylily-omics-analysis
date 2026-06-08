@@ -288,7 +288,9 @@ def test_goleft_indexcov_disables_sex_chromosome_expectation() -> None:
     goleft = _read("workflow/rules/go_left.smk")
 
     assert 'sexchrms=""' in goleft
-    assert "--sex {params.sexchrms:q}" in goleft
+    assert 'if [[ -n "$sexchrms" ]]; then' in goleft
+    assert 'sex_args=(--sex "$sexchrms")' in goleft
+    assert 'goleft indexcov --directory $gl "${{sex_args[@]}}"' in goleft
     assert "--sex {params.sexchrms} " not in goleft
     assert "chrX,chrY" not in goleft
     assert '"X,Y"' not in goleft

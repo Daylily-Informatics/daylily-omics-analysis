@@ -106,7 +106,7 @@ rule hyb_norm_vcfs:
     resources:
         vcpu=2,
         threads=2,
-        partition="i192,i192mem"
+        partition="i384nvme,i192nvme,i192,i128"
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample
@@ -148,7 +148,7 @@ rule hyb_rescue_regions:
     resources:
         vcpu=2,
         threads=2,
-        partition="i192,i192mem"
+        partition="i384nvme,i192nvme,i192,i128"
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         pad_bp=pad_bp,
@@ -196,7 +196,7 @@ rule hyb_ensemble_merge:
     resources:
         vcpu=4,
         threads=4,
-        partition="i192,i192mem"
+        partition="i384nvme,i192nvme,i192,i128"
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         mode=mode,
@@ -266,7 +266,7 @@ rule hyb_ensemble_sort:
     resources:
         vcpu=4,
         threads=4,
-        partition="i192,i192mem"
+        partition="i384nvme,i192nvme,i192,i128"
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample

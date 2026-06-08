@@ -66,7 +66,7 @@ rule sentmm2_align_sort:
         ulimit -n 65536 || echo "ulimit mod failed";
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/dev/shm/sentmm2_tmp_${{timestamp}}_$$";
+        export TMPDIR="/scratch/sentmm2_tmp_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
@@ -75,7 +75,7 @@ rule sentmm2_align_sort:
         fi
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /dev/shm >> {log} 2>&1;
+        df -h /scratch >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 

@@ -160,7 +160,7 @@ SAMPLES_TABLE = str(
 
 BCL_THREADS = _intish(BCLCFG.get("threads", 1), 1)
 BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 3000), 3000)
-BCL_PARTITION = str(BCLCFG.get("partition", "i192mem,i192bigmem") or "i192mem,i192bigmem")
+BCL_PARTITION = str(BCLCFG.get("partition", "i192hugenvme,i192nvme,i384nvme") or "i192hugenvme,i192nvme,i384nvme")
 BCL_CONSTRAINT = str(BCLCFG.get("constraint", "") or "")
 BCL_EXCLUSIVE = str(BCLCFG.get("exclusive", "--exclusive") or "")
 BCL_TMPDIR = str(BCLCFG.get("tmpdir", "/dev/shm") or "/dev/shm")

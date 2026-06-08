@@ -137,7 +137,7 @@ bwa_mem2a_aln_sort:
     - r8id.metal-48xl
 sentmm2_align_sort:
   env_yaml: ../envs/sentmm2_v0.1.yaml
-  partition: i192nvme
+  partition: i384nvme,i192nvme
   threads: 192
   minimap2_threads: 160
   sort_threads: 32
@@ -148,7 +148,7 @@ sentmm2_align_sort:
   constraint: ''
 sentmm2ont_align_sort:
   env_yaml: ../envs/sentmm2ont_v0.1.yaml
-  partition: i192nvme
+  partition: i384nvme,i192nvme
   threads: 192
   minimap2_threads: 160
   sort_threads: 32
@@ -159,7 +159,7 @@ sentmm2ont_align_sort:
   constraint: ''
 strobe_align_sort:
   env_yaml: ../envs/strobe_aligner.yaml
-  partition: i192nvme
+  partition: i384nvme,i192nvme
   threads: 192
   strobe_threads: 128
   sort_threads: 64
@@ -279,7 +279,7 @@ sent_dedup:
   env_yaml: ../envs/sentieon_v0.1.yaml
   numactl: '  OMP_NUM_THREADS=192 OMP_PROC_BIND=close OMP_PLACES=threads OMP_DYNAMIC=true OMP_MAX_ACTIVE_LEVELS=1 OMP_SCHEDULE=dynamic OMP_WAIT_POLICY=ACTIVE '
   cram_opts: ' --cram_write_options version=3.0,compressor=rans '
-  tmp_base: /dev/shm
+  tmp_base: /scratch
   index_threads: 16
   optical_distance: 2500
   constraint: ''
@@ -794,7 +794,7 @@ sentdhiomr:
   keep_tmp_dirs: false
   segdup_sr_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaWGS2.2.bundle
   segdup_lr_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle/DNAscopeONT2.2.bundle
-  segdup_genes: CFH,CYP11B1,CYP2D6,GBA,NCF1,PMS2,SMN1,STRC,HBA
+  segdup_genes: CFH,CYP11B1,CYP2D6,NCF1,PMS2,SMN1,STRC,HBA
   mt_fasta: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.fasta
   mt_shifted_fasta: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta
   mt_shift_back_chain: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/ShiftBack.chain

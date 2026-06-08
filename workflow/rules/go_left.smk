@@ -37,7 +37,12 @@ rule goleft:
         
         export gl=$(dirname {output.donetwo} ) ;
         export REF_PATH={params.huref};
-        goleft indexcov --directory $gl --sex {params.sexchrms:q} --fai {params.huref}.fai {input.crai} >> {log} 2>&1;
+        sexchrms={params.sexchrms:q}
+        sex_args=()
+        if [[ -n "$sexchrms" ]]; then
+            sex_args=(--sex "$sexchrms")
+        fi
+        goleft indexcov --directory $gl "${{sex_args[@]}}" --fai {params.huref}.fai {input.crai} >> {log} 2>&1;
         
         touch {output.done}; touch {output.donetwo};
         

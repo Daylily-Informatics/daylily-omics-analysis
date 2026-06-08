@@ -149,7 +149,7 @@ def _truvari_sv_mem_mb(wildcards):
 
 
 def _truvari_sv_partition(wildcards):
-    return str(_truvari_sv_config().get("partition", "i192mem,i192bigmem"))
+    return str(_truvari_sv_config().get("partition", "i192hugenvme,i192nvme,i384nvme"))
 
 
 def _truvari_sv_jobs():

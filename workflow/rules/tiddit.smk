@@ -64,7 +64,7 @@ rule tiddit_sort_index:
     priority: 8
     resources:
         vcpu=config["tiddit"]["threads"],
-        partition="i192,i192mem",
+        partition="i384nvme,i192nvme,i192,i128",
         threads=config["tiddit"]["threads"]
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.tiddit.sv.vcf.sort.bench.tsv"
