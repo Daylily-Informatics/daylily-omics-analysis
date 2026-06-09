@@ -121,5 +121,8 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
     assert '--dbsnp "{params.dbsnp}"' in ug_rule
     assert 'cli_threads=min(int(config["sentieon_pangenome_ug"]["threads"]), 128)' in ug_rule
     assert "-t {params.cli_threads}" in ug_rule
+    assert 'export TMPDIR="/scratch/pangenome_ug_tmp_${{timestamp}}_$$";' in ug_rule
+    assert "/fsx/scratch" not in ug_rule
+    assert "/dev/shm" not in ug_rule
     assert "$pcr_flag" not in ug_rule
     assert "--pcr_free" not in ug_rule

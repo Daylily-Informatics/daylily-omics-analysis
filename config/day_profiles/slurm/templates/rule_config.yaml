@@ -1073,11 +1073,11 @@ sentieon_cgt7p:
   read_group_platform: DNBSEQ
   constraint: ''
 sent_aln_sort_snv:
-  threads: 192
+  threads: 128
   benchmark_runs: 0
   env_yaml: ../envs/sent_pangenome_v0.1.yaml
   mem_mb: 200000
-  partition: i192nvme
+  partition: i384nvme,i192nvme,i128nvme
   constraint: ''
   distribution: block
   exclude: ''
@@ -1095,7 +1095,7 @@ sentieon_pangenome_sr:
   threads: 128
   env_yaml: ../envs/sent_pangenome_v0.1.yaml
   mem_mb: 200000
-  partition: i384nvme,i192nvme,i192hugenvme,i128
+  partition: i384nvme,i192nvme,i128nvme
   constraint: ''
   distribution: block
   exclude: ''
@@ -1113,7 +1113,7 @@ sentieon_pangenome_ug:
   threads: 128
   env_yaml: ../envs/pangenome_ultima_v0.1.yaml
   mem_mb: 200000
-  partition: i384nvme,i192nvme,i192hugenvme,i128
+  partition: i384nvme,i192nvme,i128nvme
   constraint: ''
   distribution: block
   exclude: ''

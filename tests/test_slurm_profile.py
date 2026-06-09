@@ -142,9 +142,12 @@ def test_active_rule_files_do_not_hardcode_retired_partitions() -> None:
 
 def test_pangenome_rules_define_slurm_submit_resources() -> None:
     rule_config = yaml.safe_load(SLURM_RULE_CONFIG.read_text(encoding="utf-8"))
+    expected_partitions = "i384nvme,i192nvme,i128nvme"
 
     for section, rule_file in PANGENOME_SLURM_RESOURCE_SECTIONS.items():
         cfg = rule_config[section]
+        assert cfg["threads"] == 128, section
+        assert cfg["partition"] == expected_partitions, section
         for key in SLURM_SUBMIT_RESOURCE_KEYS:
             assert key in cfg, f"{section}.{key}"
 
