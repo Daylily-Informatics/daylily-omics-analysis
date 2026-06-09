@@ -35,7 +35,7 @@ check_file() {{
 BDIR="/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles"
 check_file "$BDIR/HybridIlluminaONT2.0.bundle" "HybridIlluminaONT2.0.bundle (main hybrid model)"
 check_file "$BDIR/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
-check_file "$BDIR/DNAscopeONT2.2.bundle" "SegDup LR model"
+check_file "$BDIR/DNAscopeONT2.3.bundle" "SegDup LR model"
 
 CHRM="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.fasta" "chrM fasta"
@@ -107,4 +107,3 @@ with open(outpath, "w") as f:
     f.write(lines.lstrip())
 os.chmod(outpath, 0o755)
 print(f"Written {os.path.getsize(outpath)} bytes to {outpath}")
-

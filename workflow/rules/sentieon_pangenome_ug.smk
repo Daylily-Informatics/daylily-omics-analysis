@@ -52,7 +52,6 @@ rule sentieon_pangenome_ug:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         canonical_bed=config["sentieon_pangenome_ug"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_ug"]["dbsnp"],
-        pcr_free=config["sentieon_pangenome_ug"]["pcr_free"],
         cluster_sample=ret_sample,
     shell:
         """
@@ -119,12 +118,6 @@ rule sentieon_pangenome_ug:
             echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
 
-        # --- Build optional flags ---
-        pcr_flag="";
-        if [[ "{params.pcr_free}" == "true" ]]; then
-            pcr_flag="--pcr_free";
-        fi
-
         # --- bin/dayoa_sentieon_cli sentieon-pangenome (accelerated pipeline) ---
         cli_out="$TMPDIR/{wildcards.sample}.pangenome_ug";
 
@@ -143,7 +136,6 @@ rule sentieon_pangenome_ug:
             -i {input.cram} \
             -b "{params.canonical_bed}" \
             --dbsnp "{params.dbsnp}" \
-            $pcr_flag \
             -t {threads} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
         cli_rc=$?;
@@ -218,4 +210,3 @@ rule produce_pangenome_ug_vcf:  # TARGET: sentieon pangenome ug vcf
 
         ls {output} ) >> {log} 2>&1;
         """
-

@@ -1008,13 +1008,13 @@ sentdont:
     hg38_broad_sentdont_chrms: "20"
     b37_sentdont_chrms: "20" #"19,21" # "1-24"
     ld_preload: " "
-    env_yaml: "../envs/vanilla_v0.1.yaml"
-    sentD_gather_env: "../envs/vanilla_v0.1.yaml"
+    env_yaml: "../envs/sentieon_v0.3.yaml"
+    sentD_gather_env: "../envs/sentieon_v0.3.yaml"
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem"
-    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle"
-    dna_scope_apply_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle"
+    dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.3.bundle"
+    dna_scope_apply_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.3.bundle"
     mem_mb: 200000
     pop_vcf: ""
     keep_tmp_dirs: false
@@ -1031,7 +1031,7 @@ sentdontr:
     bench_repeat: 0
     numactl: " "
     partition: "i192,i192mem"
-    dnascope_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.2.bundle
+    dnascope_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.3.bundle
     mem_mb: 200000
     pop_vcf: ""
 
@@ -1205,14 +1205,14 @@ sentieon_cgt7p:
 sent_aln_sort_snv:
     threads: 7
     benchmark_runs: 0
-    env_yaml: "../envs/sentieon_v0.1.yaml"
+    env_yaml: "../envs/sent_pangenome_v0.1.yaml"
     mem_mb: 50000
     partition: "i8"
     constraint: ""
     bench_repeat: 0
     hapl: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
     gbz: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
-    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
     pop_vcf: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
@@ -1227,7 +1227,7 @@ sentieon_pangenome_sr:
     bench_repeat: 0
     gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
-    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
@@ -1242,11 +1242,10 @@ sentieon_pangenome_ug:
     bench_repeat: 0
     gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
-    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltimaPangenomeRealignWGS1.0.bundle/SentieonUltimaPangenomeRealignWGS1.0.bundle"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonUltimaPangenomeRealignWGS1.3.bundle"
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
-    pcr_free: "true"
 
 sentieon_gatk:
     threads: 7
