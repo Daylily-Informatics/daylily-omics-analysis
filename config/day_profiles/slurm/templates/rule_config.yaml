@@ -12,6 +12,11 @@ prep_input_sample_files:
   threads: 48
   use_threads: 48
   mem_mb: 20000
+  constraint: ''
+  distribution: block
+  exclude: ''
+  include: ''
+  exclusive: ''
   env_yaml: ../envs/prep_input_sample_files_v0.1.yaml
 malloc_alt:
   ld_preload: '  '
@@ -1366,6 +1371,11 @@ roche_downsample_bam:
   threads: 32
   mem_mb: 64000
   partition: i192
+  constraint: ''
+  distribution: block
+  exclude: ''
+  include: ''
+  exclusive: ''
   env_yaml: ../envs/roche_v0.1.yaml
 roche_gatk_haplotypecaller:
   threads: 192

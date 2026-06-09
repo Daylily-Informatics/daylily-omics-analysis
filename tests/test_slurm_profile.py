@@ -54,6 +54,10 @@ PANGENOME_SLURM_RESOURCE_SECTIONS = {
     "sentieon_pangenome_sr": "sentieon_pangenome_shortreads.smk",
     "sentieon_pangenome_ug": "sentieon_pangenome_ug.smk",
 }
+PREP_INPUT_SLURM_RESOURCE_SECTIONS = {
+    "prep_input_sample_files": "prep_input_sample_files.smk",
+    "roche_downsample_bam": "prep_input_sample_files.smk",
+}
 SLURM_SUBMIT_RESOURCE_KEYS = {
     "distribution",
     "exclude",
@@ -155,6 +159,20 @@ def test_pangenome_rules_define_slurm_submit_resources() -> None:
         for key in SLURM_SUBMIT_RESOURCE_KEYS:
             expected = f'{key}=config["{section}"]["{key}"]'
             assert expected in text, f"{rule_file}: {expected}"
+
+
+def test_prep_input_rules_define_slurm_submit_resources() -> None:
+    rule_config = yaml.safe_load(SLURM_RULE_CONFIG.read_text(encoding="utf-8"))
+    text = (ACTIVE_RULES_DIR / "prep_input_sample_files.smk").read_text(
+        encoding="utf-8"
+    )
+
+    for section in PREP_INPUT_SLURM_RESOURCE_SECTIONS:
+        cfg = rule_config[section]
+        for key in SLURM_SUBMIT_RESOURCE_KEYS:
+            assert key in cfg, f"{section}.{key}"
+            expected = f"{key}=config['{section}']['{key}']"
+            assert expected in text, f"prep_input_sample_files.smk: {expected}"
 
 
 def test_align_and_dedup_config_use_nvme_partitions_and_scratch_tmp() -> None:
