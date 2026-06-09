@@ -115,6 +115,7 @@ def test_auto_config_injection_covers_all_selector_dimensions() -> None:
     assert "sv_callers=*" in bin_day_run
     assert "def _target_alias_codes_from_argv" in common
     assert 'DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}' in common
+    assert 'DDUP_VALID_CODES = set(CANONICAL_DEDUPER_CODES) | {"spmd"}' in common
     assert "Legacy dppl is accepted and normalized to dmd." in common
 
 

@@ -840,11 +840,12 @@ os.system(
 )
 
 # Handle dedupers
-# Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), na (no dedup / skip)
+# Valid dedup codes: dmd (doppelmark), smd (sentieon markdup), spmd
+# (Sentieon pangenome markdup/realignment output), na (no dedup / skip)
 # Deprecated legacy codes dppl and dppl_sent are mapped to dmd and smd respectively.
 # If no dedupers specified, defaults to ['na'] (no dedup).
 DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}
-DDUP_VALID_CODES = set(CANONICAL_DEDUPER_CODES)
+DDUP_VALID_CODES = set(CANONICAL_DEDUPER_CODES) | {"spmd"}
 
 DDUP = []
 if 'dedupers' not in config or config.get('dedupers') is None or len(config.get('dedupers', [])) == 0:
