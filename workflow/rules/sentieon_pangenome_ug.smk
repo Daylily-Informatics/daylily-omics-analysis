@@ -44,6 +44,10 @@ rule sentieon_pangenome_ug:
         vcpu=config["sentieon_pangenome_ug"]["threads"],
         mem_mb=config["sentieon_pangenome_ug"]["mem_mb"],
         constraint=config["sentieon_pangenome_ug"]["constraint"],
+        distribution=config["sentieon_pangenome_ug"]["distribution"],
+        exclude=config["sentieon_pangenome_ug"]["exclude"],
+        include=config["sentieon_pangenome_ug"]["include"],
+        exclusive=config["sentieon_pangenome_ug"]["exclusive"],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         gbz=config["sentieon_pangenome_ug"]["gbz"],

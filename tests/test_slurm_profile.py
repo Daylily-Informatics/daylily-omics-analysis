@@ -49,6 +49,17 @@ ALIGN_DEDUP_RULE_FILES = {
     "sent_hybrid_ug_ont_modular.refactored.smk",
     "sent_hybrid_ug_pb_modular.refactored.smk",
 }
+PANGENOME_SLURM_RESOURCE_SECTIONS = {
+    "sent_aln_sort_snv": "sent_aln_sort_snv.smk",
+    "sentieon_pangenome_sr": "sentieon_pangenome_shortreads.smk",
+    "sentieon_pangenome_ug": "sentieon_pangenome_ug.smk",
+}
+SLURM_SUBMIT_RESOURCE_KEYS = {
+    "distribution",
+    "exclude",
+    "include",
+    "exclusive",
+}
 
 
 def test_slurm_profile_routes_job_stdout_and_stderr_to_logs() -> None:
@@ -127,6 +138,20 @@ def test_active_rule_files_do_not_hardcode_retired_partitions() -> None:
                 hits.append(f"{path.name}: {retired}")
 
     assert not hits
+
+
+def test_pangenome_rules_define_slurm_submit_resources() -> None:
+    rule_config = yaml.safe_load(SLURM_RULE_CONFIG.read_text(encoding="utf-8"))
+
+    for section, rule_file in PANGENOME_SLURM_RESOURCE_SECTIONS.items():
+        cfg = rule_config[section]
+        for key in SLURM_SUBMIT_RESOURCE_KEYS:
+            assert key in cfg, f"{section}.{key}"
+
+        text = (ACTIVE_RULES_DIR / rule_file).read_text(encoding="utf-8")
+        for key in SLURM_SUBMIT_RESOURCE_KEYS:
+            expected = f'{key}=config["{section}"]["{key}"]'
+            assert expected in text, f"{rule_file}: {expected}"
 
 
 def test_align_and_dedup_config_use_nvme_partitions_and_scratch_tmp() -> None:

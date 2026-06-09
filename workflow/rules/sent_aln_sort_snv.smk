@@ -40,6 +40,10 @@ rule sent_aln_sort_snv:
         vcpu=config["sent_aln_sort_snv"]["threads"],
         mem_mb=config["sent_aln_sort_snv"]["mem_mb"],
         constraint=config["sent_aln_sort_snv"]["constraint"],
+        distribution=config["sent_aln_sort_snv"]["distribution"],
+        exclude=config["sent_aln_sort_snv"]["exclude"],
+        include=config["sent_aln_sort_snv"]["include"],
+        exclusive=config["sent_aln_sort_snv"]["exclusive"],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         hapl=config["sent_aln_sort_snv"]["hapl"],
@@ -215,4 +219,3 @@ rule produce_sentpg_vcf:  # TARGET: sentieon pangenome vcf
 
         ls {output} ) >> {log} 2>&1;
         """
-

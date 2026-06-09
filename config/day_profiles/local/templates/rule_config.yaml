@@ -1209,6 +1209,10 @@ sent_aln_sort_snv:
     mem_mb: 50000
     partition: "i8"
     constraint: ""
+    distribution: "block"
+    exclude: ""
+    include: ""
+    exclusive: ""
     bench_repeat: 0
     hapl: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
     gbz: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
@@ -1224,6 +1228,10 @@ sentieon_pangenome_sr:
     mem_mb: 50000
     partition: "i8"
     constraint: ""
+    distribution: "block"
+    exclude: ""
+    include: ""
+    exclusive: ""
     bench_repeat: 0
     gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
@@ -1239,6 +1247,10 @@ sentieon_pangenome_ug:
     mem_mb: 50000
     partition: "i8"
     constraint: ""
+    distribution: "block"
+    exclude: ""
+    include: ""
+    exclusive: ""
     bench_repeat: 0
     gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
