@@ -7,9 +7,13 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODEL_ROOT = "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles"
+PANGENOME_REF_ROOT = "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38"
 DNASCOPE_ONT = f"{MODEL_ROOT}/DNAscopeONT2.3.bundle"
 PANGENOME_ILMN = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
 PANGENOME_ULTIMA = f"{MODEL_ROOT}/SentieonUltimaPangenomeRealignWGS1.3.bundle"
+PANGENOME_HAPL = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.hapl"
+PANGENOME_GBZ = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.gbz"
+PANGENOME_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20g41-20251216.vcf.gz"
 
 
 def _read(path: str) -> str:
@@ -57,6 +61,14 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         assert cfg["sent_aln_sort_snv"]["model"] == PANGENOME_ILMN
         assert cfg["sentieon_pangenome_sr"]["model"] == PANGENOME_ILMN
         assert cfg["sentieon_pangenome_ug"]["model"] == PANGENOME_ULTIMA
+        for section in (
+            "sent_aln_sort_snv",
+            "sentieon_pangenome_sr",
+            "sentieon_pangenome_ug",
+        ):
+            assert cfg[section]["hapl"] == PANGENOME_HAPL
+            assert cfg[section]["gbz"] == PANGENOME_GBZ
+            assert cfg[section]["pop_vcf"] == PANGENOME_POP_VCF
         assert "pcr_free" not in cfg["sentieon_pangenome_ug"]
         assert Path(cfg["sentdont"]["env_yaml"]).name == "sentieon_v0.3.yaml"
         assert Path(cfg["sent_aln_sort_snv"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"

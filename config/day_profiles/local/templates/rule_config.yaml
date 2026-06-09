@@ -1214,10 +1214,10 @@ sent_aln_sort_snv:
     include: ""
     exclusive: ""
     bench_repeat: 0
-    hapl: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.hapl"
-    gbz: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/hprc-v2.0-mc-grch38.gbz"
+    hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
+    gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
     model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
-    pop_vcf: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/pop-v20g41-20251216.vcf.gz"
+    pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
     pcr_free: "true"
