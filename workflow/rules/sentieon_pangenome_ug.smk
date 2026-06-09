@@ -56,6 +56,7 @@ rule sentieon_pangenome_ug:
         pop_vcf=config["sentieon_pangenome_ug"]["pop_vcf"],
         canonical_bed=config["sentieon_pangenome_ug"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_ug"]["dbsnp"],
+        cli_threads=min(int(config["sentieon_pangenome_ug"]["threads"]), 128),
         cluster_sample=ret_sample,
     shell:
         """
@@ -140,7 +141,7 @@ rule sentieon_pangenome_ug:
             -i {input.cram} \
             -b "{params.canonical_bed}" \
             --dbsnp "{params.dbsnp}" \
-            -t {threads} \
+            -t {params.cli_threads} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
         cli_rc=$?;
         set -e;

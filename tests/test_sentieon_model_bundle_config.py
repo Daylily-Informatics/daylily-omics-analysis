@@ -105,6 +105,8 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
         assert '--readgroup "@RG' in rule
         assert '-b "{params.canonical_bed}"' in rule
         assert '--dbsnp "{params.dbsnp}"' in rule
+        assert 'cli_threads=min(int(config["' in rule
+        assert "-t {params.cli_threads}" in rule
         assert "$pcr_flag" in rule
 
     ug_rule = _read("workflow/rules/sentieon_pangenome_ug.smk")
@@ -117,5 +119,7 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
     assert "-i {input.cram}" in ug_rule
     assert '-b "{params.canonical_bed}"' in ug_rule
     assert '--dbsnp "{params.dbsnp}"' in ug_rule
+    assert 'cli_threads=min(int(config["sentieon_pangenome_ug"]["threads"]), 128)' in ug_rule
+    assert "-t {params.cli_threads}" in ug_rule
     assert "$pcr_flag" not in ug_rule
     assert "--pcr_free" not in ug_rule

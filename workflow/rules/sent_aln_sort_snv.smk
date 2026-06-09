@@ -53,6 +53,7 @@ rule sent_aln_sort_snv:
         canonical_bed=config["sent_aln_sort_snv"]["canonical_bed"],
         dbsnp=config["sent_aln_sort_snv"]["dbsnp"],
         pcr_free=config["sent_aln_sort_snv"]["pcr_free"],
+        cli_threads=min(int(config["sent_aln_sort_snv"]["threads"]), 128),
         cluster_sample=ret_sample,
         rgpl="ILLUMINA",
         rgpu="presumedCombinedLanes",
@@ -145,7 +146,7 @@ rule sent_aln_sort_snv:
             -b "{params.canonical_bed}" \
             --dbsnp "{params.dbsnp}" \
             $pcr_flag \
-            -t {threads} \
+            -t {params.cli_threads} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
         cli_rc=$?;
         set -e;

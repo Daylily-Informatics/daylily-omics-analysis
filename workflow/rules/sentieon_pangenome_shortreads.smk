@@ -55,6 +55,7 @@ rule sentieon_pangenome_sr:
         canonical_bed=config["sentieon_pangenome_sr"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_sr"]["dbsnp"],
         pcr_free=config["sentieon_pangenome_sr"]["pcr_free"],
+        cli_threads=min(int(config["sentieon_pangenome_sr"]["threads"]), 128),
         cluster_sample=ret_sample,
         rgpl="ILLUMINA",
         rgpu="presumedCombinedLanes",
@@ -148,7 +149,7 @@ rule sentieon_pangenome_sr:
             -b "{params.canonical_bed}" \
             --dbsnp "{params.dbsnp}" \
             $pcr_flag \
-            -t {threads} \
+            -t {params.cli_threads} \
             "${{cli_out}}.vcf.gz" >> {log} 2>&1;
         cli_rc=$?;
         set -e;
