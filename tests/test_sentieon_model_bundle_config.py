@@ -13,7 +13,8 @@ PANGENOME_ILMN = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
 PANGENOME_ULTIMA = f"{MODEL_ROOT}/SentieonUltimaPangenomeRealignWGS1.3.bundle"
 PANGENOME_HAPL = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.hapl"
 PANGENOME_GBZ = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.gbz"
-PANGENOME_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20g41-20251216.vcf.gz"
+PANGENOME_ILMN_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20-20260528.vcf.gz"
+PANGENOME_ULTIMA_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20g41-20251216.vcf.gz"
 
 
 def _read(path: str) -> str:
@@ -68,7 +69,9 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         ):
             assert cfg[section]["hapl"] == PANGENOME_HAPL
             assert cfg[section]["gbz"] == PANGENOME_GBZ
-            assert cfg[section]["pop_vcf"] == PANGENOME_POP_VCF
+        assert cfg["sent_aln_sort_snv"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
+        assert cfg["sentieon_pangenome_sr"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
+        assert cfg["sentieon_pangenome_ug"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
         assert "pcr_free" not in cfg["sentieon_pangenome_ug"]
         assert Path(cfg["sentdont"]["env_yaml"]).name == "sentieon_v0.3.yaml"
         assert Path(cfg["sent_aln_sort_snv"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"
@@ -96,6 +99,7 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
         assert '--gbz "{params.gbz}"' in rule
         assert '-m "{params.model}"' in rule
         assert '--pop_vcf "{params.pop_vcf}"' in rule
+        assert '"popvcf"' not in rule
         assert "--r1_fastq {input.f1}" in rule
         assert "--r2_fastq {input.f2}" in rule
         assert '--readgroup "@RG' in rule

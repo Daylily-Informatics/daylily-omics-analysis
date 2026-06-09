@@ -53,7 +53,7 @@ rule sentieon_pangenome_ug:
         gbz=config["sentieon_pangenome_ug"]["gbz"],
         hapl=config["sentieon_pangenome_ug"]["hapl"],
         model=config["sentieon_pangenome_ug"]["model"],
-        pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
+        pop_vcf=config["sentieon_pangenome_ug"]["pop_vcf"],
         canonical_bed=config["sentieon_pangenome_ug"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_ug"]["dbsnp"],
         cluster_sample=ret_sample,
