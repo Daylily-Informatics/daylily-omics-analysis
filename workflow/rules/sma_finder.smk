@@ -88,14 +88,14 @@ with tsv.open("r", encoding="utf-8", newline="") as handle:
     row = next(reader, None)
 if not row:
     raise SystemExit("sma-finder summary has no data rows: %s" % tsv)
-payload = {
-    "caller": "sma_finder",
-    "sample": "{wildcards.sample}",
-    "aligner": "{wildcards.alnr}",
-    "deduper": "{wildcards.ddup}",
-    "capability": "affected_status_only",
-    "result": row,
-}
+payload = dict(
+    caller="sma_finder",
+    sample="{wildcards.sample}",
+    aligner="{wildcards.alnr}",
+    deduper="{wildcards.ddup}",
+    capability="affected_status_only",
+    result=row,
+)
 Path("{output.json}").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
 PY
         test -s {output.json:q}
