@@ -22,7 +22,7 @@ EXPECTED_SLURM_TUNING = {
     "sr_markdup_threads": 64,
     "sr_markdup_mem_mb": 64000,
     "segdup_threads": 192,
-    "segdup_mem_mb": 300000,
+    "segdup_mem_mb": 250000,
 }
 
 

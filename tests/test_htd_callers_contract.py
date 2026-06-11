@@ -44,15 +44,25 @@ def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
         "mem_mb": 32000,
         "partition": "i192hugenvme,i192nvme,i384nvme",
     }
-    for caller in ("cyrius", "smn12", "smaca"):
-        assert config[caller]["threads"] == 128
-        assert config[caller]["mem_mb"] == 128000
+    assert config["cyrius"]["threads"] == 128
+    assert config["cyrius"]["mem_mb"] == 128000
+    assert config["cyrius"]["partition"] == "i192hugenvme,i192nvme,i384nvme"
+    for caller in ("smn12", "smaca", "sma_finder", "hapsma"):
+        assert config[caller]["threads"] == 192
+        assert config[caller]["mem_mb"] == 250000
         assert config[caller]["partition"] == "i192hugenvme,i192nvme,i384nvme"
-    assert config["sma_finder"]["threads"] == 1
-    assert config["hapsma"]["threads"] == 128
-    assert config["hapsma"]["mem_mb"] == 192000
+    assert config["hapsma"]["min_smn_region_mean_coverage"] == 4
+    assert config["hapsma"]["start"] == "bam_single_remap"
+    for key in (
+        "calling_target_bed",
+        "calling_target_region",
+        "phaseset_region",
+        "homopolymer_bed",
+        "clair3model",
+    ):
+        assert key in config["hapsma"]
     assert config["sentdhiomr"]["segdup_threads"] == 192
-    assert config["sentdhiomr"]["segdup_mem_mb"] == 300000
+    assert config["sentdhiomr"]["segdup_mem_mb"] == 250000
     assert config["sentdhiomr"]["segdup_lr_model"].endswith("/DNAscopeONT2.3.bundle")
 
 
@@ -352,12 +362,21 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "requires config.hapsma.",
         "samtools depth -r",
         "HapSMA coverage gate failed",
-        "nextflow",
+        "bam_single_remap",
+        "sambamba view",
+        "minimap2 -t",
+        "gatk --java-options",
+        "whatshap polyphase",
+        "whatshap haplotag",
+        "run_clair3.sh",
+        "sniffles",
+        "No HapSMA PhaseSet was detected",
         "long_read_haplotype",
         "dev_exploratory",
         '"../envs/hapsma_v0.1.yaml"',
     ):
         assert expected in hapsma
+    assert "nextflow" not in hapsma
     assert "hapsma.enabled" not in hapsma
 
 

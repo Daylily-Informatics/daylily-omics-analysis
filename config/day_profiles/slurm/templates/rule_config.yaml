@@ -344,16 +344,16 @@ smaca:
   command: smaca
   extra_args: ''
   summary_filename: SMAca_results.tsv
-  threads: 128
-  mem_mb: 128000
+  threads: 192
+  mem_mb: 250000
   partition: i192hugenvme,i192nvme,i384nvme
 
 sma_finder:
   command: sma_finder
   extra_args: ''
-  threads: 1
-  mem_mb: 8000
-  partition: i192
+  threads: 192
+  mem_mb: 250000
+  partition: i192hugenvme,i192nvme,i384nvme
 
 gauchian:
   threads: 1
@@ -366,25 +366,27 @@ cyrius:
   partition: i192hugenvme,i192nvme,i384nvme
 
 smn12:
-  threads: 128
-  mem_mb: 128000
+  threads: 192
+  mem_mb: 250000
   partition: i192hugenvme,i192nvme,i384nvme
 
 hapsma:
   dev_exploratory: true
-  nextflow_command: ''
-  workflow_path: ''
-  config_path: ''
-  email: ''
   ploidy: ''
   start: bam_single_remap
-  single_bam_type: path
   smn_region: ''
-  min_smn_region_mean_coverage: 8
+  min_smn_region_mean_coverage: 4
+  calling_target_bed: ''
+  calling_target_region: ''
+  phaseset_region: ''
+  homopolymer_bed: ''
   clair3model: ''
-  extra_args: ''
-  threads: 128
-  mem_mb: 192000
+  clair3_optional: '--haploid_sensitive --platform=ont --enable_long_indel'
+  minimap_param: '-y -ax map-ont'
+  fastq_tags: 'RG,Mm,Ml,MM,ML'
+  min_read_length: 1000
+  threads: 192
+  mem_mb: 250000
   partition: i192hugenvme,i192nvme,i384nvme
 verifybamid2_panels: []
 verifybamid2_panel_svd_prefixes: {}
@@ -839,7 +841,7 @@ sentdhiomr:
   sr_markdup_threads: 64
   sr_markdup_mem_mb: 64000
   segdup_threads: 192
-  segdup_mem_mb: 300000
+  segdup_mem_mb: 250000
   max_mem: 140G
   igz: '  igzip -cd -T 32 '
   keep_sr_alignment: false

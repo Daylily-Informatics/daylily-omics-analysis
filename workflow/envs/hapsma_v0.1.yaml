@@ -4,5 +4,13 @@ channels:
 dependencies:
   - python >=3.10
   - openjdk >=17
-  - nextflow
+  - gatk4 >=4.2
   - samtools
+  - sambamba
+  - minimap2
+  - bcftools
+  - htslib
+  - whatshap
+  - sniffles
+  - clair3
+  - vcfpy

@@ -94,17 +94,19 @@ sma_finder:
 
 hapsma:
   dev_exploratory: true
-  nextflow_command: ""
-  workflow_path: ""
-  config_path: ""
-  email: ""
   ploidy: ""
   start: "bam_single_remap"
-  single_bam_type: "path"
   smn_region: ""
-  min_smn_region_mean_coverage: 8
+  min_smn_region_mean_coverage: 4
+  calling_target_bed: ""
+  calling_target_region: ""
+  phaseset_region: ""
+  homopolymer_bed: ""
   clair3model: ""
-  extra_args: ""
+  clair3_optional: "--haploid_sensitive --platform=ont --enable_long_indel"
+  minimap_param: "-y -ax map-ont"
+  fastq_tags: "RG,Mm,Ml,MM,ML"
+  min_read_length: 1000
   threads: 10
   mem_mb: 48000
   partition: "i192"
