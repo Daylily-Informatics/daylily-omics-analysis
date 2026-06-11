@@ -91,7 +91,7 @@ rule hapsma:  # TARGET : Run native HapSMA exploratory ONT SMN analysis.
         done
 
         ref_path={params.reference:q}
-        ref_no_ext="${ref_path%.*}"
+        ref_no_ext="${{ref_path%.*}}"
         test -s "$ref_path.fai" || (echo "Missing FASTA index: $ref_path.fai" >> {log:q}; exit 1)
         if [[ -s "$ref_path.dict" ]]; then
           :
