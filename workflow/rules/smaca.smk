@@ -51,7 +51,7 @@ if not command:
     raise SystemExit("SMAca command was empty")
 args = shlex.split(command)
 if shutil.which(args[0]) is None:
-    raise SystemExit(f"SMAca command was not found on PATH: {args[0]}")
+    raise SystemExit("SMAca command was not found on PATH: %s" % args[0])
 extra = os.environ["SMACA_EXTRA"].strip()
 cmd = args + [
     "--output",
@@ -83,7 +83,7 @@ with path.open("r", encoding="utf-8", newline="") as handle:
     reader = csv.reader(handle, delimiter="\\t")
     header = next(reader, None)
 if not header:
-    raise SystemExit(f"SMAca summary has no header: {path}")
+    raise SystemExit("SMAca summary has no header: %s" % path)
 PY
         touch {output.done:q}
         """

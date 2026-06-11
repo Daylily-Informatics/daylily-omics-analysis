@@ -55,7 +55,7 @@ if not command:
     raise SystemExit("sma-finder command was empty")
 args = shlex.split(command)
 if shutil.which(args[0]) is None:
-    raise SystemExit(f"sma-finder command was not found on PATH: {args[0]}")
+    raise SystemExit("sma-finder command was not found on PATH: %s" % args[0])
 extra = os.environ["SMA_FINDER_EXTRA"].strip()
 cmd = args + [
     "--verbose",
@@ -87,7 +87,7 @@ with tsv.open("r", encoding="utf-8", newline="") as handle:
     reader = csv.DictReader(handle, delimiter="\\t")
     row = next(reader, None)
 if not row:
-    raise SystemExit(f"sma-finder summary has no data rows: {tsv}")
+    raise SystemExit("sma-finder summary has no data rows: %s" % tsv)
 payload = {
     "caller": "sma_finder",
     "sample": "{wildcards.sample}",
