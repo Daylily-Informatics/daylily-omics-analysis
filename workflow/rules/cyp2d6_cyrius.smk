@@ -22,13 +22,13 @@ rule cyrius:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.cyrius.benchmark.tsv"
     resources:
-        vcpu=config["go_left"]["threads"],
-        threads=config["go_left"]["threads"],
-        partition=config["go_left"]["partition"],
-        mem_mb=1000,
+        vcpu=config["cyrius"]["threads"],
+        threads=config["cyrius"]["threads"],
+        partition=config["cyrius"]["partition"],
+        mem_mb=config["cyrius"]["mem_mb"],
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyrius/logs/{sample}.{alnr}.{ddup}.cyrius.log",
-    threads: config["go_left"]["threads"]
+    threads: config["cyrius"]["threads"]
     conda:
         "../envs/cyrius_v0.1.yaml"
     shell:

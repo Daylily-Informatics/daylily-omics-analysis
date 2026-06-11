@@ -121,7 +121,7 @@ def _unmapped_metagenomics_component_inputs(wildcards):
     if not _unmapped_metagenomics_enabled_for_multiqc():
         return []
     _validate_unmapped_metagenomics_multiqc_config()
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
@@ -200,7 +200,7 @@ def _unmapped_metagenomics_ganon2_component_inputs(wildcards):
     if not _unmapped_metagenomics_ganon2_enabled_for_multiqc():
         return []
     _validate_unmapped_metagenomics_ganon2_multiqc_config()
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
@@ -280,7 +280,7 @@ def _unmapped_metagenomics_sourmash_component_inputs(wildcards):
     if not _unmapped_metagenomics_sourmash_enabled_for_multiqc():
         return []
     _validate_unmapped_metagenomics_sourmash_multiqc_config()
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
@@ -392,6 +392,8 @@ def _variant_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/vep_annotation_mqc.tsv")
     if HTD_CALLERS:
         paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
+    if "produce_smn12_orthogonal_calls" in _requested_targets():
+        paths.append(MDIR + "other_reports/smn12_orthogonal_calls_mqc.tsv")
     if len(CONCORDANCE_SAMPLES.keys()) > 0 and pairs:
         paths.append(MDIR + "other_reports/giab_concordance_mqc.tsv")
     return paths

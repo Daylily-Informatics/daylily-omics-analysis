@@ -270,15 +270,14 @@ include: "rules/fastqc.smk"
 # FASTV is retired from active Snakemake execution; archived at
 # workflow/rules/archived_qc/fastv.smk for old-run provenance.
 include: "rules/gatk_contam.smk"
-# Gauchian is disabled until its runtime environment path and caller behavior
-# are revalidated. Keep workflow/rules/gauchian.smk for repair provenance.
-# include: "rules/gauchian.smk"
-# include: "rules/gba_gauchian.smk"  # Disabled until GBA integration is revalidated.
+include: "rules/gauchian.smk"
+# include: "rules/gba_gauchian.smk"  # Historical alternate GBA integration; Gauchian is active.
 include: "rules/generate_deduplicated_bams.smk"
 # GeneToCN is disabled until its upstream package/install surface is revalidated.
 # Keep workflow/rules/genetocn.smk for repair provenance.
 # include: "rules/genetocn.smk"
 include: "rules/go_left.smk"
+include: "rules/hapsma.smk"
 # include: "rules/hisat2.smk"  # Disabled until HISAT2 workflows are revalidated.
 include: "rules/htd_calls.smk"
 include: "rules/hyb_ensemble_multi_platform.smk"
@@ -335,10 +334,11 @@ include: "rules/sentmm2ont_align_sort.smk"
 include: "rules/seqfu.smk"
 include: "rules/site_mix_contam.smk"
 include: "rules/contam_identity.smk"
-# SMACA is disabled until its runtime environment path and caller behavior
-# are revalidated. Keep workflow/rules/smaca.smk for repair provenance.
-# include: "rules/smaca.smk"
-# SMN12 is enabled for pinned SMNCopyNumberCaller execution.
+include: "rules/sma_finder.smk"
+include: "rules/smaca.smk"
+include: "rules/smn12_orthogonal_calls.smk"
+# SMN12 is enabled for pinned SMNCopyNumberCaller execution and the orthogonal
+# SMN12 aggregate target.
 include: "rules/smn_copynumbercaller.smk"
 # SnpEff is unavailable until annotation integration is revalidated.
 # include: "rules/snpeff.smk"

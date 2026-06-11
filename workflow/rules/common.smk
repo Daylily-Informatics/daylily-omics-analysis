@@ -210,6 +210,8 @@ SUPPORTED_HTD_CALLERS = (
     "smn12",
     "parascopy",
     "smaca",
+    "sma_finder",
+    "hapsma",
 )
 
 
@@ -2486,7 +2488,9 @@ def instrument(wildcards):
 # (e.g. via auto-detection) but are missing from CRAM_ALIGNERS (which is
 # populated from samples.tsv), reconcile here so they are never routed
 # through the BAM-based no_dedup / markdup rules.
-_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb", "pangenome_sr", "pangenome_ug"}
+GRAPH_ONLY_PANGENOME_ALIGNERS = {"pangenome_sr", "pangenome_ug"}
+PANGENOME_SENTPG_DEDUPER = "spmd"
+_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb"}
 for _a in ALIGNERS:
     if _a in _KNOWN_CRAM_ALIGNERS and _a not in CRAM_ALIGNERS:
         CRAM_ALIGNERS.append(_a)
@@ -2500,7 +2504,79 @@ BAM_ALIGNERS = sorted(set(BAM_ALIGNERS))
 
 OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS)-set(BAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
-QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))
+QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS)-GRAPH_ONLY_PANGENOME_ALIGNERS)
+
+
+# SMN orthogonal callers need stricter routing than generic CRAM QC.  The
+# HiOMR wildcard aligner is long-read-facing, but the short-read SMN callers
+# must consume the HiOMR SR dedup CRAM produced by sentdhiomr.
+SMN_LONG_READ_ALIGNERS = {"ont", "sentmm2ont"}
+SMN_SHORT_READ_EXCLUDED_ALIGNERS = (
+    SMN_LONG_READ_ALIGNERS | {"sentmm2", "pb"} | GRAPH_ONLY_PANGENOME_ALIGNERS
+)
+
+
+def _smn_hiomr_aligners():
+    return set(globals().get("ALIGNERS_DHIOMR", []))
+
+
+def smn_short_read_aligners():
+    short_alnrs = set(QC_CRAM_ALIGNERS) - SMN_SHORT_READ_EXCLUDED_ALIGNERS
+    short_alnrs.update(_smn_hiomr_aligners())
+    return sorted(short_alnrs)
+
+
+def smn_long_read_aligners():
+    long_alnrs = set(QC_CRAM_ALIGNERS) & SMN_LONG_READ_ALIGNERS
+    long_alnrs.update(_smn_hiomr_aligners())
+    return sorted(long_alnrs)
+
+
+def smn_short_cram(wildcards):
+    if wildcards.alnr in _smn_hiomr_aligners():
+        return (
+            MDIR
+            + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiomr/"
+            + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdhiomr.sr_dedup.cram"
+        )
+    if wildcards.alnr in SMN_SHORT_READ_EXCLUDED_ALIGNERS:
+        raise WorkflowError(
+            "SMN short-read callers must not consume long-read-only or graph-only "
+            f"aligner '{wildcards.alnr}'. Use a short-read aligner or HiOMR SR output."
+        )
+    return (
+        MDIR
+        + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
+        + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
+    )
+
+
+def smn_short_crai(wildcards):
+    return smn_short_cram(wildcards) + ".crai"
+
+
+def smn_long_cram(wildcards):
+    if wildcards.alnr in _smn_hiomr_aligners():
+        return _sentdhiomr_lr_cram(wildcards)
+    if wildcards.alnr == "ont":
+        return MDIR + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.sample}.cram"
+    if wildcards.alnr == "sentmm2ont":
+        return (
+            MDIR
+            + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
+            + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
+        )
+    raise WorkflowError(
+        "SMN long-read callers require ONT evidence from aligner 'ont', "
+        f"'sentmm2ont', or HiOMR LR output; observed '{wildcards.alnr}'."
+    )
+
+
+def smn_long_crai(wildcards):
+    if wildcards.alnr in _smn_hiomr_aligners():
+        return _sentdhiomr_lr_crai(wildcards)
+    return smn_long_cram(wildcards) + ".crai"
+
 
 # ---------------------------------------------------------------------------
 # SNV caller → valid output aligners mapping.
@@ -2557,6 +2633,18 @@ def valid_snv_alnr_pairs(all_aligners, callers):
             if a in all_aligners:
                 pairs.append((a, snv))
     return pairs
+
+
+def valid_snv_alnr_ddup_tuples(all_aligners, callers, ddups):
+    """Return (aligner, deduper, caller) tuples for variant-output paths."""
+    tuples = []
+    for alnr, snv in valid_snv_alnr_pairs(all_aligners, callers):
+        if snv == "sentpg" and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:
+            tuples.append((alnr, PANGENOME_SENTPG_DEDUPER, snv))
+            continue
+        for ddup in ddups:
+            tuples.append((alnr, ddup, snv))
+    return tuples
 
 
 def get_somcall_normal_cram(wildcards):

@@ -85,6 +85,10 @@ def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     assert "bin/dayoa_sentieon_cli dnascope-longread" in rule
     assert "--tech ONT" in rule
     assert "--retain_tmpdir" in rule
+    assert 'dbsnp=config["supporting_files"]["files"]["popvcf"]["name"]' in rule
+    assert 'pop_vcf=config["sentdont"]["pop_vcf"]' in rule
+    assert '-d "{params.dbsnp}"' in rule
+    assert '--pop_vcf "{params.pop_vcf}"' in rule
     assert 'keep_tmp_dirs=config["sentdont"]["keep_tmp_dirs"]' in rule
     assert "Retaining sentdont TMPDIR because sentdont.keep_tmp_dirs=true" in rule
     assert "Preserving sentdont TMPDIR after failure" not in rule
@@ -96,6 +100,10 @@ def test_sentdont_outputs_snv_and_sv_but_marks_cnv_unsupported() -> None:
     for profile in ("local", "slurm"):
         cfg = _rule_config(profile)
         assert cfg["sentdont"]["keep_tmp_dirs"] is False
+        assert (
+            cfg["sentdont"]["pop_vcf"]
+            == "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+        )
 
 
 def test_sentdhiomr_fastq_ont_waits_for_sentmm2ont_cram() -> None:

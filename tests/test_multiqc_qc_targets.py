@@ -102,12 +102,14 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     assert '# include: "rules/picard.smk"' in snakefile
     assert 'include: "rules/qualimap.smk"' not in active_includes
     assert '# include: "rules/qualimap.smk"' in snakefile
-    assert 'include: "rules/gauchian.smk"' not in active_includes
-    assert '# include: "rules/gauchian.smk"' in snakefile
+    assert 'include: "rules/gauchian.smk"' in active_includes
+    assert "Historical alternate GBA integration" in snakefile
     assert 'include: "rules/parascopy.smk"' not in active_includes
     assert '# include: "rules/parascopy.smk"' in snakefile
-    assert 'include: "rules/smaca.smk"' not in active_includes
-    assert '# include: "rules/smaca.smk"' in snakefile
+    assert 'include: "rules/hapsma.smk"' in active_includes
+    assert 'include: "rules/sma_finder.smk"' in active_includes
+    assert 'include: "rules/smaca.smk"' in active_includes
+    assert 'include: "rules/smn12_orthogonal_calls.smk"' in active_includes
     assert 'include: "rules/smn_copynumbercaller.smk"' in active_includes
     assert 'include: "rules/genetocn.smk"' not in active_includes
     assert '# include: "rules/genetocn.smk"' in snakefile
@@ -277,7 +279,11 @@ def test_common_declares_runtime_gate_helpers_and_cram_qc_scope() -> None:
     assert "def qc_tool_enabled" in common
     assert "def qc_alignment_dedupers" in common
     assert "def qc_contamination_dedupers" in common
-    assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS))" in common
+    assert "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS)-GRAPH_ONLY_PANGENOME_ALIGNERS)" in common
+    assert "def smn_short_cram" in common
+    assert "def smn_long_cram" in common
+    assert "sentdhiomr.sr_dedup.cram" in common
+    assert "_sentdhiomr_lr_cram(wildcards)" in common
     assert "VEP_CHRMS = [" in common
     assert "_day_chrm_token_to_contig(chrm)" in common
     assert "def get_vepchrm" in common
@@ -743,6 +749,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "--cache_version {params.cache_version}" in vep
     assert "--cache {params.vep_cache}" not in vep
     assert "--fork {threads}" in vep
+    assert "rule=vep_chromosome" in vep
     assert "threads: config[\"vep\"][\"threads\"]" in vep
     assert 'mem_mb=config["vep"].get("mem_mb", 3000)' in vep
     assert vep.count("cluster_sample=ret_sample") >= 3
@@ -750,20 +757,24 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "bcftools concat -a -d all" in vep
     assert "does not match input chunk count" in vep
     assert "does not match input count" in vep
-    assert slurm_config["vep"]["threads"] == 16
-    assert slurm_config["vep"]["mem_mb"] == 64000
-    assert slurm_config["vep"]["partition"] == "i192,i128"
-    assert slurm_config["vep"]["concat_threads"] == 16
+    assert slurm_config["vep"]["threads"] == 8
+    assert slurm_config["vep"]["mem_mb"] == 128000
+    assert slurm_config["vep"]["partition"] == "i384nvme,i192nvme,i128nvme"
+    assert slurm_config["vep"]["concat_threads"] == 8
     assert slurm_config["vep"]["concat_mem_mb"] == 32000
-    assert slurm_config["vep"]["concat_partition"] == "i192,i128"
+    assert slurm_config["vep"]["concat_partition"] == "i384nvme,i192nvme,i128nvme"
     assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"
+    assert slurm_config["alignstats"]["mem_mb"] == 128000
+    assert slurm_config["alignstats"]["partition"] == "i384nvme,i192nvme,i128nvme"
+    assert slurm_config["mosdepth"]["mem_mb"] == 64000
+    assert slurm_config["mosdepth"]["partition"] == "i384nvme,i192nvme,i128nvme"
     assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
     assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
     assert "vep_annotation_mqc.tsv" in vep
     assert "summary_glob" in vep
-    assert "valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)" in vep
+    assert "valid_snv_alnr_ddup_tuples(" in vep
     assert '# include: "rules/snpeff.smk"' in snakefile
     assert 'include: "rules/snpeff.smk"' not in [
         line.strip() for line in snakefile.splitlines() if line.strip().startswith("include:")
@@ -795,6 +806,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "peddy_sample_qc",
         "vep_annotation",
         "htd_calls",
+        "smn12_orthogonal_calls",
         "expansionhunter",
     ):
         assert key in config["custom_data"]

@@ -12,12 +12,12 @@ import os
 
 def _variant_qc_parts(path):
     name = os.path.basename(str(path))
-    for alnr in ALL_ALIGNERS:
-        for ddup in DDUP:
-            for caller in snv_CALLERS:
-                marker = f".{alnr}.{ddup}.{caller}."
-                if marker in name:
-                    return name.split(marker, 1)[0], alnr, ddup, caller
+    for alnr, ddup, caller in valid_snv_alnr_ddup_tuples(
+        ALL_ALIGNERS, snv_CALLERS, DDUP
+    ):
+        marker = f".{alnr}.{ddup}.{caller}."
+        if marker in name:
+            return name.split(marker, 1)[0], alnr, ddup, caller
     raise ValueError(f"Could not parse variant QC sample identity from path: {path}")
 
 
@@ -61,8 +61,9 @@ rule bcftools_variant_stats_gather:
             MDIR
             + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv"
             for sample in SSAMPS
-            for ddup in DDUP
-            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv_caller in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ]
     output:
         MDIR + "other_reports/bcftools_variant_stats_mqc.tsv"
@@ -116,8 +117,9 @@ rule produce_bcfvcfstats:  # TARGET:  jusg genvcfstats
             MDIR
             + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/bcfstats/{sample}.{alnr}.{ddup}.{snv_caller}.bcfstats.tsv"
             for sample in SSAMPS
-            for ddup in DDUP
-            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv_caller in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ],
         MDIR + "other_reports/bcftools_variant_stats_mqc.tsv",
     log:

@@ -22,12 +22,12 @@ malloc_alt:
   ld_preload: '  '
 alignstats:
   threads: 96
-  partition: i384nvme,i192nvme
+  partition: i384nvme,i192nvme,i128nvme
   num_reads_in_mem: ' '
   env_yaml: ../envs/alignstats_v0.2.yaml
   glances: ' '
   ld_preload: '  '
-  mem_mb: 3000
+  mem_mb: 128000
 bcftools_vcfstat:
   threads: 16
 bcl2fq:
@@ -264,7 +264,7 @@ doppelmark:
   view_mem: 2G
   mbuffer_mem: 1G
   partition: i384nvme,i192nvme
-  mem_mb: 200000
+  mem_mb: 600000
   clip_padding: 800
   shard_size: 50000000
   min_bases: 20000
@@ -339,6 +339,53 @@ truvari_sv_benchmark:
           truth_tbi: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/sv/v5.0q/HG002/giabHCv5q/HG002_GRCh38_v5.0q_stvar.vcf.gz.tbi
           truth_bed: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/controls/giab/sv/v5.0q/HG002/giabHCv5q/HG002_GRCh38_v5.0q_stvar.benchmark.bed
 htd_callers: []
+
+smaca:
+  command: smaca
+  extra_args: ''
+  summary_filename: SMAca_results.tsv
+  threads: 128
+  mem_mb: 128000
+  partition: i192hugenvme,i192nvme,i384nvme
+
+sma_finder:
+  command: sma_finder
+  extra_args: ''
+  threads: 1
+  mem_mb: 8000
+  partition: i192
+
+gauchian:
+  threads: 1
+  mem_mb: 32000
+  partition: i192hugenvme,i192nvme,i384nvme
+
+cyrius:
+  threads: 128
+  mem_mb: 128000
+  partition: i192hugenvme,i192nvme,i384nvme
+
+smn12:
+  threads: 128
+  mem_mb: 128000
+  partition: i192hugenvme,i192nvme,i384nvme
+
+hapsma:
+  dev_exploratory: true
+  nextflow_command: ''
+  workflow_path: ''
+  config_path: ''
+  email: ''
+  ploidy: ''
+  start: bam_single_remap
+  single_bam_type: path
+  smn_region: ''
+  min_smn_region_mean_coverage: 8
+  clair3model: ''
+  extra_args: ''
+  threads: 128
+  mem_mb: 192000
+  partition: i192hugenvme,i192nvme,i384nvme
 verifybamid2_panels: []
 verifybamid2_panel_svd_prefixes: {}
 expansionhunter:
@@ -485,8 +532,8 @@ mosdepth:
   threads: 16
   env_yaml: ../envs/mosdepth_v0.1.yaml
   depth_bins: 0,1,3,5,10,15,20,30,40,50,60
-  partition: i192,i128
-  mem_mb: 3000
+  partition: i384nvme,i192nvme,i128nvme
+  mem_mb: 64000
 quickmer2:
   threads: 32
   mem_mb: 128000
@@ -791,8 +838,8 @@ sentdhiomr:
   mem_mb_snv_light: 8000
   sr_markdup_threads: 64
   sr_markdup_mem_mb: 64000
-  segdup_threads: 8
-  segdup_mem_mb: 32000
+  segdup_threads: 192
+  segdup_mem_mb: 300000
   max_mem: 140G
   igz: '  igzip -cd -T 32 '
   keep_sr_alignment: false
@@ -1347,12 +1394,12 @@ seqfu:
   partition: i192
   mem_mb: 3000
 vep:
-  threads: 16
-  mem_mb: 64000
-  partition: i192,i128
-  concat_threads: 16
+  threads: 8
+  mem_mb: 128000
+  partition: i384nvme,i192nvme,i128nvme
+  concat_threads: 8
   concat_mem_mb: 32000
-  concat_partition: i192,i128
+  concat_partition: i384nvme,i192nvme,i128nvme
   hg38_vep_chrms: 1-25
   hg38_broad_vep_chrms: 1-25
   b37_vep_chrms: 1-25

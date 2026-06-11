@@ -31,7 +31,7 @@ localrules:
 
 rule produce_coverage_evenness_two:  # TARGET: Produce cov eveness TWO.
     input:
-            metrics=expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/{sample}.{alnr}.{ddup}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=ALL_ALIGNERS, ddup=DDUP)
+            metrics=expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/coverage_evenness_two/{sample}.{alnr}.{ddup}.coverage_evenness_two.tsv", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=DDUP)
     container: None
     threads: 8
     output:

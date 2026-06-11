@@ -7,7 +7,7 @@ rule multiqc_cov_aln:  # TARGET : Run Alignment and Generate Alignment and Cover
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
     output:
@@ -40,28 +40,28 @@ rule cov_aln_qc:
     input:
         expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
                sample=SSAMPS,
-               alnr=ALL_ALIGNERS,
+               alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
@@ -69,13 +69,13 @@ rule cov_aln_qc:
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
             sample=SSAMPS,
-            alnr=ALL_ALIGNERS,
+            alnr=QC_CRAM_ALIGNERS,
             ddup=DDUP,
         ),
 	#        expand(

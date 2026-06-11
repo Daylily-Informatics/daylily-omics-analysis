@@ -1,8 +1,8 @@
 channels:
   - conda-forge
   - bioconda
-  - defaults
 dependencies:
-  - python >=3.8
+  - python >=3.10
+  - openjdk >=17
+  - nextflow
   - samtools
-  - smaca >=1.2.1

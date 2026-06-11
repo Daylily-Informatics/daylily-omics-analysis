@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import csv
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -18,18 +21,53 @@ def _yaml(path: str) -> dict:
     return yaml.safe_load(_read(path))
 
 
+def _read_tsv(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
+
+
 def test_htd_callers_default_empty_in_profiles() -> None:
     for path in (
         "config/day_profiles/local/templates/rule_config.yaml",
         "config/day_profiles/slurm/templates/rule_config.yaml",
     ):
-        assert _yaml(path)["htd_callers"] == []
+        config = _yaml(path)
+        assert config["htd_callers"] == []
+        assert "enabled" not in config["hapsma"]
+
+
+def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
+    config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
+
+    assert config["gauchian"] == {
+        "threads": 1,
+        "mem_mb": 32000,
+        "partition": "i192hugenvme,i192nvme,i384nvme",
+    }
+    for caller in ("cyrius", "smn12", "smaca"):
+        assert config[caller]["threads"] == 128
+        assert config[caller]["mem_mb"] == 128000
+        assert config[caller]["partition"] == "i192hugenvme,i192nvme,i384nvme"
+    assert config["sma_finder"]["threads"] == 1
+    assert config["hapsma"]["threads"] == 128
+    assert config["hapsma"]["mem_mb"] == 192000
+    assert config["sentdhiomr"]["segdup_threads"] == 192
+    assert config["sentdhiomr"]["segdup_mem_mb"] == 300000
+    assert config["sentdhiomr"]["segdup_lr_model"].endswith("/DNAscopeONT2.3.bundle")
 
 
 def test_common_declares_supported_htd_callers_and_validation() -> None:
     common = _read("workflow/rules/common.smk")
 
-    for caller in ("gauchian", "cyrius", "smn12", "parascopy", "smaca"):
+    for caller in (
+        "gauchian",
+        "cyrius",
+        "smn12",
+        "parascopy",
+        "smaca",
+        "sma_finder",
+        "hapsma",
+    ):
         assert f'"{caller}"' in common
     assert '"genetocn"' not in common[
         common.index("SUPPORTED_HTD_CALLERS") : common.index("def _supporting_file_name")
@@ -40,7 +78,7 @@ def test_common_declares_supported_htd_callers_and_validation() -> None:
     assert "produce_htd_calls requires a non-empty" in common
 
 
-def test_cyrius_and_smn12_included_and_stargazer_intentionally_excluded() -> None:
+def test_active_and_disabled_htd_rule_includes_are_explicit() -> None:
     snakefile = _read("workflow/Snakefile")
     active_includes = [
         line.strip()
@@ -50,17 +88,17 @@ def test_cyrius_and_smn12_included_and_stargazer_intentionally_excluded() -> Non
 
     assert 'include: "rules/cyp2d6_cyrius.smk"' in snakefile
     assert 'include: "rules/htd_calls.smk"' in snakefile
-    assert 'include: "rules/gauchian.smk"' not in active_includes
-    assert '# include: "rules/gauchian.smk"' in snakefile
-    assert "Gauchian is disabled until its runtime environment path" in snakefile
+    assert 'include: "rules/gauchian.smk"' in active_includes
+    assert "Historical alternate GBA integration" in snakefile
     assert 'include: "rules/parascopy.smk"' not in active_includes
     assert '# include: "rules/parascopy.smk"' in snakefile
     assert "Parascopy is disabled until locus configuration assets" in snakefile
-    assert 'include: "rules/smaca.smk"' not in active_includes
-    assert '# include: "rules/smaca.smk"' in snakefile
-    assert "SMACA is disabled until its runtime environment path" in snakefile
+    assert 'include: "rules/smaca.smk"' in active_includes
+    assert 'include: "rules/sma_finder.smk"' in active_includes
+    assert 'include: "rules/hapsma.smk"' in active_includes
+    assert 'include: "rules/smn12_orthogonal_calls.smk"' in active_includes
     assert 'include: "rules/smn_copynumbercaller.smk"' in active_includes
-    assert "SMN12 is enabled for pinned SMNCopyNumberCaller execution" in snakefile
+    assert "SMN12 is enabled for pinned SMNCopyNumberCaller execution and the orthogonal" in snakefile
     assert 'include: "rules/genetocn.smk"' not in active_includes
     assert '# include: "rules/genetocn.smk"' in snakefile
     assert "GeneToCN is disabled until its upstream package/install surface" in snakefile
@@ -96,6 +134,30 @@ def test_cyrius_rule_uses_documented_interface_and_outputs() -> None:
     assert "rule produce_cyp2d6" not in cyrius
     assert "htd/cyp2d6" not in cyrius
     assert '"logs/cyrius.done"' in cyrius
+    assert 'threads: config["cyrius"]["threads"]' in cyrius
+    assert 'mem_mb=config["cyrius"]["mem_mb"]' in cyrius
+
+
+def test_gauchian_rule_is_active_and_single_thread_explicit() -> None:
+    gauchian = _read("workflow/rules/gauchian.smk")
+
+    for expected in (
+        "rule gauchian:",
+        "rule produce_gauchian:",
+        "htd/gauchian",
+        ".gauchian.done",
+        '"../envs/gba_v0.1.yaml"',
+        'threads: config["gauchian"]["threads"]',
+        'mem_mb=config["gauchian"]["mem_mb"]',
+        "gauchian \\",
+        "-m {output.manifest}",
+        "--reference {params.huref}",
+        "-g {params.genome}",
+        "-o \"${{out_dir}}\"",
+        "-p {params.prefix}",
+    ):
+        assert expected in gauchian
+    assert "--threads" not in gauchian
 
 
 def test_cyrius_vendored_resources_present() -> None:
@@ -125,20 +187,27 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "other_reports/htd_calls_mqc.tsv",
         "workflow/scripts/htd_calls_mqc.py",
         '"logs/htd_calls.done"',
+        "gauchian.done",
         "cyrius.tsv",
         "cyrius.json",
         "smn12.summary.json",
         "smn12.done",
+        "smaca.summary.tsv",
+        "smaca.done",
+        "sma_finder.summary.tsv",
+        "sma_finder.summary.json",
+        "sma_finder.done",
+        "hapsma.summary.tsv",
+        "hapsma.done",
+        "smn_short_read_aligners()",
+        "smn_long_read_aligners()",
     ):
         assert expected in htd
-    assert "gauchian.done" not in htd
     assert "parascopy.done" not in htd
-    assert "smaca.summary.tsv" not in htd
-    assert "smaca.done" not in htd
     assert "genetocn.done" not in htd
 
 
-def test_htd_mqc_script_schema_and_cyrius_fields() -> None:
+def test_htd_mqc_script_schema_and_smn_capability_fields() -> None:
     script = _read("workflow/scripts/htd_calls_mqc.py")
 
     for expected in (
@@ -146,6 +215,15 @@ def test_htd_mqc_script_schema_and_cyrius_fields() -> None:
         "CYP2D6",
         "Genotype",
         "Filter",
+        "caller_class",
+        "evidence_source",
+        "smn1_copy_number",
+        "smn2_copy_number",
+        "affected_status",
+        "carrier_status",
+        "long_read_haplotype_dev",
+        "affected_status_only",
+        "not_reported",
         "json_path",
         "tsv_path",
         "done_path",
@@ -160,22 +238,37 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     smn12 = _read("workflow/rules/smn_copynumbercaller.smk")
     parascopy = _read("workflow/rules/parascopy.smk")
     smaca = _read("workflow/rules/smaca.smk")
+    sma_finder = _read("workflow/rules/sma_finder.smk")
+    hapsma = _read("workflow/rules/hapsma.smk")
     genetocn = _read("workflow/rules/genetocn.smk")
     htd_calls = _read("workflow/rules/htd_calls.smk")
 
-    for text in (gauchian, smn12, parascopy, smaca, genetocn):
+    for text in (gauchian, parascopy, genetocn):
         assert "QC_CRAM_ALIGNERS" in text
+    for text in (smn12, smaca, sma_finder):
+        assert "smn_short_cram" in text
+        assert "smn_short_crai" in text
+        assert "smn_short_read_aligners()" in text
+    assert "smn_long_cram" in hapsma
+    assert "smn_long_crai" in hapsma
+    assert "smn_long_read_aligners()" in hapsma
     assert "def genetocn_cram" in genetocn
     assert "def genetocn_inputs" not in genetocn
     assert "cram=genetocn_cram" in genetocn
-    assert "htd/gauchian" not in htd_calls
-    assert "gauchian.done" not in htd_calls
+    assert "htd/gauchian" in htd_calls
+    assert "gauchian.done" in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done" in parascopy
     assert "htd/parascopy" not in htd_calls
     assert "parascopy.done" not in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done" in smaca
-    assert "htd/smaca" not in htd_calls
-    assert "smaca.done" not in htd_calls
+    assert "htd/smaca" in htd_calls
+    assert "smaca.done" in htd_calls
+    assert "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.done" in sma_finder
+    assert "htd/sma_finder" in htd_calls
+    assert "sma_finder.done" in htd_calls
+    assert "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done" in hapsma
+    assert "htd/hapsma" in htd_calls
+    assert "hapsma.done" in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json" in smn12
     assert "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done" in smn12
     assert "htd/smn12" in htd_calls
@@ -186,12 +279,23 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
 
 
 def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
+    common = _read("workflow/rules/common.smk")
     smn12 = _read("workflow/rules/smn_copynumbercaller.smk")
 
     for expected in (
-        "def smn12_cram",
-        "ALIGNERS_DHIOMR",
+        "def smn_short_cram",
+        "_smn_hiomr_aligners()",
         "sentdhiomr.sr_dedup.cram",
+        "SMN short-read callers must not consume long-read-only or graph-only",
+        "def smn_long_cram",
+        "_sentdhiomr_lr_cram(wildcards)",
+        "SMN long-read callers require ONT evidence",
+    ):
+        assert expected in common
+    for expected in (
+        "def smn12_cram",
+        "return smn_short_cram(wildcards)",
+        "return smn_short_crai(wildcards)",
         "done=MDIR",
         "rm -f {output.summary} {output.done}",
         "smn_caller.py",
@@ -214,6 +318,49 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
     assert 'echo "{}" > {output.summary}' not in smn12
 
 
+def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
+    smaca = _read("workflow/rules/smaca.smk")
+    sma_finder = _read("workflow/rules/sma_finder.smk")
+    hapsma = _read("workflow/rules/hapsma.smk")
+
+    for expected in (
+        "rule smaca:",
+        "cram=smn_short_cram",
+        "crai=smn_short_crai",
+        "--reference",
+        "--ncpus",
+        "SMAca command was not found on PATH",
+        "SMAca summary has no header",
+        '"../envs/smaca_v0.1.yaml"',
+    ):
+        assert expected in smaca
+    for expected in (
+        "rule sma_finder:",
+        "cram=smn_short_cram",
+        "crai=smn_short_crai",
+        "--hg38-reference-fasta",
+        "affected_status_only",
+        "sma-finder command was not found on PATH",
+        '"../envs/sma_finder_v0.1.yaml"',
+    ):
+        assert expected in sma_finder
+    for expected in (
+        "rule hapsma:",
+        "cram=smn_long_cram",
+        "crai=smn_long_crai",
+        "HapSMA is dev_exploratory",
+        "requires config.hapsma.",
+        "samtools depth -r",
+        "HapSMA coverage gate failed",
+        "nextflow",
+        "long_read_haplotype",
+        "dev_exploratory",
+        '"../envs/hapsma_v0.1.yaml"',
+    ):
+        assert expected in hapsma
+    assert "hapsma.enabled" not in hapsma
+
+
 def test_smn12_resource_bundle_contains_required_files() -> None:
     data_dir = REPO_ROOT / "workflow" / "resources" / "smn12"
 
@@ -230,5 +377,109 @@ def test_final_multiqc_and_multiqc_config_include_htd_when_selected() -> None:
 
     assert "if HTD_CALLERS:" in final
     assert "htd_calls_mqc.tsv" in final
+    assert "produce_smn12_orthogonal_calls" in final
+    assert "smn12_orthogonal_calls_mqc.tsv" in final
     assert "htd_calls" in multiqc["custom_data"]
     assert multiqc["sp"]["htd_calls"]["fn"] == "other_reports/htd_calls_mqc.tsv"
+    assert "smn12_orthogonal_calls" in multiqc["custom_data"]
+    assert (
+        multiqc["sp"]["smn12_orthogonal_calls"]["fn"]
+        == "other_reports/smn12_orthogonal_calls_mqc.tsv"
+    )
+
+
+def test_smn12_orthogonal_target_includes_caller_evidence_sources() -> None:
+    rule = _read("workflow/rules/smn12_orthogonal_calls.smk")
+    script = _read("workflow/scripts/smn12_orthogonal_calls_mqc.py")
+
+    for expected in (
+        "rule produce_smn12_orthogonal_calls:",
+        "smn12.summary.json",
+        "smaca.summary.tsv",
+        "sma_finder.summary.tsv",
+        "hapsma.summary.tsv",
+        "sentdhiomr.segdup.SMN1.done",
+        "requires Sentieon HiOMR segdup_genes",
+        "other_reports/smn12_orthogonal_calls_mqc.tsv",
+    ):
+        assert expected in rule
+    assert "hapsma.enabled" not in rule
+    for expected in (
+        "sentieon_segdup_smn1",
+        "hybrid_segdup",
+        "_smaca_row",
+        "_extract_copy_number",
+        "discordance_flag",
+        "no_discordance_detected",
+        "affected_status_only",
+        "long_read_haplotype_dev",
+    ):
+        assert expected in script
+
+
+def test_htd_mqc_extracts_smaca_copy_numbers(tmp_path: Path) -> None:
+    summary = (
+        tmp_path
+        / "S1/align/sent/dmd/htd/smaca/S1.sent.dmd.smaca.summary.tsv"
+    )
+    done = tmp_path / "S1/align/sent/dmd/htd/smaca/S1.sent.dmd.smaca.done"
+    output = tmp_path / "other_reports/htd_calls_mqc.tsv"
+    summary.parent.mkdir(parents=True)
+    summary.write_text(
+        "sample\tSMN1_copy_number\tSMN2_copy_number\nS1\t2\t1\n",
+        encoding="utf-8",
+    )
+    done.write_text("", encoding="utf-8")
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow/scripts/htd_calls_mqc.py"),
+            "--output",
+            str(output),
+            str(summary),
+            str(done),
+        ],
+        check=True,
+    )
+
+    rows = _read_tsv(output)
+    assert rows[0]["caller"] == "smaca"
+    assert rows[0]["smn1_copy_number"] == "2"
+    assert rows[0]["smn2_copy_number"] == "1"
+    assert rows[0]["status"] == "complete"
+
+
+def test_smn12_orthogonal_mqc_extracts_smaca_copy_numbers_from_gene_rows(
+    tmp_path: Path,
+) -> None:
+    summary = (
+        tmp_path
+        / "S1/align/sent/dmd/htd/smaca/S1.sent.dmd.smaca.summary.tsv"
+    )
+    done = tmp_path / "S1/align/sent/dmd/htd/smaca/S1.sent.dmd.smaca.done"
+    output = tmp_path / "other_reports/smn12_orthogonal_calls_mqc.tsv"
+    summary.parent.mkdir(parents=True)
+    summary.write_text(
+        "gene\tcopy_number\nSMN1\t2\nSMN2\t1\n",
+        encoding="utf-8",
+    )
+    done.write_text("", encoding="utf-8")
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow/scripts/smn12_orthogonal_calls_mqc.py"),
+            "--output",
+            str(output),
+            str(summary),
+            str(done),
+        ],
+        check=True,
+    )
+
+    rows = _read_tsv(output)
+    assert rows[0]["caller"] == "smaca"
+    assert rows[0]["smn1_copy_number"] == "2"
+    assert rows[0]["smn2_copy_number"] == "1"
+    assert rows[0]["discordance_flag"] == "no_discordance_detected"

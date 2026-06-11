@@ -43,6 +43,6 @@ localrules: produce_picard_cram,
 
 rule produce_picard_cram:  # TARGET: produce picard QC data
     input:
-        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done", sample=SSAMPS,alnr=ALL_ALIGNERS, ddup=DDUP)
+        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/picard/picard/{sample}.{alnr}.{ddup}.done", sample=SSAMPS,alnr=QC_CRAM_ALIGNERS, ddup=DDUP)
     output:
         touch(MDIR + "other_reports/picard_summary_gather.done"),

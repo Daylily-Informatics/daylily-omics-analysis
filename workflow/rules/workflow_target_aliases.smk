@@ -69,9 +69,10 @@ def _workflow_target_alias_inputs(kind, target):
 
 
 def _workflow_na_dedup_aligners():
-    aligners = set(ALIGNERS) | set(CRAM_ALIGNERS) | set(BAM_ALIGNERS)
+    aligners = set(QC_CRAM_ALIGNERS) | set(BAM_ALIGNERS)
     for alnr, _snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS):
-        aligners.add(alnr)
+        if alnr not in GRAPH_ONLY_PANGENOME_ALIGNERS:
+            aligners.add(alnr)
     return sorted(aligners)
 
 

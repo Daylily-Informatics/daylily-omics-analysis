@@ -40,6 +40,21 @@ parascopy:
   targets: null       # Optional BED/TSV of targets supplied to Parascopy.
   extra_args: ""
 
+gauchian:
+  threads: 1
+  mem_mb: 32000
+  partition: "i192"
+
+cyrius:
+  threads: 8
+  mem_mb: 16000
+  partition: "i192"
+
+smn12:
+  threads: 8
+  mem_mb: 16000
+  partition: "i192"
+
 
 logs:
     operational:
@@ -52,11 +67,14 @@ logs:
 
 
 smaca:
-  command: "SMAca.py"
+  command: "smaca"
   controls_manifest: ""
   panel_bed: ""
   extra_args: ""
   summary_filename: "SMAca_results.tsv"
+  threads: 8
+  mem_mb: 16000
+  partition: "i192"
   flags:
     case: "--case"
     crai: "--crai"
@@ -66,6 +84,30 @@ smaca:
     output: "--output"
     sample: "--sample"
     threads: "--threads"
+
+sma_finder:
+  command: "sma_finder"
+  extra_args: ""
+  threads: 1
+  mem_mb: 8000
+  partition: "i192"
+
+hapsma:
+  dev_exploratory: true
+  nextflow_command: ""
+  workflow_path: ""
+  config_path: ""
+  email: ""
+  ploidy: ""
+  start: "bam_single_remap"
+  single_bam_type: "path"
+  smn_region: ""
+  min_smn_region_mean_coverage: 8
+  clair3model: ""
+  extra_args: ""
+  threads: 10
+  mem_mb: 48000
+  partition: "i192"
 
 
 # example test data

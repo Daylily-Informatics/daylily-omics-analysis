@@ -633,8 +633,28 @@
           "render_as": "config_list",
           "choices": [
             {
+              "value": "gauchian",
+              "label": "Gauchian GBA"
+            },
+            {
               "value": "cyrius",
               "label": "Cyrius"
+            },
+            {
+              "value": "smn12",
+              "label": "SMNCopyNumberCaller SMN1/SMN2"
+            },
+            {
+              "value": "smaca",
+              "label": "SMAca SMN1/SMN2"
+            },
+            {
+              "value": "sma_finder",
+              "label": "Broad sma-finder"
+            },
+            {
+              "value": "hapsma",
+              "label": "HapSMA dev exploratory"
             }
           ]
         }

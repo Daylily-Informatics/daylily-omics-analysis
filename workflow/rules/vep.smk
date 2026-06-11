@@ -138,6 +138,11 @@ rule vep_chromosome:
         """
         set -euo pipefail
         mkdir -p $(dirname {output.annovcf}) $(dirname {log})
+        date --iso-8601=seconds > {log}
+        echo "rule=vep_chromosome sample={wildcards.sample} alnr={wildcards.alnr} ddup={wildcards.ddup} snv={wildcards.snv} contig={params.contig} threads={threads} mem_mb={resources.mem_mb}" >> {log}
+        echo "input={input.chunk_vcfgz}" >> {log}
+        echo "output={output.annovcf}" >> {log}
+        echo "vep_cache={params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build}" >> {log}
         test -d {params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build} || (
             echo "ERROR: VEP cache not found: {params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build}" >&2
             exit 2
@@ -293,8 +298,9 @@ rule vep_annotation_gather:
             MDIR
             + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.vcf.gz.tbi"
             for sample in SSAMPS
-            for ddup in DDUP
-            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ],
     output:
         MDIR + "other_reports/vep_annotation_mqc.tsv",
@@ -349,8 +355,9 @@ rule produce_vep:  # TARGET: just produce vep results
             MDIR
             + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/{sample}.{alnr}.{ddup}.{snv}.vep.vcf.gz.tbi"
             for sample in SSAMPS
-            for ddup in DDUP
-            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ],
         MDIR + "other_reports/vep_annotation_mqc.tsv",
     output:

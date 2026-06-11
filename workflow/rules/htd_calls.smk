@@ -6,7 +6,20 @@ def htd_call_outputs(*, require_non_empty=False):
     outputs = []
     alnrs = QC_CRAM_ALIGNERS
     ddups = DDUP
+    smn_short_alnrs = smn_short_read_aligners()
+    smn_long_alnrs = smn_long_read_aligners()
 
+    if "gauchian" in callers:
+        outputs.extend(
+            expand(
+                [
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/{sample}.{alnr}.{ddup}.gauchian.done",
+                ],
+                sample=SSAMPS,
+                alnr=alnrs,
+                ddup=ddups,
+            )
+        )
     if "cyrius" in callers:
         outputs.extend(
             expand(
@@ -28,7 +41,44 @@ def htd_call_outputs(*, require_non_empty=False):
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
                 ],
                 sample=SSAMPS,
-                alnr=alnrs,
+                alnr=smn_short_alnrs,
+                ddup=ddups,
+            )
+        )
+    if "smaca" in callers:
+        outputs.extend(
+            expand(
+                [
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.summary.tsv",
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",
+                ],
+                sample=SSAMPS,
+                alnr=smn_short_alnrs,
+                ddup=ddups,
+            )
+        )
+    if "sma_finder" in callers:
+        outputs.extend(
+            expand(
+                [
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.tsv",
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.json",
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.done",
+                ],
+                sample=SSAMPS,
+                alnr=smn_short_alnrs,
+                ddup=ddups,
+            )
+        )
+    if "hapsma" in callers:
+        outputs.extend(
+            expand(
+                [
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.summary.tsv",
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done",
+                ],
+                sample=SSAMPS,
+                alnr=smn_long_alnrs,
                 ddup=ddups,
             )
         )

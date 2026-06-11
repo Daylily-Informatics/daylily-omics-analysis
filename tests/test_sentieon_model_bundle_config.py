@@ -59,6 +59,7 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
 
         assert cfg["sentdont"]["dna_scope_snv_model"] == DNASCOPE_ONT
         assert cfg["sentdont"]["dna_scope_apply_model"] == DNASCOPE_ONT
+        assert cfg["sentdont"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
         assert cfg["sent_aln_sort_snv"]["model"] == PANGENOME_ILMN
         assert cfg["sentieon_pangenome_sr"]["model"] == PANGENOME_ILMN
         assert cfg["sentieon_pangenome_ug"]["model"] == PANGENOME_ULTIMA

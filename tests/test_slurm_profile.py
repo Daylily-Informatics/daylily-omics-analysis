@@ -185,6 +185,7 @@ def test_align_and_dedup_config_use_nvme_partitions_and_scratch_tmp() -> None:
         assert expected <= parts, f"{section}.partition={value}"
 
     assert rule_config["sent_dedup"]["tmp_base"] == "/scratch"
+    assert rule_config["doppelmark"]["mem_mb"] >= 600000
 
 
 def test_align_and_dedup_rule_shells_do_not_use_dev_shm_tmpdirs() -> None:

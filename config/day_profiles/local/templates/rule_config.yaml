@@ -394,6 +394,53 @@ truvari_sv_benchmark:
 
 htd_callers: []
 
+smaca:
+    command: "smaca"
+    extra_args: ""
+    summary_filename: "SMAca_results.tsv"
+    threads: 2
+    mem_mb: 8000
+    partition: "i8"
+
+sma_finder:
+    command: "sma_finder"
+    extra_args: ""
+    threads: 1
+    mem_mb: 4000
+    partition: "i8"
+
+gauchian:
+    threads: 1
+    mem_mb: 8000
+    partition: "i8"
+
+cyrius:
+    threads: 2
+    mem_mb: 8000
+    partition: "i8"
+
+smn12:
+    threads: 2
+    mem_mb: 8000
+    partition: "i8"
+
+hapsma:
+    dev_exploratory: true
+    nextflow_command: ""
+    workflow_path: ""
+    config_path: ""
+    email: ""
+    ploidy: ""
+    start: "bam_single_remap"
+    single_bam_type: "path"
+    smn_region: ""
+    min_smn_region_mean_coverage: 8
+    clair3model: ""
+    extra_args: ""
+    threads: 2
+    mem_mb: 16000
+    partition: "i8"
+
 verifybamid2_panels: []
 verifybamid2_panel_svd_prefixes: {}
 
@@ -1016,7 +1063,7 @@ sentdont:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.3.bundle"
     dna_scope_apply_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles/DNAscopeONT2.3.bundle"
     mem_mb: 200000
-    pop_vcf: ""
+    pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     keep_tmp_dirs: false
 
 sentdontr:

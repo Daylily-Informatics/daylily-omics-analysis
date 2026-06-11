@@ -142,19 +142,20 @@ def all_concordance_mqc_outputs():
     """
     paths = []
     for sample in SSAMPS:
-        for ddup in DDUP:
-            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS):
-                wildcards = type(
-                    "ConcordanceWildcards",
-                    (),
-                    {"sample": sample, "alnr": alnr, "ddup": ddup, "snv": snv},
-                )()
-                for cmpfootprint in get_concordance_footprints(wildcards):
-                    paths.append(
-                        MDIR
-                        + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/"
-                        + f"_{cmpfootprint}/snv_{sample}_{cmpfootprint}_concordance.mqc.tsv"
-                    )
+        for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
+            ALL_ALIGNERS, snv_CALLERS, DDUP
+        ):
+            wildcards = type(
+                "ConcordanceWildcards",
+                (),
+                {"sample": sample, "alnr": alnr, "ddup": ddup, "snv": snv},
+            )()
+            for cmpfootprint in get_concordance_footprints(wildcards):
+                paths.append(
+                    MDIR
+                    + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/"
+                    + f"_{cmpfootprint}/snv_{sample}_{cmpfootprint}_concordance.mqc.tsv"
+                )
     return sorted(paths)
 
 
@@ -362,8 +363,9 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         dones=[
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done"
             for sample in SSAMPS
-            for ddup in DDUP
-            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ],
         mqcs=all_concordance_mqc_outputs(),
     priority: 48

@@ -18,9 +18,14 @@ rule gauchian:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gauchian.benchmark.tsv",
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/gauchian/logs/gauchian.log",
-    threads: config["go_left"]["threads"]
+    threads: config["gauchian"]["threads"]
+    resources:
+        partition=config["gauchian"]["partition"],
+        threads=config["gauchian"]["threads"],
+        vcpu=config["gauchian"]["threads"],
+        mem_mb=config["gauchian"]["mem_mb"],
     conda:
-         "workflow/envs/gba_v0.1.yaml"
+        "../envs/gba_v0.1.yaml"
     shell:
         """
         set -euo pipefail
@@ -57,7 +62,7 @@ MANIFEST
             -g {params.genome} \
             -o "${{out_dir}}" \
             -p {params.prefix} \
-            &> {log}
+            >> {log} 2>&1
 
         touch {output.done}
         """

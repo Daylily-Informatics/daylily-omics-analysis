@@ -90,6 +90,41 @@ def test_render_workflow_command_normalizes_and_renders_kitchensink() -> None:
     )
 
 
+def test_workflow_catalog_exposes_smn12_orthogonal_htd_choices() -> None:
+    catalog = load_workflow_catalog()
+    kitchensink = next(
+        workflow
+        for workflow in catalog["workflows"]
+        if workflow["workflow_id"] == "germline_wgs_kitchensink"
+    )
+    htd_option = next(
+        option for option in kitchensink["options"] if option["option_id"] == "htd_callers"
+    )
+
+    assert htd_option["default"] == ["cyrius"]
+    assert [choice["value"] for choice in htd_option["choices"]] == [
+        "gauchian",
+        "cyrius",
+        "smn12",
+        "smaca",
+        "sma_finder",
+        "hapsma",
+    ]
+
+    preview = render_workflow_command(
+        workflow_id="germline_wgs_kitchensink",
+        genome_build="hg38",
+        execution_profile="slurm",
+        options={
+            "htd_callers": ["gauchian", "cyrius", "smn12", "smaca", "sma_finder", "hapsma"],
+        },
+        input_context={"provided_inputs": ["workset_manifest"], "sample_count": 1},
+    )
+
+    assert preview["valid"] is True
+    assert "htd_callers=['gauchian','cyrius','smn12','smaca','sma_finder','hapsma']" in preview["argv"]
+
+
 def test_render_workflow_command_rejects_missing_required_input() -> None:
     preview = render_workflow_command(
         workflow_id="germline_wgs_snv",

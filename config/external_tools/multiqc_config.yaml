@@ -104,6 +104,7 @@ module_order:
   - vep
   - vep_annotation
   - htd_calls
+  - smn12_orthogonal_calls
   - giab_concordance
   - norm_cov_evenness_combo
   - rules_benchmark_data
@@ -214,6 +215,8 @@ report_section_order:
     order: 4400
   htd_calls:
     order: 4500
+  smn12_orthogonal_calls:
+    order: 4510
   rules_benchmark_data:
     order: 9000
   ultima_upload_status:
@@ -711,6 +714,16 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'htd_calls'
+  smn12_orthogonal_calls:
+    id: 'smn12_orthogonal_calls'
+    section_name: 'SMN12 Orthogonal Caller Outputs'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
+    description: 'SMN1/SMN2 evidence from SMNCopyNumberCaller, SMAca, sma-finder, HapSMA, and Sentieon HiOMR segdup'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'smn12_orthogonal_calls'
   alignstats_gs:
     id: 'alignstats_gs'
     section_name: 'alignstats_gs'
@@ -822,6 +835,8 @@ sp:
     fn: "other_reports/vep_annotation_mqc.tsv"
   htd_calls:
     fn: "other_reports/htd_calls_mqc.tsv"
+  smn12_orthogonal_calls:
+    fn: "other_reports/smn12_orthogonal_calls_mqc.tsv"
   alignstats_gs:
     fn: "other_reports/alignstats_gs_mqc.tsv"
 

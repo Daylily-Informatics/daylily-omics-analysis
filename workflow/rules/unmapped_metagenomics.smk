@@ -358,7 +358,7 @@ def unmapped_metagenomics_alignment_index(wildcards):
 
 
 def unmapped_metagenomics_stage_mqcs(wildcards):
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
@@ -382,7 +382,7 @@ def unmapped_metagenomics_stage_mqcs(wildcards):
 
 
 def unmapped_metagenomics_kraken_reports(wildcards):
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners or not dedupers:
         return []
@@ -398,7 +398,7 @@ def unmapped_metagenomics_kraken_reports(wildcards):
 
 
 def unmapped_metagenomics_ganon2_stage_mqcs(wildcards):
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
@@ -422,7 +422,7 @@ def unmapped_metagenomics_ganon2_stage_mqcs(wildcards):
 
 
 def unmapped_metagenomics_ganon2_reports(wildcards):
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners or not dedupers:
         return []
@@ -438,7 +438,7 @@ def unmapped_metagenomics_ganon2_reports(wildcards):
 
 
 def unmapped_metagenomics_sourmash_stage_mqcs(wildcards):
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners:
         raise WorkflowError(
@@ -462,7 +462,7 @@ def unmapped_metagenomics_sourmash_stage_mqcs(wildcards):
 
 
 def unmapped_metagenomics_sourmash_gather_csvs(wildcards):
-    aligners = sorted(ALL_ALIGNERS)
+    aligners = QC_CRAM_ALIGNERS
     dedupers = qc_contamination_dedupers()
     if not aligners or not dedupers:
         return []
@@ -508,7 +508,7 @@ rule unmapped_metagenomics_kraken2_quick:
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
         + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_mqc.tsv",
     wildcard_constraints:
-        alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
+        alnr="|".join(QC_CRAM_ALIGNERS) if QC_CRAM_ALIGNERS else r"(?!x)x",
         ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
         read_set="|".join(UNMAPPED_METAGENOMICS_READ_SETS),
     threads: unmapped_metagenomics_threads
@@ -631,7 +631,7 @@ rule unmapped_metagenomics_ganon2_quick:
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
         + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_mqc.tsv",
     wildcard_constraints:
-        alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
+        alnr="|".join(QC_CRAM_ALIGNERS) if QC_CRAM_ALIGNERS else r"(?!x)x",
         ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
         read_set="|".join(UNMAPPED_METAGENOMICS_READ_SETS),
     threads: unmapped_metagenomics_ganon2_threads
@@ -759,7 +759,7 @@ rule unmapped_metagenomics_sourmash_gather:
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
         + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_mqc.tsv",
     wildcard_constraints:
-        alnr="|".join(ALL_ALIGNERS) if ALL_ALIGNERS else r"(?!x)x",
+        alnr="|".join(QC_CRAM_ALIGNERS) if QC_CRAM_ALIGNERS else r"(?!x)x",
         ddup="|".join(qc_contamination_dedupers()) if qc_contamination_dedupers() else r"(?!x)x",
         read_set="|".join(UNMAPPED_METAGENOMICS_READ_SETS),
     threads: unmapped_metagenomics_sourmash_threads

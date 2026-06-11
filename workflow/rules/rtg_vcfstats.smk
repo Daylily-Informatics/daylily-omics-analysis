@@ -56,8 +56,9 @@ rule rtg_vcfstats_gather:
             MDIR
             + f"{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/{sample}.{alnr}.{ddup}.{snv_caller}.rtg.vcfstats.txt"
             for sample in SSAMPS
-            for ddup in DDUP
-            for alnr, snv_caller in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv_caller in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ]
     output:
         MDIR + "other_reports/rtg_vcfstats_mqc.tsv"

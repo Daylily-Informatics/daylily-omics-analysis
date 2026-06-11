@@ -5,21 +5,11 @@ SMN12_GENOME_ARG = "37" if config["genome_build"] == "b37" else "38"
 
 
 def smn12_cram(wildcards):
-    if wildcards.alnr in globals().get("ALIGNERS_DHIOMR", []):
-        return (
-            MDIR
-            + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiomr/"
-            + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.sentdhiomr.sr_dedup.cram"
-        )
-    return (
-        MDIR
-        + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/"
-        + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.cram"
-    )
+    return smn_short_cram(wildcards)
 
 
 def smn12_crai(wildcards):
-    return smn12_cram(wildcards) + ".crai"
+    return smn_short_crai(wildcards)
 
 
 rule smn_copynumbercaller:
@@ -39,7 +29,12 @@ rule smn_copynumbercaller:
         MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/logs/{sample}.{alnr}.{ddup}.smn12.log",
     benchmark:
         MDIR + "benchmarks/smn_copynumbercaller.{alnr}.{ddup}.{sample}.bench.tsv"
-    threads: config["go_left"]["threads"]
+    threads: config["smn12"]["threads"]
+    resources:
+        partition=config["smn12"]["partition"],
+        threads=config["smn12"]["threads"],
+        vcpu=config["smn12"]["threads"],
+        mem_mb=config["smn12"]["mem_mb"],
     conda:
         "../envs/smn12_v0.1.yaml"
     shell:
@@ -78,7 +73,7 @@ rule produce_smn12:  # TARGET : Produce SMN1/SMN2 copy-number results
         expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
             sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
+            alnr=smn_short_read_aligners(),
             ddup=DDUP,
         )
     output:
