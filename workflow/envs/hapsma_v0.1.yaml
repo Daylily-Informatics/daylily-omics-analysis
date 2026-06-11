@@ -7,7 +7,7 @@ dependencies:
   - gatk4 >=4.2
   - samtools
   - sambamba
-  - minimap2
+  - minimap2 =2.31
   - bcftools
   - htslib
   - whatshap
