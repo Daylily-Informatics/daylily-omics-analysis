@@ -54,6 +54,7 @@ rule hapsma:  # TARGET : Run native HapSMA exploratory ONT SMN analysis.
         homopolymer_bed=lambda wildcards: _hapsma_required("homopolymer_bed"),
         clair3model=lambda wildcards: _hapsma_required("clair3model"),
         clair3_optional=lambda wildcards: _hapsma_required("clair3_optional"),
+        minimap_index=lambda wildcards: _hapsma_required("minimap_index"),
         minimap_param=lambda wildcards: _hapsma_required("minimap_param"),
         fastq_tags=lambda wildcards: _hapsma_required("fastq_tags"),
         min_read_length=lambda wildcards: _hapsma_required("min_read_length"),
@@ -80,6 +81,7 @@ rule hapsma:  # TARGET : Run native HapSMA exploratory ONT SMN analysis.
 
         for required_path in \
           {params.reference:q} \
+          {params.minimap_index:q} \
           {params.calling_target_bed:q} \
           {params.homopolymer_bed:q} \
           {input.cram:q} \
@@ -111,6 +113,10 @@ rule hapsma:  # TARGET : Run native HapSMA exploratory ONT SMN analysis.
         rg_bam="{output.results_dir}/input.smn_region.remap.rg.bam"
         rg_id="{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.hapsma"
         rg_line="@RG\tID:${{rg_id}}\tSM:{wildcards.sample}\tPL:ONT\tLB:${{rg_id}}"
+        clair3_model={params.clair3model:q}
+        clair3_model="${{clair3_model//'$CONDA_PREFIX'/$CONDA_PREFIX}}"
+        clair3_model="${{clair3_model//'${{CONDA_PREFIX}}'/$CONDA_PREFIX}}"
+        test -d "$clair3_model" || (echo "Missing required HapSMA Clair3 model directory: $clair3_model" >> {log:q}; exit 1)
 
         samtools depth -r {params.smn_region:q} -a {input.cram:q} > {output.coverage:q}
         awk '{{sum += $3; n += 1}} END {{if (n == 0) {{print 0}} else {{printf "%.6f\n", sum / n}}}}' \
@@ -143,7 +149,7 @@ PY
         samtools fastq -@ {threads} -T {params.fastq_tags:q} "$condition_bam" > "$fastq" 2>> {log:q}
 
         echo "Remapping with minimap2 {params.minimap_param}" >> {log:q}
-        minimap2 -t {threads} {params.minimap_param} -R "$rg_line" {params.reference:q} "$fastq" > "$remap_sam" 2>> {log:q}
+        minimap2 -t {threads} {params.minimap_param} -R "$rg_line" {params.minimap_index:q} "$fastq" > "$remap_sam" 2>> {log:q}
         samtools view -@ {threads} -S -b "$remap_sam" 2>> {log:q} \
           | samtools sort -@ {threads} -m 4G -o "$remap_bam" - 2>> {log:q}
         samtools index -@ {threads} "$remap_bam" >> {log:q} 2>&1
@@ -294,7 +300,7 @@ PY
               --bam_fn="$hap_bam" \
               --ref_fn={params.reference:q} \
               --output="$clair_dir" \
-              --model_path={params.clair3model:q} \
+              --model_path="$clair3_model" \
               --sample_name="{wildcards.sample}.${{approach}}.hap${{hp}}" \
               --threads={threads} \
               {params.clair3_optional} >> {log:q} 2>&1

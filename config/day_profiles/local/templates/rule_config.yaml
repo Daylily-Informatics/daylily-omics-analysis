@@ -436,6 +436,7 @@ hapsma:
     homopolymer_bed: ""
     clair3model: ""
     clair3_optional: "--haploid_sensitive --platform=ont --enable_long_indel"
+    minimap_index: ""
     minimap_param: "-y -ax map-ont"
     fastq_tags: "RG,Mm,Ml,MM,ML"
     min_read_length: 1000

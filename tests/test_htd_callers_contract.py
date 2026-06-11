@@ -59,6 +59,7 @@ def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
         "phaseset_region",
         "homopolymer_bed",
         "clair3model",
+        "minimap_index",
     ):
         assert key in config["hapsma"]
     assert config["sentdhiomr"]["segdup_threads"] == 192
@@ -365,6 +366,8 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "bam_single_remap",
         "sambamba view",
         "minimap2 -t",
+        "params.minimap_index",
+        "CONDA_PREFIX",
         "gatk --java-options",
         "whatshap polyphase",
         "whatshap haplotag",
