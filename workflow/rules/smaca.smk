@@ -66,7 +66,7 @@ if extra:
 cmd.append("{input.cram}")
 os.makedirs(os.path.dirname(os.environ["SMACA_LOG"]), exist_ok=True)
 with open(os.environ["SMACA_LOG"], "wb") as log:
-    log.write(("Running command: %s\n" % " ".join(shlex.quote(part) for part in cmd)).encode())
+    log.write(("Running command: %s\\n" % " ".join(shlex.quote(part) for part in cmd)).encode())
     log.flush()
     proc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT)
 if proc.returncode:

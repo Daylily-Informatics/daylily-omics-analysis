@@ -69,7 +69,7 @@ if extra:
 cmd.append("{input.cram}")
 os.makedirs(os.path.dirname(os.environ["SMA_FINDER_LOG"]), exist_ok=True)
 with open(os.environ["SMA_FINDER_LOG"], "wb") as log:
-    log.write(("Running command: %s\n" % " ".join(shlex.quote(part) for part in cmd)).encode())
+    log.write(("Running command: %s\\n" % " ".join(shlex.quote(part) for part in cmd)).encode())
     log.flush()
     proc = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT)
 if proc.returncode:

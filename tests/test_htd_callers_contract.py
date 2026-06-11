@@ -342,6 +342,7 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "--ncpus",
         "SMAca command was not found on PATH",
         "SMAca summary has no header",
+        'Running command: %s\\\\n',
         '"../envs/smaca_v0.1.yaml"',
     ):
         assert expected in smaca
@@ -352,6 +353,7 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "--hg38-reference-fasta",
         "affected_status_only",
         "sma-finder command was not found on PATH",
+        'Running command: %s\\\\n',
         '"../envs/sma_finder_v0.1.yaml"',
     ):
         assert expected in sma_finder
