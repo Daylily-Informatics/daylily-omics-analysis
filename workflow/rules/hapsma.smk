@@ -128,11 +128,27 @@ from pathlib import Path
 mean_cov = float(Path("{output.results_dir}/smn_region.mean_coverage.txt").read_text().strip())
 min_cov = float("{params.min_cov}")
 if mean_cov < min_cov:
-    raise SystemExit(
-        f"HapSMA coverage gate failed for {wildcards.sample}: "
-        f"mean SMN region coverage {{mean_cov:.3f}} < required {{min_cov:.3f}}."
-    )
+    reason = f"mean_smn_region_coverage {{mean_cov:.3f}} < required {{min_cov:.3f}}"
+    rows = [
+        "sample\taligner\tdeduper\tcaller\tcaller_class\tdev_status\tevidence_source\tploidy\tsmn_region\tmean_smn_region_coverage\tbed_phase_set\tbed_phase_status\tbed_phase_reason\tregion_phase_set\tregion_phase_status\tregion_phase_reason\toutput_dir",
+        "{wildcards.sample}\t{wildcards.alnr}\t{wildcards.ddup}\thapsma\tlong_read_haplotype\tdev_exploratory\tONT_long_read_cram\t{params.ploidy}\t{params.smn_region}\t"
+        + f"{{mean_cov:.6f}}"
+        + "\tNA\tno_call_low_coverage\t"
+        + reason
+        + "\tNA\tno_call_low_coverage\t"
+        + reason
+        + "\t{output.results_dir}",
+    ]
+    Path("{output.summary}").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    Path("{output.done}").touch()
+    with Path("{log}").open("a", encoding="utf-8") as handle:
+        handle.write(
+            f"HapSMA no-call low coverage for {wildcards.sample}: {{reason}}.\n"
+        )
 PY
+        if [[ -s {output.summary:q} && -e {output.done:q} ]]; then
+          exit 0
+        fi
 
         echo "HapSMA native path start: sample={wildcards.sample} alnr={wildcards.alnr} ddup={wildcards.ddup}" >> {log:q}
         echo "Extracting SMN region: {params.smn_region}" >> {log:q}
