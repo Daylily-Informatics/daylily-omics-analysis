@@ -10,7 +10,10 @@ MODEL_ROOT = "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-20250
 PANGENOME_REF_ROOT = "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38"
 DNASCOPE_ONT = f"{MODEL_ROOT}/DNAscopeONT2.3.bundle"
 PANGENOME_ILMN = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
-PANGENOME_ILMN_PRIOR = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+PANGENOME_ILMN_PRIOR = (
+    f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.0.bundle/"
+    "SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+)
 PANGENOME_ULTIMA = f"{MODEL_ROOT}/SentieonUltimaPangenomeRealignWGS1.3.bundle"
 PANGENOME_HAPL = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.hapl"
 PANGENOME_GBZ = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.gbz"
