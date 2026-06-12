@@ -989,7 +989,7 @@ sentD:
   partition: i384nvme,i192nvme
   dna_scope_snv_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model
   pop_vcf: /fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
-  mem_mb: 200000
+  mem_mb: 300000
 cgt7p:
   threads: 192
   gather_threads: 16
@@ -1011,7 +1011,8 @@ sort_index_sentD_chunk_vcf:
   threads: 16
   env_yaml: ../envs/vanilla_v0.1.yaml
   partition: i384nvme,i192nvme
-  mem_mb: 3000
+  mem_mb: 250000
+  sort_mem: 192G
 concat_index_sentD_chunks:
   threads: 16
   env_yaml: ../envs/vanilla_v0.1.yaml

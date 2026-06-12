@@ -302,6 +302,32 @@ def test_goleft_indexcov_disables_sex_chromosome_expectation() -> None:
     assert '"X,Y"' not in goleft
 
 
+def test_sentd_sort_index_chunk_uses_configured_scratch_resources() -> None:
+    sentd = _read("workflow/rules/sent_DNAscope.smk")
+    block = _rule_block(sentd, "sentD_sort_index_chunk_vcf")
+    slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
+    local_config = _yaml("config/day_profiles/local/templates/rule_config.yaml")
+
+    assert 'vcfgz=(' in block
+    assert 'MDIR\n            + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz"' in block
+    assert 'vcfgz=touch(' not in block
+    assert 'vcftbi=(' in block
+    assert 'MDIR\n            + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz.tbi"' in block
+    assert 'vcftbi=touch(' not in block
+    assert 'config["sort_index_sentD_chunk_vcf"]["threads"]' in block
+    assert 'mem_mb=config["sort_index_sentD_chunk_vcf"]["mem_mb"]' in block
+    assert 'config["sort_index_sentD_chunk_vcf"]["partition"]' in block
+    assert "bcftools sort" in block
+    assert 'bedtools sort -header -i {input.vcf}' not in block
+    assert '--temp-dir "$TMPDIR"' in block
+    assert "--max-mem {params.sort_mem:q}" in block
+    assert "tabix -f -p vcf {output.vcfgz:q}" in block
+    assert slurm_config["sentD"]["mem_mb"] >= 300000
+    assert slurm_config["sort_index_sentD_chunk_vcf"]["mem_mb"] >= 250000
+    assert slurm_config["sort_index_sentD_chunk_vcf"]["sort_mem"] == "192G"
+    assert local_config["sort_index_sentD_chunk_vcf"]["mem_mb"] >= 16000
+
+
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
     evidence = _read("workflow/rules/evidence_manifest.smk")

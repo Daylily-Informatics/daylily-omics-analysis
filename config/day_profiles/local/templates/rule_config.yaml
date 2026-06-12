@@ -1144,6 +1144,8 @@ sort_index_sentD_chunk_vcf:
     threads: 7
     env_yaml: "../envs/vanilla_v0.1.yaml"
     partition: "i8"
+    mem_mb: 16000
+    sort_mem: "8G"
 
 concat_index_sentD_chunks:
     threads: 7

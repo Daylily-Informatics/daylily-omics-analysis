@@ -100,34 +100,50 @@ rule sentD_sort_index_chunk_vcf:
     output:
         vcfsort=touch(MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf"),
-        vcfgz=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz"),
-        vcftbi=touch(MDIR
-        + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz.tbi"),
+        vcfgz=(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz"
+        ),
+        vcftbi=(
+            MDIR
+            + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz.tbi"
+        ),
     conda:
-        "../envs/vanilla_v0.1.yaml"
+        config["sort_index_sentD_chunk_vcf"]["env_yaml"]
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/sentd/vcfs/{dchrm}/log/{sample}.{alnr}.{ddup}.sentd.{dchrm}.snv.sort.vcf.gz.log",
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{dchrm}.sentD_sort_index_chunk_vcf.bench.tsv"
     resources:
-        vcpu=1,
-        threads=1,
-        partition="i384nvme"
+        vcpu=config["sort_index_sentD_chunk_vcf"]["threads"],
+        threads=config["sort_index_sentD_chunk_vcf"]["threads"],
+        mem_mb=config["sort_index_sentD_chunk_vcf"]["mem_mb"],
+        partition=config["sort_index_sentD_chunk_vcf"]["partition"]
     params:
-        x='y',
+        sort_mem=config["sort_index_sentD_chunk_vcf"].get("sort_mem", "48G"),
         cluster_sample=ret_sample,
-    threads: 1 #config["config"]["sort_index_sentDna_chunk_vcf"]['threads']
+    threads: config["sort_index_sentD_chunk_vcf"]["threads"]
     shell:
         """
-        bedtools sort -header -i {input.vcf} > {output.vcfsort} 2>> {log};
-        
-        bgzip {output.vcfsort} >> {log} 2>&1;
-        touch {output.vcfsort};
+        set -euo pipefail
 
-        tabix -f -p vcf {output.vcfgz} >> {log} 2>&1;
-        
+        timestamp=$(date +%Y%m%d%H%M%S)_$$
+        export TMPDIR=/scratch/sentd_sort_${{timestamp}}
+        mkdir -p "$TMPDIR" "$(dirname {log:q})"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+
+        rm -f {output.vcfsort:q} {output.vcfgz:q} {output.vcftbi:q}
+
+        bcftools sort \
+            --temp-dir "$TMPDIR" \
+            --max-mem {params.sort_mem:q} \
+            -Oz \
+            -o {output.vcfgz:q} \
+            {input.vcf:q} >> {log:q} 2>&1
+
+        tabix -f -p vcf {output.vcfgz:q} >> {log:q} 2>&1
+        touch {output.vcfsort:q}
         """
 
 
