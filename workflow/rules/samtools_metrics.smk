@@ -52,3 +52,7 @@ rule produce_samtools_metrics:  # TARGET : Produce samtools BAM metrics
         MDIR + "logs/produce_samtools_metrics.log"
     benchmark:
         "logs/benchmarks/produce_samtools_metrics.bench.tsv"
+    shell:
+        "mkdir -p $(dirname {output:q}) $(dirname {log:q}); "
+        "touch {log:q}; "
+        "touch {output:q};"

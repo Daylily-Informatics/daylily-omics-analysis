@@ -777,6 +777,9 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert 'mem_mb=config["gen_samstats"]["mem_mb"]' in samtools_metrics
     assert slurm_config["gen_samstats"]["mem_mb"] == 64000
     assert slurm_config["gen_samstats"]["partition"] == "i192,i128"
+    produce_samtools_metrics = _rule_block(samtools_metrics, "produce_samtools_metrics")
+    assert "shell:" in produce_samtools_metrics
+    assert "touch {output:q}" in produce_samtools_metrics
     alignstats_compile = _read("workflow/rules/alignstats_compile.smk")
     produce_alignstats = _rule_block(alignstats_compile, "produce_alignstats")
     assert 'done=f"{MDIR}logs/produce_alignstats.done"' in produce_alignstats
