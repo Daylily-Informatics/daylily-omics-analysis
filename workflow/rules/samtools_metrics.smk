@@ -14,6 +14,10 @@ rule gen_samstats:
         idxstats=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.idxstat.tsv",
         sent=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
     threads: config["gen_samstats"]["threads"]
+    resources:
+        vcpu=config["gen_samstats"]["threads"],
+        partition=config["gen_samstats"]["partition"],
+        mem_mb=config["gen_samstats"]["mem_mb"],
     conda:
         config["samtools_markdups"]["env_yaml"]
     benchmark:

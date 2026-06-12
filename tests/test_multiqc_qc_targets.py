@@ -418,9 +418,12 @@ def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
     fastv = _read("workflow/rules/archived_qc/fastv.smk")
     seqfu = _read("workflow/rules/seqfu.smk")
     multiqc = _read("config/external_tools/multiqc_config.yaml")
+    slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
 
     assert "bench=MDIR" not in fastp
     assert ": > {log.a};" in fastp
+    assert 'mem_mb=config["fastqc"]["mem_mb"]' in fastqc
+    assert slurm_config["fastqc"]["mem_mb"] == 64000
     assert 'lane_suffix=".${{lane_idx}}"' in fastqc
     assert "${{sample_name}}.R1${{lane_suffix}}.fastq.gz" in fastqc
     assert "${{sample_name}}.R2${{lane_suffix}}.fastq.gz" in fastqc
@@ -713,6 +716,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
     alignstats = _read("workflow/rules/alignstats.smk")
+    samtools_metrics = _read("workflow/rules/samtools_metrics.smk")
     snakefile = _read("workflow/Snakefile")
     tiddit = _read("workflow/rules/tiddit.smk")
     slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
@@ -770,6 +774,9 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert alignstats.count('mem_mb=config["alignstats"]["mem_mb"]') == 2
     assert slurm_config["alignstats"]["mem_mb"] == 250000
     assert slurm_config["alignstats"]["partition"] == "i384nvme,i192nvme,i128nvme"
+    assert 'mem_mb=config["gen_samstats"]["mem_mb"]' in samtools_metrics
+    assert slurm_config["gen_samstats"]["mem_mb"] == 64000
+    assert slurm_config["gen_samstats"]["partition"] == "i192,i128"
     alignstats_compile = _read("workflow/rules/alignstats_compile.smk")
     produce_alignstats = _rule_block(alignstats_compile, "produce_alignstats")
     assert 'done=f"{MDIR}logs/produce_alignstats.done"' in produce_alignstats

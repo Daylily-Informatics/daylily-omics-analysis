@@ -491,6 +491,7 @@ fastqc:
     extract: "  "
     ld_preload: " "
     partition: "i8"
+    mem_mb: 8000
 
 fastv:
     threads: 7
@@ -1481,6 +1482,7 @@ gen_samstats:
     run_threadsb: 1 # will be x2
     ld_preload: "   "
     partition: "i8"
+    mem_mb: 8000
 
 sentieon_qc_metrics:
     threads: 7

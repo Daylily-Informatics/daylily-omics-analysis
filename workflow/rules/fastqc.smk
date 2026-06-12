@@ -17,6 +17,7 @@ rule fastqc_subsampled:
     resources:
         vcpu=config["fastqc"]["threads"],
         partition=config['fastqc']['partition'],
+        mem_mb=config["fastqc"]["mem_mb"],
     params:
         tmp=f"{MDIR}" + "{sample}/seqqc/fastqc/tmp",
         tool_dir=f"{MDIR}" + "{sample}/seqqc/fastqc",

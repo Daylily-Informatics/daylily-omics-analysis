@@ -434,7 +434,7 @@ fastqc:
   extract: '  '
   ld_preload: ' '
   partition: i192,i128
-  mem_mb: 3000
+  mem_mb: 64000
 fastv:
   threads: 16
   env_yaml: ../envs/fastv_v0.1.yaml
@@ -1348,7 +1348,7 @@ gen_samstats:
   run_threadsb: 3
   ld_preload: '  '
   partition: i192,i128
-  mem_mb: 3000
+  mem_mb: 64000
 sentieon_qc_metrics:
   threads: 16
   partition: i192
