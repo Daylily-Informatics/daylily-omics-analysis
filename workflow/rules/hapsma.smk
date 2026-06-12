@@ -274,7 +274,7 @@ def write_status(status, phase_set, reason):
     Path(ps_path).write_text(phase_set + "\n", encoding="utf-8")
     Path(status_path).write_text(
         "status\tphase_set\treason\n"
-        + f"{status}\t{phase_set}\t{reason}\n",
+        + f"{{status}}\t{{phase_set}}\t{{reason}}\n",
         encoding="utf-8",
     )
 
@@ -369,7 +369,7 @@ region_ps = (results / "region" / "{wildcards.sample}.region.phaseset.txt").read
 def read_status(path):
     rows = path.read_text(encoding="utf-8").strip().splitlines()
     if len(rows) < 2:
-        return "missing_phase_status", "", f"Missing HapSMA phase status file: {path}"
+        return "missing_phase_status", "", f"Missing HapSMA phase status file: {{path}}"
     fields = rows[1].split("\t")
     while len(fields) < 3:
         fields.append("")
