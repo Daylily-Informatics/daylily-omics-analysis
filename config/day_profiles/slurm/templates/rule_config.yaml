@@ -153,11 +153,11 @@ sentmm2_align_sort:
   constraint: ''
 sentmm2ont_align_sort:
   env_yaml: ../envs/sentmm2ont_v0.1.yaml
-  partition: i384nvme,i192nvme
+  partition: i384nvme
   threads: 192
   minimap2_threads: 160
   sort_threads: 32
-  mem_mb: 200000
+  mem_mb: 650000
   sort_thread_mem: 3G
   minimap2_opts: ' -ax map-ont '
   mbuffer: ' | mbuffer -m 32G -q -s 2M '

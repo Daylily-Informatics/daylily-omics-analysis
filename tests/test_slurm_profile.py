@@ -182,6 +182,9 @@ def test_align_and_dedup_config_use_nvme_partitions_and_scratch_tmp() -> None:
     for section in sorted(ALIGN_DEDUP_CONFIG_SECTIONS):
         value = rule_config[section]["partition"]
         parts = {part for part in str(value).split(",") if part}
+        if section == "sentmm2ont_align_sort":
+            assert parts == {"i384nvme"}, f"{section}.partition={value}"
+            continue
         assert expected <= parts, f"{section}.partition={value}"
 
     assert rule_config["sent_dedup"]["tmp_base"] == "/scratch"

@@ -55,6 +55,15 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
         assert cfg["sentmm2ont_align_sort"]["minimap2_opts"].strip() == "-ax map-ont"
 
 
+def test_sentmm2ont_slurm_align_sort_requests_384_nvme_memory() -> None:
+    cfg = _rule_config("slurm")
+    resources = cfg["sentmm2ont_align_sort"]
+
+    assert resources["partition"] == "i384nvme"
+    assert resources["threads"] == 192
+    assert resources["mem_mb"] >= 650000
+
+
 def test_read_group_epoch_suffixes_are_shell_expanded() -> None:
     rg_rules = (
         "workflow/rules/sentmm2ont_align_sort.smk",
