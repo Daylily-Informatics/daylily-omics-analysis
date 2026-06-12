@@ -787,6 +787,12 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "touch {output.done}" in produce_alignstats
     assert slurm_config["mosdepth"]["mem_mb"] == 64000
     assert slurm_config["mosdepth"]["partition"] == "i384nvme,i192nvme,i128nvme"
+    mosdepth = _read("workflow/rules/mosdepth.smk")
+    mosdepth_rule = _rule_block(mosdepth, "mosdepth")
+    assert 'mem_mb=config["mosdepth"]["mem_mb"]' in mosdepth_rule
+    assert "prefix=MDIR" in mosdepth_rule
+    assert "{params.prefix:q}" in mosdepth_rule
+    assert "b=MDIR" not in mosdepth_rule
     assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
     assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
     assert "vep_annotation_mqc.tsv" in vep

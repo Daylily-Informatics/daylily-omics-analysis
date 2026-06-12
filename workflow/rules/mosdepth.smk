@@ -21,14 +21,15 @@ rule mosdepth:
     resources:
         threads=config["mosdepth"]["threads"],
         partition=config["mosdepth"]["partition"],
+        mem_mb=config["mosdepth"]["mem_mb"],
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.mosdepth.bench.tsv"
     log:
         a=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.log",
-        b=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}",
     conda:
         config["mosdepth"]["env_yaml"]
     params:
+        prefix=MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}",
         win_size=1000,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         core_bed=config["supporting_files"]["files"]["huref"]["fasta"]["bed"],
@@ -41,9 +42,9 @@ rule mosdepth:
         r"""
         set -euo pipefail
         mkdir -p "$(dirname {output.summary:q})"
-        rm -f {log.a:q} {output.summary:q} {output.global_dist:q} {output.region_dist:q}
-        mosdepth --threads {threads} --by {params.core_bed:q} --use-median -n --fast-mode --mapq {params.mapq} -f {params.huref:q} -T {params.T:q} {log.b:q} {input.cram:q} > {log.a:q} 2>&1
-        rm -f {log.b:q}.per-base.bed.gz {log.b:q}.per-base.bed.gz.csi
+        rm -f {log.a:q} {params.prefix:q} {output.summary:q} {output.global_dist:q} {output.region_dist:q}
+        mosdepth --threads {threads} --by {params.core_bed:q} --use-median -n --fast-mode --mapq {params.mapq} -f {params.huref:q} -T {params.T:q} {params.prefix:q} {input.cram:q} > {log.a:q} 2>&1
+        rm -f {params.prefix:q}.per-base.bed.gz {params.prefix:q}.per-base.bed.gz.csi
         test -s {output.summary:q} || (printf 'ERROR: mosdepth summary output is missing or empty: %s\n' {output.summary:q} | tee -a {log.a:q} >&2; exit 1)
         test -s {output.global_dist:q} || (printf 'ERROR: mosdepth global_dist output is missing or empty: %s\n' {output.global_dist:q} | tee -a {log.a:q} >&2; exit 1)
         test -s {output.region_dist:q} || (printf 'ERROR: mosdepth region_dist output is missing or empty: %s\n' {output.region_dist:q} | tee -a {log.a:q} >&2; exit 1)
