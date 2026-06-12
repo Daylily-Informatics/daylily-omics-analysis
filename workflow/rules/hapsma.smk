@@ -235,7 +235,7 @@ PY
             --filter-name SNP_LowQualityDepth --filter-expression 'QD < 2.0' \
             --filter-name SNP_MappingQuality --filter-expression 'MQ < 40.0' \
             --filter-name SNP_StrandBias --filter-expression 'FS > 10.0' \
-            --filter-name Ref_Homopolymer --filter-expression 'RegionRef > 0' \
+            --filter-name Ref_Homopolymer --filter-expression 'vc.hasAttribute("RegionRef")' \
             --cluster-size 3 --cluster-window-size 35 >> {log:q} 2>&1
           gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=$TMPDIR" VariantFiltration \
             --reference {params.reference:q} \

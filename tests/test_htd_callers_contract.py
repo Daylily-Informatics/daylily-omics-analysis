@@ -373,6 +373,7 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "gatk --java-options",
         "whatshap polyphase",
         "whatshap haplotag",
+        'vc.hasAttribute("RegionRef")',
         "whatshap_status=$?",
         "whatshap_exit=$whatshap_status",
         "whatshap haplotag failed for phased HapSMA",
