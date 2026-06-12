@@ -712,6 +712,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     rtg = _read("workflow/rules/rtg_vcfstats.smk")
     peddy = _read("workflow/rules/peddy.smk")
     vep = _read("workflow/rules/vep.smk")
+    alignstats = _read("workflow/rules/alignstats.smk")
     snakefile = _read("workflow/Snakefile")
     tiddit = _read("workflow/rules/tiddit.smk")
     slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
@@ -766,7 +767,8 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"
-    assert slurm_config["alignstats"]["mem_mb"] == 128000
+    assert alignstats.count('mem_mb=config["alignstats"]["mem_mb"]') == 2
+    assert slurm_config["alignstats"]["mem_mb"] == 250000
     assert slurm_config["alignstats"]["partition"] == "i384nvme,i192nvme,i128nvme"
     assert slurm_config["mosdepth"]["mem_mb"] == 64000
     assert slurm_config["mosdepth"]["partition"] == "i384nvme,i192nvme,i128nvme"

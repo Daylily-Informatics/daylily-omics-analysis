@@ -27,7 +27,7 @@ alignstats:
   env_yaml: ../envs/alignstats_v0.2.yaml
   glances: ' '
   ld_preload: '  '
-  mem_mb: 128000
+  mem_mb: 250000
 bcftools_vcfstat:
   threads: 16
 bcl2fq:

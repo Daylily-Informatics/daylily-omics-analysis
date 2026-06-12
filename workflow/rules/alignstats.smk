@@ -33,7 +33,8 @@ rule alignstats_bam:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
         partition=config["alignstats"]["partition"],
         threads=config["alignstats"]["threads"],
-        vcpu=config["alignstats"]["threads"]
+        vcpu=config["alignstats"]["threads"],
+        mem_mb=config["alignstats"]["mem_mb"]
     log:  MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/logs/{sample}.{alnr}.{ddup}.alignstats.log",
     params:
         P=50,
@@ -66,7 +67,8 @@ rule alignstats:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
         partition=config["alignstats"]["partition"],
         threads=config["alignstats"]["threads"],
-        vcpu=config["alignstats"]["threads"]
+        vcpu=config["alignstats"]["threads"],
+        mem_mb=config["alignstats"]["mem_mb"]
     log:  MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/logs/{sample}.{alnr}.{ddup}.alignstats.log",
     params:
         P=50,
