@@ -176,6 +176,7 @@ PY
           local filter_vcf="$outdir/vcf/{wildcards.sample}.${{approach}}.filter.vcf.gz"
           local tagged_bam="$outdir/bam/{wildcards.sample}.${{approach}}.whatshap.tagged.bam"
           local ps_file="$outdir/{wildcards.sample}.${{approach}}.phaseset.txt"
+          local ps_status="$outdir/{wildcards.sample}.${{approach}}.phaseset.status.tsv"
 
           echo "Running HapSMA $approach approach intervals=$intervals phase_region=$phase_region" >> {log:q}
           gatk --java-options "-Xmx{resources.mem_mb}m -Djava.io.tmpdir=$TMPDIR" HaplotypeCaller \
@@ -259,13 +260,25 @@ PY
             --ignore-read-groups >> {log:q} 2>&1
           samtools index -@ {threads} "$tagged_bam" >> {log:q} 2>&1
 
-          python - "$filter_vcf" "$phase_region" > "$ps_file" <<'PY'
+          python - "$filter_vcf" "$phase_region" "$ps_file" "$ps_status" <<'PY'
 import sys
 from collections import Counter
+from pathlib import Path
 
 import vcfpy
 
-vcf_path, region = sys.argv[1:3]
+vcf_path, region, ps_path, status_path = sys.argv[1:5]
+
+
+def write_status(status, phase_set, reason):
+    Path(ps_path).write_text(phase_set + "\n", encoding="utf-8")
+    Path(status_path).write_text(
+        "status\tphase_set\treason\n"
+        + f"{status}\t{phase_set}\t{reason}\n",
+        encoding="utf-8",
+    )
+
+
 reader = vcfpy.Reader.from_path(vcf_path)
 phasesets = []
 for record in reader.fetch(region):
@@ -274,17 +287,35 @@ for record in reader.fetch(region):
         if ps:
             phasesets.append(str(ps))
 if not phasesets:
-    raise SystemExit(f"No HapSMA PhaseSet was detected within {{region}}")
+    write_status(
+        "no_call_no_phase_set",
+        "NO_PHASE_SET",
+        f"No HapSMA PhaseSet was detected within {{region}}",
+    )
+    sys.exit(0)
 counts = Counter(phasesets)
 phase_set, count = counts.most_common(1)[0]
 if len(counts) > 1 and count / sum(counts.values()) <= 0.65:
-    raise SystemExit(
-        f"No dominant HapSMA PhaseSet in {{region}}: {{dict(counts)}}"
+    write_status(
+        "no_call_no_dominant_phase_set",
+        "NO_DOMINANT_PHASE_SET",
+        f"No dominant HapSMA PhaseSet in {{region}}: {{dict(counts)}}",
     )
-print(phase_set)
+    sys.exit(0)
+write_status(
+    "phased",
+    phase_set,
+    f"dominant_phase_set={{phase_set}};count={{count}};total={{sum(counts.values())}}",
+)
 PY
           local phase_set
           phase_set=$(cat "$ps_file")
+          local phase_status
+          phase_status=$(awk -F '\t' 'NR == 2 {print $1}' "$ps_status")
+          if [[ "$phase_status" != "phased" ]]; then
+            echo "HapSMA $approach no-call: $(awk -F '\t' 'NR == 2 {print $3}' "$ps_status")" >> {log:q}
+            return 0
+          fi
 
           for hp in $(seq 1 {params.ploidy:q}); do
             local hap_bam="$outdir/bam/{wildcards.sample}.${{approach}}.hap${{hp}}.ps${{phase_set}}.bam"
@@ -333,14 +364,40 @@ results = Path("{output.results_dir}")
 mean_cov = (results / "smn_region.mean_coverage.txt").read_text().strip()
 bed_ps = (results / "bed" / "{wildcards.sample}.bed.phaseset.txt").read_text().strip()
 region_ps = (results / "region" / "{wildcards.sample}.region.phaseset.txt").read_text().strip()
+
+
+def read_status(path):
+    rows = path.read_text(encoding="utf-8").strip().splitlines()
+    if len(rows) < 2:
+        return "missing_phase_status", "", f"Missing HapSMA phase status file: {path}"
+    fields = rows[1].split("\t")
+    while len(fields) < 3:
+        fields.append("")
+    return fields[0], fields[1], fields[2]
+
+
+bed_status, _, bed_reason = read_status(
+    results / "bed" / "{wildcards.sample}.bed.phaseset.status.tsv"
+)
+region_status, _, region_reason = read_status(
+    results / "region" / "{wildcards.sample}.region.phaseset.status.tsv"
+)
 rows = [
-    "sample\taligner\tdeduper\tcaller\tcaller_class\tdev_status\tevidence_source\tploidy\tsmn_region\tmean_smn_region_coverage\tbed_phase_set\tregion_phase_set\toutput_dir",
+    "sample\taligner\tdeduper\tcaller\tcaller_class\tdev_status\tevidence_source\tploidy\tsmn_region\tmean_smn_region_coverage\tbed_phase_set\tbed_phase_status\tbed_phase_reason\tregion_phase_set\tregion_phase_status\tregion_phase_reason\toutput_dir",
     "{wildcards.sample}\t{wildcards.alnr}\t{wildcards.ddup}\thapsma\tlong_read_haplotype\tdev_exploratory\tONT_long_read_cram\t{params.ploidy}\t{params.smn_region}\t"
     + mean_cov
     + "\t"
     + bed_ps
     + "\t"
+    + bed_status
+    + "\t"
+    + bed_reason
+    + "\t"
     + region_ps
+    + "\t"
+    + region_status
+    + "\t"
+    + region_reason
     + "\t{output.results_dir}",
 ]
 Path("{output.summary}").write_text("\n".join(rows) + "\n", encoding="utf-8")
