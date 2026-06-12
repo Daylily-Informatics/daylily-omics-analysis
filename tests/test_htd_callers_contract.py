@@ -385,6 +385,8 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "region_phase_reason",
         'f"{{status}}\\t{{phase_set}}\\t{{reason}}\\n"',
         'f"Missing HapSMA phase status file: {{path}}"',
+        "NR == 2 {{print $1}}",
+        "NR == 2 {{print $3}}",
         "long_read_haplotype",
         "dev_exploratory",
         '"../envs/hapsma_v0.1.yaml"',

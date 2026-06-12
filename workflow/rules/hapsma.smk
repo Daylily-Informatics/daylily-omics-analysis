@@ -311,9 +311,9 @@ PY
           local phase_set
           phase_set=$(cat "$ps_file")
           local phase_status
-          phase_status=$(awk -F '\t' 'NR == 2 {print $1}' "$ps_status")
+          phase_status=$(awk -F '\t' 'NR == 2 {{print $1}}' "$ps_status")
           if [[ "$phase_status" != "phased" ]]; then
-            echo "HapSMA $approach no-call: $(awk -F '\t' 'NR == 2 {print $3}' "$ps_status")" >> {log:q}
+            echo "HapSMA $approach no-call: $(awk -F '\t' 'NR == 2 {{print $3}}' "$ps_status")" >> {log:q}
             return 0
           fi
 
