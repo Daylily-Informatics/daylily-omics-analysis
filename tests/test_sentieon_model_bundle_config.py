@@ -6,10 +6,11 @@ import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MODEL_ROOT = "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bundles"
+MODEL_ROOT = "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles"
 PANGENOME_REF_ROOT = "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38"
 DNASCOPE_ONT = f"{MODEL_ROOT}/DNAscopeONT2.3.bundle"
 PANGENOME_ILMN = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
+PANGENOME_ILMN_PRIOR = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
 PANGENOME_ULTIMA = f"{MODEL_ROOT}/SentieonUltimaPangenomeRealignWGS1.3.bundle"
 PANGENOME_HAPL = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.hapl"
 PANGENOME_GBZ = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.gbz"
@@ -42,7 +43,7 @@ def _sentieon_cli_spec(env_yaml: str) -> str:
 
 
 def _assert_sentieon_cli_env(env_yaml: str, expected_cli: str) -> None:
-    assert "sentieon=202503.02" in _env_text(env_yaml)
+    assert "sentieon=202503.03" in _env_text(env_yaml)
     assert _sentieon_cli_spec(env_yaml) == expected_cli
 
 
@@ -54,14 +55,17 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         text = _read(f"config/day_profiles/{profile}/templates/rule_config.yaml")
 
         assert "DNAscopeONT2.2.bundle" not in text
-        assert "SentieonIlluminaPangenomeRealignWGS1.0.bundle" not in text
         assert "SentieonUltimaPangenomeRealignWGS1.0.bundle" not in text
 
         assert cfg["sentdont"]["dna_scope_snv_model"] == DNASCOPE_ONT
         assert cfg["sentdont"]["dna_scope_apply_model"] == DNASCOPE_ONT
         assert cfg["sentdont"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
+        assert cfg["sent_aln_sort_snv"]["model_mode"] == "current"
         assert cfg["sent_aln_sort_snv"]["model"] == PANGENOME_ILMN
+        assert cfg["sent_aln_sort_snv"]["prior_model"] == PANGENOME_ILMN_PRIOR
+        assert cfg["sentieon_pangenome_sr"]["model_mode"] == "current"
         assert cfg["sentieon_pangenome_sr"]["model"] == PANGENOME_ILMN
+        assert cfg["sentieon_pangenome_sr"]["prior_model"] == PANGENOME_ILMN_PRIOR
         assert cfg["sentieon_pangenome_ug"]["model"] == PANGENOME_ULTIMA
         for section in (
             "sent_aln_sort_snv",
@@ -94,7 +98,10 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
     )
 
     for rule in fastq_rules:
-        assert "bin/dayoa_sentieon_cli sentieon-pangenome" in rule
+        assert "sentieon-pangenome" not in rule
+        assert "bin/dayoa_sentieon_cli dnascope-pangenome" in rule
+        assert "_model_mode" in rule
+        assert '"prior"' in rule
         assert "-r {params.huref}" in rule
         assert '--hapl "{params.hapl}"' in rule
         assert '--gbz "{params.gbz}"' in rule
@@ -111,7 +118,8 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
         assert "$pcr_flag" in rule
 
     ug_rule = _read("workflow/rules/sentieon_pangenome_ug.smk")
-    assert "bin/dayoa_sentieon_cli sentieon-pangenome" in ug_rule
+    assert "sentieon-pangenome" not in ug_rule
+    assert "bin/dayoa_sentieon_cli dnascope-pangenome" in ug_rule
     assert "-r {params.huref}" in ug_rule
     assert '--hapl "{params.hapl}"' in ug_rule
     assert '--gbz "{params.gbz}"' in ug_rule

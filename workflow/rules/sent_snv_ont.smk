@@ -85,7 +85,7 @@ rule sent_snv_ont:
         keep_tmp_dirs=config["sentdont"]["keep_tmp_dirs"],
     shell:
         """
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
 
         export TMPDIR=/dev/shm/sentdont_tmp_$timestamp;

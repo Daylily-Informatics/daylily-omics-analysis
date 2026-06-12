@@ -94,7 +94,7 @@ rule sentmm2ont_align_sort:
         config["sentmm2ont_align_sort"]["env_yaml"]
     shell:
         """
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
         if [ -z "$SENTIEON_LICENSE" ]; then
             echo "SENTIEON_LICENSE not set. Please set the SENTIEON_LICENSE environment variable to the license file path & make this update to your dyinit file as well." >> {log} 2>&1;
             exit 3;
@@ -177,7 +177,7 @@ rule sentmm2ont_align_sort:
                 exit 8;
             fi
         ) {params.longread_trim_head} {params.longread_trim_tail} \
-        | LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/minimap2 \
+        | LD_PRELOAD=$LD_PRELOAD /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/minimap2 \
         {params.minimap2_opts} \
         -R "@RG\\tID:{params.cluster_sample}-$epocsec\\tSM:{params.cluster_sample}\\tLB:{params.cluster_sample}-LB-1\\tPL:{params.rgpl}\\tPU:{params.rgpu}\\tCN:{params.rgcn}\\tPG:{params.rgpg}\\tLR:1" \
         -t {params.minimap2_threads} \

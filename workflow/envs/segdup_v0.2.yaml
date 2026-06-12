@@ -3,7 +3,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - sentieon=202503.02
+  - sentieon=202503.03
   - python=3.11
   - pip
   - setuptools
@@ -14,5 +14,5 @@ dependencies:
   - jemalloc
   - pysam>=0.19,<0.23
   - pip:
-    - sentieon-cli==1.6.1
-    - git+https://github.com/Sentieon/segdup-caller.git@v0.5.1
+    - sentieon-cli==1.6.3
+    - git+https://github.com/Sentieon/segdup-caller.git@v0.6.0

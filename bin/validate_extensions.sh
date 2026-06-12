@@ -36,12 +36,12 @@ check_dir() {
     fi
 }
 
-check_dir "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02" "Sentieon 202503.02"
-for b in /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/share/SentieonHybridIlluminaONT*; do
+check_dir "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03" "Sentieon 202503.03"
+for b in /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/share/SentieonHybridIlluminaONT*; do
     check_file "$b" "HybridIlluminaONT: $(basename $b)"
 done
-check_file "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/share/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
-check_file "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/share/DNAscopeONT2.3.bundle" "SegDup LR model"
+check_file "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/share/SentieonIlluminaWGS2.2.bundle" "SegDup SR model"
+check_file "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/share/DNAscopeONT2.3.bundle" "SegDup LR model"
 
 CHRM="/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM"
 check_file "$CHRM/Homo_sapiens_assembly38.chrM.fasta" "chrM fasta"

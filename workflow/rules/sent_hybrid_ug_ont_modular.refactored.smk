@@ -85,7 +85,7 @@ rule sentdhuomr_pass1:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_p1_${{timestamp}}_$$";
@@ -191,7 +191,7 @@ rule sentdhuomr_hybrid_select:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         echo "Starting hybrid_select pipeline at $(date)" >> {log}
 
@@ -255,7 +255,7 @@ rule sentdhuomr_mapq0_bed:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_mq_${{timestamp}}_$$";
@@ -409,7 +409,7 @@ rule sentdhuomr_stage1:
     shell:
         r"""
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_s1_${{timestamp}}_$$";
@@ -618,7 +618,7 @@ rule sentdhuomr_stage2:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_s2_${{timestamp}}_$$";
@@ -693,7 +693,7 @@ rule sentdhuomr_stage3:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_s3_${{timestamp}}_$$";
@@ -805,7 +805,7 @@ rule sentdhuomr_pass2:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_p2_${{timestamp}}_$$";
@@ -877,7 +877,7 @@ rule sentdhuomr_subset:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         echo "Subsetting pass-1 VCF at $(date)" >> {log}
 
@@ -966,7 +966,7 @@ rule sentdhuomr_anno:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         echo "Starting hybrid annotation at $(date)" >> {log}
 
@@ -1023,7 +1023,7 @@ rule sentdhuomr_transfer:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         echo "Starting annotation transfer shard {wildcards.tchrm} (regions: {params.regions}) at $(date)" >> {log}
 
@@ -1146,7 +1146,7 @@ rule sentdhuomr_model_apply:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_ma_${{timestamp}}_$$";
@@ -1205,7 +1205,7 @@ rule sentdhuomr_final_norm:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         echo "Starting final normalization at $(date)" >> {log}
 
@@ -1398,7 +1398,7 @@ rule sentdhuomr_call_svs:
     shell:
         """
         set -euo pipefail
-        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/
+        export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
         export TMPDIR="/scratch/sentdhuomr_sv_${{timestamp}}_$$";

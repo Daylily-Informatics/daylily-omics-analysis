@@ -2,7 +2,7 @@ import os
 
 ####### Sentieon Pangenome (accelerated) – Ultima Genomics pipeline
 #
-# Uses bin/dayoa_sentieon_cli sentieon-pangenome which performs pangenome-aware
+# Uses bin/dayoa_sentieon_cli dnascope-pangenome which performs pangenome-aware
 # alignment (via GBZ graph reference) and variant calling for Ultima
 # Genomics single-end WGS data.
 #
@@ -123,16 +123,16 @@ rule sentieon_pangenome_ug:
             echo "WARNING: libjemalloc not found in CONDA_PREFIX=$CONDA_PREFIX" >> {log};
         fi
 
-        # --- bin/dayoa_sentieon_cli sentieon-pangenome (accelerated pipeline) ---
+        # --- bin/dayoa_sentieon_cli dnascope-pangenome (accelerated pipeline) ---
         cli_out="$TMPDIR/{wildcards.sample}.pangenome_ug";
 
-        echo "bin/dayoa_sentieon_cli sentieon-pangenome starting (Ultima, CRAM input mode)" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli dnascope-pangenome starting (Ultima, CRAM input mode)" >> {log} 2>&1;
         echo "  input_cram={input.cram}" >> {log} 2>&1;
         echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
         set +e;
-        bin/dayoa_sentieon_cli sentieon-pangenome \
+        bin/dayoa_sentieon_cli dnascope-pangenome \
             -r {params.huref} \
             --hapl "{params.hapl}" \
             --gbz "{params.gbz}" \
@@ -147,7 +147,7 @@ rule sentieon_pangenome_ug:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: bin/dayoa_sentieon_cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: bin/dayoa_sentieon_cli dnascope-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 
@@ -158,7 +158,7 @@ rule sentieon_pangenome_ug:
             bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
             bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
         else
-            echo "ERROR: VCF not produced by bin/dayoa_sentieon_cli sentieon-pangenome" >> {log} 2>&1;
+            echo "ERROR: VCF not produced by bin/dayoa_sentieon_cli dnascope-pangenome" >> {log} 2>&1;
             exit 20;
         fi
 

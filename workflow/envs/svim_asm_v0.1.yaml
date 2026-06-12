@@ -8,4 +8,4 @@ dependencies:
   - svim-asm
   - samtools
   - bcftools
-  - sentieon
+  - sentieon=202503.03

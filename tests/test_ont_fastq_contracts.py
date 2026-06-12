@@ -163,11 +163,11 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     assert "touch {output.done}" in rule
     assert '"../envs/segdup_v0.2.yaml"' in rule
     assert "python=3.11" in env
-    assert "sentieon-cli==1.6.1" in env
-    assert "git+https://github.com/Sentieon/segdup-caller.git@v0.5.1" in env
+    assert "sentieon-cli==1.6.3" in env
+    assert "git+https://github.com/Sentieon/segdup-caller.git@v0.6.0" in env
 
 
-def test_sentdhiomr_transfer_matches_sentieon_cli_v161_merge_contract() -> None:
+def test_sentdhiomr_transfer_matches_sentieon_cli_v163_merge_contract() -> None:
     rule = _read("workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk")
 
     assert 'subset_bed="$TMPDIR/transfer.{wildcards.tchrm}.bed"' in rule

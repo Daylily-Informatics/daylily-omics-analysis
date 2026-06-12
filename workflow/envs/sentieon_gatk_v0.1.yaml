@@ -5,7 +5,7 @@ channels:
   - r
   - defaults
 dependencies:
-  - sentieon==202112.06
+  - sentieon=202503.03
   - mbuffer
   - curl
   - samtools

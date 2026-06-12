@@ -2,13 +2,24 @@ import os
 
 ####### Sentieon Pangenome (accelerated) – short-read pipeline
 #
-# Uses bin/dayoa_sentieon_cli sentieon-pangenome which performs pangenome-aware
+# Uses bin/dayoa_sentieon_cli dnascope-pangenome which performs pangenome-aware
 # alignment (via GBZ graph reference) and variant calling for Illumina
 # paired-end WGS data.  No vg/XG/snarls dependencies required.
 #
 # Outputs per sample (at standard concordance-compatible path):
 #   {sample}/align/pangenome_sr/spmd/snv/sentpg/{sample}.pangenome_sr.spmd.sentpg.snv.sort.vcf.gz
 #
+
+
+def _sentieon_pangenome_sr_model(wildcards):
+    section = "sentieon_pangenome_sr"
+    mode = str(config.get(f"{section}_model_mode", config[section]["model_mode"])).lower()
+    if mode == "current":
+        return config[section]["model"]
+    if mode == "prior":
+        return config[section]["prior_model"]
+    raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
+
 
 rule sentieon_pangenome_sr:
     """Sentieon pangenome (accelerated): graph-align + variant call (Illumina PE FASTQ → VCF)."""
@@ -50,7 +61,7 @@ rule sentieon_pangenome_sr:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         gbz=config["sentieon_pangenome_sr"]["gbz"],
         hapl=config["sentieon_pangenome_sr"]["hapl"],
-        model=config["sentieon_pangenome_sr"]["model"],
+        model=_sentieon_pangenome_sr_model,
         pop_vcf=config["sentieon_pangenome_sr"]["pop_vcf"],
         canonical_bed=config["sentieon_pangenome_sr"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_sr"]["dbsnp"],
@@ -129,15 +140,15 @@ rule sentieon_pangenome_sr:
             pcr_flag="--pcr_free";
         fi
 
-        # --- bin/dayoa_sentieon_cli sentieon-pangenome (accelerated pipeline) ---
+        # --- bin/dayoa_sentieon_cli dnascope-pangenome (accelerated pipeline) ---
         cli_out="$TMPDIR/{wildcards.sample}.pangenome_sr";
 
-        echo "bin/dayoa_sentieon_cli sentieon-pangenome starting" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli dnascope-pangenome starting" >> {log} 2>&1;
         echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
         set +e;
-        bin/dayoa_sentieon_cli sentieon-pangenome \
+        bin/dayoa_sentieon_cli dnascope-pangenome \
             -r {params.huref} \
             --hapl "{params.hapl}" \
             --gbz "{params.gbz}" \
@@ -155,7 +166,7 @@ rule sentieon_pangenome_sr:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: bin/dayoa_sentieon_cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: bin/dayoa_sentieon_cli dnascope-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 
@@ -166,7 +177,7 @@ rule sentieon_pangenome_sr:
             bcftools reheader -s "$TMPDIR/rename.txt" -o {output.vcfgz} "${{cli_out}}.vcf.gz" >> {log} 2>&1;
             bcftools index -f -t --threads {threads} -o {output.vcfgztbi} {output.vcfgz} >> {log} 2>&1;
         else
-            echo "ERROR: VCF not produced by bin/dayoa_sentieon_cli sentieon-pangenome" >> {log} 2>&1;
+            echo "ERROR: VCF not produced by bin/dayoa_sentieon_cli dnascope-pangenome" >> {log} 2>&1;
             exit 20;
         fi
 

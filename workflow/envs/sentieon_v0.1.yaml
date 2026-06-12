@@ -5,7 +5,7 @@ channels:
   - r
   - defaults
 dependencies:
-  - sentieon==202112.06
+  - sentieon=202503.03
   - mbuffer
   - curl
   - samtools
@@ -16,7 +16,7 @@ dependencies:
   - seqfu
   - sambamba
   - isa-l==2.31.0
-  - python
+  - python=3.11
   - pip  # Specify pip as a dependency first
   - pip:
-      - https://github.com/Sentieon/sentieon-cli/archive/refs/tags/v1.5.2.tar.gz
+      - sentieon-cli==1.6.3

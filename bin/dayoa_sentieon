@@ -4,7 +4,7 @@ set -e
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/day_sentieon_jitter.bash"
 
-sentieon_bin="${DAYOA_SENTIEON_BIN:-/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.02/bin/sentieon}"
+sentieon_bin="${DAYOA_SENTIEON_BIN:-/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/sentieon}"
 dayoa_require_executable "$sentieon_bin"
 dayoa_sentieon_start_jitter "$sentieon_bin $*"
 "$sentieon_bin" "$@"

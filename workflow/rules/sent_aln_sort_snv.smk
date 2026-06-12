@@ -2,10 +2,20 @@ import os
 
 ####### Sentieon Pangenome – align + sort + call in one step
 #
-# Uses bin/dayoa_sentieon_cli sentieon-pangenome which performs pangenome-aware
+# Uses bin/dayoa_sentieon_cli dnascope-pangenome which performs pangenome-aware
 # alignment (via graph reference) and variant calling for Illumina
 # paired-end WGS data.  Outputs a single VCF.gz with SNVs/indels.
 #
+
+
+def _sent_aln_sort_snv_model(wildcards):
+    section = "sent_aln_sort_snv"
+    mode = str(config.get(f"{section}_model_mode", config[section]["model_mode"])).lower()
+    if mode == "current":
+        return config[section]["model"]
+    if mode == "prior":
+        return config[section]["prior_model"]
+    raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
 
 
 rule sent_aln_sort_snv:
@@ -48,7 +58,7 @@ rule sent_aln_sort_snv:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         hapl=config["sent_aln_sort_snv"]["hapl"],
         gbz=config["sent_aln_sort_snv"]["gbz"],
-        model=config["sent_aln_sort_snv"]["model"],
+        model=_sent_aln_sort_snv_model,
         pop_vcf=config["sent_aln_sort_snv"]["pop_vcf"],
         canonical_bed=config["sent_aln_sort_snv"]["canonical_bed"],
         dbsnp=config["sent_aln_sort_snv"]["dbsnp"],
@@ -126,15 +136,15 @@ rule sent_aln_sort_snv:
             pcr_flag="--pcr_free";
         fi
 
-        # --- bin/dayoa_sentieon_cli sentieon-pangenome ---
+        # --- bin/dayoa_sentieon_cli dnascope-pangenome ---
         cli_out="$TMPDIR/{wildcards.sample}.sentpg";
 
-        echo "bin/dayoa_sentieon_cli sentieon-pangenome starting" >> {log} 2>&1;
+        echo "bin/dayoa_sentieon_cli dnascope-pangenome starting" >> {log} 2>&1;
         echo "  model={params.model}" >> {log} 2>&1;
         echo "  hapl={params.hapl}" >> {log} 2>&1;
         echo "  gbz={params.gbz}" >> {log} 2>&1;
         set +e;
-        bin/dayoa_sentieon_cli sentieon-pangenome \
+        bin/dayoa_sentieon_cli dnascope-pangenome \
             -r {params.huref} \
             --hapl "{params.hapl}" \
             --gbz "{params.gbz}" \
@@ -152,7 +162,7 @@ rule sent_aln_sort_snv:
         set -e;
         echo "sentieon-cli exit code: $cli_rc" >> {log} 2>&1;
         if [ $cli_rc -ne 0 ]; then
-            echo "ERROR: bin/dayoa_sentieon_cli sentieon-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
+            echo "ERROR: bin/dayoa_sentieon_cli dnascope-pangenome failed with exit code $cli_rc" >> {log} 2>&1;
             exit $cli_rc;
         fi
 

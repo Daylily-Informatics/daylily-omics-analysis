@@ -1,0 +1,68 @@
+# Sentieon Current-Code HG003 Acceptance Ledger
+
+Created: 2026-06-12T14:13:47Z
+
+Cluster: `dyecX4`
+AWS profile: `lsmc`
+Region: `us-west-2`
+DayOA repo: `/Users/jmajor/projects/lsmc/daylily-omics-analysis`
+DYEC repo: `/Users/jmajor/projects/lsmc/daylily-ephemeral-cluster`
+Evidence export root: `s3://lsmc-ssf-sequencing-data/derived/analysis_results/sentieon-upgrade/ubuntu/<analysis-id>/`
+
+## Objective
+
+Bring active DayOA Sentieon-owned runtime code to current upstream versions, tag a clean DayOA release, update DYEC pins as needed, then validate HG003 live analyses from the tagged code:
+
+- Sentieon core `202503.03`
+- `sentieon-cli==1.6.3`
+- `segdup-caller@v0.6.0`
+- current ILMN pangenome model `SentieonIlluminaPangenomeRealignWGS1.2.bundle`
+- prior ILMN pangenome model discovered from repo history: `SentieonIlluminaPangenomeRealignWGS1.0.bundle`
+
+## Gate 0 Inventory
+
+| Check | Result |
+| --- | --- |
+| DayOA branch/status | `## jem-dev...origin/jem-dev`; clean at start |
+| DayOA describe | `10.0.5` |
+| DYEC branch/status | `## jem-dev...origin/jem-dev`; existing untracked 4NA report artifacts present |
+| DYEC describe | `10.0.14` |
+| Upstream Sentieon core | Sentieon docs and Bioconda show current `202503.03` |
+| Upstream Sentieon CLI | PyPI `sentieon-cli` latest `1.6.3`; released 2026-06-10; requires Python `>=3.11` |
+| Upstream Sentieon CLI git tag | `v1.6.3` present |
+| Upstream segdup-caller git tag | GitHub tags show `v0.6.0`, released 2026-06-03 |
+| Upstream model YAML | Sentieon model YAML updated 2026-06-01; current ILMN pangenome `SentieonIlluminaPangenomeRealignWGS1.2.bundle`, Ultima pangenome `SentieonUltimaPangenomeRealignWGS1.3.bundle` |
+| Prior ILMN pangenome model | `SentieonIlluminaPangenomeRealignWGS1.0.bundle`, from DayOA history before current `1.2` pin |
+
+## Agent Ledger
+
+| ID | Agent | Scope | Status | Evidence / Notes |
+| --- | --- | --- | --- | --- |
+| A0 | `agent-orchestrator` | Own ledger, Gate 0 inventory, final counts, cross-row consistency. | IN_PROGRESS | Gate 0 local repo and upstream-version inventory recorded. |
+| A1 | `agent-upstream-versions` | Record current upstream Sentieon core, CLI, segdup-caller, and model bundle versions. | COMPLETE | Sources: Sentieon docs/release notes, Bioconda sentieon recipe, PyPI `sentieon-cli`, GitHub `segdup-caller` tags, Sentieon `sentieon_models.yaml`. |
+| A2 | `agent-envs` | Update active Sentieon conda envs to current core/CLI/segdup pins and Python 3.11 where needed. | COMPLETE | Active Sentieon envs now pin `sentieon=202503.03`, `sentieon-cli==1.6.3`, Python `3.11` where CLI is present, and `segdup-caller@v0.6.0`. |
+| A3 | `agent-command-shape` | Replace active `sentieon-pangenome` calls with `dnascope-pangenome`. | COMPLETE | Active pangenome rules use `bin/dayoa_sentieon_cli dnascope-pangenome`; stale string remains only as a negative test assertion. |
+| A4 | `agent-models` | Move runtime paths to `sentieon-genomics-202503.03`; preserve current/prior pangenome model contracts. | COMPLETE | Active config/runtime paths point to `sentieon-genomics-202503.03`; ILMN pangenome defaults to `1.2`, with explicit `prior_model` `1.0` and `*_model_mode=prior` override support. Runtime asset existence still must be verified on headnode before live prior-model run. |
+| A5 | `agent-tests` | Run slim local tests and static checks. | COMPLETE | `python -m pytest ... -q`: 39 passed in 0.60s. `python -m py_compile ...`: passed. Grep guard finds no stale active pins/commands except negative test assertions. |
+| A6 | `agent-release` | Commit/tag DayOA and update/tag DYEC pin if required. | OPEN | Pending local tests. |
+| A7 | `agent-headnode` | Prepare dyecX4/profile `lsmc` runs from new DayOA tag via persistent `ubuntu` tmux and `dy-r`. | OPEN | Pending release. |
+| A8 | `agent-live-runs` | Dry-run then live-run HG003 acceptance analyses. | OPEN | Pending headnode prep. |
+| A9 | `agent-evidence` | DRA export and acceptance-report inputs. | OPEN | Pending successful live analyses. |
+
+## Required Local Test Command
+
+```bash
+python -m pytest tests/test_sentieon_model_bundle_config.py tests/test_ont_fastq_contracts.py tests/test_snakemake_parser_contracts.py tests/test_complete_genomics_sentieon.py tests/test_htd_callers_contract.py -q
+```
+
+## Required Headnode Workflow Contract
+
+All DayOA workflow execution on the dyecX4 headnode must use a persistent `ubuntu` tmux login shell with setup as separate commands:
+
+```bash
+source dyoainit
+dy-a slurm hg38_broad
+dy-r ...
+```
+
+Raw `snakemake` invocation is out of scope.

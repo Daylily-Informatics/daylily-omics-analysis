@@ -3,8 +3,8 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - sentieon
-  - python=3.10
+  - sentieon=202503.03
+  - python=3.11
   - pip
   - setuptools
   - wheel
@@ -24,4 +24,4 @@ dependencies:
   - isa-l=2.31.0
   - pip
   - pip:
-    - git+https://github.com/Sentieon/sentieon-cli.git@v1.2.3
+    - sentieon-cli==1.6.3

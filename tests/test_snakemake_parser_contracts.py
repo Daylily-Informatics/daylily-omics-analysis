@@ -19,7 +19,7 @@ RAW_SENTIEON_COMMAND_RE = re.compile(
 )
 RAW_SENTIEON_CLI_COMMAND_RE = re.compile(
     r"(?<![A-Za-z0-9_./-])sentieon-cli\s+"
-    r"(?:dnascope|sentieon-pangenome)\b"
+    r"(?:dnascope|dnascope-pangenome)\b"
 )
 
 
