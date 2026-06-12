@@ -18,6 +18,7 @@ PANGENOME_ULTIMA = f"{MODEL_ROOT}/SentieonUltimaPangenomeRealignWGS1.3.bundle"
 PANGENOME_HAPL = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.hapl"
 PANGENOME_GBZ = f"{PANGENOME_REF_ROOT}/hprc-v2.0-mc-grch38.gbz"
 PANGENOME_ILMN_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20-20260528.vcf.gz"
+PANGENOME_ILMN_PRIOR_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20g41-20251216.vcf.gz"
 PANGENOME_ULTIMA_POP_VCF = f"{PANGENOME_REF_ROOT}/pop-v20g41-20251216.vcf.gz"
 
 
@@ -80,6 +81,8 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         assert cfg["sent_aln_sort_snv"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
         assert cfg["sentieon_pangenome_sr"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
         assert cfg["sentieon_pangenome_ug"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
+        assert cfg["sent_aln_sort_snv"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
+        assert cfg["sentieon_pangenome_sr"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
         assert "pcr_free" not in cfg["sentieon_pangenome_ug"]
         assert Path(cfg["sentdont"]["env_yaml"]).name == "sentieon_v0.3.yaml"
         assert Path(cfg["sent_aln_sort_snv"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"
@@ -105,6 +108,8 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
         assert "bin/dayoa_sentieon_cli dnascope-pangenome" in rule
         assert "_model_mode" in rule
         assert '"prior"' in rule
+        assert "_pop_vcf" in rule
+        assert "prior_pop_vcf" in rule
         assert "-r {params.huref}" in rule
         assert '--hapl "{params.hapl}"' in rule
         assert '--gbz "{params.gbz}"' in rule

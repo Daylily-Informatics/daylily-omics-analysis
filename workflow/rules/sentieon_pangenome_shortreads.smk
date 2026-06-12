@@ -21,6 +21,16 @@ def _sentieon_pangenome_sr_model(wildcards):
     raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
 
 
+def _sentieon_pangenome_sr_pop_vcf(wildcards):
+    section = "sentieon_pangenome_sr"
+    mode = str(config.get(f"{section}_model_mode", config[section]["model_mode"])).lower()
+    if mode == "current":
+        return config[section]["pop_vcf"]
+    if mode == "prior":
+        return config[section]["prior_pop_vcf"]
+    raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
+
+
 rule sentieon_pangenome_sr:
     """Sentieon pangenome (accelerated): graph-align + variant call (Illumina PE FASTQ → VCF)."""
     input:
@@ -62,7 +72,7 @@ rule sentieon_pangenome_sr:
         gbz=config["sentieon_pangenome_sr"]["gbz"],
         hapl=config["sentieon_pangenome_sr"]["hapl"],
         model=_sentieon_pangenome_sr_model,
-        pop_vcf=config["sentieon_pangenome_sr"]["pop_vcf"],
+        pop_vcf=_sentieon_pangenome_sr_pop_vcf,
         canonical_bed=config["sentieon_pangenome_sr"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_sr"]["dbsnp"],
         pcr_free=config["sentieon_pangenome_sr"]["pcr_free"],

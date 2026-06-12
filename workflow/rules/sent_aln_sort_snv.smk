@@ -18,6 +18,16 @@ def _sent_aln_sort_snv_model(wildcards):
     raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
 
 
+def _sent_aln_sort_snv_pop_vcf(wildcards):
+    section = "sent_aln_sort_snv"
+    mode = str(config.get(f"{section}_model_mode", config[section]["model_mode"])).lower()
+    if mode == "current":
+        return config[section]["pop_vcf"]
+    if mode == "prior":
+        return config[section]["prior_pop_vcf"]
+    raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
+
+
 rule sent_aln_sort_snv:
     """Sentieon pangenome: align + sort + variant call (Illumina PE FASTQ → VCF)."""
     input:
@@ -59,7 +69,7 @@ rule sent_aln_sort_snv:
         hapl=config["sent_aln_sort_snv"]["hapl"],
         gbz=config["sent_aln_sort_snv"]["gbz"],
         model=_sent_aln_sort_snv_model,
-        pop_vcf=config["sent_aln_sort_snv"]["pop_vcf"],
+        pop_vcf=_sent_aln_sort_snv_pop_vcf,
         canonical_bed=config["sent_aln_sort_snv"]["canonical_bed"],
         dbsnp=config["sent_aln_sort_snv"]["dbsnp"],
         pcr_free=config["sent_aln_sort_snv"]["pcr_free"],
