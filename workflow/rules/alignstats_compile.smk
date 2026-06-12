@@ -74,7 +74,11 @@ localrules:
 rule produce_alignstats:  # TARGET - only takes path to produce alignstats
     input:
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
+    output:
+        done=f"{MDIR}logs/produce_alignstats.done",
     log:
         MDIR + "logs/produce_alignstats.log"
     benchmark:
         "logs/benchmarks/produce_alignstats.bench.tsv"
+    shell:
+        "touch {log}; touch {output.done}"

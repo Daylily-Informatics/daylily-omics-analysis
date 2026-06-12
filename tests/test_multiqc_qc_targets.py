@@ -770,6 +770,11 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert alignstats.count('mem_mb=config["alignstats"]["mem_mb"]') == 2
     assert slurm_config["alignstats"]["mem_mb"] == 250000
     assert slurm_config["alignstats"]["partition"] == "i384nvme,i192nvme,i128nvme"
+    alignstats_compile = _read("workflow/rules/alignstats_compile.smk")
+    produce_alignstats = _rule_block(alignstats_compile, "produce_alignstats")
+    assert 'done=f"{MDIR}logs/produce_alignstats.done"' in produce_alignstats
+    assert "shell:" in produce_alignstats
+    assert "touch {output.done}" in produce_alignstats
     assert slurm_config["mosdepth"]["mem_mb"] == 64000
     assert slurm_config["mosdepth"]["partition"] == "i384nvme,i192nvme,i128nvme"
     assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
