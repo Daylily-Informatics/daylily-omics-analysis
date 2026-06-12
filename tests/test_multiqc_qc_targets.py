@@ -328,6 +328,15 @@ def test_sentd_sort_index_chunk_uses_configured_scratch_resources() -> None:
     assert local_config["sort_index_sentD_chunk_vcf"]["mem_mb"] >= 16000
 
 
+def test_sentieon_bwa_sort_requests_350gb_on_slurm() -> None:
+    sentieon = _read("workflow/rules/sentieon.smk")
+    block = _rule_block(sentieon, "sentieon_bwa_sort")
+    slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
+
+    assert "mem_mb=config['sentieon']['mem_mb']" in block
+    assert slurm_config["sentieon"]["mem_mb"] >= 350000
+
+
 def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     text = _read("workflow/rules/multiqc_final_wgs.smk")
     evidence = _read("workflow/rules/evidence_manifest.smk")
