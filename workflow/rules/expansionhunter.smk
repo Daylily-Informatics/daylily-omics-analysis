@@ -393,25 +393,33 @@ rule expansionhunter_multiqc:
 rule produce_expansion_hunter:  # TARGET: run ExpansionHunter for ILMN, Complete Genomics/MGI, and Ultima short-read CRAMs
     input:
         lambda wildcards: _expansionhunter_target_paths("tsv")
-
-
+    output:
+        done=MDIR + "logs/produce_expansion_hunter.done"
     log:
         MDIR + "logs/produce_expansion_hunter.log"
     benchmark:
         "logs/benchmarks/produce_expansion_hunter.bench.tsv"
+    shell:
+        "touch {log}; touch {output.done}"
 rule produce_expansionhunter:  # TARGET: alias for produce_expansion_hunter
     input:
         lambda wildcards: _expansionhunter_target_paths("tsv")
-
-
+    output:
+        done=MDIR + "logs/produce_expansionhunter.done"
     log:
         MDIR + "logs/produce_expansionhunter.log"
     benchmark:
         "logs/benchmarks/produce_expansionhunter.bench.tsv"
+    shell:
+        "touch {log}; touch {output.done}"
 rule produce_expansionhunter_multiqc:  # TARGET: run ExpansionHunter and focused MultiQC report
     input:
         MDIR + "reports/expansionhunter.multiqc.html"
+    output:
+        done=MDIR + "logs/produce_expansionhunter_multiqc.done"
     log:
         MDIR + "logs/produce_expansionhunter_multiqc.log"
     benchmark:
         "logs/benchmarks/produce_expansionhunter_multiqc.bench.tsv"
+    shell:
+        "touch {log}; touch {output.done}"

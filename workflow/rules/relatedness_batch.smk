@@ -258,7 +258,11 @@ rule relatedness_batch_gather:
 rule produce_relatedness:  # TARGET: produce batch Somalier relatedness QC
     input:
         MDIR + "other_reports/relatedness_mqc.tsv"
+    output:
+        done=MDIR + "logs/produce_relatedness.done"
     log:
         MDIR + "logs/produce_relatedness.log"
     benchmark:
         "logs/benchmarks/produce_relatedness.bench.tsv"
+    shell:
+        "touch {log}; touch {output.done}"

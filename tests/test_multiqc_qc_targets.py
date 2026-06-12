@@ -736,6 +736,23 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
     assert "setuptools" in report_env["dependencies"]
 
 
+def test_relatedness_and_expansionhunter_target_wrappers_emit_markers() -> None:
+    relatedness = _read("workflow/rules/relatedness_batch.smk")
+    expansionhunter = _read("workflow/rules/expansionhunter.smk")
+
+    for text, rule_name in (
+        (relatedness, "produce_relatedness"),
+        (expansionhunter, "produce_expansion_hunter"),
+        (expansionhunter, "produce_expansionhunter"),
+        (expansionhunter, "produce_expansionhunter_multiqc"),
+    ):
+        block = _rule_block(text, rule_name)
+        assert "output:" in block
+        assert f"{rule_name}.done" in block
+        assert "shell:" in block
+        assert "touch {log}; touch {output.done}" in block
+
+
 def test_no_dedup_uses_samtools_conda_env() -> None:
     rule_text = _read("workflow/rules/no_dedup.smk")
     samtools_env = _read("workflow/envs/samtools_v0.1.yaml")
