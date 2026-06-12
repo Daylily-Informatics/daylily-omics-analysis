@@ -284,7 +284,19 @@ def write_status(status, phase_set, reason):
 
 reader = vcfpy.Reader.from_path(vcf_path)
 phasesets = []
-for record in reader.fetch(region):
+try:
+    records = reader.fetch(region)
+except ValueError as exc:
+    if "not found in index" in str(exc):
+        write_status(
+            "no_call_no_phase_set",
+            "NO_PHASE_SET",
+            f"No HapSMA PhaseSet was detected within {{region}}; {{exc}}",
+        )
+        sys.exit(0)
+    raise
+
+for record in records:
     if record.calls:
         ps = record.calls[0].data.get("PS")
         if ps:

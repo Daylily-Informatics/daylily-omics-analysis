@@ -379,6 +379,7 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "run_clair3.sh",
         "sniffles",
         "No HapSMA PhaseSet was detected",
+        "not found in index",
         "no_call_no_phase_set",
         "no_call_no_dominant_phase_set",
         "phaseset.status.tsv",
