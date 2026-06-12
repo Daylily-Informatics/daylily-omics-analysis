@@ -252,13 +252,16 @@ PY
             --TMP_DIR "$TMPDIR" >> {log:q} 2>&1
           tabix -f -p vcf "$filter_vcf" >> {log:q} 2>&1
 
+          local whatshap_status=0
+          set +e
           whatshap haplotag \
             "$filter_vcf" "$rg_bam" \
             -o "$tagged_bam" \
             --reference {params.reference:q} \
             --ploidy {params.ploidy:q} \
             --ignore-read-groups >> {log:q} 2>&1
-          samtools index -@ {threads} "$tagged_bam" >> {log:q} 2>&1
+          whatshap_status=$?
+          set -e
 
           python - "$filter_vcf" "$phase_region" "$ps_file" "$ps_status" <<'PY'
 import sys
@@ -313,9 +316,15 @@ PY
           local phase_status
           phase_status=$(awk -F '\t' 'NR == 2 {{print $1}}' "$ps_status")
           if [[ "$phase_status" != "phased" ]]; then
-            echo "HapSMA $approach no-call: $(awk -F '\t' 'NR == 2 {{print $3}}' "$ps_status")" >> {log:q}
+            echo "HapSMA $approach no-call: $(awk -F '\t' 'NR == 2 {{print $3}}' "$ps_status"); whatshap_exit=$whatshap_status" >> {log:q}
             return 0
           fi
+          if [[ "$whatshap_status" -ne 0 ]]; then
+            echo "whatshap haplotag failed for phased HapSMA $approach approach: exit $whatshap_status" >> {log:q}
+            return "$whatshap_status"
+          fi
+          test -s "$tagged_bam" || (echo "whatshap haplotag did not produce $tagged_bam" >> {log:q}; return 1)
+          samtools index -@ {threads} "$tagged_bam" >> {log:q} 2>&1
 
           for hp in $(seq 1 {params.ploidy:q}); do
             local hap_bam="$outdir/bam/{wildcards.sample}.${{approach}}.hap${{hp}}.ps${{phase_set}}.bam"
