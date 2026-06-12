@@ -160,6 +160,7 @@ rule sentmm2ont_align_sort:
             exit 6;
         fi
 
+        set +e
         (
             if [[ "{params.input_kind}" == "fastq" ]]; then
                 for read_path in {input.reads:q}; do
@@ -191,6 +192,30 @@ rule sentmm2ont_align_sort:
         --reference {params.huref} \
         --write-index \
         -o {output.cramo}##idx##{output.crami} >> {log} 2>&1;
+        pipeline_status=("${{PIPESTATUS[@]}}");
+        set -e
+
+        printf 'sentmm2ont pipeline statuses: %s\n' "${{pipeline_status[*]}}" >> {log} 2>&1;
+        bad_pipeline_status=0;
+        last_pipeline_index=$((${{#pipeline_status[@]}} - 1));
+        for status_index in "${{!pipeline_status[@]}}"; do
+            status_value="${{pipeline_status[$status_index]}}";
+            if [[ "$status_value" -eq 0 ]]; then
+                continue;
+            fi;
+            if [[ "$status_index" -lt "$last_pipeline_index" && "$status_value" -eq 141 ]]; then
+                echo "sentmm2ont tolerated upstream SIGPIPE 141 at pipeline index $status_index pending output validation." >> {log} 2>&1;
+                continue;
+            fi;
+            echo "ERROR: sentmm2ont pipeline command index $status_index exited $status_value." >> {log} 2>&1;
+            bad_pipeline_status=1;
+        done;
+        if [[ "$bad_pipeline_status" -ne 0 ]]; then
+            exit 9;
+        fi;
+        test -s {output.cramo:q} || (echo "ERROR: sentmm2ont CRAM output missing or empty: {output.cramo}" >> {log} 2>&1; exit 10);
+        test -s {output.crami:q} || (echo "ERROR: sentmm2ont CRAI output missing or empty: {output.crami}" >> {log} 2>&1; exit 11);
+        samtools quickcheck -v {output.cramo:q} >> {log} 2>&1 || (echo "ERROR: samtools quickcheck failed for {output.cramo}" >> {log} 2>&1; exit 12);
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));

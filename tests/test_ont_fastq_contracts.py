@@ -46,6 +46,9 @@ def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
     assert 'cat -- "$read_path"' in rule
     assert "samtools fastq -@ 4 -T MM,ML {input.reads:q}" in rule
     assert "{params.minimap2_opts}" in rule
+    assert 'pipeline_status=("${{PIPESTATUS[@]}}")' in rule
+    assert "tolerated upstream SIGPIPE 141" in rule
+    assert "samtools quickcheck -v {output.cramo:q}" in rule
 
     for profile in ("local", "slurm"):
         cfg = _rule_config(profile)
