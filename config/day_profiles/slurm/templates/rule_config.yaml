@@ -775,7 +775,7 @@ sentdhrom:
   bench_repeat: 0
   numactl: ' '
   partition: i192hugenvme,i192nvme,i384nvme
-  dna_scope_snv_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaONT1.1.model.bundle
+  dna_scope_snv_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaONT1.1.bundle
   pop_vcf: /fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz
   mem_mb: 300000
   mem_mb_medium: 75000

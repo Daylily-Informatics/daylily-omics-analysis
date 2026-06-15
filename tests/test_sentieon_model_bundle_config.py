@@ -9,6 +9,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MODEL_ROOT = "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles"
 PANGENOME_REF_ROOT = "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38"
 DNASCOPE_ONT = f"{MODEL_ROOT}/DNAscopeONT2.3.bundle"
+HYBRID_ILLUMINA_PACBIO = f"{MODEL_ROOT}/HybridIlluminaPacBio1.1.bundle"
+HYBRID_ULTIMA_ONT = f"{MODEL_ROOT}/HybridUltimaONT1.1.bundle"
 PANGENOME_ILMN = f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
 PANGENOME_ILMN_PRIOR = (
     f"{MODEL_ROOT}/SentieonIlluminaPangenomeRealignWGS1.0.bundle/"
@@ -60,6 +62,8 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
 
         assert "DNAscopeONT2.2.bundle" not in text
         assert "SentieonUltimaPangenomeRealignWGS1.0.bundle" not in text
+        assert "HybridIlluminaPacBio2.3.bundle" not in text
+        assert "HybridUltimaONT1.1.model.bundle" not in text
 
         assert cfg["sentdont"]["dna_scope_snv_model"] == DNASCOPE_ONT
         assert cfg["sentdont"]["dna_scope_apply_model"] == DNASCOPE_ONT
@@ -83,6 +87,12 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         assert cfg["sentieon_pangenome_ug"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
         assert cfg["sent_aln_sort_snv"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
         assert cfg["sentieon_pangenome_sr"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
+        for section in ("sentdhip", "sentdhipm"):
+            if section in cfg:
+                assert cfg[section]["dna_scope_snv_model"] == HYBRID_ILLUMINA_PACBIO
+        for section in ("sentdhuo", "sentdhrom"):
+            if section in cfg:
+                assert cfg[section]["dna_scope_snv_model"] == HYBRID_ULTIMA_ONT
         assert "pcr_free" not in cfg["sentieon_pangenome_ug"]
         assert Path(cfg["sentdont"]["env_yaml"]).name == "sentieon_v0.3.yaml"
         assert Path(cfg["sent_aln_sort_snv"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"
