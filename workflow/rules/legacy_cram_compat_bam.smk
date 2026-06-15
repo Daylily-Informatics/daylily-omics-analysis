@@ -23,7 +23,7 @@ rule legacy_cram_compat_bam:
     resources:
         vcpu=int(config.get("legacy_cram_compat_bam", {}).get("threads", 16)),
         threads=int(config.get("legacy_cram_compat_bam", {}).get("threads", 16)),
-        mem_mb=int(config.get("legacy_cram_compat_bam", {}).get("mem_mb", 32000)),
+        mem_mb=int(config.get("legacy_cram_compat_bam", {}).get("mem_mb", 50000)),
         partition=config.get("legacy_cram_compat_bam", {}).get("partition", "i384nvme,i192nvme,i192,i128"),
     params:
         cluster_sample=ret_sample,

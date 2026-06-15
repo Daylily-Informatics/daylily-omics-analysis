@@ -57,7 +57,7 @@ rule vep_validate_input_contigs:
         vcpu=1,
         threads=1,
         partition=config["vep"].get("concat_partition", config["vep"]["partition"]),
-        mem_mb=4000,
+        mem_mb=50000,
     params:
         allowed_contigs=get_vep_allowed_contigs,
     shell:
@@ -101,7 +101,7 @@ rule vep_chromosome_input:
         vcpu=1,
         threads=1,
         partition=config["vep"].get("concat_partition", config["vep"]["partition"]),
-        mem_mb=4000,
+        mem_mb=50000,
     params:
         cluster_sample=ret_sample,
         contig=get_vepchrm,
@@ -148,7 +148,7 @@ rule vep_chromosome:
         vcpu=config["vep"]["threads"],
         partition=config["vep"]["partition"],
         threads=config["vep"]["threads"],
-        mem_mb=config["vep"].get("mem_mb", 3000),
+        mem_mb=config["vep"].get("mem_mb", 50000),
     params:
         contig=get_vepchrm,
         cluster_sample=ret_sample,
@@ -283,7 +283,7 @@ rule vep_concat_index_chunks:
         vcpu=config["vep"].get("concat_threads", 4),
         partition=config["vep"].get("concat_partition", config["vep"]["partition"]),
         threads=config["vep"].get("concat_threads", 4),
-        mem_mb=config["vep"].get("concat_mem_mb", 16000),
+        mem_mb=config["vep"].get("concat_mem_mb", 50000),
     params:
         cluster_sample=ret_sample,
         ovcfgztemp=MDIR

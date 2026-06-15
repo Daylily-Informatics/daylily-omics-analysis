@@ -145,7 +145,7 @@ def _truvari_sv_thread_count(wildcards):
 
 
 def _truvari_sv_mem_mb(wildcards):
-    return int(_truvari_sv_config().get("mem_mb", 32000))
+    return int(_truvari_sv_config().get("mem_mb", 50000))
 
 
 def _truvari_sv_partition(wildcards):

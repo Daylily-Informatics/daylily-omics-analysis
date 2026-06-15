@@ -1000,7 +1000,7 @@ def test_rtg_vcfeval_requests_explicit_memory() -> None:
     assert '.get("mem_mb", 64000)' not in concordance
     assert '.get("parse_mem_mb", 16000)' not in concordance
     assert 'rtg_mem_gb=$(( ({resources.mem_mb} * 85 / 100 + 1023) / 1024 ))' in concordance
-    assert 'RTG_MEM="${rtg_mem_gb}G" rtg vcfeval' in concordance
+    assert 'RTG_MEM="${{rtg_mem_gb}}G" rtg vcfeval' in concordance
     assert 'mkdir -p "$(dirname {output.mqc})"' in concordance
 
 

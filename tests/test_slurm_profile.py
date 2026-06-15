@@ -10,7 +10,10 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SLURM_RULE_CONFIG = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
+LOCAL_RULE_CONFIG = REPO_ROOT / "config/day_profiles/local/templates/rule_config.yaml"
+GLOBAL_CONFIG = REPO_ROOT / "config/global.yaml"
 ACTIVE_RULES_DIR = REPO_ROOT / "workflow/rules"
+MEMORY_FLOOR_MB = 50000
 V8_PARTITIONS = {
     "i8",
     "i128",
@@ -75,7 +78,7 @@ def test_slurm_profile_routes_job_stdout_and_stderr_to_logs() -> None:
     resources = SimpleNamespace(
         time=60,
         partition="i192",
-        mem_mb=3000,
+        mem_mb=MEMORY_FLOOR_MB,
         distribution="block",
         constraint="",
         exclude="",
@@ -110,6 +113,50 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
 
     assert "partition=i384nvme,i192,i192nvme,i128" in profile["default-resources"]
     assert "mem_mb=100000" in profile["default-resources"]
+
+
+def test_config_and_rule_memory_values_observe_global_floor() -> None:
+    hits: list[str] = []
+
+    def walk_config(value, context: str) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                next_context = f"{context}.{key}"
+                if "mem_mb" in str(key) and isinstance(child, int) and child < MEMORY_FLOOR_MB:
+                    hits.append(f"{next_context}={child}")
+                walk_config(child, next_context)
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                walk_config(item, f"{context}[{index}]")
+
+    for path in (GLOBAL_CONFIG, LOCAL_RULE_CONFIG, SLURM_RULE_CONFIG):
+        walk_config(yaml.safe_load(path.read_text(encoding="utf-8")), path.name)
+
+    profile = yaml.safe_load(
+        (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    for default_resource in profile["default-resources"]:
+        match = re.fullmatch(r"mem_mb=(\d+).*", str(default_resource))
+        if match and int(match.group(1)) < MEMORY_FLOOR_MB:
+            hits.append(f"slurm default-resources {default_resource}")
+
+    literal_patterns = [
+        re.compile(r"mem_mb\s*=\s*(\d+)"),
+        re.compile(r"get\(\s*['\"][^'\"]*mem_mb[^'\"]*['\"]\s*,\s*(\d+)"),
+        re.compile(r"get\(\s*['\"][^'\"]*mem_mb[^'\"]*['\"]\s*,\s*max\(\s*(\d+)"),
+    ]
+    for path in sorted(ACTIVE_RULES_DIR.rglob("*.smk")):
+        for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if "mem_mb" not in line:
+                continue
+            for pattern in literal_patterns:
+                for match in pattern.finditer(line):
+                    if int(match.group(1)) < MEMORY_FLOOR_MB:
+                        hits.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {line.strip()}")
+
+    assert not hits
 
 
 def test_slurm_rule_config_uses_v8_partitions_and_explicit_memory() -> None:

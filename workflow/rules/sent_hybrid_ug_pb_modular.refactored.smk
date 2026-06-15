@@ -318,7 +318,7 @@ rule sentdhupmr_mapq0_slop:
         partition="i192hugenvme,i192nvme,i384nvme",
         threads=2,
         vcpu=2,
-        mem_mb=4000,
+        mem_mb=50000,
     params:
         cluster_sample=ret_sample,
     shell:
@@ -354,7 +354,7 @@ rule sentdhupmr_merge_beds:
         partition="i192hugenvme,i192nvme,i384nvme",
         threads=2,
         vcpu=2,
-        mem_mb=4000,
+        mem_mb=50000,
     params:
         cluster_sample=ret_sample,
     shell:

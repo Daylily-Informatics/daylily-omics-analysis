@@ -328,7 +328,7 @@ def test_verifybamid2_panel_config_and_resources_are_declared() -> None:
     profile_expectations = {
         "config/day_profiles/local/templates/rule_config.yaml": {
             "100k_threads": 8,
-            "100k_mem_mb": 16000,
+            "100k_mem_mb": 50000,
             "100k_svd_prefix": VERIFYBAMID2_HG38_100K_SVD_PREFIX,
         },
         "config/day_profiles/slurm/templates/rule_config.yaml": {

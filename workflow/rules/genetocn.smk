@@ -5,7 +5,7 @@ import re
 GENETOCN_CFG = config.get("genetocn", {})
 GENETOCN_ENV = GENETOCN_CFG.get("env_yaml", "workflow/envs/genetocn_v0.1.yaml")
 GENETOCN_THREADS = GENETOCN_CFG.get("threads", config["go_left"]["threads"])
-GENETOCN_MEM_MB = GENETOCN_CFG.get("mem_mb", 32000)
+GENETOCN_MEM_MB = GENETOCN_CFG.get("mem_mb", 50000)
 
 
 def genetocn_cram(wildcards):

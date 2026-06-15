@@ -25,7 +25,7 @@ rule no_dedup:
         threads=config.get("no_dedup", {}).get("threads", 4),
         partition=config.get("no_dedup", {}).get("partition", "i192"),
         vcpu=config.get("no_dedup", {}).get("threads", 4),
-        mem_mb=config.get("no_dedup", {}).get("mem_mb", 16000),
+        mem_mb=config.get("no_dedup", {}).get("mem_mb", 50000),
         constraint=config.get("no_dedup", {}).get("constraint", ""),
     params:
         cluster_sample=ret_sample,

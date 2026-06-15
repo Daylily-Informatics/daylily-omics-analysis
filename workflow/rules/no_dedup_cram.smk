@@ -61,7 +61,7 @@ rule no_dedup_cram:
         threads=1,
         partition=config.get("no_dedup", {}).get("partition", "i192"),
         vcpu=1,
-        mem_mb=1000,
+        mem_mb=50000,
     log:
         MDIR + "{sample}/align/{alnr}/na/logs/dedupe.na.{sample}.{alnr}.log",
     shell:

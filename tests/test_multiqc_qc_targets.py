@@ -811,7 +811,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "--fork {threads}" in vep
     assert "rule=vep_chromosome" in vep
     assert "threads: config[\"vep\"][\"threads\"]" in vep
-    assert 'mem_mb=config["vep"].get("mem_mb", 3000)' in vep
+    assert 'mem_mb=config["vep"].get("mem_mb", 50000)' in vep
     assert vep.count("cluster_sample=ret_sample") >= 3
     assert "vep.input_contigs.ok" in vep
     assert "bcftools concat -a -d all" in vep
@@ -821,7 +821,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["vep"]["mem_mb"] == 128000
     assert slurm_config["vep"]["partition"] == "i384nvme,i192nvme,i128nvme"
     assert slurm_config["vep"]["concat_threads"] == 8
-    assert slurm_config["vep"]["concat_mem_mb"] == 32000
+    assert slurm_config["vep"]["concat_mem_mb"] == 50000
     assert slurm_config["vep"]["concat_partition"] == "i384nvme,i192nvme,i128nvme"
     assert slurm_config["vep"]["hg38_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"

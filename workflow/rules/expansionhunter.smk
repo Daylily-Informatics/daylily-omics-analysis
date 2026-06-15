@@ -293,7 +293,7 @@ rule expansionhunter_json_to_tsv:
     resources:
         threads=1,
         vcpu=1,
-        mem_mb=2000,
+        mem_mb=50000,
         partition=EXPANSIONHUNTER_CFG["partition"],
     conda:
         config["vanilla"]["env_yaml"]

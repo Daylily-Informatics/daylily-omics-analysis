@@ -15,7 +15,7 @@ def _parascopy_partition():
 
 
 def _parascopy_mem_mb():
-    return _PARASCOPY_CONFIG.get("mem_mb", 16000)
+    return _PARASCOPY_CONFIG.get("mem_mb", 50000)
 
 
 def _parascopy_locus_config():

@@ -159,7 +159,7 @@ SAMPLES_TABLE = str(
 )
 
 BCL_THREADS = _intish(BCLCFG.get("threads", 1), 1)
-BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 3000), 3000)
+BCL_MEM_MB = _intish(BCLCFG.get("mem_mb", 50000), 50000)
 BCL_PARTITION = str(BCLCFG.get("partition", "i192hugenvme,i192nvme,i384nvme") or "i192hugenvme,i192nvme,i384nvme")
 BCL_CONSTRAINT = str(BCLCFG.get("constraint", "") or "")
 BCL_EXCLUSIVE = str(BCLCFG.get("exclusive", "--exclusive") or "")
@@ -199,8 +199,8 @@ BCL_TILE_SHARD_TILE_LIMIT = _optional_nonnegative_int(
 BCL_TILE_SHARD_TILE_NAMES_RAW = BCLCFG.get("tile_shard_tile_names", "")
 BCL_TILE_SHARD_THREADS = _intish(BCLCFG.get("tile_shard_threads", BCL_THREADS), BCL_THREADS)
 BCL_TILE_SHARD_MEM_MB = _intish(
-    BCLCFG.get("tile_shard_mem_mb", max(3000, BCL_MEM_MB // 4)),
-    max(3000, BCL_MEM_MB // 4),
+    BCLCFG.get("tile_shard_mem_mb", max(50000, BCL_MEM_MB // 4)),
+    max(50000, BCL_MEM_MB // 4),
 )
 BCL_TILE_PARALLEL_TILES = _intish(BCLCFG.get("tile_parallel_tiles", BCL_PARALLEL_TILES), BCL_PARALLEL_TILES)
 BCL_TILE_CONVERSION_THREADS = _intish(
@@ -742,7 +742,7 @@ rule merge_bclconvert_tile_shards:
         constraint=BCL_CONSTRAINT,
         vcpu=1,
         threads=1,
-        mem_mb=3000,
+        mem_mb=50000,
         tmpdir=BCL_TMPDIR,
     params:
         cluster_sample=lambda wildcards: f"merge_bclconvert_tile_shards_{wildcards.lane}",
@@ -792,7 +792,7 @@ if BCL_MERGE_LANE_FASTQS:
             constraint=BCL_CONSTRAINT,
             vcpu=1,
             threads=1,
-            mem_mb=3000,
+            mem_mb=50000,
             tmpdir=BCL_TMPDIR,
         params:
             cluster_sample="run_bclconvert_merge_lanes",
@@ -832,7 +832,7 @@ else:
             constraint=BCL_CONSTRAINT,
             vcpu=1,
             threads=1,
-            mem_mb=3000,
+            mem_mb=50000,
             tmpdir=BCL_TMPDIR,
         params:
             cluster_sample="run_bclconvert_lane_fastqs_ready",

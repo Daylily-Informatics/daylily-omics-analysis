@@ -313,7 +313,7 @@ def verifybamid2_panel_mem_mb(wildcards):
     panel_cfg = _verifybamid2_panel_config(wildcards.vb2panel)
     return _config_int(
         panel_cfg.get("mem_mb", None),
-        config["verifybamid2_contam"].get("mem_mb", 16000),
+        config["verifybamid2_contam"].get("mem_mb", 50000),
     )
 
 

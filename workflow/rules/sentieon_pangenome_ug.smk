@@ -193,7 +193,7 @@ rule sentieon_pangenome_ug_shard_bed:
     resources:
         threads=1,
         vcpu=1,
-        mem_mb=4000,
+        mem_mb=50000,
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         canonical_bed=config["sentieon_pangenome_ug"]["canonical_bed"],
@@ -398,7 +398,7 @@ rule sentpgs_concat_fofn:
     resources:
         threads=1,
         vcpu=1,
-        mem_mb=4000,
+        mem_mb=50000,
     params:
         cluster_sample=ret_sample,
     benchmark:

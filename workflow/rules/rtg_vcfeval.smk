@@ -301,6 +301,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
         resources:
             vcpu=config["rtg_vcfeval"]["threads"],
             threads=config["rtg_vcfeval"]["threads"],
+            mem_mb=config["prep_for_concordance_check"]["mem_mb"],
             partition=config["rtg_vcfeval"]["partition_other"]
         conda:
             config["rtg_vcfeval"]["env_yaml"]

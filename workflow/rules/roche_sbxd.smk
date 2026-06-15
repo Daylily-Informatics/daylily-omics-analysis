@@ -32,7 +32,7 @@ rule no_dedup_roche_bam:
         threads=1,
         partition=config.get("no_dedup", {}).get("partition", "i192"),
         vcpu=1,
-        mem_mb=1000,
+        mem_mb=50000,
     log:
         MDIR + "{sample}/align/{alnr}/na/logs/no_dedup_roche.{sample}.{alnr}.log",
     benchmark:

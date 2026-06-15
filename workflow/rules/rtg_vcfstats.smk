@@ -29,6 +29,7 @@ rule rtg_vcfstats:
     threads: config["rtg_vcfstats"]["threads"]
     resources:
         threads=config["rtg_vcfstats"]["threads"],
+        mem_mb=config["rtg_vcfstats"]["mem_mb"],
         partition=config["rtg_vcfstats"]["partition"],
     params:
         work_dir=MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv_caller}/vcf_stats/",

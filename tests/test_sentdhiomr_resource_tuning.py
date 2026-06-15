@@ -18,7 +18,7 @@ EXPECTED_SLURM_TUNING = {
     "mem_mb_snv_medium": 64000,
     "threads_snv_light": 4,
     "use_threads_snv_light": 3,
-    "mem_mb_snv_light": 8000,
+    "mem_mb_snv_light": 50000,
     "sr_markdup_threads": 64,
     "sr_markdup_mem_mb": 64000,
     "segdup_threads": 192,

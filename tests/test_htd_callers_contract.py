@@ -41,7 +41,7 @@ def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
 
     assert config["gauchian"] == {
         "threads": 1,
-        "mem_mb": 32000,
+        "mem_mb": 50000,
         "partition": "i192hugenvme,i192nvme,i384nvme",
     }
     assert config["cyrius"]["threads"] == 128

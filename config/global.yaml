@@ -33,7 +33,7 @@ hyb_ensemble:
 
 parascopy:
   threads: 8
-  mem_mb: 16000
+  mem_mb: 50000
   partition: "i8"
   locus_config: null  # Set to the path of the Parascopy locus configuration JSON.
   reference: null     # Optional override for the reference FASTA used by Parascopy.
@@ -42,17 +42,17 @@ parascopy:
 
 gauchian:
   threads: 1
-  mem_mb: 32000
+  mem_mb: 50000
   partition: "i192"
 
 cyrius:
   threads: 8
-  mem_mb: 16000
+  mem_mb: 50000
   partition: "i192"
 
 smn12:
   threads: 8
-  mem_mb: 16000
+  mem_mb: 50000
   partition: "i192"
 
 
@@ -73,7 +73,7 @@ smaca:
   extra_args: ""
   summary_filename: "SMAca_results.tsv"
   threads: 8
-  mem_mb: 16000
+  mem_mb: 50000
   partition: "i192"
   flags:
     case: "--case"
@@ -89,7 +89,7 @@ sma_finder:
   command: "sma_finder"
   extra_args: ""
   threads: 1
-  mem_mb: 8000
+  mem_mb: 50000
   partition: "i192"
 
 hapsma:
@@ -109,7 +109,7 @@ hapsma:
   fastq_tags: "RG,Mm,Ml,MM,ML"
   min_read_length: 1000
   threads: 10
-  mem_mb: 48000
+  mem_mb: 50000
   partition: "i192"
 
 

@@ -53,7 +53,7 @@ prep_input_sample_files:
     partition: "i192mem,i192,i128"
     threads: 8
     use_threads: 8
-    mem_mb: 20000
+    mem_mb: 50000
     env_yaml: "../envs/prep_input_sample_files_v0.1.yaml"
 
 # ###### RULE CONFIG ----------------------------------------
@@ -68,8 +68,7 @@ alignstats:
     env_yaml: "../envs/alignstats_v0.2.yaml"
     glances: " "
     ld_preload: "  "
-    mem_mb: 20000
-
+    mem_mb: 50000
 bcftools_vcfstat:
     threads: 7
 
@@ -126,7 +125,7 @@ bclconvert:
     first_tile_only: false
     extra_args: ""
     threads: 7
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
     constraint: ""
     exclusive: ""
@@ -142,7 +141,7 @@ bclconvert:
     tile_shard_tile_limit: 0
     tile_shard_tile_names: ""
     tile_shard_threads: 7
-    tile_shard_mem_mb: 16000
+    tile_shard_mem_mb: 50000
     tile_parallel_tiles: 1
     tile_conversion_threads: 3
     tile_compression_threads: 3
@@ -152,7 +151,7 @@ bclconvert:
     output_legacy_stats: true
     num_unknown_barcodes_reported: 1000
     demux_qc_threads: 4
-    demux_qc_mem_mb: 16000
+    demux_qc_mem_mb: 50000
     barcode_mismatches_index1: 0
     barcode_mismatches_index2: 0
 
@@ -381,7 +380,7 @@ unmapped_metagenomics:
 truvari_sv_benchmark:
     env_yaml: "../envs/truvari_v0.1.yaml"
     threads: 8
-    mem_mb: 32000
+    mem_mb: 50000
     partition: "i8"
     extra_args: ""
     truthsets:
@@ -400,29 +399,29 @@ smaca:
     extra_args: ""
     summary_filename: "SMAca_results.tsv"
     threads: 2
-    mem_mb: 8000
+    mem_mb: 50000
     partition: "i8"
 
 sma_finder:
     command: "sma_finder"
     extra_args: ""
     threads: 1
-    mem_mb: 4000
+    mem_mb: 50000
     partition: "i8"
 
 gauchian:
     threads: 1
-    mem_mb: 8000
+    mem_mb: 50000
     partition: "i8"
 
 cyrius:
     threads: 2
-    mem_mb: 8000
+    mem_mb: 50000
     partition: "i8"
 
 smn12:
     threads: 2
-    mem_mb: 8000
+    mem_mb: 50000
     partition: "i8"
 
 hapsma:
@@ -442,7 +441,7 @@ hapsma:
     fastq_tags: "RG,Mm,Ml,MM,ML"
     min_read_length: 1000
     threads: 2
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
 
 verifybamid2_panels: []
@@ -451,7 +450,7 @@ verifybamid2_panel_svd_prefixes: {}
 expansionhunter:
     version: "5.0.0"
     threads: 16
-    mem_mb: 32000
+    mem_mb: 50000
     partition: "i8"
     env_yaml: "../envs/expansionhunter_v0.1.yaml"
     variant_catalog: "resources/strchive/STRchive-disease-loci.hg38.stranger.json"
@@ -463,7 +462,7 @@ longtr:
     env_yaml: "../envs/longtr_v0.1.yaml"
     command: "LongTR"
     threads: 2
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
     aligners: ["ont", "sentmm2ont"]
     deduper: "na"
@@ -491,8 +490,7 @@ fastqc:
     extract: "  "
     ld_preload: " "
     partition: "i8"
-    mem_mb: 8000
-
+    mem_mb: 50000
 fastv:
     threads: 7
     env_yaml: "../envs/fastv_v0.1.yaml"
@@ -508,7 +506,7 @@ genetocn:
     env_yaml: "../envs/genetocn_v0.1.yaml"
     partition: "i8"
     threads: 8
-    mem_mb: 32000
+    mem_mb: 50000
     reference: ""
     panel: ""
     intervals: ""
@@ -531,7 +529,7 @@ manta_sort_and_index:
 
 manta:
     threads: 7
-    mem_mb: 32000
+    mem_mb: 50000
     env_yaml: "../envs/manta_v0.1.yaml"
     numactl: ""
     ld_preload: "  "
@@ -539,7 +537,7 @@ manta:
 
 legacy_cram_compat_bam:
     threads: 4
-    mem_mb: 16000
+    mem_mb: 50000
     env_yaml: "../envs/samtools_v0.1.yaml"
     partition: "i8"
 
@@ -607,7 +605,7 @@ lofreq2:
 parascopy:
     threads: 4
     partition: "i8"
-    mem_mb: 16000
+    mem_mb: 50000
     locus_config: ""  # Path to Parascopy locus configuration JSON.
     reference: ""     # Optional override for the reference FASTA.
     targets: ""       # Optional targets file passed to Parascopy.
@@ -617,7 +615,7 @@ aiv:
     threads: 4
     partition: "i8"
     partition_other: "i8"
-    mem_mb: 8000
+    mem_mb: 50000
     hg38_aiv_chrms: "1-24"
     hg38_broad_aiv_chrms: "1-24"
     b37_aiv_chrms: "1-24"
@@ -629,7 +627,7 @@ varn:
     threads: 4
     partition: "i8"
     partition_other: "i8"
-    mem_mb: 8000
+    mem_mb: 50000
     hg38_varn_chrms: "21,22"
     hg38_broad_varn_chrms: "21,22"
     b37_varn_chrms: "21,22"
@@ -641,7 +639,7 @@ senttn:
     threads: 4
     partition: "i8"
     partition_other: "i8"
-    mem_mb: 8000
+    mem_mb: 50000
     hg38_senttn_chrms: "21,22"
     hg38_broad_senttn_chrms: "21,22"
     b37_senttn_chrms: "21,22"
@@ -722,7 +720,7 @@ sentdhio:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridIlluminaONT1.1.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -762,7 +760,7 @@ sentdhuo:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaONT1.1.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -804,7 +802,7 @@ sentdhipm:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridIlluminaPacBio1.1.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -828,7 +826,7 @@ sentdhupm:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaPacBio1.0.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -852,7 +850,7 @@ sentdhrom:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaONT1.1.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -875,7 +873,7 @@ sentdhrpm:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaPacBio1.0.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -900,7 +898,7 @@ sentdhiomr:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridIlluminaONT2.0.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -910,14 +908,14 @@ sentdhiomr:
     mem_mb_snv: 50000
     threads_snv_medium: 2
     use_threads_snv_medium: 2
-    mem_mb_snv_medium: 16000
+    mem_mb_snv_medium: 50000
     threads_snv_light: 1
     use_threads_snv_light: 1
-    mem_mb_snv_light: 8000
+    mem_mb_snv_light: 50000
     sr_markdup_threads: 4
-    sr_markdup_mem_mb: 16000
+    sr_markdup_mem_mb: 50000
     segdup_threads: 2
-    segdup_mem_mb: 16000
+    segdup_mem_mb: 50000
     max_mem: "4G"
     pop_vcf: ""
     keep_sr_alignment: false
@@ -949,7 +947,7 @@ sentdhipmr:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridIlluminaPacBio1.1.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -973,7 +971,7 @@ sentdhupmr:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaPacBio1.0.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -997,7 +995,7 @@ sentdhuomr:
     dna_scope_snv_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/HybridUltimaONT1.1.bundle"
     mem_mb: 200000
     mem_mb_medium: 50000
-    mem_mb_light: 16000
+    mem_mb_light: 50000
     threads_medium: 4
     threads_light: 2
     use_threads_medium: 4
@@ -1145,7 +1143,7 @@ sort_index_sentD_chunk_vcf:
     threads: 7
     env_yaml: "../envs/vanilla_v0.1.yaml"
     partition: "i8"
-    mem_mb: 16000
+    mem_mb: 50000
     sort_mem: "8G"
 
 concat_index_sentD_chunks:
@@ -1181,8 +1179,8 @@ qualimap:
 
 rtg_vcfeval:
     threads: 7
-    mem_mb: 16000
-    parse_mem_mb: 8000
+    mem_mb: 650000
+    parse_mem_mb: 128000
     env_yaml: "../envs/rtgtools_v0.1.yaml"
     ld_preload: " "
     partition: "i8"
@@ -1326,7 +1324,7 @@ sentieon_pangenome_ug:
     shard_mem_mb: 50000
     shard_partition: "i8"
     concat_threads: 4
-    concat_mem_mb: 8000
+    concat_mem_mb: 50000
     concat_partition: "i8"
 
 sentieon_gatk:
@@ -1393,7 +1391,7 @@ vanilla:
 verifybamid2_contam:
     env_yaml: "../envs/verifybamid2_v0.1.yaml"
     threads: 4
-    mem_mb: 8000
+    mem_mb: 50000
     ld_preload: "  "
     partition: "i8"
     default_panel: "100k"
@@ -1405,7 +1403,7 @@ verifybamid2_contam:
             svd_prefix:
                 name: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/snp_vcfs/chr20_verbam/chr20.random1000.vcf.gz
             threads: 4
-            mem_mb: 8000
+            mem_mb: 50000
             partition: "i8"
         100k:
             label: "1000g_phase3_100k"
@@ -1413,7 +1411,7 @@ verifybamid2_contam:
             svd_prefix:
                 name: /fsx/references/runtime_assets/tool_specific_resources/verifybamid/hg38/100k/1000g.phase3.100k.b38.vcf.gz.dat
             threads: 8
-            mem_mb: 16000
+            mem_mb: 50000
             partition: "i8"
         1m:
             label: "daylily_snp_subset_1M"
@@ -1463,7 +1461,7 @@ haplocheck:
     cloudgene_app: "haplocheck@1.2.2"
     input_modes: ["vcf"]
     threads: 4
-    mem_mb: 8000
+    mem_mb: 50000
     partition: "i8"
 
 read_haps:
@@ -1472,7 +1470,7 @@ read_haps:
     reliable_snp_file: /fsx/references/runtime_assets/tool_specific_resources/read_haps/high_quality_markers_deCODE_2015.txt.gz
     extra_args: ""
     threads: 4
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
 
 relatedness:
@@ -1494,8 +1492,7 @@ gen_samstats:
     run_threadsb: 1 # will be x2
     ld_preload: "   "
     partition: "i8"
-    mem_mb: 8000
-
+    mem_mb: 50000
 sentieon_qc_metrics:
     threads: 7
     partition: "i8"
@@ -1551,10 +1548,10 @@ seqfu:
 
 vep:
     threads: 7
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
     concat_threads: 4
-    concat_mem_mb: 8000
+    concat_mem_mb: 50000
     concat_partition: "i8"
     hg38_vep_chrms: "1-25"
     hg38_broad_vep_chrms: "1-25"
@@ -1568,19 +1565,19 @@ vpot:
     threads: 7
     env_yaml: "../envs/vpot_v0.1.yaml"
     partition: "i8"
-    mem_mb: 16000
+    mem_mb: 50000
     extra: ""
 
 
 roche_downsample_bam:
     threads: 4
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
     env_yaml: "../envs/vanilla_v0.1.yaml"
 
 roche_gatk_haplotypecaller:
     threads: 4
-    mem_mb: 32000
+    mem_mb: 50000
     partition: "i8"
     container: "docker://broadinstitute/gatk-nightly:2025-08-19-4.6.2.0-17-g2a1f41bf3-NIGHTLY-SNAPSHOT"
     env_yaml: "../envs/roche_v0.1.yaml"
@@ -1588,13 +1585,13 @@ roche_gatk_haplotypecaller:
 
 roche_filter_variants:
     threads: 4
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
     container: "docker://roche/sbxd-small-variant-caller:latest"
     env_yaml: "../envs/roche_v0.1.yaml"
 
 roche_rtg_vcfeval:
     threads: 4
-    mem_mb: 16000
+    mem_mb: 50000
     partition: "i8"
     env_yaml: "../envs/roche_v0.1.yaml"
