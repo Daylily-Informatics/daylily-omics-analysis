@@ -76,6 +76,43 @@ dy-r produce_sent_align produce_dmd_dedup_cram produce_alignstats -p -j 150 -k -
 - 2026-06-15T00:06Z: Patched both active clone configs to request more memory for RTG concordance: `rtg_vcfeval.mem_mb=500000`, `rtg_vcfeval.parse_mem_mb=64000`, `rtg_vcfeval.partition_other=i384nvme,i192hugenvme,i192`.
 - 2026-06-15T00:08Z: Sentieon BWA/Doppelmark CRAMs exist in both clones, but `alignstats` failed before JSON output. Patched both active clone configs to request `alignstats.mem_mb=160000` and `alignstats.partition=i384nvme,i192nvme,i128`.
 - 2026-06-15T01:47Z: Queued patched reruns in the existing tmux sessions. Dry-runs passed for both clones. Current dry-run needs 6 RTG ROI jobs and 2 alignstats jobs; prior dry-run needs 2 RTG ROI jobs and 2 alignstats jobs. Live concordance rerun submitted RTG jobs with `mem_mb=500000`; Slurm jobs `5572`-`5578` were in `CF` and `5579` was pending for resources.
+- 2026-06-15T01:56Z: Patched concordance reruns completed for both clones (`rc=0`).
+- 2026-06-15T02:47Z: Separate Sentieon BWA/Doppelmark alignstats recovery completed for both clones (`__RECOVERY_ALIGNSTATS_LIVE_RC__=0`); `produce_alignstats.done` exists in both analysis directories.
+- 2026-06-15T02:55Z: Forced prior-model Altair parse completed (`dry_rc=0 rc=0`) after creating the missing sanitized ROI work directory `_altair-v1_1`; the top-level prior `giab_concordance_mqc.tsv` now contains populated `altair-v1.1` class rows.
+- 2026-06-15T02:58Z: Final dry-runs reported `pg=0 alignstats=0` for both clones.
+- 2026-06-15T03:05Z: Final SSM extraction found no Slurm jobs for `ubuntu` and confirmed both top-level concordance TSVs and both alignstats TSVs were present.
+
+## Final Metric Summary
+
+### Alignstats `sent.dmd` WGS Coverage
+
+Both clones use the same separate Sentieon BWA + Doppelmark alignment path for the requested alignstats metrics.
+
+| Metric | Current model | Prior model |
+| --- | ---: | ---: |
+| WgsCoverageMean | 32.224574 | 32.224574 |
+| WgsCoverageMedian | 33 | 33 |
+| WgsCoverageStandardDeviation | 417.549146 | 417.549146 |
+| WgsCoverageBases1Pct | 94.104365 | 94.104365 |
+| WgsCoverageBases10Pct | 91.915417 | 91.915417 |
+| WgsCoverageBases20Pct | 84.748962 | 84.748962 |
+| WgsCoverageBases30Pct | 64.092102 | 64.092102 |
+| WgsAlignedReads | 719025987 | 719025987 |
+| WgsAlignedReadsPct | 99.624008 | 99.624008 |
+| WgsCalculatedAlignedReads | 694943424 | 694943424 |
+| WgsCovDuplicateReads | 24082563 | 24082563 |
+| WgsCovDuplicateReadsPct | 3.336738 | 3.336738 |
+| MappedReads | 721739668 | 721739668 |
+| MappedReadsPct | 100.0 | 100.0 |
+
+### `produce_snv_concordance` All-Variant F-scores
+
+| Model | ROI | All F-score | TP | FP | FN |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Current `SentieonIlluminaPangenomeRealignWGS1.2.bundle` | altair-v1.1 | 0.9547873167999502 | 444918.0 | 31293.0 | 10844.0 |
+| Current `SentieonIlluminaPangenomeRealignWGS1.2.bundle` | giabHC | 0.9939747222460159 | 3788725.0 | 2746.0 | 43187.0 |
+| Prior `SentieonIlluminaPangenomeRealignWGS1.0.bundle` | altair-v1.1 | 0.9555739019621946 | 445038.0 | 30655.0 | 10726.0 |
+| Prior `SentieonIlluminaPangenomeRealignWGS1.0.bundle` | giabHC | 0.9942140957701462 | 3789967.0 | 2165.0 | 41947.0 |
 - 2026-06-15T02:45Z: Re-assessed remaining failures. Current and prior pangenome/concordance dry-runs had already reached `RC=0`, but the active analysis checkouts still lacked the local `produce_alignstats.done` wrapper fix. Copied `workflow/rules/alignstats_compile.smk` into both active analysis checkouts using the DYEC SSM helper path, together with the already-applied `alignstats.smk`, `rtg_vcfeval.smk`, and parser fixes.
 - 2026-06-15T02:46Z: Verified active clone recovery config: `alignstats.mem_mb=250000`, `rtg_vcfeval.mem_mb=650000`, `rtg_vcfeval.parse_mem_mb=128000`, `rtg_vcfeval.partition=i384nvme,i192hugenvme`, `rtg_vcfeval.partition_other=i384nvme,i192hugenvme`, direct RTG memory resource use with no fallback, parser creates sanitized ROI intermediate directories, and `produce_alignstats` has `done=f"{MDIR}logs/produce_alignstats.done"`.
 - 2026-06-15T02:47Z: Live `produce_sent_align produce_dmd_dedup_cram produce_alignstats` recovery reran in both tmux sessions through `dy-r` without `-n`; both returned `__RECOVERY_ALIGNSTATS_LIVE_RC__=0`.
