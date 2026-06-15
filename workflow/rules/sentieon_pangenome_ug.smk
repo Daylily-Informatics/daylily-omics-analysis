@@ -261,7 +261,7 @@ rule sentieon_pangenome_ug_sharded:
         canonical_bed=config["sentieon_pangenome_ug"]["canonical_bed"],
         dbsnp=config["sentieon_pangenome_ug"]["dbsnp"],
         cli_threads=min(int(config["sentieon_pangenome_ug"]["shard_threads"]), 128),
-        cluster_sample=ret_sample,
+        cluster_sample=lambda wildcards: f"{ret_sample(wildcards)}-{wildcards.dchrm}",
     shell:
         """
         mkdir -p $(dirname {log}) $(dirname {output.vcfgz});

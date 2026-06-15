@@ -1027,7 +1027,7 @@ peddy:
   mem_mb: 50000
 prep_for_concordance_check:
   threads: 4
-  partition: i192,i128
+  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
   mem_mb: 50000
 picard:
   threads: 32
@@ -1049,13 +1049,13 @@ rtg_vcfeval:
   parse_mem_mb: 128000
   env_yaml: ../envs/rtgtools_v0.1.yaml
   ld_preload: ' '
-  partition: i384nvme,i192hugenvme
-  partition_other: i384nvme,i192hugenvme
+  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
+  partition_other: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
   rtg_region: ' '
 run_concordance:
   threads: 8
   env_yaml: ../envs/rtgtools_v0.1.yaml
-  partition: i192
+  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
   mem_mb: 50000
 sentieon_haplocaller:
   threads: 192
@@ -1460,5 +1460,5 @@ roche_filter_variants:
 roche_rtg_vcfeval:
   threads: 16
   mem_mb: 50000
-  partition: i192,i128
+  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
   env_yaml: ../envs/rtgtools_v0.1.yaml

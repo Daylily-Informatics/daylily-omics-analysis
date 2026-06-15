@@ -850,8 +850,12 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "b=MDIR" not in mosdepth_rule
     assert slurm_config["rtg_vcfeval"]["mem_mb"] == 650000
     assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 128000
-    assert slurm_config["rtg_vcfeval"]["partition"] == "i384nvme,i192hugenvme"
-    assert slurm_config["rtg_vcfeval"]["partition_other"] == "i384nvme,i192hugenvme"
+    rtg_partitions = "i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128"
+    assert slurm_config["prep_for_concordance_check"]["partition"] == rtg_partitions
+    assert slurm_config["rtg_vcfeval"]["partition"] == rtg_partitions
+    assert slurm_config["rtg_vcfeval"]["partition_other"] == rtg_partitions
+    assert slurm_config["run_concordance"]["partition"] == rtg_partitions
+    assert slurm_config["roche_rtg_vcfeval"]["partition"] == rtg_partitions
     assert "vep_annotation_mqc.tsv" in vep
     assert "summary_glob" in vep
     assert "valid_snv_alnr_ddup_tuples(" in vep

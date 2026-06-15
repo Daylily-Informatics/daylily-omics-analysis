@@ -142,6 +142,7 @@ def test_sentpgs_rules_are_isolated_from_monolithic_sentpg() -> None:
     assert 'rule sentpgs_concat_fofn:' in rules
     assert 'rule sentpgs_concat_index_chunks:' in rules
     assert 'rule produce_pangenome_ug_sharded_vcf:' in rules
+    assert 'cluster_sample=lambda wildcards: f"{ret_sample(wildcards)}-{wildcards.dchrm}"' in rules
     assert "make_scoped_pangenome_bed.py" in rules
     assert '--canonical-bed "{params.canonical_bed}"' in rules
     assert '-b "$scoped_canonical_bed"' in rules
