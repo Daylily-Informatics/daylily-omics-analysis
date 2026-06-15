@@ -1,0 +1,30 @@
+
+── EXPORT ──
+  › Preparing direct FSx export DRA
+2026-06-15 01:53:27,357 INFO Found credentials in shared credentials file: ~/.aws/credentials
+  · Attached export DRA dra-09acb9861906187bb at 
+/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/
+2026-06-15 01:56:03,785 INFO Task task-046045719223d5682 status: PENDING
+2026-06-15 01:56:34,027 INFO Task task-046045719223d5682 status: EXECUTING
+2026-06-15 01:57:04,270 INFO Task task-046045719223d5682 status: EXECUTING
+2026-06-15 01:57:34,657 INFO Task task-046045719223d5682 status: EXECUTING
+2026-06-15 01:58:05,220 INFO Task task-046045719223d5682 status: EXECUTING
+2026-06-15 01:58:35,437 INFO Task task-046045719223d5682 status: EXECUTING
+2026-06-15 01:59:05,666 INFO Task task-046045719223d5682 status: EXECUTING
+2026-06-15 01:59:35,895 INFO Task task-046045719223d5682 status: SUCCEEDED
+2026-06-15 01:59:51,775 INFO Wrote export status to /Users/jmajor/projects/lsmc/daylily-omics-analysis/docs/plans/20260615T081948Z_smn12_full_depth_chip124/exports/dyecX4_na00232_smn12_chip124_20260615T062929Z/fsx_export.yaml
+
+╭────────────────────────────── Export complete ───────────────────────────────╮
+│                                                                              │
+│  Cluster: dyecX4                                                             │
+│  FSx: fs-04960a3a07c091cf3                                                   │
+│  Source: /analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/    │
+│  S3:                                                                         │
+│  s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/dyecX4/na0  │
+│  0232_smn12_chip124_20260615T062929Z/                                        │
+│  Status file:                                                                │
+│  /Users/jmajor/projects/lsmc/daylily-omics-analysis/docs/plans/20260615T081  │
+│  948Z_smn12_full_depth_chip124/exports/dyecX4_na00232_smn12_chip124_2026061  │
+│  5T062929Z/fsx_export.yaml                                                   │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯

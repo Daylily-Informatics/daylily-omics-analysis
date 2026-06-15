@@ -1,0 +1,32 @@
+{
+  "lane_id": "chip1-chip2-chip4",
+  "run_id": "HYB-4NA-smn12-full-20260615",
+  "samples": {
+    "NA00232": {
+      "barcode": "barcode18",
+      "expected_smn1": 0,
+      "expected_smn2": 2,
+      "ilmn_r1": "/fsx/run_dir_mounts/ilmn-lh01121-b23ww2nlt4-fastq/NA00232-SMN_S46_R1_001.fastq.gz",
+      "ilmn_r2": "/fsx/run_dir_mounts/ilmn-lh01121-b23ww2nlt4-fastq/NA00232-SMN_S46_R2_001.fastq.gz",
+      "ont_fastq_counts": {
+        "chip1": 73,
+        "chip2": 73,
+        "chip4": 73
+      },
+      "ont_fastq_total": 219
+    },
+    "NA09677": {
+      "barcode": "barcode19",
+      "expected_smn1": 0,
+      "expected_smn2": 3,
+      "ilmn_r1": "/fsx/run_dir_mounts/ilmn-lh01121-b23ww2nlt4-fastq/NA09677-SMN_S47_R1_001.fastq.gz",
+      "ilmn_r2": "/fsx/run_dir_mounts/ilmn-lh01121-b23ww2nlt4-fastq/NA09677-SMN_S47_R2_001.fastq.gz",
+      "ont_fastq_counts": {
+        "chip1": 73,
+        "chip2": 73,
+        "chip4": 73
+      },
+      "ont_fastq_total": 219
+    }
+  }
+}

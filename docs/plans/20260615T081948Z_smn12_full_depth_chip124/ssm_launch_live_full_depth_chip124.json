@@ -1,0 +1,19 @@
+{
+  "analysis_id": "smn12_full_ilmn_chip124_20260615T092300Z",
+  "cluster": "dyecX4",
+  "command_id": "b3f11feb-ff86-454a-ae5b-7713efe01faa",
+  "created_utc": "2026-06-15T09:33:05Z",
+  "flags": "-p -T 0 -k -j 500 --rerun-triggers mtime",
+  "instance_id": "i-05815cdeec4a6dad8",
+  "live_log": "/fsx/analysis_results/dyecX4/smn12_full_ilmn_chip124_20260615T092300Z/daylily-omics-analysis/logs/live_smn12_full_chip124_20260615T092300Z.log",
+  "patch_log": "/fsx/analysis_results/dyecX4/smn12_full_ilmn_chip124_20260615T092300Z/daylily-omics-analysis/logs/smn12_runtime_patch_full_chip124_live_20260615T092300Z.log",
+  "profile": "lsmc",
+  "region": "us-west-2",
+  "remote_repo": "/fsx/analysis_results/dyecX4/smn12_full_ilmn_chip124_20260615T092300Z/daylily-omics-analysis",
+  "response_code": 0,
+  "session": "dayoa_smn12_full_chip124_20260615T092300Z_live",
+  "status": "Success",
+  "stderr": "",
+  "stdout": "DAY-EC activated.\nDAY-EC activated.\n__TMUX_SESSION__\tdayoa_smn12_full_chip124_20260615T092300Z_live\n__REMOTE_REPO__\t/fsx/analysis_results/dyecX4/smn12_full_ilmn_chip124_20260615T092300Z/daylily-omics-analysis\n__LIVE_LOG__\t/fsx/analysis_results/dyecX4/smn12_full_ilmn_chip124_20260615T092300Z/daylily-omics-analysis/logs/live_smn12_full_chip124_20260615T092300Z.log\n",
+  "targets": "produce_smn12_orthogonal_calls produce_htd_calls produce_sentdhiomr_segdup"
+}

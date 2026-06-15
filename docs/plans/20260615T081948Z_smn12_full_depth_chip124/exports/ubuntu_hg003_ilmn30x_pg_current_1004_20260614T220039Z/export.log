@@ -1,0 +1,27 @@
+
+── EXPORT ──
+  › Preparing direct FSx export DRA
+2026-06-15 01:37:57,730 INFO Found credentials in shared credentials file: ~/.aws/credentials
+  · Attached export DRA dra-0b9180e318c79fac9 at 
+/fsx/analysis_results/ubuntu/hg003_ilmn30x_pg_current_1004_20260614T220039Z/
+2026-06-15 01:40:49,132 INFO Task task-0cd306f5cbd23b396 status: PENDING
+2026-06-15 01:41:19,526 INFO Task task-0cd306f5cbd23b396 status: EXECUTING
+2026-06-15 01:41:49,761 INFO Task task-0cd306f5cbd23b396 status: EXECUTING
+2026-06-15 01:42:20,152 INFO Task task-0cd306f5cbd23b396 status: SUCCEEDED
+2026-06-15 01:42:36,180 INFO Wrote export status to /Users/jmajor/projects/lsmc/daylily-omics-analysis/docs/plans/20260615T081948Z_smn12_full_depth_chip124/exports/ubuntu_hg003_ilmn30x_pg_current_1004_20260614T220039Z/fsx_export.yaml
+
+╭────────────────────────────── Export complete ───────────────────────────────╮
+│                                                                              │
+│  Cluster: dyecX4                                                             │
+│  FSx: fs-04960a3a07c091cf3                                                   │
+│  Source:                                                                     │
+│  /analysis_results/ubuntu/hg003_ilmn30x_pg_current_1004_20260614T220039Z/    │
+│  S3:                                                                         │
+│  s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/hg0  │
+│  03_ilmn30x_pg_current_1004_20260614T220039Z/                                │
+│  Status file:                                                                │
+│  /Users/jmajor/projects/lsmc/daylily-omics-analysis/docs/plans/20260615T081  │
+│  948Z_smn12_full_depth_chip124/exports/ubuntu_hg003_ilmn30x_pg_current_1004  │
+│  _20260614T220039Z/fsx_export.yaml                                           │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
