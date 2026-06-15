@@ -1,0 +1,70 @@
+{
+  "cluster": "dyecX4",
+  "command_id": "bae50010-f7b0-41dd-af19-79fe915eed0f",
+  "counts": {
+    "raw:PBM13048": {
+      "bytes": "0",
+      "count": "0",
+      "kind": "raw",
+      "name": "PBM13048",
+      "path": "/fsx/run_dir_mounts/20260513_ONT_HG003"
+    },
+    "raw:PBM13545": {
+      "bytes": "0",
+      "count": "0",
+      "kind": "raw",
+      "name": "PBM13545",
+      "path": "/fsx/run_dir_mounts/20260513_ONT_HG003"
+    },
+    "raw:PBM14931": {
+      "bytes": "0",
+      "count": "0",
+      "kind": "raw",
+      "name": "PBM14931",
+      "path": "/fsx/run_dir_mounts/20260513_ONT_HG003"
+    },
+    "raw:barcode18_all": {
+      "bytes": "1556",
+      "count": "1",
+      "kind": "raw",
+      "name": "barcode18_all",
+      "path": "/fsx/run_dir_mounts/20260513_ONT_HG003"
+    },
+    "staged:chip1": {
+      "bytes": "19642355519",
+      "count": "73",
+      "kind": "staged",
+      "name": "chip1",
+      "path": "/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip1/fastq_pass/barcode18"
+    },
+    "staged:chip2": {
+      "bytes": "16310740013",
+      "count": "73",
+      "kind": "staged",
+      "name": "chip2",
+      "path": "/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip2/fastq_pass/barcode18"
+    },
+    "staged:chip3": {
+      "bytes": "0",
+      "count": "0",
+      "kind": "staged",
+      "name": "chip3",
+      "path": "/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip3/fastq_pass/barcode18"
+    },
+    "staged:chip4": {
+      "bytes": "15490905346",
+      "count": "73",
+      "kind": "staged",
+      "name": "chip4",
+      "path": "/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip4/fastq_pass/barcode18"
+    }
+  },
+  "created_utc": "2026-06-15T06:15:16Z",
+  "instance_id": "i-05815cdeec4a6dad8",
+  "profile": "lsmc",
+  "region": "us-west-2",
+  "response_code": 0,
+  "status": "Success",
+  "stderr": "/tmp/daylily-ssm-dMm04t.sh: line 82: sentieon-cli: command not found\n/tmp/daylily-ssm-dMm04t.sh: line 84: segdup-caller: command not found\n",
+  "stdout": "DAY-EC activated.\nDAY-EC activated.\n__META__\tdate_utc\t2026-06-15T06:15:15Z\n__META__\thostname\tip-10-0-0-45\n__META__\tuser\tubuntu\n__META__\tstaged_root\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z\n__META__\traw_root\t/fsx/run_dir_mounts/20260513_ONT_HG003\n__META__\truntime_root\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03\n__FILE__\tILMN\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ilmn/4_nas_ds_to_20x/NA00232-SMN_S46_ds20x_R1_001.fastq.gz\t17262515732\t1780794305\n__FILE__\tILMN\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ilmn/4_nas_ds_to_20x/NA00232-SMN_S46_ds20x_R2_001.fastq.gz\t17800937474\t1780794346\n__COUNT__\tstaged\tchip1\t73\t19642355519\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip1/fastq_pass/barcode18\n__PATH_SAMPLE__\tstaged\tchip1\tfirst\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip1/fastq_pass/barcode18/PBM13545_pass_barcode18_f3392d36_eb9b0a06_0.fastq.gz\n__COUNT__\tstaged\tchip2\t73\t16310740013\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip2/fastq_pass/barcode18\n__PATH_SAMPLE__\tstaged\tchip2\tfirst\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip2/fastq_pass/barcode18/PBM14931_pass_barcode18_9bbdbb3f_7e492b4e_0.fastq.gz\n__COUNT__\tstaged\tchip3\t0\t0\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip3/fastq_pass/barcode18\n__PATH_SAMPLE__\tstaged\tchip3\tfirst\t\n__COUNT__\tstaged\tchip4\t73\t15490905346\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip4/fastq_pass/barcode18\n__PATH_SAMPLE__\tstaged\tchip4\tfirst\t/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ont/chip4/fastq_pass/barcode18/PBM13048_pass_barcode18_8867cb21_f20c3bb7_0.fastq.gz\n__COUNT__\traw\tbarcode18_all\t1\t1556\t/fsx/run_dir_mounts/20260513_ONT_HG003\n__PATH_SAMPLE__\traw\tbarcode18_all\tfirst\t/fsx/run_dir_mounts/20260513_ONT_HG003/HG003/20260513_2149_1D_PBM13745_5a9ea63e/fastq_pass/barcode18/PBM13745_pass_barcode18_5a9ea63e_ee86bd52_0.fastq.gz\n__COUNT__\traw\tPBM13545\t0\t0\t/fsx/run_dir_mounts/20260513_ONT_HG003\n__PATH_SAMPLE__\traw\tPBM13545\tfirst\t\n__COUNT__\traw\tPBM14931\t0\t0\t/fsx/run_dir_mounts/20260513_ONT_HG003\n__PATH_SAMPLE__\traw\tPBM14931\tfirst\t\n__COUNT__\traw\tPBM13048\t0\t0\t/fsx/run_dir_mounts/20260513_ONT_HG003\n__PATH_SAMPLE__\traw\tPBM13048\tfirst\t\n__RUNTIME__\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/sentieon\tregular file\t1512\t1775173054\n__MISSING__\tRUNTIME\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/sentieon-cli\n__MISSING__\tRUNTIME\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/segdup-caller\n__RUNTIME__\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaWGS2.2.bundle\tregular file\t127015170\t1781500719\n__MISSING__\tRUNTIME\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaWGS2.2.bundle/dnascope.model\n__MISSING__\tRUNTIME\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaWGS2.2.bundle/bwa.model\n__RUNTIME__\t/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/DNAscopeONT2.3.bundle\tregular file\t925744416\t1780993894\n__RUNTIME__\t/fsx/references/runtime_assets/tool_specific_resources/hapsma/hg38_broad/SMN_region_38.smn_only.bed\tregular file\t226\t1781216909\n__RUNTIME__\t/fsx/references/runtime_assets/tool_specific_resources/hapsma/hg38_broad/hg38_broad_smn_100kb_pad_homopolymer_run3.bed\tregular file\t2290466\t1781216912\n__RUNTIME__\t/fsx/references/runtime_assets/tool_specific_resources/clair3/models/r1041_e82_400bps_sup_v500/pileup.pt\tregular file\t8304746\t1781220787\n__RUNTIME__\t/fsx/references/runtime_assets/tool_specific_resources/clair3/models/r1041_e82_400bps_sup_v500/full_alignment.pt\tregular file\t11983414\t1781220786\n__RUNTIME__\t/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.map-ont.mmi\tregular file\t7494956358\t1781216618\nCommand --version not found\n__VERSION_RC__\tsentieon\t1\n__VERSION_RC__\tsentieon-cli\t127\n__VERSION_RC__\tsegdup-caller\t127\n"
+}
