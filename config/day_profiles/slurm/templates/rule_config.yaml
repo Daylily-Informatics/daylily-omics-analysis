@@ -849,6 +849,7 @@ sentdhiomr:
   keep_tmp_dirs: false
   segdup_sr_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaWGS2.2.bundle
   segdup_lr_model: /fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/DNAscopeONT2.3.bundle
+  segdup_population_vcf: /fsx/references/runtime_assets/tool_specific_resources/segdup-caller/pop_vcfs/segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz
   segdup_genes: CFH,CYP11B1,CYP2D6,NCF1,PMS2,SMN1,STRC,HBA
   mt_fasta: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.fasta
   mt_shifted_fasta: /fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/chrM/Homo_sapiens_assembly38.chrM.shifted_by_8000_bases.fasta
@@ -1044,12 +1045,12 @@ qualimap:
 rtg_vcfeval:
   threads: 16
   sub_threads: 16
-  mem_mb: 64000
-  parse_mem_mb: 16000
+  mem_mb: 650000
+  parse_mem_mb: 128000
   env_yaml: ../envs/rtgtools_v0.1.yaml
   ld_preload: ' '
-  partition: i192
-  partition_other: i192
+  partition: i384nvme,i192hugenvme
+  partition_other: i384nvme,i192hugenvme
   rtg_region: ' '
 run_concordance:
   threads: 8

@@ -925,6 +925,7 @@ sentdhiomr:
     # SegDup caller config (segdup-caller CLI)
     segdup_sr_model: ""
     segdup_lr_model: ""
+    segdup_population_vcf: ""
     segdup_genes: ""
     # Mitochondrial calling pipeline config
     mt_fasta: ""

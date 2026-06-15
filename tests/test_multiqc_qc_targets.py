@@ -802,9 +802,12 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "--input_file {input.chunk_vcfgz}" in vep
     assert "--chr {params.contig}" in vep
     assert "--assembly {params.genome_build}" in vep
-    assert "--dir_cache {params.vep_cache}" in vep
+    assert "vep_cache_root=vep_cache_root()" in vep
+    assert "vep_cache_dir=vep_cache_dir()" in vep
+    assert "--dir_cache {input.vep_cache_root}" in vep
     assert "--cache_version {params.cache_version}" in vep
-    assert "--cache {params.vep_cache}" not in vep
+    assert "--cache {input.vep_cache_root}" not in vep
+    assert "ERROR: VEP cache not found: {input.vep_cache_dir}" in vep
     assert "--fork {threads}" in vep
     assert "rule=vep_chromosome" in vep
     assert "threads: config[\"vep\"][\"threads\"]" in vep
@@ -845,8 +848,10 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "prefix=MDIR" in mosdepth_rule
     assert "{params.prefix:q}" in mosdepth_rule
     assert "b=MDIR" not in mosdepth_rule
-    assert slurm_config["rtg_vcfeval"]["mem_mb"] == 64000
-    assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 16000
+    assert slurm_config["rtg_vcfeval"]["mem_mb"] == 650000
+    assert slurm_config["rtg_vcfeval"]["parse_mem_mb"] == 128000
+    assert slurm_config["rtg_vcfeval"]["partition"] == "i384nvme,i192hugenvme"
+    assert slurm_config["rtg_vcfeval"]["partition_other"] == "i384nvme,i192hugenvme"
     assert "vep_annotation_mqc.tsv" in vep
     assert "summary_glob" in vep
     assert "valid_snv_alnr_ddup_tuples(" in vep

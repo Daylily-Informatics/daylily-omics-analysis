@@ -95,6 +95,9 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
 
     assert _rule_config("local")["sentdontr"]["dnascope_model"] == DNASCOPE_ONT
     assert _rule_config("slurm")["sentdhiomr"]["segdup_lr_model"] == DNASCOPE_ONT
+    assert _rule_config("slurm")["sentdhiomr"]["segdup_population_vcf"].endswith(
+        "/tool_specific_resources/segdup-caller/pop_vcfs/segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz"
+    )
 
 
 def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:

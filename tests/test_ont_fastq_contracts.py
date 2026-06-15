@@ -149,6 +149,15 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
 
     assert "pip install git+https://github.com/Sentieon/segdup-caller.git" not in rule
     assert "ERROR: segdup-caller not found in pinned conda env" in rule
+    assert "sentdhiomr.segdup_population_vcf is required" in rule
+    assert "segdup_population_vcf=_sentdhiomr_segdup_population_vcf" in rule
+    assert "ERROR: Sentieon segdup population VCF not found: {input.segdup_population_vcf}" in rule
+    assert "ERROR: Sentieon segdup population VCF index not found: {input.segdup_population_vcf}.tbi" in rule
+    assert "SEGDUP_PACKAGE_POP_VCF=" in rule
+    assert "segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz" in rule
+    assert "flock 9" in rule
+    assert 'cp -f {input.segdup_population_vcf} "$tmp_vcf"' in rule
+    assert 'cp -f {input.segdup_population_vcf}.tbi "$tmp_tbi"' in rule
     assert 'vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.result.vcf.gz"' in rule
     assert 'yaml=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.yaml"' in rule
     assert 'outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}"' in rule

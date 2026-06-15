@@ -7,6 +7,30 @@ import csv
 import os
 
 
+def vep_cache_root():
+    return os.path.normpath(
+        config["supporting_files"]["files"]["vep"]["vep_cache"]["name"]
+    )
+
+
+def vep_genome_build():
+    return "GRCh37" if "b37" in config["genome_build"] else "GRCh38"
+
+
+def vep_cache_version():
+    return config["supporting_files"]["files"]["vep"]["vep_genome_build"].split(
+        "_", 1
+    )[0]
+
+
+def vep_cache_dir():
+    return os.path.join(
+        vep_cache_root(),
+        "homo_sapiens",
+        f"{vep_cache_version()}_{vep_genome_build()}",
+    )
+
+
 rule vep_validate_input_contigs:
     input:
         vcfgz=MDIR
@@ -107,6 +131,8 @@ rule vep_chromosome:
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/chunks/{vepchrm}/{sample}.{alnr}.{ddup}.{snv}.{vepchrm}.input.vcf.gz.tbi",
         record_count=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/chunks/{vepchrm}/{sample}.{alnr}.{ddup}.{snv}.{vepchrm}.input.vcf.gz.record_count",
+        vep_cache_root=vep_cache_root(),
+        vep_cache_dir=vep_cache_dir(),
     output:
         annovcf=MDIR
         + "{sample}/align/{alnr}/{ddup}/snv/{snv}/vep/chunks/{vepchrm}/{sample}.{alnr}.{ddup}.{snv}.{vepchrm}.vep.vcf.gz",
@@ -126,10 +152,9 @@ rule vep_chromosome:
     params:
         contig=get_vepchrm,
         cluster_sample=ret_sample,
-        genome_build="GRCh37" if 'b37' in config['genome_build'] else "GRCh38",
+        genome_build=vep_genome_build(),
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
-        vep_cache=config["supporting_files"]["files"]["vep"]["vep_cache"]['name'],
-        cache_version=config["supporting_files"]["files"]["vep"]["vep_genome_build"].split("_", 1)[0],
+        cache_version=vep_cache_version(),
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{snv}.{vepchrm}.vep.bench.tsv"
     container:
@@ -142,9 +167,9 @@ rule vep_chromosome:
         echo "rule=vep_chromosome sample={wildcards.sample} alnr={wildcards.alnr} ddup={wildcards.ddup} snv={wildcards.snv} contig={params.contig} threads={threads} mem_mb={resources.mem_mb}" >> {log}
         echo "input={input.chunk_vcfgz}" >> {log}
         echo "output={output.annovcf}" >> {log}
-        echo "vep_cache={params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build}" >> {log}
-        test -d {params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build} || (
-            echo "ERROR: VEP cache not found: {params.vep_cache}/homo_sapiens/{params.cache_version}_{params.genome_build}" >&2
+        echo "vep_cache={input.vep_cache_dir}" >> {log}
+        test -d {input.vep_cache_dir} || (
+            echo "ERROR: VEP cache not found: {input.vep_cache_dir}" >&2
             exit 2
         )
         records=$(cat {input.record_count})
@@ -152,7 +177,7 @@ rule vep_chromosome:
             gzip -cd {input.chunk_vcfgz} | awk '/^#/' | bgzip -c > {output.annovcf}
         else
             vep \
-            --dir_cache {params.vep_cache} \
+            --dir_cache {input.vep_cache_root} \
             --offline \
             --vcf \
             --cache \

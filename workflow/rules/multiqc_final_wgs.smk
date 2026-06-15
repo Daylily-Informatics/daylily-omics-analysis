@@ -922,6 +922,11 @@ rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
         MDIR + "logs/produce_multiqc_all.log"
     benchmark:
         "logs/benchmarks/produce_multiqc_all.bench.tsv"
+    shell:
+        r"""
+        set -euo pipefail
+        echo "produce_multiqc_all inputs ready" > {log}
+        """
 rule produce_multiqc_stage_final:  # TARGET: stage final MultiQC input tree
     input:
         MDIR + "reports/multiqc_inputs/final/.stage.done"

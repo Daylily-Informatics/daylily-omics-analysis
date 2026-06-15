@@ -4,6 +4,7 @@ import csv
 import os
 import sys
 import re
+import subprocess
 
 if len(sys.argv) < 11:
     raise SystemExit(
@@ -127,37 +128,74 @@ for i in summary_fh:
 
 def _proc_vcf(vcf_n):
     new_vcf_n = f"{vcf_n.replace('.','_')}_stripped.vcf.gz"
-    ccmd = f" bcftools  annotate  -x INFO/datasets,INFO/platforms,INFO/callsetnames,INFO/platformnames,INFO/callable,INFO/datasetnames  --threads {cpus_div4} -O z -o {new_vcf_n} {vcf_n}; tabix -f {new_vcf_n}; "
-    print(f"{ccmd}", file=sys.stderr)
-    os.system(ccmd)
+    os.makedirs(os.path.dirname(new_vcf_n), exist_ok=True)
+    ccmd = [
+        "bcftools",
+        "annotate",
+        "-x",
+        "INFO/datasets,INFO/platforms,INFO/callsetnames,INFO/platformnames,INFO/callable,INFO/datasetnames",
+        "--threads",
+        str(cpus_div4),
+        "-O",
+        "z",
+        "-o",
+        new_vcf_n,
+        vcf_n,
+    ]
+    print(" ".join(ccmd), file=sys.stderr)
+    subprocess.run(ccmd, check=True)
+    tcmd = ["tabix", "-f", new_vcf_n]
+    print(" ".join(tcmd), file=sys.stderr)
+    subprocess.run(tcmd, check=True)
     return(new_vcf_n)
 
 new_summary_out_fh.close()
 
 tp_vcf = sys.argv[1].replace("summary.txt", "tp.vcf.gz")
 tp_count = sys.argv[1].replace("summary.txt", "tp.count")
-tp_cmd = "env python workflow/scripts/classify_var_by_type_size.py {0} {1} {2} {3} {4} {5}".format(
-    _proc_vcf(tp_vcf), "TP", tgt_region_size, tp_count, sample, alt_id
-)
-print(tp_cmd, file=sys.stderr)
-os.system(tp_cmd)
+tp_cmd = [
+    sys.executable,
+    "workflow/scripts/classify_var_by_type_size.py",
+    _proc_vcf(tp_vcf),
+    "TP",
+    str(tgt_region_size),
+    tp_count,
+    sample,
+    alt_id,
+]
+print(" ".join(tp_cmd), file=sys.stderr)
+subprocess.run(tp_cmd, check=True)
 
 fp_vcf = sys.argv[1].replace("summary.txt", "fp.vcf.gz")
 fp_count = sys.argv[1].replace("summary.txt", "fp.count")
-fp_cmd = "env python workflow/scripts/classify_var_by_type_size.py {0} {1} {2} {3} {4} {5}".format(
-    _proc_vcf(fp_vcf), "FP", tgt_region_size, fp_count, sample, alt_id
-)
-print(fp_cmd, file=sys.stderr)
-os.system(fp_cmd)
+fp_cmd = [
+    sys.executable,
+    "workflow/scripts/classify_var_by_type_size.py",
+    _proc_vcf(fp_vcf),
+    "FP",
+    str(tgt_region_size),
+    fp_count,
+    sample,
+    alt_id,
+]
+print(" ".join(fp_cmd), file=sys.stderr)
+subprocess.run(fp_cmd, check=True)
 
 
 fn_vcf = sys.argv[1].replace("summary.txt", "fn.vcf.gz")
 fn_count = sys.argv[1].replace("summary.txt", "fn.count")
-fn_cmd = "env python workflow/scripts/classify_var_by_type_size.py {0} {1} {2} {3} {4} {5}".format(
-    _proc_vcf(fn_vcf), "FN", tgt_region_size, fn_count, sample, alt_id
-)
-print(fn_cmd, file=sys.stderr)
-os.system(fn_cmd)
+fn_cmd = [
+    sys.executable,
+    "workflow/scripts/classify_var_by_type_size.py",
+    _proc_vcf(fn_vcf),
+    "FN",
+    str(tgt_region_size),
+    fn_count,
+    sample,
+    alt_id,
+]
+print(" ".join(fn_cmd), file=sys.stderr)
+subprocess.run(fn_cmd, check=True)
 
 ### Gather per-var type metrics, generate a more detailed view of the new_summary.txt
 ds_var = {"TP": {}, "FP": {}, "FN": {}}

@@ -319,6 +319,55 @@ def copy_rewritten_delimited(
             writer.writerow(fixed)
 
 
+def copy_goleft_indexcov_roc(source: Path, dest: Path, parts: StageParts) -> None:
+    if not source.is_file():
+        raise StagingError(f"missing goleft ROC source for rewrite: {source}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with source.open(newline="", encoding="utf-8") as in_handle, dest.open(
+        "w", newline="", encoding="utf-8"
+    ) as out_handle:
+        reader = csv.reader(in_handle, delimiter="\t")
+        writer = csv.writer(out_handle, delimiter="\t", lineterminator="\n")
+        try:
+            header = next(reader)
+        except StopIteration as exc:
+            raise StagingError(f"empty goleft ROC source: {source}") from exc
+        if len(header) < 3:
+            raise StagingError(f"goleft ROC lacks sample columns: {source}")
+        sample_columns = [parts.stage_sample]
+        if len(header) > 3:
+            sample_columns.extend(
+                f"{parts.stage_sample}.{idx}" for idx in range(2, len(header) - 1)
+            )
+        writer.writerow([*header[:2], *sample_columns])
+        writer.writerows(reader)
+
+
+def copy_goleft_indexcov_ped(source: Path, dest: Path, parts: StageParts) -> None:
+    if not source.is_file():
+        raise StagingError(f"missing goleft PED source for rewrite: {source}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with source.open(newline="", encoding="utf-8") as in_handle, dest.open(
+        "w", newline="", encoding="utf-8"
+    ) as out_handle:
+        reader = csv.reader(in_handle, delimiter="\t")
+        writer = csv.writer(out_handle, delimiter="\t", lineterminator="\n")
+        try:
+            header = next(reader)
+        except StopIteration as exc:
+            raise StagingError(f"empty goleft PED source: {source}") from exc
+        clean_header = [field.lstrip("#") for field in header]
+        if "sample_id" not in clean_header:
+            raise StagingError(f"goleft PED lacks sample_id column: {source}")
+        sample_idx = clean_header.index("sample_id")
+        writer.writerow(header)
+        for row in reader:
+            fixed = list(row)
+            if sample_idx < len(fixed):
+                fixed[sample_idx] = parts.stage_sample
+            writer.writerow(fixed)
+
+
 def stage_custom_tsv(stager: Stager, source: Path) -> None:
     rel = relative_or_name(source, stager.input_root)
     dest = stager.output_dir / rel
@@ -642,7 +691,6 @@ def stage_mosdepth_summary(stager: Stager, source: Path) -> None:
     prefix = source.with_name(source.name.removesuffix(".mosdepth.summary.txt"))
     for suffix, input_kind in (
         (".mosdepth.summary.txt", "mosdepth_summary"),
-        (".mosdepth.global.dist.txt", "mosdepth_global_dist"),
         (".mosdepth.region.dist.txt", "mosdepth_region_dist"),
     ):
         metric = Path(str(prefix) + suffix)
@@ -672,15 +720,42 @@ def stage_kraken2_report(stager: Stager, source: Path) -> None:
 def stage_goleft_done(stager: Stager, source: Path) -> None:
     parts = parse_alignment_parts(source)
     goleft_dir = source.parent / "goleft"
-    stager.copy_tree_files(
-        goleft_dir,
-        Path("native/goleft_indexcov") / parts.stage_sample,
-        parts,
-        module="goleft_indexcov",
-        input_kind="goleft_indexcov",
-        group_id=str(goleft_dir),
-        patterns=("*.bed", "*.bed.gz", "*.roc", "*.ped", "*.tsv", "*.txt", "*.sex"),
-    )
+    if not goleft_dir.is_dir():
+        raise StagingError(f"missing MultiQC source directory: {goleft_dir}")
+    copied = 0
+    for metric in sorted(goleft_dir.iterdir()):
+        if not metric.is_file():
+            continue
+        if not metric.name.startswith("goleft-indexcov."):
+            continue
+        suffix = metric.name.removeprefix("goleft-indexcov")
+        dest = (
+            stager.output_dir
+            / "native/goleft_indexcov"
+            / parts.stage_sample
+            / f"{parts.stage_sample}-indexcov{suffix}"
+        )
+        if suffix == ".roc":
+            copy_goleft_indexcov_roc(metric, dest, parts)
+            input_kind = "goleft_indexcov_roc"
+        elif suffix == ".ped":
+            copy_goleft_indexcov_ped(metric, dest, parts)
+            input_kind = "goleft_indexcov_ped"
+        else:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(metric, dest)
+            input_kind = f"goleft_indexcov{suffix}"
+        stager.add_manifest_row(
+            metric,
+            dest,
+            parts,
+            module="goleft_indexcov",
+            input_kind=input_kind,
+            group_id=str(goleft_dir),
+        )
+        copied += 1
+    if copied == 0:
+        raise StagingError(f"no goleft indexcov files found in {goleft_dir}")
 
 
 def stage_verifybamid_tsv(stager: Stager, source: Path) -> None:

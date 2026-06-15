@@ -44,6 +44,17 @@ config["sentdhiomr"].setdefault("keep_tmp_dirs", False)
 config["sentdhiomr"].setdefault("segdup_sr_model", "")
 config["sentdhiomr"].setdefault("segdup_lr_model", "")
 config["sentdhiomr"].setdefault("segdup_genes", "")
+config["sentdhiomr"].setdefault("segdup_population_vcf", "")
+
+
+def _sentdhiomr_segdup_population_vcf(wildcards):
+    path = str(config["sentdhiomr"].get("segdup_population_vcf", "")).strip()
+    if not path:
+        raise ValueError(
+            "sentdhiomr.segdup_population_vcf is required for Sentieon "
+            "segdup-caller v0.6.0 package-data repair"
+        )
+    return path
 
 # Parse segdup genes into a list for per-gene rule expansion
 SEGDUP_GENES = [g.strip() for g in config["sentdhiomr"]["segdup_genes"].split(",") if g.strip()]
@@ -2132,6 +2143,7 @@ rule sentdhiomr_call_segdup_gene:
         sr_bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
         lr_cram=_sentdhiomr_lr_cram,
         lr_crai=_sentdhiomr_lr_crai,
+        segdup_population_vcf=_sentdhiomr_segdup_population_vcf,
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.result.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/{gene}/{sample}.{gene}.result.vcf.gz.tbi",
@@ -2173,6 +2185,41 @@ rule sentdhiomr_call_segdup_gene:
             echo "ERROR: segdup-caller not found in pinned conda env" >> {log}
             exit 127
         fi
+        test -s {input.segdup_population_vcf} || (
+            echo "ERROR: Sentieon segdup population VCF not found: {input.segdup_population_vcf}" >> {log}
+            exit 2
+        )
+        test -s {input.segdup_population_vcf}.tbi || (
+            echo "ERROR: Sentieon segdup population VCF index not found: {input.segdup_population_vcf}.tbi" >> {log}
+            exit 2
+        )
+        gzip -t {input.segdup_population_vcf}
+        bcftools view -h {input.segdup_population_vcf} >/dev/null
+        SEGDUP_PACKAGE_POP_VCF=$("$CONDA_PREFIX/bin/python" - <<'PY'
+import importlib.resources as ir
+
+path = ir.files("genecaller").joinpath(
+    "data",
+    "pop_vcfs",
+    "segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz",
+)
+print(path)
+PY
+)
+        mkdir -p "$(dirname "$SEGDUP_PACKAGE_POP_VCF")"
+        (
+            flock 9
+            if [ ! -s "$SEGDUP_PACKAGE_POP_VCF" ] || [ ! -s "$SEGDUP_PACKAGE_POP_VCF.tbi" ]; then
+                tmp_vcf="$SEGDUP_PACKAGE_POP_VCF.$$"
+                tmp_tbi="$SEGDUP_PACKAGE_POP_VCF.tbi.$$"
+                cp -f {input.segdup_population_vcf} "$tmp_vcf"
+                cp -f {input.segdup_population_vcf}.tbi "$tmp_tbi"
+                mv -f "$tmp_vcf" "$SEGDUP_PACKAGE_POP_VCF"
+                mv -f "$tmp_tbi" "$SEGDUP_PACKAGE_POP_VCF.tbi"
+            fi
+            gzip -t "$SEGDUP_PACKAGE_POP_VCF"
+            bcftools view -h "$SEGDUP_PACKAGE_POP_VCF" >/dev/null
+        ) 9>"$SEGDUP_PACKAGE_POP_VCF.lock"
 
         LR_ARGS=""
         if [ -n "{params.lr_model}" ]; then

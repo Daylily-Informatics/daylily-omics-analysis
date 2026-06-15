@@ -690,8 +690,10 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
 
     assert (out_dir / "native/samtools/HG001.sent.dmd.stats.tsv").exists()
     assert (out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.summary.txt").exists()
-    assert (out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.global.dist.txt").exists()
     assert (out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.region.dist.txt").exists()
+    assert not (
+        out_dir / "native/mosdepth/HG001.sent.dmd.mosdepth.global.dist.txt"
+    ).exists()
     assert (
         out_dir / "native/picard/HG001.sent.dmd.alignment_summary_metrics.txt"
     ).exists()
@@ -703,6 +705,61 @@ def test_stage_multiqc_inputs_stages_alignment_native_metrics(tmp_path: Path) ->
     with manifest.open(newline="", encoding="utf-8") as handle:
         samples = {row["Sample"] for row in csv.DictReader(handle, delimiter="\t")}
     assert samples == {"HG001.sent.dmd"}
+
+
+def test_stage_multiqc_inputs_rewrites_goleft_indexcov_native_files(
+    tmp_path: Path,
+) -> None:
+    module = _load_module(
+        REPO_ROOT / "workflow/scripts/stage_multiqc_inputs.py",
+        "stage_multiqc_inputs_goleft_under_test",
+    )
+    root = tmp_path / "results/day/hg38"
+    done_paths = []
+    for aligner, deduper in (("sent", "na"), ("ont", "dmd")):
+        alignqc = root / f"HG001/align/{aligner}/{deduper}/alignqc"
+        goleft = alignqc / "goleft"
+        goleft.mkdir(parents=True)
+        (alignqc / "goleft.done").write_text("done\n", encoding="utf-8")
+        (goleft / "goleft-indexcov.roc").write_text(
+            "#chrom\tcov\tHG001-cram\nchr1\t0.00\t1.00\n",
+            encoding="utf-8",
+        )
+        (goleft / "goleft-indexcov.ped").write_text(
+            "#family_id\tsample_id\tpaternal_id\tmaternal_id\tsex\tphenotype\n"
+            "unknown\tHG001-cram\t-9\t-9\t1\t-9\n",
+            encoding="utf-8",
+        )
+        (goleft / "goleft-indexcov.sex").write_text("sex\n", encoding="utf-8")
+        done_paths.append(alignqc / "goleft.done")
+
+    out_dir = root / "reports/multiqc_inputs/final"
+    manifest = out_dir / "manifest.tsv"
+    stager = module.Stager(root, out_dir, manifest)
+    stager.reset()
+    for done in done_paths:
+        module.stage_known_input(stager, done)
+    stager.finish()
+
+    sent_roc = out_dir / "native/goleft_indexcov/HG001.sent.na/HG001.sent.na-indexcov.roc"
+    ont_roc = out_dir / "native/goleft_indexcov/HG001.ont.dmd/HG001.ont.dmd-indexcov.roc"
+    sent_ped = out_dir / "native/goleft_indexcov/HG001.sent.na/HG001.sent.na-indexcov.ped"
+    ont_ped = out_dir / "native/goleft_indexcov/HG001.ont.dmd/HG001.ont.dmd-indexcov.ped"
+    assert sent_roc.exists()
+    assert ont_roc.exists()
+    assert "#chrom\tcov\tHG001.sent.na\n" in sent_roc.read_text(encoding="utf-8")
+    assert "#chrom\tcov\tHG001.ont.dmd\n" in ont_roc.read_text(encoding="utf-8")
+    assert "\tHG001.sent.na\t" in sent_ped.read_text(encoding="utf-8")
+    assert "\tHG001.ont.dmd\t" in ont_ped.read_text(encoding="utf-8")
+    assert not list(out_dir.glob("native/goleft_indexcov/*/goleft-indexcov.roc"))
+
+    with manifest.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle, delimiter="\t"))
+    assert {
+        row["Sample"]
+        for row in rows
+        if row["module"] == "goleft_indexcov"
+    } == {"HG001.sent.na", "HG001.ont.dmd"}
 
 
 def test_stage_multiqc_inputs_keeps_haplocheck_native_manifest_distinct(
@@ -938,8 +995,21 @@ def test_validate_multiqc_sample_ids_rejects_collapsed_native_outputs(
 def test_rtg_vcfeval_requests_explicit_memory() -> None:
     concordance = _read("workflow/rules/rtg_vcfeval.smk")
 
-    assert 'mem_mb=config["rtg_vcfeval"].get("mem_mb", 64000)' in concordance
-    assert 'mem_mb=config["rtg_vcfeval"].get("parse_mem_mb", 16000)' in concordance
+    assert 'mem_mb=config["rtg_vcfeval"]["mem_mb"]' in concordance
+    assert 'mem_mb=config["rtg_vcfeval"]["parse_mem_mb"]' in concordance
+    assert '.get("mem_mb", 64000)' not in concordance
+    assert '.get("parse_mem_mb", 16000)' not in concordance
+
+
+def test_parse_vcfeval_summary_prepares_sanitized_intermediate_dir() -> None:
+    parser = _read("workflow/scripts/parse-vcfeval-summary.py")
+
+    assert "os.makedirs(os.path.dirname(new_vcf_n), exist_ok=True)" in parser
+    assert "subprocess.run(ccmd, check=True)" in parser
+    assert "subprocess.run(tcmd, check=True)" in parser
+    assert "subprocess.run(tp_cmd, check=True)" in parser
+    assert "subprocess.run(fp_cmd, check=True)" in parser
+    assert "subprocess.run(fn_cmd, check=True)" in parser
 
 
 def test_manta_converts_cram_to_bam_before_calling() -> None:
