@@ -37,10 +37,17 @@ Instruction files read:
 - `/Users/jmajor/.augment/AGENTS.md`
 - `/Users/jmajor/.augment/rules/*.md`
 
+Truth/expectation for `NA00232`:
+
+- Local curated table `bin/util/other/smn1_smn2_copy_numbers.tsv` records `NA00232;NA10684` as `SMN1_exon7=0`, `SMN2_exon7=2`, `SMN1_exon8=0`, `SMN2_exon8=2`.
+- Local curated table `bin/util/other/smn1_smn2_copy_numbers.tsv` records the `SMN2=3` SMA-positive row as `NA22592;NA09677;NA03813`, not `NA00232`.
+- Coriell `NA00232` and MRC-Holland P021 both agree that `NA00232` has two SMN2 copies and homozygous SMN1 exon 7/8 deletion.
+
 Prior evidence:
 
 - Previous 4NA ledger recorded `chip3 barcode18 0`, `chip1 barcode18 73`, `chip2 barcode18 73`, and `chip4 barcode18 73`.
-- Previous 4NA report recorded `NA00232` as expected SMA-positive (`SMN1=0`, `SMN2=1`) with two successful units:
+- Previous 4NA report carried forward the observed direct-CN result `SMN1=0`, `SMN2=1`; corrected truth comparison indicates `NA00232` is expected `SMN1=0`, `SMN2=2`.
+  The prior two successful units were:
   - `chip1-chip2`: SMNCopy `0/1`, Sentieon `0/1`, sma-finder `has SMA`, HapSMA mean SMN-region coverage `7.71`, no-call phase-set status.
   - `chip4-only-sub-for-missing-chip3`: SMNCopy `0/1`, Sentieon `0/1`, sma-finder `has SMA`, HapSMA mean SMN-region coverage `3.32`, no-call low-coverage status.
 
@@ -68,7 +75,7 @@ Active DayOA config evidence from local `jem-dev`:
 | N4C-009 | Approved substitute setup | Create a current DayOA workdir/config for the approved chip1+2+4 unit. | SUCCESS | feature_implementation | Gate 2 | orchestrator | SSM `da1e2163-010c-4b19-8f0e-b7d780e99747`, JSON `ssm_prepare_chip124.json`: analysis id `na00232_smn12_chip124_20260615T062929Z`; remote repo `/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis`; DayOA checkout `13b324a52ba8a5b2edb12dd685403c8e8cddd6c2`; `RUNID=HYB-NA00232-smn12-current-20260615`; `LANEID=chip1-chip2-chip4`; `ONT_FASTQS=219`. |  | Config copied to remote workdir from `s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/na00232_smn12_chip124_20260615T062929Z/config/`. |
 | N4C-010 | Approved substitute dry-run | Run supported `dy-r` dry-run in persistent `ubuntu` tmux and verify planned targets for SMN12 callers plus SMN-only Sentieon segdup. | SUCCESS | contract_test | Gate 5 | orchestrator | Launch SSM `00dedec5-24ae-44ef-9736-0e3f9b5420b3`; poll SSM `0f8968f9-633b-47a3-b6de-4e2b40650e4a`; JSON `ssm_poll_dryrun_chip124_1.json`; dry-run marker `__DRYRUN_RC__=0`; `Job stats` total `20`; planned `produce_htd_calls`, `produce_smn12_orthogonal_calls`, and `sentdhiomr_call_segdup` for `SMN1`. |  | Dry-run passed. |
 | N4C-011 | Approved substitute live run | Run supported `dy-r` live workflow to terminal status. | SUCCESS | feature_implementation | Gate 5 | orchestrator | Launch SSM `18e145e1-fdec-449b-884e-408fe951c43a`; live session `dayoa_na00232_smn12_chip124_20260615T062929Z_live`; live log `logs/live_smn12_chip124_20260615T062929Z.log`; polls `ssm_poll_live_chip124_1.json` through `ssm_poll_live_chip124_9.json`. At `2026-06-15T07:44:14Z`, workflow reached `20 of 20 steps (100%) done`, `WORKFLOW SUCCESS`, `RETURN CODE: 0`; final poll SSM `96bcb7cf-9873-4522-81a1-e568d7647e8f`. |  | Live workflow completed successfully. |
-| N4C-012 | Approved substitute results | Collect caller outputs and compare to prior `NA00232` two-chip/chip4-only evidence. | SUCCESS | contract_test | Gate 5 | orchestrator | Result collector `ssm_collect_chip124_results.py`; successful collection SSM `ed1d97c4-d9bd-4d0a-93b8-3244ea3152b0`; `ssm_collect_chip124_results.json`. SMNCopy `SMN1=0`, `SMN2=1`, `isSMA=true`, `PASS:Majority`; Sentieon segdup `SMN1=0`, `SMN2=1`, `sentieon=202503.03`, `segdup-caller=0.6.0`; sma-finder `has SMA`; HapSMA mean SMN-region coverage `11.031685` but still `NO_PHASE_SET`. |  | Current run confirms expected SMA-positive result; HapSMA coverage improved but no phase-set call. |
+| N4C-012 | Approved substitute results | Collect caller outputs and compare to prior `NA00232` two-chip/chip4-only evidence. | SUCCESS | contract_test | Gate 5 | orchestrator | Result collector `ssm_collect_chip124_results.py`; successful collection SSM `ed1d97c4-d9bd-4d0a-93b8-3244ea3152b0`; `ssm_collect_chip124_results.json`. Truth comparison is expected `SMN1=0`, `SMN2=2`. SMNCopy `SMN1=0`, `SMN2=1`, `isSMA=true`, `PASS:Majority`; Sentieon segdup `SMN1=0`, `SMN2=1`, `sentieon=202503.03`, `segdup-caller=0.6.0`; sma-finder `has SMA`; HapSMA mean SMN-region coverage `11.031685` but still `NO_PHASE_SET`. |  | Current run correctly identifies SMA-positive status but undercalls expected SMN2 by one copy; HapSMA coverage improved but no phase-set call. |
 | N4C-013 | Approved substitute report | Update final report/evidence for the approved chip1+2+4 substitute run. | SUCCESS | feature_implementation | Gate 5 | orchestrator | Final report: `report.md`; ledger updated with terminal live/result state. |  | Report preserved locally. |
 
 ## Commands And Evidence Log
@@ -210,18 +217,19 @@ Caller summaries:
 
 | caller | result |
 | --- | --- |
-| SMNCopyNumberCaller / `smn12` | `SMN1=0`, `SMN2=1`, `SMN2delta78=0`, `isSMA=true`, `isCarrier=false`, `PASS:Majority`, median depth `27.33`, total CN raw `0.919`, full-length CN raw `1.027` |
-| Sentieon HiOMR segdup SMN1 | `SMN1=0`, `SMN2=1`, `sentieon=202503.03`, `segdup-caller=0.6.0` |
+| SMNCopyNumberCaller / `smn12` | `SMN1=0`, `SMN2=1`, `SMN2delta78=0`, `isSMA=true`, `isCarrier=false`, `PASS:Majority`, median depth `27.33`, total CN raw `0.919`, full-length CN raw `1.027`; SMN2 undercalled versus expected `2` |
+| Sentieon HiOMR segdup SMN1 | `SMN1=0`, `SMN2=1`, `sentieon=202503.03`, `segdup-caller=0.6.0`; SMN2 undercalled versus expected `2` |
 | Broad `sma_finder` | `has SMA`, confidence `13`, `0/14` C840 reads with SMN1 base C |
 | SMAca | completed; summary coverage avg `SMN1=4.717640162747397`, avg `SMN2=7.005000172419739`; MQC row does not expose direct CN fields |
 | HapSMA | mean SMN-region coverage `11.031685`; `NO_PHASE_SET`, `no_call_no_phase_set` |
 
 Comparison to prior `NA00232` evidence:
 
+- Expected truth for `NA00232`: `SMN1=0`, `SMN2=2`.
 - Prior chip1+chip2, Sentieon stack `202503.02`: SMNCopy `0/1`, Sentieon segdup `0/1`, sma-finder `has SMA`, HapSMA mean coverage `7.71` with no-call/no-phase-set.
 - Prior chip4-only substitute, Sentieon stack `202503.02`: SMNCopy `0/1`, Sentieon segdup `0/1`, sma-finder `has SMA`, HapSMA mean coverage `3.32` with no-call/low-coverage.
 - Current chip1+chip2+chip4, Sentieon stack `202503.03`: SMNCopy `0/1`, Sentieon segdup `0/1`, sma-finder `has SMA`, HapSMA mean coverage `11.031685` but still no-call/no-phase-set.
 
 Conclusion:
 
-The new stack and higher ONT coverage did not change the main interpretation because the decisive callers already called the expected SMA-positive result. It did improve HapSMA coverage over both prior units, but did not make HapSMA produce a phase-set call.
+The new stack and higher ONT coverage correctly identified SMA-positive status but did not fix the SMN2 undercall: direct CN callers still report `SMN2=1` where the expected value is `2`. HapSMA coverage improved over both prior units, but did not make HapSMA produce a phase-set call.

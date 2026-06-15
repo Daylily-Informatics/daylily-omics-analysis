@@ -20,27 +20,33 @@ The live DayOA run completed successfully: `20 of 20 steps (100%) done`, `WORKFL
 
 ## Result Summary
 
+Truth/expectation used for comparison:
+
+- local curated table `bin/util/other/smn1_smn2_copy_numbers.tsv`: `NA00232;NA10684` has `SMN1_exon7=0`, `SMN2_exon7=2`, `SMN1_exon8=0`, `SMN2_exon8=2`.
+- Coriell `NA00232` and MRC-Holland P021 agree with `NA00232` having `SMN1=0`, `SMN2=2`.
+- The `SMN2=3` row in the local table is `NA22592;NA09677;NA03813`, not `NA00232`.
+
 | caller | result | evidence |
 | --- | --- | --- |
-| SMNCopyNumberCaller / `smn12` | `SMN1=0`, `SMN2=1`, `isSMA=true`, `PASS:Majority`, median depth `27.33` | `ssm_collect_chip124_results.json` |
-| Sentieon HiOMR segdup SMN1 | `SMN1=0`, `SMN2=1`; `sentieon=202503.03`; `segdup-caller=0.6.0` | `SMN1.yaml`, collected in `ssm_collect_chip124_results.json` |
+| SMNCopyNumberCaller / `smn12` | `SMN1=0`, `SMN2=1`, `isSMA=true`, `PASS:Majority`, median depth `27.33`; SMN2 undercalled versus expected `2` | `ssm_collect_chip124_results.json` |
+| Sentieon HiOMR segdup SMN1 | `SMN1=0`, `SMN2=1`; `sentieon=202503.03`; `segdup-caller=0.6.0`; SMN2 undercalled versus expected `2` | `SMN1.yaml`, collected in `ssm_collect_chip124_results.json` |
 | Broad `sma_finder` | `has SMA`, confidence `13`, `0/14` C840 reads with SMN1 base C | `sma_finder.summary.json`, collected |
 | HapSMA | mean SMN-region coverage `11.031685`; still `NO_PHASE_SET` / `no_call_no_phase_set` | `hapsma.summary.tsv`, collected |
 | SMAca | completed; MQC row did not expose direct SMN1/SMN2 CN fields; summary coverage has avg `SMN1=4.7176`, avg `SMN2=7.0050` | `smaca.summary.tsv`, collected |
 
-The orthogonal MQC table marks rows `discordant` because some callers report affected status or no direct CN rather than all reporting the same CN pair. The decisive CN/status callers are directionally concordant for the expected SMA-positive sample.
+The orthogonal MQC table marks rows `discordant` because some callers report affected status or no direct CN rather than all reporting the same CN pair. The decisive CN/status callers are directionally concordant for SMA-positive status, but the direct CN callers undercall expected SMN2 copy number.
 
 ## Comparison
 
 Prior `NA00232` evidence from the 202503.02 two-unit run:
 
-| unit | stack | SMNCopy | Sentieon segdup | sma_finder | HapSMA |
-| --- | --- | --- | --- | --- | --- |
-| chip1+chip2 | 202503.02 | `0/1` | `0/1` | `has SMA` | mean coverage `7.71`, no-call/no-phase-set |
-| chip4-only substitute | 202503.02 | `0/1` | `0/1` | `has SMA` | mean coverage `3.32`, no-call/low-coverage |
-| chip1+chip2+chip4 | 202503.03 | `0/1`, `PASS:Majority` | `0/1` | `has SMA` | mean coverage `11.031685`, still no-call/no-phase-set |
+| unit | stack | expected SMN1/SMN2 | SMNCopy | Sentieon segdup | sma_finder | HapSMA |
+| --- | --- | --- | --- | --- | --- | --- |
+| chip1+chip2 | 202503.02 | `0/2` | `0/1` | `0/1` | `has SMA` | mean coverage `7.71`, no-call/no-phase-set |
+| chip4-only substitute | 202503.02 | `0/2` | `0/1` | `0/1` | `has SMA` | mean coverage `3.32`, no-call/low-coverage |
+| chip1+chip2+chip4 | 202503.03 | `0/2` | `0/1`, `PASS:Majority` | `0/1` | `has SMA` | mean coverage `11.031685`, still no-call/no-phase-set |
 
-Conclusion: the new Sentieon stack plus higher ONT coverage did not change the main SMA-positive interpretation because SMNCopy, Sentieon segdup, and sma-finder were already calling the expected result. It did improve HapSMA coverage over both prior units, but HapSMA still did not produce a usable phase-set call.
+Conclusion: the new Sentieon stack plus higher ONT coverage did not fix the SMN2 undercall. SMA-positive status is still correctly identified, but direct CN callers report `SMN2=1` where the expected value is `2`. HapSMA coverage improved over both prior units, but HapSMA still did not produce a usable phase-set call.
 
 ## Evidence Files
 
