@@ -154,6 +154,7 @@ def test_sentdhiomr_segdup_is_pinned_and_validates_vcfs_before_done() -> None:
     assert "ERROR: Sentieon segdup population VCF not found: {input.segdup_population_vcf}" in rule
     assert "ERROR: Sentieon segdup population VCF index not found: {input.segdup_population_vcf}.tbi" in rule
     assert "SEGDUP_PACKAGE_POP_VCF=" in rule
+    assert "<<'INNERPY'" in rule
     assert "segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz" in rule
     assert "flock 9" in rule
     assert 'cp -f {input.segdup_population_vcf} "$tmp_vcf"' in rule

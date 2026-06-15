@@ -2195,7 +2195,7 @@ rule sentdhiomr_call_segdup_gene:
         )
         gzip -t {input.segdup_population_vcf}
         bcftools view -h {input.segdup_population_vcf} >/dev/null
-        SEGDUP_PACKAGE_POP_VCF=$("$CONDA_PREFIX/bin/python" - <<'PY'
+        SEGDUP_PACKAGE_POP_VCF=$("$CONDA_PREFIX/bin/python" - <<'INNERPY'
 import importlib.resources as ir
 
 path = ir.files("genecaller").joinpath(
@@ -2204,7 +2204,7 @@ path = ir.files("genecaller").joinpath(
     "segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz",
 )
 print(path)
-PY
+INNERPY
 )
         mkdir -p "$(dirname "$SEGDUP_PACKAGE_POP_VCF")"
         (

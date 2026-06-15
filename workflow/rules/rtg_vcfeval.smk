@@ -200,7 +200,8 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             outdir="$(dirname {output.summary})"
             rm -rf "$outdir"
 
-            rtg vcfeval \
+            rtg_mem_gb=$(( ({resources.mem_mb} * 85 / 100 + 1023) / 1024 ))
+            RTG_MEM="${rtg_mem_gb}G" rtg vcfeval \
               --decompose \
               --squash-ploidy \
               --ref-overlap \
@@ -253,6 +254,8 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
 
             # Prevent parse script from over-threading bcftools when many ROIs run concurrently.
             export DAYLILY_BCFTOOLS_THREADS="{threads}"
+
+            mkdir -p "$(dirname {output.mqc})"
 
             python workflow/scripts/parse-vcfeval-summary.py \
               {input.summary} \

@@ -999,6 +999,9 @@ def test_rtg_vcfeval_requests_explicit_memory() -> None:
     assert 'mem_mb=config["rtg_vcfeval"]["parse_mem_mb"]' in concordance
     assert '.get("mem_mb", 64000)' not in concordance
     assert '.get("parse_mem_mb", 16000)' not in concordance
+    assert 'rtg_mem_gb=$(( ({resources.mem_mb} * 85 / 100 + 1023) / 1024 ))' in concordance
+    assert 'RTG_MEM="${rtg_mem_gb}G" rtg vcfeval' in concordance
+    assert 'mkdir -p "$(dirname {output.mqc})"' in concordance
 
 
 def test_parse_vcfeval_summary_prepares_sanitized_intermediate_dir() -> None:
