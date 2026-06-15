@@ -43,6 +43,13 @@ def remote_script(*, session: str, lines: int) -> str:
         grep -nE "__DAYOA_STAGE__|__DAYOA_FAIL__|RETURN CODE|AUTO-CONFIG" "$TMUX_LOG" | tail -n 80 || true
         echo "__SQUEUE_PANGENOME__"
         squeue -u ubuntu -o "%.18i %.12P %.36j %.2t %.10M %.40R" | grep -E "sentieon_pangenome_ug|sentpgs|rtg_vcfeval|parse_vcfeval|produce_snv|produce_pangenome" || true
+        echo "__SQUEUE_PANGENOME_START__"
+        shard_jobs=$(squeue -h -u ubuntu -o "%i %j" | awk '$2 ~ /sentieon_pangenome_ug_sharded/ {{print $1}}' | paste -sd, -)
+        if [[ -n "$shard_jobs" ]]; then
+          squeue --start -j "$shard_jobs" || true
+        else
+          echo "no pending/running sentieon_pangenome_ug_sharded jobs"
+        fi
         echo "__SQUEUE_ALL_TAIL__"
         squeue -u ubuntu -o "%.18i %.12P %.36j %.2t %.10M %.40R" | tail -n 40 || true
         echo "__SENTPGS_OUTPUTS__"
