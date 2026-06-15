@@ -17,7 +17,7 @@ cluster:
     --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include} {resources.exclusive} 
 default-resources:  
   - disk_mb=1000
-  - mem_mb=3000 # This should be total for the job, and the amount avail will be 0.95*published mem for instance type.
+  - mem_mb=100000 # This should be total for the job, and the amount avail will be 0.95*published mem for instance type.
   - threads=1
   - time=200
   - partition=i384nvme,i192,i192nvme,i128

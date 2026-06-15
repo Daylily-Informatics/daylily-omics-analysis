@@ -109,6 +109,7 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
     )
 
     assert "partition=i384nvme,i192,i192nvme,i128" in profile["default-resources"]
+    assert "mem_mb=100000" in profile["default-resources"]
 
 
 def test_slurm_rule_config_uses_v8_partitions_and_explicit_memory() -> None:
