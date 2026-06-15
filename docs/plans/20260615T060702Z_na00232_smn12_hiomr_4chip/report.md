@@ -1,57 +1,51 @@
-# NA00232 SMN12 Four-Chip HiOMR Gate Report
+# NA00232 SMN12 HiOMR Chip1+2+4 Report
 
-Created: 2026-06-15T06:17:00Z
+Created: 2026-06-15T07:55:00Z
 
 ## Outcome
 
-The requested `NA00232` run was not launched.
+The original exact four-chip request remains blocked because `NA00232` ONT chip3 barcode18 data is absent.
 
-Reason: exact `NA00232` ONT chip3 barcode18 data is absent. The current headnode has the ILMN 20x FASTQs and ONT chip1, chip2, and chip4 barcode18 data, but not chip3 barcode18. I did not substitute chip4-only or run a three-chip analysis under the four-chip request.
+After user approval, I ran the approved substitute:
 
-## Evidence
+- ILMN 20x `NA00232`
+- ONT chip1 + chip2 + chip4 barcode18
+- 219 ONT FASTQs total
+- current DayOA `jem-dev` checkout `13b324a52ba8a5b2edb12dd685403c8e8cddd6c2`
+- Sentieon `202503.03`, `sentieon-cli==1.6.3`, `segdup-caller==0.6.0`
+- Sentieon HiOMR segdup restricted to `SMN1`
+- HTD callers `smn12`, `smaca`, `sma_finder`, `hapsma`
 
-Inspection command:
+The live DayOA run completed successfully: `20 of 20 steps (100%) done`, `WORKFLOW SUCCESS`, `RETURN CODE: 0`.
 
-```bash
-cd /Users/jmajor/projects/lsmc/daylily-ephemeral-cluster
-source ./activate
-PYTHONPATH="$PWD" python /Users/jmajor/projects/lsmc/daylily-omics-analysis/docs/plans/20260615T060702Z_na00232_smn12_hiomr_4chip/ssm_inspect_inputs_runtime.py --cluster dyecX4 --profile lsmc --region us-west-2 --output /Users/jmajor/projects/lsmc/daylily-omics-analysis/docs/plans/20260615T060702Z_na00232_smn12_hiomr_4chip/ssm_inspect_inputs_runtime.json
-```
+## Result Summary
 
-- SSM command id: `bae50010-f7b0-41dd-af19-79fe915eed0f`
-- Cluster/headnode: `dyecX4`, `i-05815cdeec4a6dad8`
-- ILMN R1/R2 exist:
-  - `NA00232-SMN_S46_ds20x_R1_001.fastq.gz`, `17262515732` bytes
-  - `NA00232-SMN_S46_ds20x_R2_001.fastq.gz`, `17800937474` bytes
-- Staged ONT barcode18 counts:
-  - `chip1`: `73`
-  - `chip2`: `73`
-  - `chip3`: `0`
-  - `chip4`: `73`
-- Bounded raw mount check:
-  - `/fsx/run_dir_mounts/20260513_ONT_HG003` has only one barcode18 FASTQ, `1556` bytes, from `PBM13745`.
-  - It has zero barcode18 FASTQs for the staged 4NA chip flowcell names `PBM13545`, `PBM14931`, and `PBM13048`.
+| caller | result | evidence |
+| --- | --- | --- |
+| SMNCopyNumberCaller / `smn12` | `SMN1=0`, `SMN2=1`, `isSMA=true`, `PASS:Majority`, median depth `27.33` | `ssm_collect_chip124_results.json` |
+| Sentieon HiOMR segdup SMN1 | `SMN1=0`, `SMN2=1`; `sentieon=202503.03`; `segdup-caller=0.6.0` | `SMN1.yaml`, collected in `ssm_collect_chip124_results.json` |
+| Broad `sma_finder` | `has SMA`, confidence `13`, `0/14` C840 reads with SMN1 base C | `sma_finder.summary.json`, collected |
+| HapSMA | mean SMN-region coverage `11.031685`; still `NO_PHASE_SET` / `no_call_no_phase_set` | `hapsma.summary.tsv`, collected |
+| SMAca | completed; MQC row did not expose direct SMN1/SMN2 CN fields; summary coverage has avg `SMN1=4.7176`, avg `SMN2=7.0050` | `smaca.summary.tsv`, collected |
 
-## Runtime Gate
+The orthogonal MQC table marks rows `discordant` because some callers report affected status or no direct CN rather than all reporting the same CN pair. The decisive CN/status callers are directionally concordant for the expected SMA-positive sample.
 
-Current runtime assets are visible on FSx:
+## Comparison
 
-- Sentieon runtime root: `/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03`
-- `SentieonIlluminaWGS2.2.bundle`, `127015170` bytes
-- `DNAscopeONT2.3.bundle`, `925744416` bytes
-- HapSMA SMN support BEDs, Clair3 R10 model files, and hg38_broad map-ont `.mmi`
+Prior `NA00232` evidence from the 202503.02 two-unit run:
 
-Local DayOA `jem-dev` per-rule env YAMLs pin `sentieon=202503.03`, `sentieon-cli==1.6.3`, and `segdup-caller@v0.6.0`.
-
-## Comparison Boundary
-
-No new caller comparison is possible from this request because the four-chip analysis did not run.
-
-The prior `NA00232` evidence remains:
-
-| unit | sentieon stack | smncopy | sentieon segdup | sma_finder | hapsma |
+| unit | stack | SMNCopy | Sentieon segdup | sma_finder | HapSMA |
 | --- | --- | --- | --- | --- | --- |
-| chip1-chip2 | 202503.02 | `0/1` | `0/1` | `has SMA` | mean SMN coverage `7.71`, no-call/no-phase-set |
-| chip4-only-sub-for-missing-chip3 | 202503.02 | `0/1` | `0/1` | `has SMA` | mean SMN coverage `3.32`, no-call/low-coverage |
+| chip1+chip2 | 202503.02 | `0/1` | `0/1` | `has SMA` | mean coverage `7.71`, no-call/no-phase-set |
+| chip4-only substitute | 202503.02 | `0/1` | `0/1` | `has SMA` | mean coverage `3.32`, no-call/low-coverage |
+| chip1+chip2+chip4 | 202503.03 | `0/1`, `PASS:Majority` | `0/1` | `has SMA` | mean coverage `11.031685`, still no-call/no-phase-set |
 
-A current-stack higher-coverage assessment requires actual `NA00232` chip3 barcode18 input or explicit approval to run a non-four-chip substitute.
+Conclusion: the new Sentieon stack plus higher ONT coverage did not change the main SMA-positive interpretation because SMNCopy, Sentieon segdup, and sma-finder were already calling the expected result. It did improve HapSMA coverage over both prior units, but HapSMA still did not produce a usable phase-set call.
+
+## Evidence Files
+
+- Live success poll: `ssm_poll_live_chip124_9.json`, SSM `96bcb7cf-9873-4522-81a1-e568d7647e8f`
+- Result collection: `ssm_collect_chip124_results.json`, SSM `ed1d97c4-d9bd-4d0a-93b8-3244ea3152b0`
+- Config metadata: `chip124_manifest_metadata.json`
+- Samples/units: `samples_chip124.tsv`, `units_chip124.tsv`
+- Remote workdir: `/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis`

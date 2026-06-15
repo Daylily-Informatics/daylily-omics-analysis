@@ -1,0 +1,16 @@
+{
+  "analysis_id": "na00232_smn12_chip124_20260615T062929Z",
+  "cluster": "dyecX4",
+  "command_id": "da1e2163-010c-4b19-8f0e-b7d780e99747",
+  "config_s3": "s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/na00232_smn12_chip124_20260615T062929Z/config",
+  "created_utc": "2026-06-15T06:33:47Z",
+  "instance_id": "i-05815cdeec4a6dad8",
+  "profile": "lsmc",
+  "region": "us-west-2",
+  "remote_repo": "/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis",
+  "remote_root": "/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z",
+  "response_code": 0,
+  "status": "Success",
+  "stderr": "",
+  "stdout": "DAY-EC activated.\nDAY-EC activated.\n__META__\tutc\t2026-06-15T06:33:43Z\n__META__\tanalysis_id\tna00232_smn12_chip124_20260615T062929Z\n__META__\tpreferred_remote_root\t/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z\n__META__\tconfig_s3\ts3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/na00232_smn12_chip124_20260615T062929Z/config\n__META__\tactual_remote_root\t/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z\n__META__\tactual_remote_repo\t/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis\nCompleted 256 Bytes/256 Bytes (5.0 KiB/s) with 1 file(s) remaining\rdownload: s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/na00232_smn12_chip124_20260615T062929Z/config/samples.tsv to config/samples.tsv\nCompleted 32.1 KiB/32.1 KiB (393.4 KiB/s) with 1 file(s) remaining\rdownload: s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/na00232_smn12_chip124_20260615T062929Z/config/units.tsv to config/units.tsv\nCompleted 2.0 KiB/2.0 KiB (29.8 KiB/s) with 1 file(s) remaining\rdownload: s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/ubuntu/na00232_smn12_chip124_20260615T062929Z/config/patch_smn12_runtime.py to config/patch_smn12_runtime.py\n13b324a52ba8a5b2edb12dd685403c8e8cddd6c2\n## jem-dev...origin/jem-dev\n?? config/patch_smn12_runtime.py\n    2 config/samples.tsv\n    2 config/units.tsv\n    4 total\n__UNIT__\tRUNID\tHYB-NA00232-smn12-current-20260615\n__UNIT__\tLANEID\tchip1-chip2-chip4\n__UNIT__\tONT_FASTQS\t219\n"
+}

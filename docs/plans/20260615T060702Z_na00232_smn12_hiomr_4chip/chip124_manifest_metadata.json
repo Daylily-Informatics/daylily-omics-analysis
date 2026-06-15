@@ -1,0 +1,15 @@
+{
+  "approved_substitute": "chip1+chip2+chip4, no chip3",
+  "barcode": "barcode18",
+  "ilmn_r1": "/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ilmn/4_nas_ds_to_20x/NA00232-SMN_S46_ds20x_R1_001.fastq.gz",
+  "ilmn_r2": "/fsx/analysis_inputs/ubuntu/4na_hiomr_smn12_20260611T220404Z/ilmn/4_nas_ds_to_20x/NA00232-SMN_S46_ds20x_R2_001.fastq.gz",
+  "lane_id": "chip1-chip2-chip4",
+  "ont_fastq_counts": {
+    "chip1": 73,
+    "chip2": 73,
+    "chip4": 73
+  },
+  "ont_fastq_total": 219,
+  "run_id": "HYB-NA00232-smn12-current-20260615",
+  "sample": "NA00232"
+}

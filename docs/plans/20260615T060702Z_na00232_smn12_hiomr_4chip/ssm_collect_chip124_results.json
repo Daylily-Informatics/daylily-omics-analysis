@@ -1,0 +1,292 @@
+{
+  "cluster": "dyecX4",
+  "collection": {
+    "files": {
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/hapsma/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.hapsma.done": {
+        "exists": true,
+        "mtime": 1781507329,
+        "size": 0
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/hapsma/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.hapsma.summary.tsv": {
+        "exists": true,
+        "mtime": 1781507329,
+        "size": 916
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/sma_finder/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sma_finder.done": {
+        "exists": true,
+        "mtime": 1781509173,
+        "size": 0
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/sma_finder/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sma_finder.summary.json": {
+        "exists": true,
+        "mtime": 1781509173,
+        "size": 685
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/sma_finder/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sma_finder.summary.tsv": {
+        "exists": true,
+        "mtime": 1781509173,
+        "size": 366
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smaca/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smaca.done": {
+        "exists": true,
+        "mtime": 1781509193,
+        "size": 0
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smaca/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smaca.summary.tsv": {
+        "exists": true,
+        "mtime": 1781509193,
+        "size": 1612
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smn12/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smn12.done": {
+        "exists": true,
+        "mtime": 1781509454,
+        "size": 0
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smn12/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smn12.summary.json": {
+        "exists": true,
+        "mtime": 1781509454,
+        "size": 872
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smn12/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smn12.summary.tsv": {
+        "exists": true,
+        "mtime": 1781509451,
+        "size": 333
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/log/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sentdhiomr.segdup.SMN1.log": {
+        "exists": true,
+        "mtime": 1781508887,
+        "size": 3146
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/results/SMN1/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.SMN1.result.vcf.gz": {
+        "exists": true,
+        "mtime": 1781508893,
+        "size": 22628
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/results/SMN1/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.SMN1.result.vcf.gz.tbi": {
+        "exists": true,
+        "mtime": 1781508893,
+        "size": 72
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/results/SMN1/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.SMN1.yaml": {
+        "exists": true,
+        "mtime": 1781508893,
+        "size": 2007
+      },
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/logs/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sentdhiomr_call_segdup.log": {
+        "exists": true,
+        "mtime": 1781508893,
+        "size": 0
+      },
+      "results/day/hg38_broad/other_reports/htd_calls_mqc.tsv": {
+        "exists": true,
+        "mtime": 1781509454,
+        "size": 5967
+      },
+      "results/day/hg38_broad/other_reports/smn12_orthogonal_calls_mqc.tsv": {
+        "exists": true,
+        "mtime": 1781509454,
+        "size": 6240
+      }
+    },
+    "repo": "/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis",
+    "reports": {
+      "htd_calls_mqc.tsv": [
+        {
+          "affected_status": "not_reported",
+          "aligner": "sentmm2ont",
+          "caller": "hapsma",
+          "caller_class": "long_read_haplotype_dev",
+          "carrier_status": "not_reported",
+          "confidence": "11.031685",
+          "deduper": "na",
+          "evidence_source": "ONT_long_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "has SMA",
+          "aligner": "sentmm2ont",
+          "caller": "sma_finder",
+          "caller_class": "affected_status_only",
+          "carrier_status": "not_reported",
+          "confidence": "13",
+          "deduper": "na",
+          "evidence_source": "short_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "NA",
+          "aligner": "sentmm2ont",
+          "caller": "smaca",
+          "caller_class": "copy_number",
+          "carrier_status": "NA",
+          "confidence": "NA",
+          "deduper": "na",
+          "evidence_source": "short_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "True",
+          "aligner": "sentmm2ont",
+          "caller": "smn12",
+          "caller_class": "copy_number",
+          "carrier_status": "False",
+          "confidence": "[[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]",
+          "deduper": "na",
+          "evidence_source": "short_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "0",
+          "smn2_copy_number": "1",
+          "status": "complete"
+        }
+      ],
+      "smn12_orthogonal_calls_mqc.tsv": [
+        {
+          "affected_status": "not_reported",
+          "aligner": "sentmm2ont",
+          "caller": "hapsma",
+          "caller_class": "long_read_haplotype_dev",
+          "carrier_status": "not_reported",
+          "confidence": "11.031685",
+          "deduper": "na",
+          "discordance_flag": "discordant",
+          "evidence_source": "ONT_long_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "not_reported",
+          "aligner": "sentmm2ont",
+          "caller": "sentieon_segdup_smn1",
+          "caller_class": "hybrid_segdup",
+          "carrier_status": "not_reported",
+          "confidence": "NA",
+          "deduper": "na",
+          "discordance_flag": "discordant",
+          "evidence_source": "HiOMR_SR_LR",
+          "gene": "SMN1",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "has SMA",
+          "aligner": "sentmm2ont",
+          "caller": "sma_finder",
+          "caller_class": "affected_status_only",
+          "carrier_status": "not_reported",
+          "confidence": "13",
+          "deduper": "na",
+          "discordance_flag": "discordant",
+          "evidence_source": "short_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "NA",
+          "aligner": "sentmm2ont",
+          "caller": "smaca",
+          "caller_class": "copy_number",
+          "carrier_status": "NA",
+          "confidence": "NA",
+          "deduper": "na",
+          "discordance_flag": "discordant",
+          "evidence_source": "short_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "NA",
+          "smn2_copy_number": "NA",
+          "status": "complete"
+        },
+        {
+          "affected_status": "True",
+          "aligner": "sentmm2ont",
+          "caller": "smn12",
+          "caller_class": "copy_number",
+          "carrier_status": "False",
+          "confidence": "[[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]",
+          "deduper": "na",
+          "discordance_flag": "discordant",
+          "evidence_source": "short_read_cram",
+          "gene": "SMN1/SMN2",
+          "sample": "HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ",
+          "smn1_copy_number": "0",
+          "smn2_copy_number": "1",
+          "status": "complete"
+        }
+      ]
+    },
+    "sample_dirs": [
+      "results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ"
+    ],
+    "summaries": {
+      "hapsma": {
+        "bed_phase_set": "NO_PHASE_SET",
+        "bed_phase_status": "no_call_no_phase_set",
+        "mean_smn_region_coverage": "11.031685",
+        "region_phase_set": "NO_PHASE_SET",
+        "region_phase_status": "no_call_no_phase_set"
+      },
+      "sentieon_segdup_smn1": {
+        "SMN1": 0,
+        "SMN2": 1,
+        "segdup_caller": "0.6.0",
+        "sentieon": "202503.03"
+      },
+      "sma_finder": {
+        "c840_reads_with_smn1_base_C": "0",
+        "c840_total_reads": "14",
+        "confidence_score": "13",
+        "sma_status": "has SMA"
+      },
+      "smaca": {
+        "avg_cov_SMN1": "4.717640162747397",
+        "avg_cov_SMN2": "7.005000172419739",
+        "cov_SMN1_a": "0.0",
+        "cov_SMN2_a": "16.5",
+        "g.27134T>G": "AA [[0, 0], [0, 0], [0, 0], [0, 0]]"
+      },
+      "smn12": {
+        "Full_length_CN_raw": 1.027,
+        "Info": "PASS:Majority",
+        "Median_depth": 27.33,
+        "SMN1": 0,
+        "SMN2": 1,
+        "SMN2delta78": 0,
+        "Total_CN_raw": 0.919,
+        "isCarrier": false,
+        "isSMA": true
+      }
+    },
+    "utc": "2026-06-15T07:48:27Z"
+  },
+  "command_id": "ed1d97c4-d9bd-4d0a-93b8-3244ea3152b0",
+  "created_utc": "2026-06-15T07:48:28Z",
+  "instance_id": "i-05815cdeec4a6dad8",
+  "profile": "lsmc",
+  "region": "us-west-2",
+  "remote_repo": "/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis",
+  "response_code": 0,
+  "status": "Success",
+  "stderr": "",
+  "stdout": "DAY-EC activated.\nDAY-EC activated.\n{\n  \"files\": {\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/hapsma/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.hapsma.done\": {\n      \"exists\": true,\n      \"mtime\": 1781507329,\n      \"size\": 0\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/hapsma/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.hapsma.summary.tsv\": {\n      \"exists\": true,\n      \"mtime\": 1781507329,\n      \"size\": 916\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/sma_finder/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sma_finder.done\": {\n      \"exists\": true,\n      \"mtime\": 1781509173,\n      \"size\": 0\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/sma_finder/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sma_finder.summary.json\": {\n      \"exists\": true,\n      \"mtime\": 1781509173,\n      \"size\": 685\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/sma_finder/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sma_finder.summary.tsv\": {\n      \"exists\": true,\n      \"mtime\": 1781509173,\n      \"size\": 366\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smaca/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smaca.done\": {\n      \"exists\": true,\n      \"mtime\": 1781509193,\n      \"size\": 0\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smaca/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smaca.summary.tsv\": {\n      \"exists\": true,\n      \"mtime\": 1781509193,\n      \"size\": 1612\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smn12/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smn12.done\": {\n      \"exists\": true,\n      \"mtime\": 1781509454,\n      \"size\": 0\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smn12/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smn12.summary.json\": {\n      \"exists\": true,\n      \"mtime\": 1781509454,\n      \"size\": 872\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/htd/smn12/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.smn12.summary.tsv\": {\n      \"exists\": true,\n      \"mtime\": 1781509451,\n      \"size\": 333\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/log/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sentdhiomr.segdup.SMN1.log\": {\n      \"exists\": true,\n      \"mtime\": 1781508887,\n      \"size\": 3146\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/results/SMN1/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.SMN1.result.vcf.gz\": {\n      \"exists\": true,\n      \"mtime\": 1781508893,\n      \"size\": 22628\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/results/SMN1/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.SMN1.result.vcf.gz.tbi\": {\n      \"exists\": true,\n      \"mtime\": 1781508893,\n      \"size\": 72\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/align/sentmm2ont/na/segdup/sentdhiomr/results/SMN1/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.SMN1.yaml\": {\n      \"exists\": true,\n      \"mtime\": 1781508893,\n      \"size\": 2007\n    },\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ/logs/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ.sentmm2ont.na.sentdhiomr_call_segdup.log\": {\n      \"exists\": true,\n      \"mtime\": 1781508893,\n      \"size\": 0\n    },\n    \"results/day/hg38_broad/other_reports/htd_calls_mqc.tsv\": {\n      \"exists\": true,\n      \"mtime\": 1781509454,\n      \"size\": 5967\n    },\n    \"results/day/hg38_broad/other_reports/smn12_orthogonal_calls_mqc.tsv\": {\n      \"exists\": true,\n      \"mtime\": 1781509454,\n      \"size\": 6240\n    }\n  },\n  \"repo\": \"/fsx/analysis_results/dyecX4/na00232_smn12_chip124_20260615T062929Z/daylily-omics-analysis\",\n  \"reports\": {\n    \"htd_calls_mqc.tsv\": [\n      {\n        \"affected_status\": \"not_reported\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"hapsma\",\n        \"caller_class\": \"long_read_haplotype_dev\",\n        \"carrier_status\": \"not_reported\",\n        \"confidence\": \"11.031685\",\n        \"deduper\": \"na\",\n        \"evidence_source\": \"ONT_long_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"has SMA\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"sma_finder\",\n        \"caller_class\": \"affected_status_only\",\n        \"carrier_status\": \"not_reported\",\n        \"confidence\": \"13\",\n        \"deduper\": \"na\",\n        \"evidence_source\": \"short_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"NA\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"smaca\",\n        \"caller_class\": \"copy_number\",\n        \"carrier_status\": \"NA\",\n        \"confidence\": \"NA\",\n        \"deduper\": \"na\",\n        \"evidence_source\": \"short_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"True\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"smn12\",\n        \"caller_class\": \"copy_number\",\n        \"carrier_status\": \"False\",\n        \"confidence\": \"[[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]\",\n        \"deduper\": \"na\",\n        \"evidence_source\": \"short_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"0\",\n        \"smn2_copy_number\": \"1\",\n        \"status\": \"complete\"\n      }\n    ],\n    \"smn12_orthogonal_calls_mqc.tsv\": [\n      {\n        \"affected_status\": \"not_reported\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"hapsma\",\n        \"caller_class\": \"long_read_haplotype_dev\",\n        \"carrier_status\": \"not_reported\",\n        \"confidence\": \"11.031685\",\n        \"deduper\": \"na\",\n        \"discordance_flag\": \"discordant\",\n        \"evidence_source\": \"ONT_long_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"not_reported\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"sentieon_segdup_smn1\",\n        \"caller_class\": \"hybrid_segdup\",\n        \"carrier_status\": \"not_reported\",\n        \"confidence\": \"NA\",\n        \"deduper\": \"na\",\n        \"discordance_flag\": \"discordant\",\n        \"evidence_source\": \"HiOMR_SR_LR\",\n        \"gene\": \"SMN1\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"has SMA\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"sma_finder\",\n        \"caller_class\": \"affected_status_only\",\n        \"carrier_status\": \"not_reported\",\n        \"confidence\": \"13\",\n        \"deduper\": \"na\",\n        \"discordance_flag\": \"discordant\",\n        \"evidence_source\": \"short_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"NA\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"smaca\",\n        \"caller_class\": \"copy_number\",\n        \"carrier_status\": \"NA\",\n        \"confidence\": \"NA\",\n        \"deduper\": \"na\",\n        \"discordance_flag\": \"discordant\",\n        \"evidence_source\": \"short_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"NA\",\n        \"smn2_copy_number\": \"NA\",\n        \"status\": \"complete\"\n      },\n      {\n        \"affected_status\": \"True\",\n        \"aligner\": \"sentmm2ont\",\n        \"caller\": \"smn12\",\n        \"caller_class\": \"copy_number\",\n        \"carrier_status\": \"False\",\n        \"confidence\": \"[[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]\",\n        \"deduper\": \"na\",\n        \"discordance_flag\": \"discordant\",\n        \"evidence_source\": \"short_read_cram\",\n        \"gene\": \"SMN1/SMN2\",\n        \"sample\": \"HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\",\n        \"smn1_copy_number\": \"0\",\n        \"smn2_copy_number\": \"1\",\n        \"status\": \"complete\"\n      }\n    ]\n  },\n  \"sample_dirs\": [\n    \"results/day/hg38_broad/HYB-NA00232-smn12-current-20260615-NA00232-SMN-chip1-chip2-chip4-barcode18-PF-ILMN-NOVASEQ\"\n  ],\n  \"summaries\": {\n    \"hapsma\": {\n      \"bed_phase_set\": \"NO_PHASE_SET\",\n      \"bed_phase_status\": \"no_call_no_phase_set\",\n      \"mean_smn_region_coverage\": \"11.031685\",\n      \"region_phase_set\": \"NO_PHASE_SET\",\n      \"region_phase_status\": \"no_call_no_phase_set\"\n    },\n    \"sentieon_segdup_smn1\": {\n      \"SMN1\": 0,\n      \"SMN2\": 1,\n      \"segdup_caller\": \"0.6.0\",\n      \"sentieon\": \"202503.03\"\n    },\n    \"sma_finder\": {\n      \"c840_reads_with_smn1_base_C\": \"0\",\n      \"c840_total_reads\": \"14\",\n      \"confidence_score\": \"13\",\n      \"sma_status\": \"has SMA\"\n    },\n    \"smaca\": {\n      \"avg_cov_SMN1\": \"4.717640162747397\",\n      \"avg_cov_SMN2\": \"7.005000172419739\",\n      \"cov_SMN1_a\": \"0.0\",\n      \"cov_SMN2_a\": \"16.5\",\n      \"g.27134T>G\": \"AA [[0, 0], [0, 0], [0, 0], [0, 0]]\"\n    },\n    \"smn12\": {\n      \"Full_length_CN_raw\": 1.027,\n      \"Info\": \"PASS:Majority\",\n      \"Median_depth\": 27.33,\n      \"SMN1\": 0,\n      \"SMN2\": 1,\n      \"SMN2delta78\": 0,\n      \"Total_CN_raw\": 0.919,\n      \"isCarrier\": false,\n      \"isSMA\": true\n    }\n  },\n  \"utc\": \"2026-06-15T07:48:27Z\"\n}\n"
+}
