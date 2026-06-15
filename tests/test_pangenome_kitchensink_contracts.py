@@ -26,7 +26,9 @@ def test_sentpg_variant_paths_use_fixed_spmd_deduper() -> None:
 
     assert 'PANGENOME_SENTPG_DEDUPER = "spmd"' in common
     assert "def valid_snv_alnr_ddup_tuples(all_aligners, callers, ddups):" in common
-    assert 'if snv == "sentpg" and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:' in common
+    assert 'if snv in {"sentpg", "sentpgs"} and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:' in common
+    assert '"sentpg":    ["pangenome_sr", "pangenome_ug"]' in common
+    assert '"sentpgs":   ["pangenome_ug"]' in common
     assert "tuples.append((alnr, PANGENOME_SENTPG_DEDUPER, snv))" in common
 
 

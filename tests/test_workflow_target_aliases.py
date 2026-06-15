@@ -84,6 +84,7 @@ def test_all_targets_expand_complete_registered_sets() -> None:
     assert '$_astatus" == "current"' in bin_day_run
     assert "if row[\"code\"] == \"all\":" in common
     assert "codes.update(_current_alias_codes(kind))" in common
+    assert "sentpgs" not in {row["code"] for row in _rows("snv_caller", "current")}
 
 
 def test_selector_targets_handle_aggregate_delegates_with_explicit_inputs() -> None:
@@ -117,6 +118,21 @@ def test_auto_config_injection_covers_all_selector_dimensions() -> None:
     assert 'DDUP_LEGACY_MAP = {"dppl": "dmd", "dppl_sent": "smd"}' in common
     assert 'DDUP_VALID_CODES = set(CANONICAL_DEDUPER_CODES) | {"spmd"}' in common
     assert "Legacy dppl is accepted and normalized to dmd." in common
+
+
+def test_experimental_sharded_pangenome_target_autoconfigs_without_current_selector() -> None:
+    selector_rules = _read("workflow/rules/workflow_target_aliases.smk")
+    rows = _registry()
+
+    assert {
+        (row["kind"], row["code"], row["status"])
+        for row in rows
+        if row["target"] == "produce_pangenome_ug_sharded_vcf"
+    } == {
+        ("aligner", "pangenome_ug", "experimental"),
+        ("snv_caller", "sentpgs", "experimental"),
+    }
+    assert "rule produce_pangenome_ug_sharded_vcf:" not in selector_rules
 
 
 def test_multiqc_canonical_targets_and_deprecated_aliases() -> None:

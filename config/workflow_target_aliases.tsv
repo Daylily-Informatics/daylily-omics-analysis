@@ -15,6 +15,7 @@ produce_sentmm2ont_align_sort	aligner	sentmm2ont	deprecated
 produce_cgt7p_vcf	aligner	sentcg	deprecated	
 produce_pangenome_sr_vcf	aligner	pangenome_sr	deprecated	
 produce_pangenome_ug_vcf	aligner	pangenome_ug	deprecated	
+produce_pangenome_ug_sharded_vcf	aligner	pangenome_ug	experimental
 produce_dmd_dedup_cram	deduper	dmd	current	dedup_doppelmark
 produce_smd_dedup_cram	deduper	smd	current	dedup_sentieon
 produce_na_dedup_cram	deduper	na	current	dedup_none
@@ -60,6 +61,7 @@ produce_sentdhupmr_vcf	snv_caller	sentdhupmr	deprecated
 produce_sentpg_vcf	snv_caller	sentpg	deprecated	
 produce_pangenome_sr_vcf	snv_caller	sentpg	deprecated	
 produce_pangenome_ug_vcf	snv_caller	sentpg	deprecated	
+produce_pangenome_ug_sharded_vcf	snv_caller	sentpgs	experimental
 produce_sentieon_gatk_vcf	snv_caller	gatk	deprecated	
 produce_deep19_vcf	snv_caller	deep19	deprecated	
 produce_deep19_r_vcf	snv_caller	deep19r	deprecated	

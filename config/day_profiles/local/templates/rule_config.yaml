@@ -1319,6 +1319,15 @@ sentieon_pangenome_ug:
     pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
     canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
     dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
+    hg38_sentpgs_chrms: "19-20"
+    hg38_broad_sentpgs_chrms: "19-20"
+    b37_sentpgs_chrms: "19-20"
+    shard_threads: 7
+    shard_mem_mb: 50000
+    shard_partition: "i8"
+    concat_threads: 4
+    concat_mem_mb: 8000
+    concat_partition: "i8"
 
 sentieon_gatk:
     threads: 7

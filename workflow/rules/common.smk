@@ -795,6 +795,10 @@ SENTDHUPMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHUPMR_CHRMS)
 SENTDHUOMR_CHRMS = config["sentdhuomr"][f"{config['genome_build']}_sentdhuomr_chrms"].split(",")
 SENTDHUOMR_CHRMS_TRANSFER = _expand_chrm_ranges(SENTDHUOMR_CHRMS)
 
+# Sharded Sentieon Ultima pangenome caller. Uses the same HIOMR-style shard
+# token syntax as the hybrid modular rules, including contiguous ranges.
+SENTPGS_CHRMS = config["sentieon_pangenome_ug"][f"{config['genome_build']}_sentpgs_chrms"].split(",")
+
 # Sentieon GATK HaplotypeCaller
 GATK_CHRMS = config["sentieon_gatk"][f"{config['genome_build']}_sentieon_gatk_chrms"].split(",")
 
@@ -2616,6 +2620,7 @@ _SNV_CALLER_VALID_ALIGNERS = {
     "ensemble":  ["ont", "pb", "sentmm2"],  # Multi-platform ensemble → emits alnr=ont, pb, or sentmm2
     # Pangenome callers
     "sentpg":    ["pangenome_sr", "pangenome_ug"],  # Sentieon pangenome → emits alnr=pangenome_sr or pangenome_ug
+    "sentpgs":   ["pangenome_ug"],                   # Sharded Sentieon Ultima pangenome → emits alnr=pangenome_ug
 }
 
 
@@ -2639,7 +2644,7 @@ def valid_snv_alnr_ddup_tuples(all_aligners, callers, ddups):
     """Return (aligner, deduper, caller) tuples for variant-output paths."""
     tuples = []
     for alnr, snv in valid_snv_alnr_pairs(all_aligners, callers):
-        if snv == "sentpg" and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:
+        if snv in {"sentpg", "sentpgs"} and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:
             tuples.append((alnr, PANGENOME_SENTPG_DEDUPER, snv))
             continue
         for ddup in ddups:
