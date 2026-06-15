@@ -201,7 +201,7 @@ if len(CONCORDANCE_SAMPLES.keys()) > 0:
             rm -rf "$outdir"
 
             rtg_mem_gb=$(( ({resources.mem_mb} * 85 / 100 + 1023) / 1024 ))
-            RTG_MEM="${rtg_mem_gb}G" rtg vcfeval \
+            RTG_MEM="${{rtg_mem_gb}}G" rtg vcfeval \
               --decompose \
               --squash-ploidy \
               --ref-overlap \

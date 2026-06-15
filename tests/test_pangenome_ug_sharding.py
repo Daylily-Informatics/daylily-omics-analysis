@@ -156,3 +156,10 @@ def test_sentpgs_common_routing_contract() -> None:
     assert 'SENTPGS_CHRMS = config["sentieon_pangenome_ug"][f"{config[\'genome_build\']}_sentpgs_chrms"].split(",")' in common
     assert '"sentpgs":   ["pangenome_ug"]' in common
     assert 'if snv in {"sentpg", "sentpgs"} and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:' in common
+
+
+def test_rtg_vcfeval_roi_escapes_internal_shell_variables_for_dryrun() -> None:
+    rtg = (REPO_ROOT / "workflow/rules/rtg_vcfeval.smk").read_text(encoding="utf-8")
+
+    assert 'rtg_mem_gb=$(( ({resources.mem_mb} * 85 / 100 + 1023) / 1024 ))' in rtg
+    assert 'RTG_MEM="${{rtg_mem_gb}}G" rtg vcfeval' in rtg
