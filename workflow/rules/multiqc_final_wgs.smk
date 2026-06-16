@@ -411,6 +411,48 @@ def _sv_component_inputs(wildcards):
     return paths
 
 
+def _altair_component_inputs(wildcards):
+    paths = [MDIR + "other_reports/input_sample_libraries_mqc.tsv"]
+    paths.extend(_alignment_qc_native_inputs(wildcards))
+    paths.append(MDIR + "other_reports/alignment_qc_outputs_mqc.tsv")
+    if qc_tool_enabled("gatk_contam") or qc_tool_enabled("site_mix"):
+        paths.append(MDIR + "other_reports/contamination_mqc.tsv")
+    if qc_tool_enabled("site_mix"):
+        paths.extend(
+            [
+                MDIR + "other_reports/site_mix_contam_mqc.tsv",
+                MDIR + "other_reports/site_mix_donor_mqc.tsv",
+            ]
+        )
+    if qc_tool_enabled("relatedness"):
+        paths.append(MDIR + "other_reports/relatedness_mqc.tsv")
+        paths.extend(_relatedness_native_inputs(wildcards))
+    paths.extend(contam_identity_multiqc_inputs(wildcards))
+    paths.extend(_contam_identity_native_inputs(wildcards))
+    pairs = valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+    if len(CONCORDANCE_SAMPLES.keys()) > 0 and pairs:
+        paths.append(MDIR + "other_reports/giab_concordance_mqc.tsv")
+    paths.extend(_sv_component_inputs(wildcards))
+    paths.append(MDIR + "other_reports/bcftools_variant_stats_mqc.tsv")
+    paths.append(MDIR + "other_reports/rtg_vcfstats_mqc.tsv")
+    if qc_tool_enabled("peddy"):
+        paths.extend(
+            ["logs/peddy_gathered.done", MDIR + "other_reports/peddy_sample_qc_mqc.tsv"]
+        )
+    return sorted(set(paths))
+
+
+def _ultima_reanalysis_component_inputs(wildcards):
+    paths = list(_altair_component_inputs(wildcards))
+    if (
+        qc_tool_enabled("expansionhunter")
+        and set(ALIGNERS) & EXPANSIONHUNTER_ALIGNERS
+        and expansionhunter_report_targets_available()
+    ):
+        paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")
+    return sorted(set(paths))
+
+
 def _final_component_inputs(wildcards):
     return _variant_component_inputs(wildcards)
 
@@ -427,6 +469,10 @@ def _multiqc_stage_component_inputs(wildcards):
         return _final_component_inputs(wildcards) + [
             MDIR + "other_reports/rules_benchmark_data_mqc.tsv"
         ]
+    if stage == "altair":
+        return _altair_component_inputs(wildcards)
+    if stage == "ultima_reanalysis":
+        return _ultima_reanalysis_component_inputs(wildcards)
     raise ValueError(f"Unknown MultiQC report stage: {stage}")
 
 
@@ -453,6 +499,8 @@ localrules:
     produce_multiqc_variant_annotation,
     produce_multiqc_all,
     produce_multiqc_stage_final,
+    produce_multiqc_altair,
+    produce_multiqc_ultima_reanalysis,
     produce_multiqc_seq_data,
     produce_multiqc_alignment,
     produce_multiqc_variants,
@@ -858,6 +906,104 @@ report_header_info:
         """
 
 
+rule multiqc_altair:  # TARGET: focused Altair validation QC MultiQC report
+    input:
+        stage_done=MDIR + "reports/multiqc_inputs/altair/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/altair/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
+    output:
+        f"{MDIR}reports/DAY_altair_multiqc.html",
+    benchmark:
+        f"{MDIR}benchmarks/DAY_all.altair_multiqc.bench.tsv"
+    threads: config["multiqc"]["threads"]
+    resources:
+        threads=config["multiqc"]["threads"],
+        partition=config["multiqc"]["partition"],
+    log:
+        f"{MDIR}reports/logs/altair_multiqc.log",
+    params:
+        ghash=config["githash"],
+        gbranch=config["gitbranch"],
+        gtag=config["gittag"],
+        cluster_sample="multiqc_altair",
+        stage_dir=MDIR + "reports/multiqc_inputs/altair",
+        data_json=MDIR + "reports/DAY_altair_multiqc_data/multiqc_data.json",
+    conda:
+        "../envs/multiqc_v0.1.yaml"
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
+        multiqc -f \
+          $module_excludes \
+          --config ./config/external_tools/multiqc_config.yaml \
+          --custom-css-file ./config/external_tools/multiqc.css \
+          --ignore "*/other_reports/logs/*" \
+          --ignore "other_reports/logs/*" \
+          --ignore "*_mqc.log" \
+          --template default \
+          --filename {output:q} \
+          -i 'Altair Validation MultiQC Report' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
+        """
+
+
+rule multiqc_ultima_reanalysis:  # TARGET: focused Ultima reanalysis QC MultiQC report
+    input:
+        stage_done=MDIR + "reports/multiqc_inputs/ultima_reanalysis/.stage.done",
+        stage_manifest=MDIR + "reports/multiqc_inputs/ultima_reanalysis/manifest.tsv",
+        module_exclude_config="config/multiqc_module_exclude.txt",
+    output:
+        f"{MDIR}reports/DAY_ultima_reanalysis_multiqc.html",
+    benchmark:
+        f"{MDIR}benchmarks/DAY_all.ultima_reanalysis_multiqc.bench.tsv"
+    threads: config["multiqc"]["threads"]
+    resources:
+        threads=config["multiqc"]["threads"],
+        partition=config["multiqc"]["partition"],
+    log:
+        f"{MDIR}reports/logs/ultima_reanalysis_multiqc.log",
+    params:
+        ghash=config["githash"],
+        gbranch=config["gitbranch"],
+        gtag=config["gittag"],
+        cluster_sample="multiqc_ultima_reanalysis",
+        stage_dir=MDIR + "reports/multiqc_inputs/ultima_reanalysis",
+        data_json=MDIR + "reports/DAY_ultima_reanalysis_multiqc_data/multiqc_data.json",
+    conda:
+        "../envs/multiqc_v0.1.yaml"
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
+        multiqc -f \
+          $module_excludes \
+          --config ./config/external_tools/multiqc_config.yaml \
+          --custom-css-file ./config/external_tools/multiqc.css \
+          --ignore "*/other_reports/logs/*" \
+          --ignore "other_reports/logs/*" \
+          --ignore "*_mqc.log" \
+          --template default \
+          --filename {output:q} \
+          -i 'Ultima Reanalysis MultiQC Report' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          {params.stage_dir:q} > {log:q} 2>&1
+        python workflow/scripts/validate_multiqc_sample_ids.py \
+          --manifest {input.stage_manifest:q} \
+          --multiqc-data {params.data_json:q} >> {log:q} 2>&1
+        """
+
+
 rule produce_multiqc_input_data:  # TARGET: canonical input sequence-data QC report
     input:
         MDIR + "reports/DAY_seq_data_multiqc.html"
@@ -927,6 +1073,26 @@ rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
         set -euo pipefail
         echo "produce_multiqc_all inputs ready" > {log}
         """
+rule produce_multiqc_altair:  # TARGET: focused Altair validation QC report
+    input:
+        MDIR + "reports/DAY_altair_multiqc.html"
+
+
+    log:
+        MDIR + "logs/produce_multiqc_altair.log"
+    benchmark:
+        "logs/benchmarks/produce_multiqc_altair.bench.tsv"
+rule produce_multiqc_ultima_reanalysis:  # TARGET: focused Ultima reanalysis QC report
+    input:
+        MDIR + "reports/DAY_ultima_reanalysis_multiqc.html"
+    output:
+        MDIR + "logs/produce_multiqc_ultima_reanalysis.done"
+    log:
+        MDIR + "logs/produce_multiqc_ultima_reanalysis.log"
+    benchmark:
+        "logs/benchmarks/produce_multiqc_ultima_reanalysis.bench.tsv"
+    shell:
+        "touch {log:q}; touch {output:q}"
 rule produce_multiqc_stage_final:  # TARGET: stage final MultiQC input tree
     input:
         MDIR + "reports/multiqc_inputs/final/.stage.done"

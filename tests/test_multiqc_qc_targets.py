@@ -351,6 +351,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "rule produce_multiqc_sample_qc:",
         "rule produce_multiqc_variant_annotation:",
         "rule produce_multiqc_all:",
+        "rule produce_multiqc_altair:",
+        "rule produce_multiqc_ultima_reanalysis:",
         "rule produce_multiqc_seq_data:",
         "rule produce_multiqc_alignment:",
         "rule produce_multiqc_variants:",
@@ -360,10 +362,17 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         assert rule_name in text
 
     assert 'MDIR + "reports/DAY_final_multiqc.html"' in text
+    assert 'MDIR + "reports/DAY_altair_multiqc.html"' in text
+    assert 'MDIR + "reports/DAY_ultima_reanalysis_multiqc.html"' in text
+    ultima_wrapper = _rule_block(text, "produce_multiqc_ultima_reanalysis")
+    assert 'MDIR + "logs/produce_multiqc_ultima_reanalysis.done"' in ultima_wrapper
+    assert "touch {log:q}; touch {output:q}" in ultima_wrapper
     assert "def _seq_data_component_inputs" in text
     assert "def _alignment_component_inputs" in text
     assert "def _variant_component_inputs" in text
     assert "def _sv_component_inputs" in text
+    assert "def _altair_component_inputs" in text
+    assert "def _ultima_reanalysis_component_inputs" in text
     assert "FASTQ_QC_SAMPS = [sample for sample in SAMPS if sample_has_fastq_qc_inputs(sample)]" in common
     assert common.index("SAMPS = list(get_samp_ids())") < common.index("FASTQ_QC_SAMPS =")
     assert 'qc_tool_enabled("fastp")' not in text
@@ -577,6 +586,8 @@ def test_multiqc_command_rules_use_dedicated_conda_env() -> None:
                 "multiqc_alignment",
                 "multiqc_variants",
                 "multiqc_final_wgs",
+                "multiqc_altair",
+                "multiqc_ultima_reanalysis",
             ),
             f'conda:\n        "{MULTIQC_ENV_YAML}"',
         ),
@@ -1007,12 +1018,16 @@ def test_multiqc_reports_scan_only_staged_inputs() -> None:
     assert "reports/multiqc_inputs/alignment" in text
     assert "reports/multiqc_inputs/variants" in text
     assert "reports/multiqc_inputs/final" in text
+    assert "reports/multiqc_inputs/altair" in text
+    assert "reports/multiqc_inputs/ultima_reanalysis" in text
     assert "--input-root {params.input_root:q}" in text
     for rule_name, stage in (
         ("rule multiqc_seq_data:", "seq_data"),
         ("rule multiqc_alignment:", "alignment"),
         ("rule multiqc_variants:", "variants"),
         ("rule multiqc_final_wgs:", "final"),
+        ("rule multiqc_altair:", "altair"),
+        ("rule multiqc_ultima_reanalysis:", "ultima_reanalysis"),
     ):
         body = text[text.index(rule_name) :]
         next_rule = body.find("\n\nrule ", 1)
@@ -1025,6 +1040,80 @@ def test_multiqc_reports_scan_only_staged_inputs() -> None:
         assert "{params.stage_dir:q}" in body
         assert "{MDIR} > {log:q}" not in body
         assert "{MDIR} >> {log:q}" not in body
+
+
+def test_altair_multiqc_target_uses_focused_validation_inputs() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+    helper = text[
+        text.index("def _altair_component_inputs") : text.index(
+            "def _final_component_inputs"
+        )
+    ]
+    block = _rule_block(text, "multiqc_altair")
+
+    for expected in (
+        'stage_done=MDIR + "reports/multiqc_inputs/altair/.stage.done"',
+        'stage_manifest=MDIR + "reports/multiqc_inputs/altair/manifest.tsv"',
+        'stage_dir=MDIR + "reports/multiqc_inputs/altair"',
+        'data_json=MDIR + "reports/DAY_altair_multiqc_data/multiqc_data.json"',
+        "Altair Validation MultiQC Report",
+        "{params.stage_dir:q}",
+        "workflow/scripts/multiqc_log_guard.py",
+        "workflow/scripts/validate_multiqc_sample_ids.py",
+        f'conda:\n        "{MULTIQC_ENV_YAML}"',
+    ):
+        assert expected in block
+
+    for expected in (
+        "input_sample_libraries_mqc.tsv",
+        "_alignment_qc_native_inputs(wildcards)",
+        "alignment_qc_outputs_mqc.tsv",
+        "contamination_mqc.tsv",
+        "site_mix_contam_mqc.tsv",
+        "site_mix_donor_mqc.tsv",
+        "relatedness_mqc.tsv",
+        "_relatedness_native_inputs(wildcards)",
+        "contam_identity_multiqc_inputs(wildcards)",
+        "_contam_identity_native_inputs(wildcards)",
+        "giab_concordance_mqc.tsv",
+        "_sv_component_inputs(wildcards)",
+        "bcftools_variant_stats_mqc.tsv",
+        "rtg_vcfstats_mqc.tsv",
+        "peddy_sample_qc_mqc.tsv",
+    ):
+        assert expected in helper
+
+
+def test_ultima_reanalysis_multiqc_target_uses_focused_validation_inputs() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+    helper = text[
+        text.index("def _ultima_reanalysis_component_inputs") : text.index(
+            "def _final_component_inputs"
+        )
+    ]
+    block = _rule_block(text, "multiqc_ultima_reanalysis")
+
+    for expected in (
+        'stage_done=MDIR + "reports/multiqc_inputs/ultima_reanalysis/.stage.done"',
+        'stage_manifest=MDIR + "reports/multiqc_inputs/ultima_reanalysis/manifest.tsv"',
+        'stage_dir=MDIR + "reports/multiqc_inputs/ultima_reanalysis"',
+        'data_json=MDIR + "reports/DAY_ultima_reanalysis_multiqc_data/multiqc_data.json"',
+        "Ultima Reanalysis MultiQC Report",
+        "{params.stage_dir:q}",
+        "workflow/scripts/multiqc_log_guard.py",
+        "workflow/scripts/validate_multiqc_sample_ids.py",
+        f'conda:\n        "{MULTIQC_ENV_YAML}"',
+    ):
+        assert expected in block
+
+    for expected in (
+        "_altair_component_inputs(wildcards)",
+        "expansionhunter_mqc.tsv",
+        "qc_tool_enabled(\"expansionhunter\")",
+        "EXPANSIONHUNTER_ALIGNERS",
+        "expansionhunter_report_targets_available()",
+    ):
+        assert expected in helper
 
 
 def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
@@ -1088,11 +1177,17 @@ def test_multiqc_runtime_policy_documented() -> None:
         "produce_multiqc_sample_qc",
         "produce_multiqc_variant_annotation",
         "produce_multiqc_all",
+        "produce_multiqc_altair",
+        "produce_multiqc_ultima_reanalysis",
         "runtime_gate_minutes: 45",
         "FASTV is retired from active Snakemake execution",
         "site_mix genotype-free contamination",
         "Global contamination/identity bundle",
         "reports/multiqc_inputs/<stage>/",
+        "reports/multiqc_inputs/altair/",
+        "reports/multiqc_inputs/ultima_reanalysis/",
+        "reports/DAY_altair_multiqc.html",
+        "reports/DAY_ultima_reanalysis_multiqc.html",
         "Duplicate `(module, Sample)` pairs fail during staging",
         "`<sample>.<aligner>.<deduper>.<snv_caller>`",
         "`<sample>.<aligner>.<deduper>.<sv_caller>`",

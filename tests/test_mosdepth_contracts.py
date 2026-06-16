@@ -37,6 +37,8 @@ def test_produce_mosdepth_uses_configured_alignment_qc_scope() -> None:
     text = _read("workflow/rules/mosdepth.smk")
     target = text[text.index("rule produce_mosdepth:") :]
 
+    assert "done=MDIR + \"logs/produce_mosdepth.done\"" in target
+    assert "touch {log}; touch {output.done}" in target
     assert "alnr=QC_CRAM_ALIGNERS" in target
     assert "ddup=qc_alignment_dedupers()" in target
     assert "alnr=CRAM_ALIGNERS" not in target

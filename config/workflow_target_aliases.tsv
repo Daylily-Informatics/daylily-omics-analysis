@@ -84,3 +84,7 @@ produce_all_sv_vcf	sv_caller	all	current
 produce_tiddit	sv_caller	tiddit	deprecated	
 produce_manta	sv_caller	manta	deprecated	
 produce_dysgu	sv_caller	dysgu	deprecated	
+produce_sentdug_mito	specialty_caller	sentdug_mito	experimental	
+produce_sentdug_segdup	specialty_caller	sentdug_segdup	experimental	
+produce_sentdug_cnv	specialty_caller	sentdug_cnv	experimental	
+produce_sentdug_sv	specialty_caller	sentdug_sv	experimental	

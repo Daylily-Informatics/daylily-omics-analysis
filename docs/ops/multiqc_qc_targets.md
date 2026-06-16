@@ -13,6 +13,8 @@
 | `produce_multiqc_sample_qc` | Sample-level QC such as contamination and relatedness. |
 | `produce_multiqc_variant_annotation` | Annotation QC when enabled. |
 | `produce_multiqc_all` | Canonical all-routine-QC final report. |
+| `produce_multiqc_altair` | Focused Altair validation report over concordance, relatedness, contamination, alignment, coverage, and variant-QC evidence. |
+| `produce_multiqc_ultima_reanalysis` | Focused Ultima reanalysis report over concordance if available, alignment, coverage, relatedness, contamination, Peddy, SV, variant-QC, and ExpansionHunter evidence when enabled. |
 | `produce_multiqc_seq_data` | Deprecated alias retained for now. |
 | `produce_multiqc_alignment` | Deprecated alias retained for now. |
 | `produce_multiqc_variants` | Deprecated alias retained for now. |
@@ -36,6 +38,8 @@ Examples:
 dy-r produce_multiqc_all -p -j 20
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["metagenomics"]
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentd"]
+dy-r produce_multiqc_altair -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentd"]
+dy-r produce_multiqc_ultima_reanalysis -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentpg"]
 ```
 
 FASTV is retired from active Snakemake execution. `site_mix genotype-free contamination`, Kraken2 unmapped metagenomics, Ganon2 unmapped metagenomics, and sourmash gather secondary fingerprinting are controlled by explicit runtime gates and configuration. `multiqc_qc.enable_tools=["metagenomics"]` is the umbrella kitchen-sink opt-in for all three metagenomics evidence branches.
@@ -81,6 +85,14 @@ Peddy CSVs and Somalier native files are rewritten before MultiQC. Haplocheck an
 | ONT and Ultima demux FASTQ QC | Included in mounted `produce_ont_run_qc` and `produce_ultima_run_qc` targets when demux FASTQs are present under the explicit `RUN_DIR`; reported through focused run-QC MultiQC reports, not routine final WGS MultiQC. |
 
 QC gap: generated evidence can be absent because the tool was not configured, not because the sample passed or failed. Interpretive decisions belong to R2.
+
+## Altair Validation MultiQC
+
+`produce_multiqc_altair` writes `reports/DAY_altair_multiqc.html` from the staged input tree `reports/multiqc_inputs/altair/`.
+
+`produce_multiqc_ultima_reanalysis` writes `reports/DAY_ultima_reanalysis_multiqc.html` from the staged input tree `reports/multiqc_inputs/ultima_reanalysis/`. It reuses the focused validation input set and includes `expansionhunter_mqc.tsv` when ExpansionHunter is enabled for the active CRAM aligner set.
+
+The focused Altair report consumes existing DayOA evidence only: sample/library context, alignment and coverage QC inventory, alignstats, samtools, mosdepth, goleft, normal coverage evenness, GATK/site-mix contamination summaries when enabled, global contamination/identity custom evidence when explicitly enabled, Somalier relatedness native files and `relatedness_mqc.tsv`, Peddy sample QC when enabled, GIAB SNV/SV concordance summaries when configured, and bcftools/RTG variant summary custom content. It does not create an alternate discovery path for arbitrary files.
 
 FASTV, VerifyBamID2, NGSTroubleFinder, and CHARR are retired from active Snakemake execution. Historical FASTV and VerifyBamID2 rule/config files remain under `workflow/rules/archived_qc/` for provenance and old-run inspection; NGSTroubleFinder parser support remains for old evidence inspection. Active rules and final MultiQC no longer pull their outputs.
 

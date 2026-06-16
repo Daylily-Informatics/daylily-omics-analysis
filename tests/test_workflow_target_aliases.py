@@ -146,6 +146,8 @@ def test_multiqc_canonical_targets_and_deprecated_aliases() -> None:
         "produce_multiqc_sample_qc",
         "produce_multiqc_variant_annotation",
         "produce_multiqc_all",
+        "produce_multiqc_altair",
+        "produce_multiqc_ultima_reanalysis",
     ):
         assert f"rule {target}:" in multiqc
 
