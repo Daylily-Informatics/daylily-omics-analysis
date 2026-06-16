@@ -40,10 +40,10 @@ Export the completed full-depth ILMN chip1/2/4 SMN12 HiOMR results to S3, then c
 | ID | Area | Requirement | Status | Category | Approval Gate | Owner | Evidence | Root Cause | Terminal Note |
 |---|---|---|---|---|---|---|---|---|---|
 | EXP-001 | DRA export | Export `smn12_full_ilmn_chip124_20260615T092300Z` from FSx to the matching S3 derived prefix without deleting source data. | SUCCESS | feature_implementation | Gate 5 | orchestrator | After approved detach of `dra-021b674814a92ea8f`, `dyec export --cluster-name dyecX4 ... --wait --timeout-seconds 7200` wrote `docs/plans/20260615T114757Z_smn12_export_release_train/fsx_export.yaml` with `status: success`, `task_id: task-07c35034d247459b6`, `task_lifecycle: SUCCEEDED`, and `detached: true`. S3 has 2,182 objects totaling 339,962,670,909 bytes. |  | Export completed; temporary export DRA `dra-0c522071163c37d65` detached with `DeleteDataInFileSystem: false`. |
-| DAYOA-001 | DayOA release | Commit all DayOA new/changed/dirty files on `jem-dev`, push, annotate tag `10.0.22`, and push tag. | IN_PROGRESS | feature_implementation | Gate 5 | orchestrator | Export prerequisite complete; DayOA has new ledger and export receipt files. |  |  |
-| DYEC-001 | DYEC pin update | Update DYEC DayOA pins from the prior release to DayOA `10.0.22`. | OPEN | config_or_startup_contract | Gate 2 | orchestrator | `pyproject.toml` and `config/daylily_pipeline_command_catalog.yaml` contain `10.0.20` pins. |  |  |
-| DYEC-002 | DYEC release | Commit all DYEC new/changed/dirty files on `jem-dev`, push, annotate tag `10.0.36`, and push tag. | OPEN | feature_implementation | Gate 5 | orchestrator | DYEC remains clean before pin edits. |  |  |
-| VERIFY-001 | Final verification | Verify export receipt, git clean state, pushed branch heads, and annotated tag objects for DayOA and DYEC. | OPEN | contract_test | Gate 5 | orchestrator | Export receipt and S3 count verified; release verification pending. |  |  |
+| DAYOA-001 | DayOA release | Commit all DayOA new/changed/dirty files on `jem-dev`, push, annotate tag `10.0.22`, and push tag. | SUCCESS | feature_implementation | Gate 5 | orchestrator | DayOA commit `1d4ed3239b020f53e4763f7529f6f017d0c7ce7b` was pushed to `jem-dev`; annotated tag `10.0.22` was pushed and resolves to that commit. |  | DayOA export receipt and ledger were released as `10.0.22`. |
+| DYEC-001 | DYEC pin update | Update DYEC DayOA pins from the prior release to DayOA `10.0.22`. | SUCCESS | config_or_startup_contract | Gate 2 | orchestrator | DYEC commit `527ae647` updated `pyproject.toml`, source catalog, packaged catalog, and tests to DayOA `10.0.22`. |  | DYEC DayOA pins were updated and pushed. |
+| DYEC-002 | DYEC release | Commit all DYEC new/changed/dirty files on `jem-dev`, push, annotate tag `10.0.36`, and push tag. | SUCCESS | feature_implementation | Gate 5 | orchestrator | DYEC commit `679f4a864736747b5211371333ac38ae7c153e09` updated DYEC self pins to `10.0.36`; annotated tag `10.0.36` was pushed and resolves to that commit. |  | DYEC self-pinned release completed as `10.0.36`. |
+| VERIFY-001 | Final verification | Verify export receipt, git clean state, pushed branch heads, and annotated tag objects for DayOA and DYEC. | SUCCESS | contract_test | Gate 5 | orchestrator | Export receipt `status: success`; S3 prefix has 2,182 objects totaling 339,962,670,909 bytes; DayOA and DYEC worktrees were clean and matched `origin/jem-dev`; tags `10.0.22` and `10.0.36` are annotated. |  | All tracked rows are terminal. |
 
 ## Live Log
 
@@ -61,6 +61,18 @@ Export the completed full-depth ILMN chip1/2/4 SMN12 HiOMR results to S3, then c
 - 2026-06-15T12:09:09Z: Export task `task-07c35034d247459b6` reached `SUCCEEDED`.
 - 2026-06-15T12:09:25Z: `dyec export` wrote success receipt with `detached: true`, `detach_lifecycle: DELETED`.
 - 2026-06-15T12:10:00Z: Verification showed `task-07c35034d247459b6` had `TotalCount: 2178`, `SucceededCount: 2178`, `FailedCount: 0`; destination S3 prefix had 2,182 objects totaling 339,962,670,909 bytes.
+- 2026-06-15T12:12:00Z: DayOA commit `1d4ed3239b020f53e4763f7529f6f017d0c7ce7b` and annotated tag `10.0.22` were pushed.
+- 2026-06-15T12:20:00Z: DYEC commit `527ae647` updated DayOA pins to `10.0.22`; DYEC commit `679f4a864736747b5211371333ac38ae7c153e09` updated DYEC self pins to `10.0.36`; annotated tag `10.0.36` was pushed.
+- 2026-06-16T00:14:51Z: Follow-up release train started to commit this terminal ledger closeout as DayOA `10.0.23`, then pin that version in DYEC.
+
+## Final Report
+
+- Export status: complete.
+- Export destination: `s3://lsmc-ssf-sequencing-data/derived/analysis_results/hyb-only/dyecX4/smn12_full_ilmn_chip124_20260615T092300Z/`
+- Export object count/size: 2,182 objects; 339,962,670,909 bytes.
+- DayOA release: `10.0.22` at `1d4ed3239b020f53e4763f7529f6f017d0c7ce7b`.
+- DYEC release: `10.0.36` at `679f4a864736747b5211371333ac38ae7c153e09`.
+- Residual issue: this terminal closeout was written after `10.0.22`; it will be released as the follow-up DayOA documentation release `10.0.23`.
 
 ## DRA Slot Cleanup Candidates
 
