@@ -52,10 +52,77 @@ def test_sentdug_specialty_callers_consume_ug_cram_without_long_read_inputs() ->
     assert "--long" not in rules
 
 
+def test_sentdug_segdup_consumes_cram_directly_without_specialty_bam() -> None:
+    rules = _read("workflow/rules/sent_ug_specialty.smk")
+    segdup_rule = rules.split("rule sentdug_call_segdup_gene:", 1)[1].split(
+        "rule sentdug_call_segdup:", 1
+    )[0]
+
+    assert 'cram=MDIR + "{sample}/align/ug/{sample}.cram"' in segdup_rule
+    assert 'crai=MDIR + "{sample}/align/ug/{sample}.cram.crai"' in segdup_rule
+    assert "--short {input.cram:q}" in segdup_rule
+    assert "rules.sentdug_specialty_bam" not in segdup_rule
+    assert "{input.bam:q}" not in segdup_rule
+    assert "{input.bai:q}" not in segdup_rule
+
+
+def test_sentdug_segdup_gba_uses_supported_token_and_gba1_result_alias() -> None:
+    rules = _read("workflow/rules/sent_ug_specialty.smk")
+    segdup_rule = rules.split("rule sentdug_call_segdup_gene:", 1)[1].split(
+        "rule sentdug_call_segdup:", 1
+    )[0]
+
+    assert 'return "GBA1" if gene == "GBA" else gene' in rules
+    assert "--genes {wildcards.gene:q}" in segdup_rule
+    assert "grep -Eq '^[[:space:]]*{params.result_gene}:'" in segdup_rule
+    assert "mv {params.caller_vcf:q} {output.vcf:q}" in segdup_rule
+    assert "mv {params.caller_tbi:q} {output.tbi:q}" in segdup_rule
+
+
+def test_sentdug_segdup_passes_required_sample_sex() -> None:
+    rules = _read("workflow/rules/sent_ug_specialty.smk")
+    segdup_rule = rules.split("rule sentdug_call_segdup_gene:", 1)[1].split(
+        "rule sentdug_call_segdup:", 1
+    )[0]
+
+    assert "sample_sex_for_required_tool(" in segdup_rule
+    assert "sample_sex_assumption_log(" in segdup_rule
+    assert '"Sentieon segdup"' in segdup_rule
+    assert "printf '%s' {params.sex_assumption_log:q} >> {log:q}" in segdup_rule
+    assert "--sex {params.sample_sex:q}" in segdup_rule
+
+
+def test_sentdug_mito_and_cnv_consume_cram_directly_without_specialty_bam() -> None:
+    rules = _read("workflow/rules/sent_ug_specialty.smk")
+    cnv_rule = rules.split("rule sentdug_call_cnvs:", 1)[1].split(
+        "rule sentdug_call_segdup_gene:", 1
+    )[0]
+    mito_rule = rules.split("rule sentdug_mito_call:", 1)[1].split(
+        "align_and_call {params.mt_fasta:q}", 1
+    )[0]
+
+    for rule_text in (cnv_rule, mito_rule):
+        assert 'cram=MDIR + "{sample}/align/ug/{sample}.cram"' in rule_text
+        assert 'crai=MDIR + "{sample}/align/ug/{sample}.cram.crai"' in rule_text
+        assert "rules.sentdug_specialty_bam" not in rule_text
+        assert "{input.bam:q}" not in rule_text
+        assert "{input.bai:q}" not in rule_text
+
+    assert "-i {input.cram:q}" in cnv_rule
+    assert "samtools view -T {params.huref:q}" in mito_rule
+    assert "/scratch/sentdug_cnv" not in cnv_rule
+    assert "/scratch/sentdug_mito" not in mito_rule
+    assert "mktemp -d" in cnv_rule
+    assert "mktemp -d" in mito_rule
+
+
 def test_sentdug_mito_supports_unpaired_ultima_chrm_reads() -> None:
     rules = _read("workflow/rules/sent_ug_specialty.smk")
 
-    assert 'chrM_records=$(samtools view -F 0x4 {input.bam:q} chrM | wc -l)' in rules
+    assert (
+        "chrM_records=$(samtools view -T {params.huref:q} -F 0x4 "
+        "{input.cram:q} chrM | wc -l)"
+    ) in rules
     assert "chrM same-contig paired read records" in rules
     assert "mito_read_mode=single" in rules
     assert '"$tmpdir/${{sample}}.chrM.single.fastq"' in rules
@@ -96,6 +163,21 @@ def test_sentdug_specialty_config_keys_exist_in_profiles() -> None:
         assert required_keys <= set(sentdug), profile
         assert sentdug["sv_supported"] is False
         assert "LongReadSV" in sentdug["sv_block_reason"]
+        segdup_genes = sentdug["segdup_genes"].split(",")
+        assert segdup_genes == [
+            "CFH",
+            "CYP11B1",
+            "CYP2D6",
+            "GBA",
+            "IKBKG",
+            "NCF1",
+            "PMS2",
+            "RCCX",
+            "SMN1",
+            "STRC",
+            "HBA",
+        ]
+        assert "GBA1" not in segdup_genes
 
 
 def test_sentdug_specialty_registry_entries_are_experimental_only() -> None:

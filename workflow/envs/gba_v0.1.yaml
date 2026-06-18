@@ -7,7 +7,13 @@ channels:
 dependencies:
     - python
     - akt
+    - samtools
+    - numpy
+    - pysam
+    - scipy
+    - statsmodels
+    - pytest-runner
+    - python-dateutil
     - pip
     - pip:
-      - str_analysis
-      - git+https://github.com/Illumina/Gauchian.git@main
+      - git+https://github.com/Illumina/Gauchian.git@e69ceee9ed88ec58c45fd27b899d83e91bbb1afb

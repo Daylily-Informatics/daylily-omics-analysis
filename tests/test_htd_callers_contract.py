@@ -171,6 +171,24 @@ def test_gauchian_rule_is_active_and_single_thread_explicit() -> None:
     assert "--threads" not in gauchian
 
 
+def test_gauchian_env_uses_installable_upstream_dependencies() -> None:
+    env = _read("workflow/envs/gba_v0.1.yaml")
+
+    assert "git+https://github.com/Illumina/Gauchian.git@e69ceee9ed88ec58c45fd27b899d83e91bbb1afb" in env
+    for dependency in (
+        "samtools",
+        "numpy",
+        "pysam",
+        "scipy",
+        "statsmodels",
+        "pytest-runner",
+        "python-dateutil",
+    ):
+        assert dependency in env
+    assert "--no-deps" not in env
+    assert "str_analysis" not in env
+
+
 def test_cyrius_vendored_resources_present() -> None:
     data_dir = REPO_ROOT / "resources/cyrius/v0.0.0.6-jem/data"
 

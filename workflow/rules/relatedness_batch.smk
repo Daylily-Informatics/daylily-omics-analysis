@@ -215,7 +215,7 @@ rule relatedness_batch_gather:
         expand(
             RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_summary.tsv",
             alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_variant_dedupers(),
+            ddup=qc_relatedness_dedupers(),
         )
     output:
         MDIR + "other_reports/relatedness_mqc.tsv"

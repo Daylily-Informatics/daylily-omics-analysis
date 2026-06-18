@@ -353,7 +353,7 @@ def _alignment_qc_native_inputs(wildcards):
 
 def _relatedness_native_inputs(wildcards):
     paths = []
-    qddups = qc_variant_dedupers()
+    qddups = qc_relatedness_dedupers()
     alnrs = QC_CRAM_ALIGNERS
     paths.extend(
         expand(
@@ -450,6 +450,10 @@ def _ultima_reanalysis_component_inputs(wildcards):
         and expansionhunter_report_targets_available()
     ):
         paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")
+    if HTD_CALLERS:
+        paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
+    if "produce_smn12_orthogonal_calls" in _requested_targets():
+        paths.append(MDIR + "other_reports/smn12_orthogonal_calls_mqc.tsv")
     return sorted(set(paths))
 
 

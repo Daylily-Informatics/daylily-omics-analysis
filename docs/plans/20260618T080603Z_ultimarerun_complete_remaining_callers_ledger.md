@@ -1,0 +1,22 @@
+## Control Ledger
+
+Controlling request: complete the remaining Ultima 23andMe cohort callers on `ultimarerun`.
+Ledger path: `docs/plans/20260618T080603Z_ultimarerun_complete_remaining_callers_ledger.md`
+
+Gate 0 baseline:
+- Active workset: `/fsx/analysis_results/ubuntu/ultimarerun_full_ultima_95samples_20260616T124617Z/daylily-omics-analysis`
+- Cluster/headnode: `ultimarerun`, headnode instance `i-0fd49ae30fc10b04e`
+- Queue baseline: `squeue -u ubuntu -o '%i  %P  %C  %t  %N  %c  %T  %m  %M  %D  %j'` -> no `ubuntu` jobs after cancelling stale job `3285`.
+- Workset git baseline: `cb6ca4c`, dirty runtime patches in `config/day_profiles/slurm/templates/config.yaml`, `workflow/envs/gba_v0.1.yaml`, `workflow/rules/contam_identity.smk`, `workflow/rules/sent_ug_specialty.smk`.
+- Local DayOA repo baseline: branch `jem-dev`, dirty existing files in Slurm profile templates, `workflow/envs/gba_v0.1.yaml`, `workflow/rules/sent_ug_specialty.smk`, and focused tests.
+- Output baseline from active workset: pangenome `sentpg` 90/95 VCF+TBI, Sentieon mito 95/95 VCF+TBI, Sentieon CNV 95/95 VCF+TBI, ExpansionHunter 95 JSON outputs, no TIDDIT/Cyrius/SMN12/SMAca/SMA-finder outputs, Somalier relatedness marker missing.
+- Current blocker: add-on run failed while creating `workflow/envs/smn12_v0.1.yaml`; pip unpacked `reportlab` under `/dev/shm` and raised `OSError: [Errno 2] No such file or directory`.
+- Execution contract: all DayOA workflow execution uses `dy-r` in persistent `ubuntu` tmux; no raw `snakemake`.
+
+| ID | Area/Repo | Requirement/Surface | Status | Category | Approval Gate | Owner | Evidence | Root Cause | Terminal Note |
+|---|---|---|---|---|---|---|---|---|---|
+| G0-001 | ultimarerun | Record current queue, workset, dirty state, and output baseline. | SUCCESS | feature_implementation | Gate 0 | orchestrator | Baseline above from SSM inspections and active workset counts. |  | Baseline recorded before retry work. |
+| ENV-001 | DayOA/workset | Prevent SMN12/Cyrius conda/pip creation from failing on fragile `/dev/shm` wheel unpacking. | SUCCESS | config_or_startup_contract | Gate 2 | orchestrator | First live retry still failed creating `cyrius_v0.1.yaml` with pip unpack under `/dev/shm`; patched local and active-workset `workflow/envs/cyrius_v0.1.yaml` and `workflow/envs/smn12_v0.1.yaml` to pin Python 3.11 and conda-install declared heavy dependencies from package metadata. Patched dry-run returned `0`; live retry created envs and submitted Cyrius/SMN/SMA/TIDDIT Slurm jobs. | pip wheel unpack uses `/dev/shm` during Snakemake conda env creation despite controller `TMPDIR=/tmp`. | Env creation unblocked; live execution in progress. |
+| DAG-001 | ultimarerun | Dry-run remaining requested targets with `--rerun-triggers mtime` and confirm no completed full-cohort outputs are unnecessarily rerun. | SUCCESS | contract_test | Gate 5 | orchestrator | `dy-r ... -n` -> `RETURN CODE: 0`; `logs/status/complete_remaining_addons_dry_20260618T080603Z.log`; 577 jobs: Cyrius, SMA Finder, SMAca, SMN12, SMN12 orthogonal MQC, TIDDIT and gather markers only. |  | Dry-run excluded already-produced Sentieon mito/CNV/segdup/ExpansionHunter/Gauchian outputs. |
+| LIVE-001 | ultimarerun | Launch live completion pass for remaining pangenome/add-on callers without triggering new alignments. | ATTEMPTING_BUGFIX | feature_implementation | Gate 5 | orchestrator | First live add-on pass failed during Cyrius env creation before Slurm submission; patched dry-run returned `0`; live retry from tmux `ultima_complete_remaining_20260618T0806Z` submitted remaining Cyrius, SMN copy-number, SMAca, SMA-finder, and TIDDIT jobs. That pass reached 396/577 steps then exited `RETURN CODE: 1` on TIDDIT. Slurm TIDDIT errors showed Apptainer failed before rule log output because global `singularity-args` bound missing `/scratch` (`mount /scratch->/scratch error: mount source /scratch doesn't exist`). Patched active workset `config/day_profiles/slurm/config.yaml` and Slurm template copy to remove `-B /scratch:/scratch`; patched local Slurm template likewise. | Global Slurm profile container bind required `/scratch` on compute nodes where it does not exist. | Preparing dry-run retry after removing global `/scratch` bind. |
+| VERIFY-001 | ultimarerun | Verify final outputs/markers for pangenome SNV, mito, CNV, segdup, ExpansionHunter, Somalier relatedness, TIDDIT SV, Cyrius, SMN12, SMAca, SMA finder, and orthogonal report where applicable. | OPEN | contract_test | Gate 5 | orchestrator | Pending final count and marker check. |  |  |

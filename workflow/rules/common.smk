@@ -379,6 +379,10 @@ def qc_variant_dedupers():
     return sorted(ddup for ddup in set(DDUP) if ddup != "na")
 
 
+def qc_relatedness_dedupers():
+    return sorted(set(DDUP))
+
+
 BOOTSTRAP_UNIT_COLUMNS = [
     "RUNID",
     "SAMPLEID",

@@ -21,6 +21,7 @@ default-resources:
   - threads=1
   - time=240
   - partition=i384nvme,i192,i192nvme,i128
+  - tmpdir="/tmp"
   - vcpu=1
   - distribution=block
   - exclusive=''
@@ -47,4 +48,4 @@ force-use-threads: True
 stats: "day_pipe_stats.json"
 use-singularity: True
 singularity-prefix: "/fsx/resources/environments/containers/USER_REGSUB/HOSTNAME"
-singularity-args: "  -B /fsx:/fsx -B /tmp:/tmp -B $PWD/:$PWD   -B /dev/fd:/dev/fd  -B /dev/shm:$PWD/resources/dev/shm -B /dev/shm:/dev/shm -B /scratch:/scratch "
+singularity-args: "  -B /fsx:/fsx -B /tmp:/tmp -B $PWD/:$PWD   -B /dev/fd:/dev/fd  -B /dev/shm:$PWD/resources/dev/shm -B /dev/shm:/dev/shm "

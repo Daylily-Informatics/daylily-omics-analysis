@@ -1029,7 +1029,7 @@ sentdug:
     cnv_mem_mb: 50000
     segdup_sr_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonUltima1.1.bundle"
     segdup_population_vcf: "/fsx/references/runtime_assets/tool_specific_resources/segdup-caller/pop_vcfs/segdup_pop-population-hprc-v2.0_gnomad-v4.1.0-20251216.vcf.gz"
-    segdup_genes: "CFH,CYP11B1,CYP2D6,NCF1,PMS2,SMN1,STRC,HBA"
+    segdup_genes: "CFH,CYP11B1,CYP2D6,GBA,IKBKG,NCF1,PMS2,RCCX,SMN1,STRC,HBA"
     segdup_threads: 2
     segdup_mem_mb: 50000
     mito_env_yaml: "../envs/sentieon_v0.3b.yaml"

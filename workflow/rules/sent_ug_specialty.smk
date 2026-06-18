@@ -39,6 +39,10 @@ def _sentdug_segdup_genes():
     return genes
 
 
+def _sentdug_segdup_result_gene(gene):
+    return "GBA1" if gene == "GBA" else gene
+
+
 def _sentdug_bool_config(key):
     return str(SENTDUG_SPECIALTY_CFG.get(key, "false")).strip().lower() in {
         "1",
@@ -130,8 +134,8 @@ rule sentdug_specialty_bam:
 rule sentdug_call_cnvs:
     """Call Ultima-only Sentieon CNVs with CNVscope and CNVModelApply."""
     input:
-        bam=rules.sentdug_specialty_bam.output.bam,
-        bai=rules.sentdug_specialty_bam.output.bai,
+        cram=MDIR + "{sample}/align/ug/{sample}.cram",
+        crai=MDIR + "{sample}/align/ug/{sample}.cram.crai",
     output:
         cnv_vcf=MDIR + "{sample}/align/ug/na/cnv/sentdug/{sample}.ug.na.sentdug.cnv.vcf.gz",
         cnv_tbi=MDIR + "{sample}/align/ug/na/cnv/sentdug/{sample}.ug.na.sentdug.cnv.vcf.gz.tbi",
@@ -158,21 +162,24 @@ rule sentdug_call_cnvs:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
         mkdir -p $(dirname {output.cnv_vcf:q}) $(dirname {log:q})
         : > {log:q}
-        test -s {input.bam:q}
-        test -s {input.bai:q}
+        test -s {input.cram:q}
+        test -s {input.crai:q}
         test -s {params.huref:q}
         test -s {params.cnv_model:q}
+        samtools quickcheck {input.cram:q} >> {log:q} 2>&1
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$
-        export TMPDIR="/scratch/sentdug_cnv_${{timestamp}}"
+        tmp_parent="${{TMPDIR:-/tmp}}"
+        test -d "$tmp_parent"
+        test -w "$tmp_parent"
+        export TMPDIR=$(mktemp -d "${{tmp_parent%/}}/sentdug_cnv_${{timestamp}}.XXXXXX")
         export SENTIEON_TMPDIR="$TMPDIR"
-        mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
         tmp_cnv_vcf="$TMPDIR/cnvscope_tmp.vcf.gz"
         bin/dayoa_sentieon driver -r {params.huref:q} -t {params.use_threads} \
           --temp_dir "$TMPDIR" \
-          -i {input.bam:q} \
+          -i {input.cram:q} \
           --algo CNVscope \
           --model {params.cnv_model:q} \
           "$tmp_cnv_vcf" >> {log:q} 2>&1
@@ -194,8 +201,8 @@ rule sentdug_call_cnvs:
 rule sentdug_call_segdup_gene:
     """Call one segmental-duplication gene from Ultima short-read data."""
     input:
-        bam=rules.sentdug_specialty_bam.output.bam,
-        bai=rules.sentdug_specialty_bam.output.bai,
+        cram=MDIR + "{sample}/align/ug/{sample}.cram",
+        crai=MDIR + "{sample}/align/ug/{sample}.cram.crai",
         segdup_population_vcf=_sentdug_required_config("segdup_population_vcf"),
     output:
         vcf=MDIR
@@ -230,6 +237,23 @@ rule sentdug_call_segdup_gene:
             f"{MDIR}{wildcards.sample}/align/ug/na/segdup/sentdug/results/"
             f"{wildcards.gene}/{wildcards.sample}.yaml"
         ),
+        result_gene=lambda wildcards: _sentdug_segdup_result_gene(wildcards.gene),
+        caller_vcf=lambda wildcards: (
+            f"{MDIR}{wildcards.sample}/align/ug/na/segdup/sentdug/results/"
+            f"{wildcards.gene}/{wildcards.sample}."
+            f"{_sentdug_segdup_result_gene(wildcards.gene)}.result.vcf.gz"
+        ),
+        caller_tbi=lambda wildcards: (
+            f"{MDIR}{wildcards.sample}/align/ug/na/segdup/sentdug/results/"
+            f"{wildcards.gene}/{wildcards.sample}."
+            f"{_sentdug_segdup_result_gene(wildcards.gene)}.result.vcf.gz.tbi"
+        ),
+        sample_sex=lambda wildcards: sample_sex_for_required_tool(
+            wildcards, "Sentieon segdup"
+        ),
+        sex_assumption_log=lambda wildcards: sample_sex_assumption_log(
+            wildcards, "Sentieon segdup"
+        ),
         cluster_sample=ret_sample,
     shell:
         """
@@ -237,9 +261,10 @@ rule sentdug_call_segdup_gene:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
         mkdir -p {params.outdir:q} $(dirname {log:q})
         : > {log:q}
-        rm -f {output.done:q} {output.vcf:q} {output.tbi:q} {output.yaml:q} {params.caller_yaml:q}
-        test -s {input.bam:q}
-        test -s {input.bai:q}
+        rm -f {output.done:q} {output.vcf:q} {output.tbi:q} {output.yaml:q} {params.caller_yaml:q} {params.caller_vcf:q} {params.caller_tbi:q}
+        test -s {input.cram:q}
+        test -s {input.crai:q}
+        samtools quickcheck {input.cram:q} >> {log:q} 2>&1
         test -s {input.segdup_population_vcf:q}
         test -s {input.segdup_population_vcf:q}.tbi
         test -s {params.huref:q}
@@ -247,6 +272,9 @@ rule sentdug_call_segdup_gene:
         if ! command -v segdup-caller >/dev/null 2>&1; then
           echo "ERROR: segdup-caller not found in pinned conda env" >> {log:q}
           exit 127
+        fi
+        if [ -n {params.sex_assumption_log:q} ]; then
+          printf '%s' {params.sex_assumption_log:q} >> {log:q}
         fi
         gzip -t {input.segdup_population_vcf:q}
         bcftools view -h {input.segdup_population_vcf:q} >/dev/null
@@ -278,11 +306,12 @@ INNERPY
         ) 9>"$SEGDUP_PACKAGE_POP_VCF.lock"
 
         segdup-caller \
-          --short {input.bam:q} \
+          --short {input.cram:q} \
           --sr_model {params.sr_model:q} \
           --reference {params.huref:q} \
           --genes {wildcards.gene:q} \
           --sample_name {params.cluster_sample:q} \
+          --sex {params.sample_sex:q} \
           --outdir {params.outdir:q} \
           --keep_temp \
           --threads {threads} \
@@ -291,7 +320,13 @@ INNERPY
         test -s {params.caller_yaml:q}
         mv {params.caller_yaml:q} {output.yaml:q}
         test -s {output.yaml:q}
-        grep -Eq '^[[:space:]]*{wildcards.gene}:' {output.yaml:q}
+        grep -Eq '^[[:space:]]*{params.result_gene}:' {output.yaml:q}
+        if [ {params.caller_vcf:q} != {output.vcf:q} ]; then
+          mv {params.caller_vcf:q} {output.vcf:q}
+        fi
+        if [ {params.caller_tbi:q} != {output.tbi:q} ]; then
+          mv {params.caller_tbi:q} {output.tbi:q}
+        fi
         test -s {output.vcf:q}
         test -s {output.tbi:q}
         gzip -t {output.vcf:q}
@@ -322,8 +357,8 @@ rule sentdug_call_segdup:
 rule sentdug_mito_call:
     """Call mitochondrial variants from Ultima short-read data."""
     input:
-        bam=rules.sentdug_specialty_bam.output.bam,
-        bai=rules.sentdug_specialty_bam.output.bai,
+        cram=MDIR + "{sample}/align/ug/{sample}.cram",
+        crai=MDIR + "{sample}/align/ug/{sample}.cram.crai",
     output:
         mito_vcf=MDIR + "{sample}/align/ug/na/mito/sentdug/{sample}.ug.na.sentdug.mito.vcf.gz",
         mito_tbi=MDIR + "{sample}/align/ug/na/mito/sentdug/{sample}.ug.na.sentdug.mito.vcf.gz.tbi",
@@ -340,6 +375,7 @@ rule sentdug_mito_call:
         vcpu=SENTDUG_MITO_THREADS,
         mem_mb=SENTDUG_MITO_MEM_MB,
     params:
+        huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         mt_fasta=_sentdug_required_config("mt_fasta"),
         mt_shifted_fasta=_sentdug_required_config("mt_shifted_fasta"),
         mt_shift_back_chain=_sentdug_required_config("mt_shift_back_chain"),
@@ -355,32 +391,36 @@ rule sentdug_mito_call:
         : > {log:q}
         sample={params.cluster_sample:q}
         nt={params.use_threads}
-        test -s {input.bam:q}
-        test -s {input.bai:q}
+        test -s {input.cram:q}
+        test -s {input.crai:q}
+        test -s {params.huref:q}
         test -s {params.mt_fasta:q}
         test -s {params.mt_shifted_fasta:q}
         test -s {params.mt_shift_back_chain:q}
         test -s {params.mt_blacklist_bed:q}
+        samtools quickcheck {input.cram:q} >> {log:q} 2>&1
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$
-        tmpdir="/scratch/sentdug_mito_${{timestamp}}"
-        mkdir -p "$tmpdir"
+        tmp_parent="${{TMPDIR:-/tmp}}"
+        test -d "$tmp_parent"
+        test -w "$tmp_parent"
+        tmpdir=$(mktemp -d "${{tmp_parent%/}}/sentdug_mito_${{timestamp}}.XXXXXX")
         trap 'rm -rf "$tmpdir" 2>/dev/null || true' EXIT
 
-        chrM_records=$(samtools view -F 0x4 {input.bam:q} chrM | wc -l)
+        chrM_records=$(samtools view -T {params.huref:q} -F 0x4 {input.cram:q} chrM | wc -l)
         if [ "$chrM_records" -lt 1 ]; then
-          echo "FATAL: No mapped chrM reads extracted from {input.bam:q}" >> {log:q}
+          echo "FATAL: No mapped chrM reads extracted from {input.cram:q}" >> {log:q}
           exit 1
         fi
         echo "chrM mapped read records: $chrM_records" >> {log:q}
 
-        chrM_paired_records=$(samtools view -F 0x4 -F 0x8 {input.bam:q} chrM | \
+        chrM_paired_records=$(samtools view -T {params.huref:q} -F 0x4 -F 0x8 {input.cram:q} chrM | \
           awk '$7 == "=" || $7 == "chrM" {{n++}} END {{print n+0}}')
         echo "chrM same-contig paired read records: $chrM_paired_records" >> {log:q}
 
         if [ "$chrM_paired_records" -gt 0 ]; then
           mito_read_mode=paired
-          samtools view -F 0x4 -F 0x8 -h {input.bam:q} chrM 2>>{log:q} | \
+          samtools view -T {params.huref:q} -F 0x4 -F 0x8 -h {input.cram:q} chrM 2>>{log:q} | \
             awk '$0~/^@/ || $7 == "=" || $7 == "chrM" {{print}}' | \
             samtools collate -O - "$tmpdir/collate_$$" 2>>{log:q} | \
             samtools fastq -N \
@@ -388,16 +428,16 @@ rule sentdug_mito_call:
               -2 "$tmpdir/${{sample}}.chrM.R2.fastq" - 2>>{log:q}
           r1_lines=$(head -4 "$tmpdir/${{sample}}.chrM.R1.fastq" | wc -l)
           if [ "$r1_lines" -lt 4 ]; then
-            echo "FATAL: No chrM paired FASTQ records extracted from {input.bam:q}" >> {log:q}
+            echo "FATAL: No chrM paired FASTQ records extracted from {input.cram:q}" >> {log:q}
             exit 1
           fi
         else
           mito_read_mode=single
-          samtools view -F 0x4 -h {input.bam:q} chrM 2>>{log:q} | \
+          samtools view -T {params.huref:q} -F 0x4 -h {input.cram:q} chrM 2>>{log:q} | \
             samtools fastq -N -0 "$tmpdir/${{sample}}.chrM.single.fastq" -s /dev/null - 2>>{log:q}
           single_lines=$(head -4 "$tmpdir/${{sample}}.chrM.single.fastq" | wc -l)
           if [ "$single_lines" -lt 4 ]; then
-            echo "FATAL: No chrM single-end FASTQ records extracted from {input.bam:q}" >> {log:q}
+            echo "FATAL: No chrM single-end FASTQ records extracted from {input.cram:q}" >> {log:q}
             exit 1
           fi
         fi
