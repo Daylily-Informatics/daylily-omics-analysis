@@ -70,6 +70,29 @@ def test_run_qc_rules_are_shell_only_and_separate_from_final_multiqc() -> None:
     assert "produce_run_qc_reports" not in final_multiqc
 
 
+def test_run_qc_produce_marker_rules_have_shell_actions() -> None:
+    rules = _read("workflow/rules/run_qc_reports.smk")
+
+    for rule_name in (
+        "produce_illumina_run_qc_and_bclconvert",
+        "produce_illumina_run_qc",
+        "produce_ont_run_qc",
+        "produce_ont_demux_fastq_qc",
+        "produce_ont_run_qc_and_demux_multiqc",
+        "produce_ultima_run_qc",
+        "produce_ultima_demux_fastq_qc",
+        "produce_ultima_run_qc_and_demux_multiqc",
+        "produce_read_fate_river",
+        "produce_run_qc_reports",
+    ):
+        block = rules[rules.index(f"rule {rule_name}:") :]
+        block = block.split("\nrule ", 1)[0]
+        assert "benchmark:" in block, rule_name
+        assert "shell:" in block, rule_name
+        assert "mkdir -p logs/benchmarks $(dirname {log:q})" in block, rule_name
+        assert ": > {log:q}" in block, rule_name
+
+
 def test_illumina_run_qc_contract_uses_explicit_inputs_and_metric_subset() -> None:
     rules = _read("workflow/rules/run_qc_reports.smk")
     illumina_rules = rules[: rules.index("rule produce_illumina_run_qc_and_bclconvert:")]
