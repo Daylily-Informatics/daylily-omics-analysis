@@ -1609,6 +1609,11 @@ roche_downsample_bam:
     threads: 4
     mem_mb: 50000
     partition: "i8"
+    constraint: ""
+    distribution: block
+    exclude: ""
+    include: ""
+    exclusive: ""
     env_yaml: "../envs/vanilla_v0.1.yaml"
 
 roche_gatk_haplotypecaller:

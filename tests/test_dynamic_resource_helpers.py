@@ -468,5 +468,6 @@ def test_local_and_slurm_prep_input_resource_keys_match_rule_contract() -> None:
         "config/day_profiles/slurm/templates/rule_config.yaml",
     ]:
         cfg = yaml.safe_load((REPO_ROOT / relpath).read_text(encoding="utf-8"))
-        missing = sorted(required.difference(cfg["prep_input_sample_files"]))
-        assert not missing, f"{relpath} missing keys: {', '.join(missing)}"
+        for section in ["prep_input_sample_files", "roche_downsample_bam"]:
+            missing = sorted(required.difference(cfg[section]))
+            assert not missing, f"{relpath} {section} missing keys: {', '.join(missing)}"
