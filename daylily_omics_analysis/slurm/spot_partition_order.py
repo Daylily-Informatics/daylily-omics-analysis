@@ -45,6 +45,7 @@ CACHE_HEADER = (
 )
 
 PARALLELCLUSTER_FLEET_CONFIG = Path("/etc/parallelcluster/slurm_plugin/fleet-config.json")
+PARALLELCLUSTER_CLUSTER_CONFIG = Path("/opt/parallelcluster/shared/cluster-config.yaml")
 
 
 @dataclass(frozen=True)
@@ -243,6 +244,94 @@ def _parallelcluster_fleet_payload() -> Mapping[str, object]:
             f"ParallelCluster fleet config is not a JSON object: {PARALLELCLUSTER_FLEET_CONFIG}"
         )
     return payload
+
+
+def _parallelcluster_cluster_config_payload() -> Mapping[str, object]:
+    try:
+        import yaml
+    except ImportError as exc:
+        raise SpotPartitionError(
+            "PyYAML is required to parse ParallelCluster cluster config: "
+            f"{PARALLELCLUSTER_CLUSTER_CONFIG}"
+        ) from exc
+
+    try:
+        payload = yaml.safe_load(
+            PARALLELCLUSTER_CLUSTER_CONFIG.read_text(encoding="utf-8")
+        )
+    except FileNotFoundError as exc:
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config is missing: {PARALLELCLUSTER_CLUSTER_CONFIG}"
+        ) from exc
+    except yaml.YAMLError as exc:
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config is not valid YAML: {PARALLELCLUSTER_CLUSTER_CONFIG}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config is not a YAML object: {PARALLELCLUSTER_CLUSTER_CONFIG}"
+        )
+    return payload
+
+
+def _parallelcluster_cluster_config_metadata(partition: str) -> dict[str, tuple[str, str]]:
+    payload = _parallelcluster_cluster_config_payload()
+    scheduling = payload.get("Scheduling")
+    if not isinstance(scheduling, dict):
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config has no Scheduling block: {PARALLELCLUSTER_CLUSTER_CONFIG}"
+        )
+    queues = scheduling.get("SlurmQueues")
+    if not isinstance(queues, list):
+        raise SpotPartitionError(
+            "ParallelCluster cluster config Scheduling block has no SlurmQueues list: "
+            f"{PARALLELCLUSTER_CLUSTER_CONFIG}"
+        )
+
+    matches = [
+        queue
+        for queue in queues
+        if isinstance(queue, dict) and str(queue.get("Name") or "").strip() == partition
+    ]
+    if not matches:
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config has no Slurm queue for partition {partition!r}"
+        )
+    if len(matches) > 1:
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config has duplicate Slurm queues for partition {partition!r}"
+        )
+
+    resources = matches[0].get("ComputeResources")
+    if not isinstance(resources, list) or not resources:
+        raise SpotPartitionError(
+            f"ParallelCluster cluster config queue has no ComputeResources: {partition}"
+        )
+
+    instance_types: set[str] = set()
+    for resource in resources:
+        if not isinstance(resource, dict):
+            raise SpotPartitionError(
+                f"ParallelCluster cluster config has malformed ComputeResources entry: {partition}"
+            )
+        instances = resource.get("Instances")
+        if not isinstance(instances, list) or not instances:
+            raise SpotPartitionError(
+                f"ParallelCluster cluster config resource has no Instances: {partition}"
+            )
+        for instance in instances:
+            if not isinstance(instance, dict):
+                raise SpotPartitionError(
+                    f"ParallelCluster cluster config has malformed instance entry: {partition}"
+                )
+            instance_type = str(instance.get("InstanceType") or "").strip()
+            if not instance_type:
+                raise SpotPartitionError(
+                    f"ParallelCluster cluster config instance entry has no InstanceType: {partition}"
+                )
+            instance_types.add(instance_type)
+
+    return {instance_type: (instance_type, "regional") for instance_type in sorted(instance_types)}
 
 
 def _node_feature_resources(
@@ -475,29 +564,32 @@ def _calculate_partition_costs(
     costs: list[PartitionCost] = []
     created_iso = datetime.fromtimestamp(now, timezone.utc).isoformat()
     for partition in partitions:
-        nodes = _nodes_for_partition(partition, runner=runner)
-        node_metadata = _node_metadata(nodes, runner=runner)
-        instance_ids = _node_instance_ids(
-            node_metadata,
-            region=region,
-            profile=profile,
-            runner=runner,
-        )
-        if instance_ids:
-            metadata = _instance_metadata(
-                instance_ids,
-                region=region,
-                profile=profile,
-                runner=runner,
-            )
+        if PARALLELCLUSTER_CLUSTER_CONFIG.exists():
+            metadata = _parallelcluster_cluster_config_metadata(partition)
         else:
-            metadata = _parallelcluster_instance_metadata(
-                partition,
+            nodes = _nodes_for_partition(partition, runner=runner)
+            node_metadata = _node_metadata(nodes, runner=runner)
+            instance_ids = _node_instance_ids(
                 node_metadata,
                 region=region,
                 profile=profile,
                 runner=runner,
             )
+            if instance_ids:
+                metadata = _instance_metadata(
+                    instance_ids,
+                    region=region,
+                    profile=profile,
+                    runner=runner,
+                )
+            else:
+                metadata = _parallelcluster_instance_metadata(
+                    partition,
+                    node_metadata,
+                    region=region,
+                    profile=profile,
+                    runner=runner,
+                )
         instance_types = sorted(metadata)
         azs = sorted({az for _, az in metadata.values()})
         if len(azs) != 1:

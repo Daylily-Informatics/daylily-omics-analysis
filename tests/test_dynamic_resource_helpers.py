@@ -23,6 +23,15 @@ from daylily_omics_analysis.workflow_resources import (
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.fixture(autouse=True)
+def _disable_host_parallelcluster_config(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        spo,
+        "PARALLELCLUSTER_CLUSTER_CONFIG",
+        tmp_path / "missing-cluster-config.yaml",
+    )
+
+
 def _doppelmark_section(**overrides):
     section = {
         "mem_mb": 800000,
@@ -394,6 +403,75 @@ def test_partition_order_uses_parallelcluster_fleet_config_for_powered_down_node
     )
     assert not any("describe-subnets" in call for call in calls)
     assert any("describe-instances" in call and "--filters" in call for call in calls)
+
+
+def test_partition_order_uses_parallelcluster_cluster_config_without_slurm_node_lookup(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    cache = tmp_path / "partition_costs.log"
+    cluster_config = tmp_path / "cluster-config.yaml"
+    cluster_config.write_text(
+        """
+Region: us-west-2
+Scheduling:
+  Scheduler: slurm
+  SlurmQueues:
+    - Name: cheap
+      ComputeResources:
+        - Name: cheapres
+          Instances:
+            - InstanceType: c8id.large
+            - InstanceType: m8id.large
+    - Name: costly
+      ComputeResources:
+        - Name: costlyres
+          Instances:
+            - InstanceType: r8id.large
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(spo, "PARALLELCLUSTER_CLUSTER_CONFIG", cluster_config)
+    calls = []
+
+    def cluster_config_runner(args):
+        calls.append(args)
+        if args[0] in {"sinfo", "scontrol"} or "describe-instances" in args:
+            raise AssertionError(args)
+        if "describe-instance-types" in args:
+            start = args.index("--instance-types") + 1
+            end = args.index("--output")
+            return json.dumps(
+                {
+                    "InstanceTypes": [
+                        {"InstanceType": instance_type, "VCpuInfo": {"DefaultVCpus": 2}}
+                        for instance_type in args[start:end]
+                    ]
+                }
+            )
+        if "describe-spot-price-history" in args:
+            instance_type = args[args.index("--instance-types") + 1]
+            price = {
+                "c8id.large": "0.10",
+                "m8id.large": "0.12",
+                "r8id.large": "0.50",
+            }[instance_type]
+            return json.dumps({"SpotPriceHistory": [{"SpotPrice": price}]})
+        raise AssertionError(args)
+
+    assert (
+        derive_partition_order(
+            "costly,cheap",
+            env={"DAY_PROFILE": "slurm", "AWS_REGION": "us-west-2"},
+            now=1000.0,
+            cache_path=cache,
+            runner=cluster_config_runner,
+        )
+        == "cheap,costly"
+    )
+    assert not any(call[0] in {"sinfo", "scontrol"} for call in calls)
+    assert not any("describe-instances" in call for call in calls)
+    assert "c8id.large,m8id.large" in cache.read_text(encoding="utf-8")
 
 
 def test_partition_order_fails_hard_on_malformed_cache_and_missing_live_metadata(tmp_path: Path) -> None:
