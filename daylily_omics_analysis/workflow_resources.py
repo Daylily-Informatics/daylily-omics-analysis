@@ -43,6 +43,8 @@ def derive_doppelmark_mem_mb(
     path = Path(input_bam)
     try:
         bam_size_bytes = path.stat().st_size
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"doppelmark input BAM is not readable: {path}") from exc
     except OSError as exc:
         raise ResourceConfigError(f"doppelmark input BAM is not readable: {path}") from exc
     if bam_size_bytes <= 0:

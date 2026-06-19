@@ -147,7 +147,7 @@ def test_doppelmark_memory_uses_floor_rounding_and_cap(tmp_path: Path) -> None:
 
 
 def test_doppelmark_memory_fails_hard_for_missing_input_or_bad_config(tmp_path: Path) -> None:
-    with pytest.raises(ResourceConfigError, match="not readable"):
+    with pytest.raises(FileNotFoundError, match="not readable"):
         derive_doppelmark_mem_mb(tmp_path / "missing.bam", _doppelmark_section(), day_profile="slurm")
 
     bam = tmp_path / "input.bam"
