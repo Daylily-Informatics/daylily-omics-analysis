@@ -1198,6 +1198,7 @@ peddy:
 prep_for_concordance_check:
     threads: 2
     partition: "i8"
+    mem_mb: 50000
 
 picard:
     threads: 7
@@ -1238,6 +1239,7 @@ rtg_vcfstats:
     ld_preload: "  "
     partition: "i8"
     partition_other: "i192"
+    mem_mb: 50000
 
 sambamba_markdups:
     threads: 7

@@ -471,3 +471,14 @@ def test_local_and_slurm_prep_input_resource_keys_match_rule_contract() -> None:
         for section in ["prep_input_sample_files", "roche_downsample_bam"]:
             missing = sorted(required.difference(cfg[section]))
             assert not missing, f"{relpath} {section} missing keys: {', '.join(missing)}"
+
+
+def test_local_concordance_resource_keys_match_rule_contract() -> None:
+    cfg = yaml.safe_load(
+        (REPO_ROOT / "config/day_profiles/local/templates/rule_config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert "mem_mb" in cfg["prep_for_concordance_check"]
+    assert "mem_mb" in cfg["rtg_vcfstats"]
