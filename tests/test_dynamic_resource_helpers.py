@@ -420,3 +420,12 @@ def test_helper_rules_do_not_use_dynamic_partition_ordering() -> None:
         text = (REPO_ROOT / relpath).read_text(encoding="utf-8")
         for rule_name in rule_names:
             assert "derive_partition_order(" not in _rule_block(text, rule_name)
+
+
+def test_snakefile_adds_repo_root_to_import_path_before_rule_includes() -> None:
+    text = (REPO_ROOT / "workflow/Snakefile").read_text(encoding="utf-8")
+    path_insert = "sys.path.insert(0, wd)"
+    include_common = 'include: "rules/global_common.smk"'
+
+    assert path_insert in text
+    assert text.index(path_insert) < text.index(include_common)

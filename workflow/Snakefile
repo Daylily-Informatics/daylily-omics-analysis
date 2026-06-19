@@ -31,6 +31,8 @@ if mg_biome in ["na"] or mg_profile in ["na"]:
 
 # Set workdir to the execution directory.
 wd = os.path.abspath(".")
+if wd not in sys.path:
+    sys.path.insert(0, wd)
 workdir: f"{wd}"
 
 
