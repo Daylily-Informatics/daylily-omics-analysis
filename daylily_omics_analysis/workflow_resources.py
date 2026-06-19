@@ -33,6 +33,7 @@ def derive_doppelmark_mem_mb(
     section: Mapping[str, Any],
     *,
     day_profile: str | None = None,
+    allow_missing_input: bool = False,
 ) -> int:
     """Calculate DPPL/Doppelmark memory from input BAM size for Slurm runs."""
     profile = day_profile if day_profile is not None else os.environ.get("DAY_PROFILE")
@@ -44,6 +45,8 @@ def derive_doppelmark_mem_mb(
     try:
         bam_size_bytes = path.stat().st_size
     except FileNotFoundError as exc:
+        if allow_missing_input:
+            return configured
         raise FileNotFoundError(f"doppelmark input BAM is not readable: {path}") from exc
     except OSError as exc:
         raise ResourceConfigError(f"doppelmark input BAM is not readable: {path}") from exc

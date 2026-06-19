@@ -24,12 +24,17 @@ def derive_partition_order(partition_csv):
         raise WorkflowError(f"dynamic partition ordering failed: {exc}") from exc
 
 
+def _is_dry_run():
+    return any(arg in {"-n", "--dry-run", "--dryrun"} for arg in sys.argv[1:])
+
+
 def derive_doppelmark_mem_mb(wildcards, input):
     try:
         return _derive_doppelmark_mem_mb(
             input.bam,
             config["doppelmark"],
             day_profile=os.environ.get("DAY_PROFILE"),
+            allow_missing_input=_is_dry_run(),
         )
     except ResourceConfigError as exc:
         raise WorkflowError(f"dynamic doppelmark memory sizing failed: {exc}") from exc
