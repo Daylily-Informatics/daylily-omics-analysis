@@ -694,7 +694,11 @@ def derive_partition_order(
     """Return requested partitions ordered by live median Spot cost per vCPU."""
     parts = _split_partition_csv(partition_csv)
     env_map = os.environ if env is None else env
-    if env_map.get("DAY_PROFILE") != "slurm" or env_map.get("PARTITION_MAGIC") == "0":
+    if (
+        env_map.get("DAY_PROFILE") != "slurm"
+        or env_map.get("PARTITION_MAGIC") == "0"
+        or env_map.get("SLURM_JOB_ID")
+    ):
         return ",".join(parts)
     effective_now = time.time() if now is None else now
     costs = _costs_for_partitions(

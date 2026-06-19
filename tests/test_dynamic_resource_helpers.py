@@ -184,6 +184,15 @@ def test_partition_order_passes_through_for_local_or_partition_magic(tmp_path: P
         )
         == "costly,cheap"
     )
+    assert (
+        derive_partition_order(
+            "costly,cheap",
+            env={"DAY_PROFILE": "slurm", "AWS_REGION": "us-west-2", "SLURM_JOB_ID": "1"},
+            cache_path=cache,
+        )
+        == "costly,cheap"
+    )
+    assert not cache.exists()
 
 
 def test_partition_order_refreshes_stale_cache_and_sorts_by_vcpu_cost(tmp_path: Path) -> None:
