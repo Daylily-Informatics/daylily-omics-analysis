@@ -283,33 +283,6 @@ def _node_feature_resources(
     return resources
 
 
-def _subnet_availability_zones(
-    subnet_ids: Iterable[str],
-    *,
-    region: str,
-    profile: str | None,
-    runner: CommandRunner,
-) -> dict[str, str]:
-    ids = sorted(set(subnet_id for subnet_id in subnet_ids if subnet_id))
-    if not ids:
-        raise SpotPartitionError("ParallelCluster fleet config has no subnet IDs")
-    args = _aws_base(region, profile)
-    args.extend(["describe-subnets", "--subnet-ids", *ids, "--output", "json"])
-    payload = _json_from_command(args, runner=runner)
-    azs: dict[str, str] = {}
-    for subnet in payload.get("Subnets", []):
-        if not isinstance(subnet, dict):
-            continue
-        subnet_id = str(subnet.get("SubnetId") or "").strip()
-        az = str(subnet.get("AvailabilityZone") or "").strip()
-        if subnet_id and az:
-            azs[subnet_id] = az
-    missing = sorted(set(ids).difference(azs))
-    if missing:
-        raise SpotPartitionError("missing AWS subnet AZ metadata for: " + ", ".join(missing))
-    return azs
-
-
 def _parallelcluster_instance_metadata(
     partition: str,
     node_metadata: Mapping[str, Mapping[str, str]],
@@ -373,18 +346,17 @@ def _parallelcluster_instance_metadata(
                 )
             instance_types.add(instance_type)
 
-    subnet_azs = _subnet_availability_zones(
-        subnet_ids,
-        region=region,
-        profile=profile,
-        runner=runner,
-    )
-    azs = sorted(set(subnet_azs.values()))
-    if len(azs) != 1:
+    if not subnet_ids:
         raise SpotPartitionError(
-            f"partition {partition!r} spans multiple subnet AZs; observed {', '.join(azs)}"
+            f"ParallelCluster fleet config has no configured subnets for {partition!r}"
         )
-    return {instance_type: (instance_type, azs[0]) for instance_type in sorted(instance_types)}
+    if len(subnet_ids) != 1:
+        raise SpotPartitionError(
+            f"partition {partition!r} spans multiple configured subnets: "
+            + ", ".join(sorted(subnet_ids))
+        )
+
+    return {instance_type: (instance_type, "regional") for instance_type in sorted(instance_types)}
 
 
 def _instance_metadata(
@@ -450,17 +422,18 @@ def _spot_price(
     runner: CommandRunner,
 ) -> float:
     args = _aws_base(region, profile)
+    if availability_zone != "regional":
+        args.extend(["describe-spot-price-history", "--availability-zone", availability_zone])
+    else:
+        args.append("describe-spot-price-history")
     args.extend(
         [
-            "describe-spot-price-history",
-            "--availability-zone",
-            availability_zone,
             "--instance-types",
             instance_type,
             "--product-descriptions",
             "Linux/UNIX",
             "--max-results",
-            "1",
+            "20" if availability_zone == "regional" else "1",
             "--output",
             "json",
         ]
@@ -471,6 +444,18 @@ def _spot_price(
         raise SpotPartitionError(
             f"no current Spot price returned for {instance_type} in {availability_zone}"
         )
+    prices: list[float] = []
+    for item in history:
+        if not isinstance(item, dict):
+            continue
+        try:
+            prices.append(float(item["SpotPrice"]))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise SpotPartitionError(
+                f"invalid Spot price payload for {instance_type} in {availability_zone}"
+            ) from exc
+    if prices:
+        return statistics.median(prices)
     try:
         return float(history[0]["SpotPrice"])
     except (KeyError, TypeError, ValueError) as exc:

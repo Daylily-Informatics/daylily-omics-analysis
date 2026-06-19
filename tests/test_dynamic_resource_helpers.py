@@ -343,10 +343,6 @@ def test_partition_order_uses_parallelcluster_fleet_config_for_powered_down_node
             )
         if "describe-instances" in args and "--filters" in args:
             return json.dumps({"Reservations": []})
-        if "describe-subnets" in args:
-            return json.dumps(
-                {"Subnets": [{"SubnetId": "subnet-a", "AvailabilityZone": "us-west-2a"}]}
-            )
         if "describe-instance-types" in args:
             start = args.index("--instance-types") + 1
             end = args.index("--output")
@@ -374,7 +370,7 @@ def test_partition_order_uses_parallelcluster_fleet_config_for_powered_down_node
         )
         == "cheap,costly"
     )
-    assert any("describe-subnets" in call for call in calls)
+    assert not any("describe-subnets" in call for call in calls)
     assert any("describe-instances" in call and "--filters" in call for call in calls)
 
 
