@@ -33,9 +33,9 @@ rule doppelmark_dups:
         "../envs/doppelmark_v0.1.yaml"
     resources:
         threads=config["doppelmark"]["threads"],
-        partition=config["doppelmark"]["partition"],
+        partition=derive_partition_order(config["doppelmark"]["partition"]),
         vcpu=config["doppelmark"]["threads"],
-        mem_mb=config["doppelmark"]["mem_mb"],
+        mem_mb=derive_doppelmark_mem_mb,
         constraint=config["doppelmark"]["constraint"],
     params:
         cluster_sample=ret_sample,

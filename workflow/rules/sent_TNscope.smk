@@ -28,7 +28,7 @@ rule sent_TNscope:
     resources:
         vcpu=config['senttn']['threads'],
         threads=config['senttn']['threads'],
-        partition=config['senttn']['partition'],
+        partition=derive_partition_order(config['senttn']['partition']),
         mem_mb=config['senttn']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],

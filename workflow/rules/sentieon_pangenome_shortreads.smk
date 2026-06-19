@@ -58,7 +58,7 @@ rule sentieon_pangenome_sr:
         )
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
-        partition=config["sentieon_pangenome_sr"]["partition"],
+        partition=derive_partition_order(config["sentieon_pangenome_sr"]["partition"]),
         threads=config["sentieon_pangenome_sr"]["threads"],
         vcpu=config["sentieon_pangenome_sr"]["threads"],
         mem_mb=config["sentieon_pangenome_sr"]["mem_mb"],

@@ -91,7 +91,7 @@ rule roche_gatk_haplotypecaller:
         )
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
-        partition=config['roche_gatk_haplotypecaller']['partition'],
+        partition=derive_partition_order(config['roche_gatk_haplotypecaller']['partition']),
         threads=config['roche_gatk_haplotypecaller']['threads'],
         vcpu=config['roche_gatk_haplotypecaller']['threads'],
         mem_mb=config['roche_gatk_haplotypecaller']['mem_mb'],
@@ -181,7 +181,7 @@ rule roche_filter_variants:
         )
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
-        partition=config['roche_filter_variants']['partition'],
+        partition=derive_partition_order(config['roche_filter_variants']['partition']),
         threads=config['roche_filter_variants']['threads'],
         vcpu=config['roche_filter_variants']['threads'],
         mem_mb=config['roche_filter_variants']['mem_mb'],

@@ -32,7 +32,7 @@ rule sent_snv_ug:
         )
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
-        partition=config['sentdug']['partition'],
+        partition=derive_partition_order(config['sentdug']['partition']),
         threads=config['sentdug']['threads'],
         vcpu=config['sentdug']['threads'],
 	    mem_mb=config['sentdug']['mem_mb'],

@@ -34,7 +34,7 @@ rule mutect2_bams:
     resources:
         vcpu=config['mutect2']['threads'],
         threads=config['mutect2']['threads'],
-        partition=config['mutect2']['partition'],
+        partition=derive_partition_order(config['mutect2']['partition']),
         mem_mb=config['mutect2']['mem_mb'],
     shell:
         r"""
@@ -177,7 +177,7 @@ rule mutect2:
     resources:
         vcpu=config['mutect2']['threads'],
         threads=config['mutect2']['threads'],
-        partition=config['mutect2']['partition'],
+        partition=derive_partition_order(config['mutect2']['partition']),
         mem_mb=config['mutect2']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],

@@ -22,7 +22,7 @@ rule sentieon_gatk_bsqr:
         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.bsqr.bench.tsv", 0)
     priority: 5
     resources:
-        partition=config['sentieon_gatk']['partition'],
+        partition=derive_partition_order(config['sentieon_gatk']['partition']),
         vcpu=config['sentieon_gatk']['threads'],
         threads=config['sentieon_gatk']['threads'],
         mem_mb=config['sentieon_gatk']['mem_mb'],
@@ -177,7 +177,7 @@ rule sentieon_gatk_snv:
         repeat(MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.gatk.{gatkchrm}.bench.tsv", 0)
     priority: 45
     resources:
-        partition=config['sentieon_gatk']['partition'],
+        partition=derive_partition_order(config['sentieon_gatk']['partition']),
         vcpu=config['sentieon_gatk']['threads'],
         threads=config['sentieon_gatk']['threads'],
         mem_mb=config['sentieon_gatk']['mem_mb'],

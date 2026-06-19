@@ -41,7 +41,7 @@ rule sent_snv_pacbio:
         )
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
-        partition=config['sentdpb']['partition'],
+        partition=derive_partition_order(config['sentdpb']['partition']),
         threads=config['sentdpb']['threads'],
         vcpu=config['sentdpb']['threads'],
         mem_mb=config['sentdpb']['mem_mb'],

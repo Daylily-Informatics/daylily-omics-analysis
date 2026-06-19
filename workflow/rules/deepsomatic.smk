@@ -48,7 +48,7 @@ rule dvsom:
     resources:
         vcpu=config['deepsomatic']['threads'],
         threads=config['deepsomatic']['threads'],
-        partition=config['deepsomatic']['partition'],
+        partition=derive_partition_order(config['deepsomatic']['partition']),
         mem_mb=config['deepsomatic']['mem_mb'],
     benchmark:
         repeat(

@@ -39,7 +39,7 @@ rule strelka2_germline:
     resources:
         vcpu=config['strelka2']['threads'],
         threads=config['strelka2']['threads'],
-        partition=config['strelka2']['partition'],
+        partition=derive_partition_order(config['strelka2']['partition']),
         mem_mb=config['strelka2']['mem_mb'],
     params:
         run_dir=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2g/work/{sample}.germline.{strelkachrm}",
@@ -163,7 +163,7 @@ rule strelka2_somatic:
     resources:
         vcpu=config['strelka2']['threads'],
         threads=config['strelka2']['threads'],
-        partition=config['strelka2']['partition'],
+        partition=derive_partition_order(config['strelka2']['partition']),
         mem_mb=config['strelka2']['mem_mb'],
     params:
         run_dir=MDIR + "{sample}/align/{alnr}/{ddup}/snv/slk2s/work/{sample}.somatic.{strelkachrm}",

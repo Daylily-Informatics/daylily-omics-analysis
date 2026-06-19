@@ -58,7 +58,7 @@ rule aiv_bams:
     resources:
         vcpu=config['aiv']['threads'],
         threads=config['aiv']['threads'],
-        partition=config['aiv']['partition'],
+        partition=derive_partition_order(config['aiv']['partition']),
         mem_mb=config['aiv']['mem_mb'],
     shell:
         r"""
@@ -193,7 +193,7 @@ rule aiv:
     resources:
         vcpu=config['aiv']['threads'],
         threads=config['aiv']['threads'],
-        partition=config['aiv']['partition'],
+        partition=derive_partition_order(config['aiv']['partition']),
         mem_mb=config['aiv']['mem_mb'],
     benchmark:
         repeat(

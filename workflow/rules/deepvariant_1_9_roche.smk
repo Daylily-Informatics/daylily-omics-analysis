@@ -33,7 +33,7 @@ rule deepvariant_19_r:
     resources:
         vcpu=config['deepvariant_1_9_roche']['threads'],
         threads=config['deepvariant_1_9_roche']['threads'],
-        partition=config['deepvariant_1_9_roche']['partition'],
+        partition=derive_partition_order(config['deepvariant_1_9_roche']['partition']),
         mem_mb=config['deepvariant_1_9_roche']['mem_mb'],
     benchmark:
         repeat(

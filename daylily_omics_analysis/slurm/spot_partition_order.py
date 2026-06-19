@@ -1,71 +1,279 @@
-"""Order BWA-MEM2A Slurm partitions by current Spot price.
+"""Order Slurm partitions by live AWS Spot cost per vCPU.
 
-This helper is intentionally narrow: it only updates
-``bwa_mem2a_aln_sort.partition`` when that config section explicitly requests
-``partition_strategy: spot_price_runtime``.
+The workflow calls :func:`derive_partition_order` from Snakemake resource
+expressions. The function preserves local execution behavior, but Slurm
+execution requires live Slurm node metadata and read-only AWS EC2 pricing
+permissions. Missing metadata fails hard instead of falling back to static
+partition catalogs.
 """
 
 from __future__ import annotations
 
-import argparse
+import csv
+import fcntl
+import ipaddress
 import json
+import os
 import statistics
 import subprocess
 import sys
+import tempfile
+import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping, Sequence
-
-import yaml
+from typing import Callable, Iterable, Mapping, Sequence
 
 
 class SpotPartitionError(RuntimeError):
     """Raised when dynamic partition ordering cannot be completed."""
 
 
-@dataclass(frozen=True)
-class PartitionPrice:
-    partition: str
-    min_price: float
-    avg_price: float
-    instance_prices: tuple[tuple[str, float], ...]
-
-
 CommandRunner = Callable[[Sequence[str]], str]
 
+PARTITION_COST_LOG = Path.home() / ".config/dayoa/partition_costs.log"
+CACHE_TTL_SECONDS = 1800
+CACHE_HEADER = (
+    "created_at_epoch",
+    "created_at_iso",
+    "region",
+    "availability_zone",
+    "partition",
+    "median_usd_per_vcpu_hr",
+    "instance_types",
+    "price_samples_json",
+)
 
-def _run_aws(args: Sequence[str]) -> str:
+
+@dataclass(frozen=True)
+class PartitionCost:
+    partition: str
+    median_usd_per_vcpu_hr: float
+    instance_types: tuple[str, ...]
+    price_samples: tuple[tuple[str, float], ...]
+    created_at_epoch: float
+    created_at_iso: str
+    region: str
+    availability_zone: str
+
+
+def _run_command(args: Sequence[str]) -> str:
     proc = subprocess.run(args, check=False, text=True, capture_output=True)
     if proc.returncode != 0:
         stderr = proc.stderr.strip()
         raise SpotPartitionError(
-            f"read-only AWS CLI command failed rc={proc.returncode}: {' '.join(args)}"
+            f"read-only command failed rc={proc.returncode}: {' '.join(args)}"
             + (f"\n{stderr}" if stderr else "")
         )
     return proc.stdout
 
 
-def _aws_base(region: str, profile: str | None = None) -> list[str]:
-    args = ["aws"]
-    if profile:
-        args.extend(["--profile", profile])
-    args.extend(["ec2"])
-    return args
+def _split_partition_csv(partition_csv: str) -> list[str]:
+    parts = [part.strip() for part in str(partition_csv or "").split(",") if part.strip()]
+    if not parts:
+        raise SpotPartitionError("resources.partition must be a non-empty CSV string")
+    if len(set(parts)) != len(parts):
+        raise SpotPartitionError(f"resources.partition contains duplicates: {partition_csv!r}")
+    return parts
 
 
-def _json_from_aws(args: Sequence[str], *, runner: CommandRunner) -> Mapping[str, Any]:
+def _json_from_command(args: Sequence[str], *, runner: CommandRunner) -> Mapping[str, object]:
     try:
         payload = json.loads(runner(args))
     except json.JSONDecodeError as exc:
-        raise SpotPartitionError(f"AWS CLI returned non-JSON output: {' '.join(args)}") from exc
+        raise SpotPartitionError(f"command returned non-JSON output: {' '.join(args)}") from exc
     if not isinstance(payload, dict):
-        raise SpotPartitionError(f"AWS CLI returned a non-object JSON payload: {' '.join(args)}")
+        raise SpotPartitionError(f"command returned a non-object JSON payload: {' '.join(args)}")
     return payload
 
 
-def _spot_price(
+def _env_region(env: Mapping[str, str]) -> str:
+    region = (
+        env.get("AWS_REGION")
+        or env.get("AWS_DEFAULT_REGION")
+        or env.get("DAY_AWS_REGION")
+        or env.get("AWS_DEFAULT_REGION_NAME")
+        or ""
+    ).strip()
+    if not region:
+        raise SpotPartitionError(
+            "AWS region is required for partition price ordering; set AWS_REGION or AWS_DEFAULT_REGION"
+        )
+    return region
+
+
+def _aws_base(region: str, profile: str | None, service: str = "ec2") -> list[str]:
+    args = ["aws"]
+    if profile:
+        args.extend(["--profile", profile])
+    args.extend([service, "--region", region])
+    return args
+
+
+def _parse_key_values(text: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for token in str(text).split():
+        if "=" not in token:
+            continue
+        key, value = token.split("=", 1)
+        values[key] = value
+    return values
+
+
+def _nodes_for_partition(partition: str, *, runner: CommandRunner) -> list[str]:
+    output = runner(["sinfo", "-h", "-p", partition, "-N", "-o", "%N"])
+    nodes = [line.strip() for line in output.splitlines() if line.strip()]
+    if not nodes:
+        raise SpotPartitionError(f"sinfo returned no nodes for partition {partition!r}")
+    return sorted(set(nodes))
+
+
+def _instance_ids_from_address_filter(
+    filter_name: str,
+    values: Sequence[str],
     *,
+    region: str,
+    profile: str | None,
+    runner: CommandRunner,
+) -> list[str]:
+    if not values:
+        return []
+    args = _aws_base(region, profile)
+    args.extend(
+        [
+            "describe-instances",
+            "--filters",
+            f"Name={filter_name},Values=" + ",".join(sorted(set(values))),
+            "--output",
+            "json",
+        ]
+    )
+    payload = _json_from_command(args, runner=runner)
+    ids: list[str] = []
+    for reservation in payload.get("Reservations", []):
+        if not isinstance(reservation, dict):
+            continue
+        for instance in reservation.get("Instances", []):
+            if isinstance(instance, dict) and instance.get("InstanceId"):
+                ids.append(str(instance["InstanceId"]))
+    return ids
+
+
+def _node_instance_ids(
+    node_names: Sequence[str],
+    *,
+    region: str,
+    profile: str | None,
+    runner: CommandRunner,
+) -> list[str]:
+    instance_ids: list[str] = []
+    private_ips: list[str] = []
+    private_dns_names: list[str] = []
+    for node_name in node_names:
+        values = _parse_key_values(runner(["scontrol", "show", "node", "-o", node_name]))
+        instance_id = values.get("InstanceId") or values.get("InstanceID")
+        if instance_id:
+            instance_ids.append(instance_id)
+            continue
+        node_addr = values.get("NodeAddr") or values.get("NodeHostName")
+        if node_addr:
+            try:
+                ipaddress.ip_address(node_addr)
+            except ValueError:
+                private_dns_names.append(node_addr)
+            else:
+                private_ips.append(node_addr)
+
+    if instance_ids:
+        return sorted(set(instance_ids))
+    if not private_ips and not private_dns_names:
+        raise SpotPartitionError(
+            "scontrol node metadata did not expose InstanceId, NodeAddr, or NodeHostName"
+        )
+
+    ids = []
+    ids.extend(
+        _instance_ids_from_address_filter(
+            "private-ip-address",
+            private_ips,
+            region=region,
+            profile=profile,
+            runner=runner,
+        )
+    )
+    ids.extend(
+        _instance_ids_from_address_filter(
+            "private-dns-name",
+            private_dns_names,
+            region=region,
+            profile=profile,
+            runner=runner,
+        )
+    )
+    if not ids:
+        raise SpotPartitionError(
+            "AWS describe-instances did not resolve Slurm node addresses to EC2 instances"
+        )
+    return sorted(set(ids))
+
+
+def _instance_metadata(
+    instance_ids: Sequence[str],
+    *,
+    region: str,
+    profile: str | None,
+    runner: CommandRunner,
+) -> dict[str, tuple[str, str]]:
+    args = _aws_base(region, profile)
+    args.extend(["describe-instances", "--instance-ids", *instance_ids, "--output", "json"])
+    payload = _json_from_command(args, runner=runner)
+    metadata: dict[str, tuple[str, str]] = {}
+    for reservation in payload.get("Reservations", []):
+        if not isinstance(reservation, dict):
+            continue
+        for instance in reservation.get("Instances", []):
+            if not isinstance(instance, dict):
+                continue
+            instance_type = str(instance.get("InstanceType") or "").strip()
+            placement = instance.get("Placement") if isinstance(instance.get("Placement"), dict) else {}
+            az = str(placement.get("AvailabilityZone") or "").strip()
+            if instance_type and az:
+                metadata[instance_type] = (instance_type, az)
+    if not metadata:
+        raise SpotPartitionError("AWS describe-instances returned no instance type/AZ metadata")
+    return metadata
+
+
+def _vcpu_counts(
+    instance_types: Iterable[str],
+    *,
+    region: str,
+    profile: str | None,
+    runner: CommandRunner,
+) -> dict[str, int]:
+    unique = sorted(set(instance_types))
+    args = _aws_base(region, profile)
+    args.extend(["describe-instance-types", "--instance-types", *unique, "--output", "json"])
+    payload = _json_from_command(args, runner=runner)
+    counts: dict[str, int] = {}
+    for item in payload.get("InstanceTypes", []):
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("InstanceType") or "")
+        info = item.get("VCpuInfo") if isinstance(item.get("VCpuInfo"), dict) else {}
+        try:
+            counts[name] = int(info["DefaultVCpus"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise SpotPartitionError(f"invalid vCPU metadata for {name}") from exc
+    missing = sorted(set(unique).difference(counts))
+    if missing:
+        raise SpotPartitionError("missing vCPU metadata for instance types: " + ", ".join(missing))
+    return counts
+
+
+def _spot_price(
     instance_type: str,
+    *,
     region: str,
     availability_zone: str,
     profile: str | None,
@@ -75,8 +283,6 @@ def _spot_price(
     args.extend(
         [
             "describe-spot-price-history",
-            "--region",
-            region,
             "--availability-zone",
             availability_zone,
             "--instance-types",
@@ -89,7 +295,7 @@ def _spot_price(
             "json",
         ]
     )
-    payload = _json_from_aws(args, runner=runner)
+    payload = _json_from_command(args, runner=runner)
     history = payload.get("SpotPriceHistory") or []
     if not history:
         raise SpotPartitionError(
@@ -103,198 +309,269 @@ def _spot_price(
         ) from exc
 
 
-def _validate_instance_specs(
+def _calculate_partition_costs(
+    partitions: Sequence[str],
     *,
-    instance_types: Sequence[str],
     region: str,
     profile: str | None,
+    now: float,
     runner: CommandRunner,
-) -> None:
-    args = _aws_base(region, profile)
-    args.extend(
-        [
-            "describe-instance-types",
-            "--region",
-            region,
-            "--instance-types",
-            *instance_types,
-            "--output",
-            "json",
-        ]
-    )
-    payload = _json_from_aws(args, runner=runner)
-    returned = {
-        str(item.get("InstanceType"))
-        for item in payload.get("InstanceTypes", [])
-        if item.get("InstanceType")
-    }
-    missing = sorted(set(instance_types).difference(returned))
-    if missing:
-        raise SpotPartitionError(
-            "describe-instance-types did not return every configured instance type: "
-            + ", ".join(missing)
+) -> list[PartitionCost]:
+    costs: list[PartitionCost] = []
+    created_iso = datetime.fromtimestamp(now, timezone.utc).isoformat()
+    for partition in partitions:
+        nodes = _nodes_for_partition(partition, runner=runner)
+        instance_ids = _node_instance_ids(
+            nodes,
+            region=region,
+            profile=profile,
+            runner=runner,
         )
-
-
-def _as_list(value: Any, *, name: str) -> list[str]:
-    if not isinstance(value, list) or not value:
-        raise SpotPartitionError(f"bwa_mem2a_aln_sort.{name} must be a non-empty list")
-    result = [str(item).strip() for item in value if str(item).strip()]
-    if len(result) != len(value):
-        raise SpotPartitionError(f"bwa_mem2a_aln_sort.{name} contains an empty value")
-    if len(set(result)) != len(result):
-        raise SpotPartitionError(f"bwa_mem2a_aln_sort.{name} contains duplicate values")
-    return result
-
-
-def _price_partitions(
-    *,
-    section: Mapping[str, Any],
-    runner: CommandRunner,
-) -> list[PartitionPrice]:
-    region = str(section.get("spot_price_region") or "").strip()
-    availability_zone = str(section.get("spot_price_availability_zone") or "").strip()
-    profile = str(section.get("spot_price_profile") or "").strip() or None
-    if not region:
-        raise SpotPartitionError("bwa_mem2a_aln_sort.spot_price_region is required")
-    if not availability_zone:
-        raise SpotPartitionError("bwa_mem2a_aln_sort.spot_price_availability_zone is required")
-
-    allowed = _as_list(section.get("allowed_partitions"), name="allowed_partitions")
-    catalog = section.get("partition_instance_catalog")
-    if not isinstance(catalog, dict) or not catalog:
-        raise SpotPartitionError(
-            "bwa_mem2a_aln_sort.partition_instance_catalog must be a non-empty mapping"
+        metadata = _instance_metadata(
+            instance_ids,
+            region=region,
+            profile=profile,
+            runner=runner,
         )
-
-    all_instance_types: list[str] = []
-    for partition in allowed:
-        instance_types = _as_list(
-            catalog.get(partition),
-            name=f"partition_instance_catalog.{partition}",
+        instance_types = sorted(metadata)
+        azs = sorted({az for _, az in metadata.values()})
+        if len(azs) != 1:
+            raise SpotPartitionError(
+                f"partition {partition!r} spans multiple AZs; observed {', '.join(azs)}"
+            )
+        az = azs[0]
+        vcpus = _vcpu_counts(instance_types, region=region, profile=profile, runner=runner)
+        samples = tuple(
+            (
+                instance_type,
+                _spot_price(
+                    instance_type,
+                    region=region,
+                    availability_zone=az,
+                    profile=profile,
+                    runner=runner,
+                )
+                / float(vcpus[instance_type]),
+            )
+            for instance_type in instance_types
         )
-        all_instance_types.extend(instance_types)
-    _validate_instance_specs(
-        instance_types=sorted(set(all_instance_types)),
-        region=region,
-        profile=profile,
-        runner=runner,
-    )
-
-    prices: list[PartitionPrice] = []
-    for partition in allowed:
-        instance_prices = tuple(
-            (instance_type, _spot_price(
-                instance_type=instance_type,
-                region=region,
-                availability_zone=availability_zone,
-                profile=profile,
-                runner=runner,
-            ))
-            for instance_type in catalog[partition]
-        )
-        numeric_prices = [price for _, price in instance_prices]
-        prices.append(
-            PartitionPrice(
+        costs.append(
+            PartitionCost(
                 partition=partition,
-                min_price=min(numeric_prices),
-                avg_price=statistics.fmean(numeric_prices),
-                instance_prices=instance_prices,
+                median_usd_per_vcpu_hr=statistics.median(price for _, price in samples),
+                instance_types=tuple(instance_types),
+                price_samples=samples,
+                created_at_epoch=now,
+                created_at_iso=created_iso,
+                region=region,
+                availability_zone=az,
             )
         )
-    return prices
+    return costs
 
 
-def order_bwa_partitions(
-    rule_config: Mapping[str, Any],
+def _parse_cache(path: Path) -> dict[str, PartitionCost]:
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            if tuple(reader.fieldnames or ()) != CACHE_HEADER:
+                raise SpotPartitionError(f"partition cost cache has invalid header: {path}")
+            costs: dict[str, PartitionCost] = {}
+            for row in reader:
+                try:
+                    partition = str(row["partition"]).strip()
+                    price_samples_payload = json.loads(row["price_samples_json"])
+                    samples = tuple(
+                        (str(item["instance_type"]), float(item["usd_per_vcpu_hr"]))
+                        for item in price_samples_payload
+                    )
+                    if not partition or not samples:
+                        raise ValueError("empty partition or price samples")
+                    costs[partition] = PartitionCost(
+                        partition=partition,
+                        median_usd_per_vcpu_hr=float(row["median_usd_per_vcpu_hr"]),
+                        instance_types=tuple(
+                            item.strip()
+                            for item in row["instance_types"].split(",")
+                            if item.strip()
+                        ),
+                        price_samples=samples,
+                        created_at_epoch=float(row["created_at_epoch"]),
+                        created_at_iso=str(row["created_at_iso"]),
+                        region=str(row["region"]),
+                        availability_zone=str(row["availability_zone"]),
+                    )
+                except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+                    raise SpotPartitionError(f"malformed partition cost cache row in {path}") from exc
+    except FileNotFoundError as exc:
+        raise SpotPartitionError(f"partition cost cache not found: {path}") from exc
+    if not costs:
+        raise SpotPartitionError(f"partition cost cache is empty: {path}")
+    return costs
+
+
+def _cache_is_fresh(costs: Mapping[str, PartitionCost], *, now: float) -> bool:
+    newest = max(cost.created_at_epoch for cost in costs.values())
+    return 0 <= now - newest < CACHE_TTL_SECONDS
+
+
+def _write_cache(path: Path, costs: Sequence[PartitionCost]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w",
+        encoding="utf-8",
+        newline="",
+        dir=str(path.parent),
+        prefix=path.name + ".",
+        suffix=".tmp",
+        delete=False,
+    ) as handle:
+        tmp_path = Path(handle.name)
+        writer = csv.DictWriter(handle, fieldnames=CACHE_HEADER, delimiter="\t")
+        writer.writeheader()
+        for cost in costs:
+            writer.writerow(
+                {
+                    "created_at_epoch": f"{cost.created_at_epoch:.6f}",
+                    "created_at_iso": cost.created_at_iso,
+                    "region": cost.region,
+                    "availability_zone": cost.availability_zone,
+                    "partition": cost.partition,
+                    "median_usd_per_vcpu_hr": f"{cost.median_usd_per_vcpu_hr:.12f}",
+                    "instance_types": ",".join(cost.instance_types),
+                    "price_samples_json": json.dumps(
+                        [
+                            {
+                                "instance_type": instance_type,
+                                "usd_per_vcpu_hr": price,
+                            }
+                            for instance_type, price in cost.price_samples
+                        ],
+                        sort_keys=True,
+                    ),
+                }
+            )
+    os.replace(tmp_path, path)
+
+
+def _refresh_cache(
+    partitions: Sequence[str],
     *,
-    runner: CommandRunner = _run_aws,
-) -> tuple[str | None, list[PartitionPrice]]:
-    """Return the ordered partition string for BWA-MEM2A, if dynamic mode is enabled."""
-    section = rule_config.get("bwa_mem2a_aln_sort")
-    if not isinstance(section, dict):
-        raise SpotPartitionError("rule_config lacks bwa_mem2a_aln_sort mapping")
-    strategy = str(section.get("partition_strategy") or "").strip()
-    if not strategy:
-        return None, []
-    if strategy != "spot_price_runtime":
+    cache_path: Path,
+    env: Mapping[str, str],
+    now: float,
+    runner: CommandRunner,
+) -> dict[str, PartitionCost]:
+    region = _env_region(env)
+    profile = str(env.get("AWS_PROFILE") or "").strip() or None
+    lock_path = cache_path.with_name(cache_path.name + ".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("w", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+        try:
+            try:
+                cached = _parse_cache(cache_path)
+                if _cache_is_fresh(cached, now=now) and set(partitions).issubset(cached):
+                    return cached
+            except SpotPartitionError:
+                pass
+            costs = _calculate_partition_costs(
+                partitions,
+                region=region,
+                profile=profile,
+                now=now,
+                runner=runner,
+            )
+            _write_cache(cache_path, costs)
+            return {cost.partition: cost for cost in costs}
+        finally:
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+
+
+def _costs_for_partitions(
+    partitions: Sequence[str],
+    *,
+    cache_path: Path,
+    env: Mapping[str, str],
+    now: float,
+    runner: CommandRunner,
+) -> dict[str, PartitionCost]:
+    try:
+        cached = _parse_cache(cache_path)
+        if _cache_is_fresh(cached, now=now) and set(partitions).issubset(cached):
+            return cached
+    except SpotPartitionError:
+        pass
+    costs = _refresh_cache(
+        partitions,
+        cache_path=cache_path,
+        env=env,
+        now=now,
+        runner=runner,
+    )
+    if not set(partitions).issubset(costs):
+        missing = sorted(set(partitions).difference(costs))
         raise SpotPartitionError(
-            "unsupported bwa_mem2a_aln_sort.partition_strategy: " + strategy
+            "partition cost refresh did not produce requested partition(s): "
+            + ", ".join(missing)
         )
-    prices = _price_partitions(section=section, runner=runner)
-    ordered = sorted(prices, key=lambda item: (item.avg_price, item.min_price, item.partition))
-    return ",".join(item.partition for item in ordered), ordered
+    return costs
 
 
-def update_rule_config(
-    path: Path,
+def derive_partition_order(
+    partition_csv: str,
     *,
-    runner: CommandRunner = _run_aws,
-    dry_run: bool = False,
-) -> tuple[str | None, list[PartitionPrice]]:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    if not isinstance(data, dict):
-        raise SpotPartitionError(f"rule config must be a mapping: {path}")
-    ordered_partition, prices = order_bwa_partitions(data, runner=runner)
-    if ordered_partition is None:
-        return None, []
-    section = data["bwa_mem2a_aln_sort"]
-    old_partition = str(section.get("partition") or "")
-    if old_partition != ordered_partition and not dry_run:
-        text = path.read_text(encoding="utf-8")
-        path.write_text(_replace_bwa_partition_line(text, ordered_partition), encoding="utf-8")
-    return ordered_partition, prices
+    env: Mapping[str, str] | None = None,
+    now: float | None = None,
+    cache_path: Path | None = None,
+    runner: CommandRunner = _run_command,
+) -> str:
+    """Return requested partitions ordered by live median Spot cost per vCPU."""
+    parts = _split_partition_csv(partition_csv)
+    env_map = os.environ if env is None else env
+    if env_map.get("DAY_PROFILE") != "slurm" or env_map.get("PARTITION_MAGIC") == "0":
+        return ",".join(parts)
+    effective_now = time.time() if now is None else now
+    costs = _costs_for_partitions(
+        parts,
+        cache_path=PARTITION_COST_LOG if cache_path is None else cache_path,
+        env=env_map,
+        now=effective_now,
+        runner=runner,
+    )
+    ordered = sorted(
+        enumerate(parts),
+        key=lambda item: (costs[item[1]].median_usd_per_vcpu_hr, item[0]),
+    )
+    return ",".join(part for _, part in ordered)
 
 
-def _replace_bwa_partition_line(text: str, ordered_partition: str) -> str:
-    """Replace only the BWA partition line, preserving the rest of the YAML text."""
-    lines = text.splitlines(keepends=True)
-    section_indent: int | None = None
-    for index, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-        indent = len(line) - len(line.lstrip(" "))
-        if stripped == "bwa_mem2a_aln_sort:":
-            section_indent = indent
-            continue
-        if section_indent is None:
-            continue
-        if indent <= section_indent and stripped.endswith(":"):
-            break
-        if indent > section_indent and stripped.startswith("partition:"):
-            newline = "\n" if line.endswith("\n") else ""
-            prefix = line[:indent]
-            lines[index] = f"{prefix}partition: {ordered_partition}{newline}"
-            return "".join(lines)
-    raise SpotPartitionError("could not locate bwa_mem2a_aln_sort.partition in rule config")
-
-
-def _format_prices(prices: Iterable[PartitionPrice]) -> str:
+def _format_prices(costs: Iterable[PartitionCost]) -> str:
     lines = []
-    for item in prices:
-        instances = ",".join(f"{itype}={price:.6f}" for itype, price in item.instance_prices)
+    for cost in costs:
+        samples = ",".join(
+            f"{instance_type}={price:.12f}" for instance_type, price in cost.price_samples
+        )
         lines.append(
-            f"{item.partition}: avg={item.avg_price:.6f} min={item.min_price:.6f} {instances}"
+            f"{cost.partition}: median_usd_per_vcpu_hr={cost.median_usd_per_vcpu_hr:.12f} {samples}"
         )
     return "\n".join(lines)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--rule-config", required=True, type=Path)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args(argv)
+    partitions = _split_partition_csv(",".join(argv or sys.argv[1:]))
     try:
-        ordered, prices = update_rule_config(args.rule_config, dry_run=args.dry_run)
+        costs = _refresh_cache(
+            partitions,
+            cache_path=PARTITION_COST_LOG,
+            env=os.environ,
+            now=time.time(),
+            runner=_run_command,
+        )
     except SpotPartitionError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    if ordered is None:
-        print("bwa_mem2a_aln_sort dynamic partition ordering disabled", file=sys.stderr)
-        return 0
-    print(f"bwa_mem2a_aln_sort.partition={ordered}", file=sys.stderr)
-    print(_format_prices(prices), file=sys.stderr)
+    print(_format_prices(costs[partition] for partition in partitions), file=sys.stderr)
     return 0
 
 

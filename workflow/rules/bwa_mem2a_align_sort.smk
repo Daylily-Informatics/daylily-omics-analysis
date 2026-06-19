@@ -18,7 +18,7 @@ rule bwa_mem2_sort:
     resources:
         threads=config['bwa_mem2a_aln_sort']['threads'],
         mem_mb=config['bwa_mem2a_aln_sort']['mem_mb'],
-        partition=config['bwa_mem2a_aln_sort']['partition'],
+        partition=derive_partition_order(config['bwa_mem2a_aln_sort']['partition']),
         vcpu=config['bwa_mem2a_aln_sort']['threads'],
         constraint=config['bwa_mem2a_aln_sort']['constraint'],
     threads: config['bwa_mem2a_aln_sort']['threads']

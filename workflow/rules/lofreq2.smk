@@ -52,7 +52,7 @@ rule lfq2_indelqual:
     resources:
         vcpu=config['lofreq2']['threads'],
         threads=config['lofreq2']['threads'],
-        partition=config['lofreq2']['partition'],
+        partition=derive_partition_order(config['lofreq2']['partition']),
         mem_mb=config['lofreq2']['mem_mb'],
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -84,7 +84,7 @@ rule lofreq2:
     resources:
         vcpu=config['lofreq2']['threads'],
         threads=config['lofreq2']['threads'],
-        partition=config['lofreq2']['partition'],
+        partition=derive_partition_order(config['lofreq2']['partition']),
         mem_mb=config['lofreq2']['mem_mb'],
     benchmark:
         repeat(

@@ -119,27 +119,6 @@ bwa_mem2a_aln_sort:
   sort_thread_mem: 8G
   mbuffer: ' | mbuffer -m 64G -q -s 2M  '
   constraint: ''
-  partition_strategy: spot_price_runtime
-  allowed_partitions:
-  - i384nvme
-  - i192nvme
-  spot_price_region: us-west-2
-  spot_price_availability_zone: us-west-2d
-  partition_instance_catalog:
-    i384nvme:
-    - c8id.96xlarge
-    - c8id.metal-96xl
-    - m8id.96xlarge
-    - m8id.metal-96xl
-    - r8id.96xlarge
-    - r8id.metal-96xl
-    i192nvme:
-    - c8id.48xlarge
-    - c8id.metal-48xl
-    - m8id.48xlarge
-    - m8id.metal-48xl
-    - r8id.48xlarge
-    - r8id.metal-48xl
 sentmm2_align_sort:
   env_yaml: ../envs/sentmm2_v0.1.yaml
   partition: i384nvme,i192nvme
@@ -265,6 +244,11 @@ doppelmark:
   mbuffer_mem: 1G
   partition: i384nvme,i192nvme
   mem_mb: 800000
+  dynamic_mem_mb: true
+  dynamic_mem_floor_mb: 512000
+  dynamic_mem_per_gib_mb: 6144
+  dynamic_mem_cap_mb: 800000
+  dynamic_mem_round_mb: 1000
   clip_padding: 800
   shard_size: 50000000
   min_bases: 20000

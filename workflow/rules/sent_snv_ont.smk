@@ -70,7 +70,7 @@ rule sent_snv_ont:
         )
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
-        partition=config['sentdont']['partition'],
+        partition=derive_partition_order(config['sentdont']['partition']),
         threads=config['sentdont']['threads'],
         vcpu=config['sentdont']['threads'],
         mem_mb=config['sentdont']['mem_mb'],

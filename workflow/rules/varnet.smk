@@ -143,7 +143,7 @@ rule varn:
     resources:
         vcpu=config['varn']['threads'],
         threads=config['varn']['threads'],
-        partition=config['varn']['partition'],
+        partition=derive_partition_order(config['varn']['partition']),
         mem_mb=config['varn']['mem_mb'],
     benchmark:
         repeat(
@@ -343,4 +343,3 @@ rule prep_varn_chunkdirs:
         touch {output};
         ls {output}; ) > {log} 2>&1;
         """
-

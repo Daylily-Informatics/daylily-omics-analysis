@@ -66,7 +66,7 @@ rule sentmm2ont_align_sort:
     resources:
         threads=config["sentmm2ont_align_sort"]["threads"],
         mem_mb=config["sentmm2ont_align_sort"]["mem_mb"],
-        partition=config["sentmm2ont_align_sort"]["partition"],
+        partition=derive_partition_order(config["sentmm2ont_align_sort"]["partition"]),
         vcpu=config["sentmm2ont_align_sort"]["threads"],
         constraint=config["sentmm2ont_align_sort"]["constraint"],
     threads: config["sentmm2ont_align_sort"]["threads"]

@@ -7,6 +7,33 @@ import os
 import sys
 import pandas as pd
 
+from daylily_omics_analysis.slurm.spot_partition_order import (
+    SpotPartitionError,
+    derive_partition_order as _derive_partition_order,
+)
+from daylily_omics_analysis.workflow_resources import (
+    ResourceConfigError,
+    derive_doppelmark_mem_mb as _derive_doppelmark_mem_mb,
+)
+
+
+def derive_partition_order(partition_csv):
+    try:
+        return _derive_partition_order(partition_csv)
+    except SpotPartitionError as exc:
+        raise WorkflowError(f"dynamic partition ordering failed: {exc}") from exc
+
+
+def derive_doppelmark_mem_mb(wildcards, input):
+    try:
+        return _derive_doppelmark_mem_mb(
+            input.bam,
+            config["doppelmark"],
+            day_profile=os.environ.get("DAY_PROFILE"),
+        )
+    except ResourceConfigError as exc:
+        raise WorkflowError(f"dynamic doppelmark memory sizing failed: {exc}") from exc
+
 
 def _as_boolish(value):
     if isinstance(value, bool):

@@ -30,7 +30,7 @@ rule sent_dedup:
         SENT_DEDUP_CFG["env_yaml"]
     resources:
         threads=SENT_DEDUP_CFG["threads"],
-        partition=SENT_DEDUP_CFG["partition"],
+        partition=derive_partition_order(SENT_DEDUP_CFG["partition"]),
         vcpu=SENT_DEDUP_CFG["threads"],
         mem_mb=SENT_DEDUP_CFG["mem_mb"],
         constraint=SENT_DEDUP_CFG["constraint"],

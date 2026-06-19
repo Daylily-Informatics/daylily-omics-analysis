@@ -21,7 +21,7 @@ rule deepvariant_ultima_make_examples:
     resources:
         vcpu=config['deepvariant']['threads'],
         threads=config['deepvariant']['threads'],
-        partition=config['deepvariant']['partition'],
+        partition=derive_partition_order(config['deepvariant']['partition']),
         mem_mb=config['deepvariant']['mem_mb'],
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.deepug.{dvchrm}."+f"{config['deepvariant']['threads']}.bench.tsv"
@@ -98,7 +98,7 @@ rule deepvariant_ultima_call_variants:
     resources:
         vcpu=config['deepvariant']['threads'],
         threads=config['deepvariant']['threads'],
-        partition=config['deepvariant']['partition'],
+        partition=derive_partition_order(config['deepvariant']['partition']),
         mem_mb=config['deepvariant']['mem_mb'],
     params:
         checkpoint="/opt/models/wgs",

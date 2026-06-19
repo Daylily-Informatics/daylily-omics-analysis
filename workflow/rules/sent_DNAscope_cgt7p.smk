@@ -38,7 +38,7 @@ rule cgt7p_DNAscope:
         )
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
-        partition=config["cgt7p"]["partition"],
+        partition=derive_partition_order(config["cgt7p"]["partition"]),
         threads=config["cgt7p"]["threads"],
         vcpu=config["cgt7p"]["threads"],
         mem_mb=config["cgt7p"]["mem_mb"],

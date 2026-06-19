@@ -31,7 +31,7 @@ rule sent_DNAscope:
         )
     resources:
         attempt_n=lambda wildcards, attempt:  (attempt + 0),
-        partition=config['sentD']['partition'],
+        partition=derive_partition_order(config['sentD']['partition']),
         threads=config['sentD']['threads'],
         vcpu=config['sentD']['threads'],
 	mem_mb=config['sentD']['mem_mb'],

@@ -89,7 +89,7 @@ rule clair3:
     resources:
         vcpu=config['clair3']['threads'],
         threads=config['clair3']['threads'],
-        partition=config['clair3']['partition'],
+        partition=derive_partition_order(config['clair3']['partition']),
         mem_mb=config['clair3']['mem_mb'],
     benchmark:
         repeat(

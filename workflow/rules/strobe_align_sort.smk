@@ -20,7 +20,7 @@ if os.environ.get("DAY_STROBE_TOGGLE","") == "":
         resources:
             threads=config['strobe_align_sort']['threads'],
             mem_mb=config['strobe_align_sort']['mem_mb'],
-            partition=config['strobe_align_sort']['partition'],
+            partition=derive_partition_order(config['strobe_align_sort']['partition']),
             vcpu=config['strobe_align_sort']['threads'],
             constraint=config['strobe_align_sort']['constraint'],
         threads: config['strobe_align_sort']['threads']
@@ -116,7 +116,7 @@ else:
         resources:
             threads=config['strobe_align_sort']['threads'],
             mem_mb=config['strobe_align_sort']['mem_mb'],
-            partition=config['strobe_align_sort']['partition'],
+            partition=derive_partition_order(config['strobe_align_sort']['partition']),
             vcpu=config['strobe_align_sort']['threads'],
             constraint=config['strobe_align_sort']['constraint'],
         threads: config['strobe_align_sort']['threads']

@@ -20,7 +20,7 @@ rule sentieon_bwa_sort:  #TARGET: sent bwa sort
         repeat(MDIR + "{sample}/benchmarks/{sample}.sent.alNsort.bench.tsv", 0)
     priority: 5
     resources:
-        partition=config['sentieon']['partition'],
+        partition=derive_partition_order(config['sentieon']['partition']),
         vcpu=config['sentieon']['threads'],
         threads=config['sentieon']['threads'],
         mem_mb=config['sentieon']['mem_mb'],
@@ -165,7 +165,7 @@ rule sentieon_cgt7p_bwa_sort:  # TARGET: Complete Genomics / MGI Sentieon bwa so
         repeat(MDIR + "{sample}/benchmarks/{sample}.sentcg.alNsort.bench.tsv", 0)
     priority: 5
     resources:
-        partition=config["sentieon_cgt7p"]["partition"],
+        partition=derive_partition_order(config["sentieon_cgt7p"]["partition"]),
         vcpu=config["sentieon_cgt7p"]["threads"],
         threads=config["sentieon_cgt7p"]["threads"],
         mem_mb=config["sentieon_cgt7p"]["mem_mb"],

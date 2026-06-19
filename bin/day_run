@@ -46,16 +46,6 @@ if [[ "$profile_env_ret_code" != "0" ]]; then
     exit "$profile_env_ret_code"
 fi
 
-if [[ "$DAY_PROFILE" == "slurm" ]]; then
-    python -m daylily_omics_analysis.slurm.spot_partition_order \
-        --rule-config "$DAY_PROFILE_DIR/rule_config.yaml"
-    spot_partition_ret_code=$?
-    if [[ "$spot_partition_ret_code" != "0" ]]; then
-        colr "ERROR: dynamic BWA-MEM2A Spot partition ordering failed." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
-        exit "$spot_partition_ret_code"
-    fi
-fi
-
 if [[ -z "$DAY_GENOME_BUILD" ]]; then
     colr "ERROR: Genome build not set. Please run 'dy-g [b37|hg38]'." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
     exit 3

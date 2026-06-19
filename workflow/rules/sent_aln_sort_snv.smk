@@ -55,7 +55,7 @@ rule sent_aln_sort_snv:
         )
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
-        partition=config["sent_aln_sort_snv"]["partition"],
+        partition=derive_partition_order(config["sent_aln_sort_snv"]["partition"]),
         threads=config["sent_aln_sort_snv"]["threads"],
         vcpu=config["sent_aln_sort_snv"]["threads"],
         mem_mb=config["sent_aln_sort_snv"]["mem_mb"],

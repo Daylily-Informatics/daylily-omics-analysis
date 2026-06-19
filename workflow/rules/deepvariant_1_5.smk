@@ -25,7 +25,7 @@ rule deepvariant_15:
     resources:
         vcpu=config['deepvariant']['threads'],
         threads=config['deepvariant']['threads'],
-        partition=config['deepvariant']['partition'],
+        partition=derive_partition_order(config['deepvariant']['partition']),
         mem_mb=config['deepvariant']['mem_mb'],
     benchmark:
         repeat(
