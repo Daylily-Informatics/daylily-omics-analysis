@@ -66,13 +66,13 @@ def test_sentdug_segdup_consumes_cram_directly_without_specialty_bam() -> None:
     assert "{input.bai:q}" not in segdup_rule
 
 
-def test_sentdug_segdup_gba_uses_supported_token_and_gba1_result_alias() -> None:
+def test_sentdug_segdup_uses_supported_tokens_and_result_aliases() -> None:
     rules = _read("workflow/rules/sent_ug_specialty.smk")
     segdup_rule = rules.split("rule sentdug_call_segdup_gene:", 1)[1].split(
         "rule sentdug_call_segdup:", 1
     )[0]
 
-    assert 'return "GBA1" if gene == "GBA" else gene' in rules
+    assert 'return {"GBA": "GBA1", "RCCX": "RCCX1"}.get(gene, gene)' in rules
     assert "--genes {wildcards.gene:q}" in segdup_rule
     assert "grep -Eq '^[[:space:]]*{params.result_gene}:'" in segdup_rule
     assert "mv {params.caller_vcf:q} {output.vcf:q}" in segdup_rule

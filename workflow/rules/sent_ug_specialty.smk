@@ -40,7 +40,7 @@ def _sentdug_segdup_genes():
 
 
 def _sentdug_segdup_result_gene(gene):
-    return "GBA1" if gene == "GBA" else gene
+    return {"GBA": "GBA1", "RCCX": "RCCX1"}.get(gene, gene)
 
 
 def _sentdug_bool_config(key):
