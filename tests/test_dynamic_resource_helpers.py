@@ -298,6 +298,86 @@ def test_partition_order_resolves_slurm_node_addresses_via_ec2_filters(tmp_path:
     assert any("private-ip-address" in " ".join(call) for call in calls)
 
 
+def test_partition_order_uses_parallelcluster_fleet_config_for_powered_down_nodes(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    cache = tmp_path / "partition_costs.log"
+    fleet_config = tmp_path / "fleet-config.json"
+    fleet_config.write_text(
+        json.dumps(
+            {
+                "cheap": {
+                    "cheapres": {
+                        "Networking": {"SubnetIds": ["subnet-a"]},
+                        "Instances": [{"InstanceType": "c8id.large"}],
+                    }
+                },
+                "costly": {
+                    "costlyres": {
+                        "Networking": {"SubnetIds": ["subnet-a"]},
+                        "Instances": [{"InstanceType": "r8id.large"}],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(spo, "PARALLELCLUSTER_FLEET_CONFIG", fleet_config)
+    calls = []
+
+    def powered_down_runner(args):
+        calls.append(args)
+        if args[:5] == ["sinfo", "-h", "-p", "cheap", "-N"]:
+            return "cheap-dy-cheapres-1\n"
+        if args[:5] == ["sinfo", "-h", "-p", "costly", "-N"]:
+            return "costly-dy-costlyres-1\n"
+        if args[:4] == ["scontrol", "show", "node", "-o"]:
+            node = args[4]
+            partition, resource = node.split("-dy-", 1)
+            resource = resource.rsplit("-", 1)[0]
+            return (
+                f"NodeName={node} AvailableFeatures=dynamic,{resource} "
+                f"NodeAddr={node} NodeHostName={node} "
+                f"State=IDLE+CLOUD+POWERED_DOWN Partitions={partition}"
+            )
+        if "describe-instances" in args and "--filters" in args:
+            return json.dumps({"Reservations": []})
+        if "describe-subnets" in args:
+            return json.dumps(
+                {"Subnets": [{"SubnetId": "subnet-a", "AvailabilityZone": "us-west-2a"}]}
+            )
+        if "describe-instance-types" in args:
+            start = args.index("--instance-types") + 1
+            end = args.index("--output")
+            return json.dumps(
+                {
+                    "InstanceTypes": [
+                        {"InstanceType": instance_type, "VCpuInfo": {"DefaultVCpus": 2}}
+                        for instance_type in args[start:end]
+                    ]
+                }
+            )
+        if "describe-spot-price-history" in args:
+            instance_type = args[args.index("--instance-types") + 1]
+            price = "0.10" if instance_type == "c8id.large" else "0.50"
+            return json.dumps({"SpotPriceHistory": [{"SpotPrice": price}]})
+        raise AssertionError(args)
+
+    assert (
+        derive_partition_order(
+            "costly,cheap",
+            env={"DAY_PROFILE": "slurm", "AWS_REGION": "us-west-2"},
+            now=1000.0,
+            cache_path=cache,
+            runner=powered_down_runner,
+        )
+        == "cheap,costly"
+    )
+    assert any("describe-subnets" in call for call in calls)
+    assert any("describe-instances" in call and "--filters" in call for call in calls)
+
+
 def test_partition_order_fails_hard_on_malformed_cache_and_missing_live_metadata(tmp_path: Path) -> None:
     cache = tmp_path / "partition_costs.log"
     cache.write_text("bad\theader\n", encoding="utf-8")

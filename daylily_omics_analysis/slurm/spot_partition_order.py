@@ -44,6 +44,8 @@ CACHE_HEADER = (
     "price_samples_json",
 )
 
+PARALLELCLUSTER_FLEET_CONFIG = Path("/etc/parallelcluster/slurm_plugin/fleet-config.json")
+
 
 @dataclass(frozen=True)
 class PartitionCost:
@@ -128,6 +130,20 @@ def _nodes_for_partition(partition: str, *, runner: CommandRunner) -> list[str]:
     return sorted(set(nodes))
 
 
+def _node_metadata(
+    node_names: Sequence[str],
+    *,
+    runner: CommandRunner,
+) -> dict[str, dict[str, str]]:
+    metadata: dict[str, dict[str, str]] = {}
+    for node_name in node_names:
+        values = _parse_key_values(runner(["scontrol", "show", "node", "-o", node_name]))
+        if not values:
+            raise SpotPartitionError(f"scontrol returned no metadata for node {node_name!r}")
+        metadata[node_name] = values
+    return metadata
+
+
 def _instance_ids_from_address_filter(
     filter_name: str,
     values: Sequence[str],
@@ -160,7 +176,7 @@ def _instance_ids_from_address_filter(
 
 
 def _node_instance_ids(
-    node_names: Sequence[str],
+    node_metadata: Mapping[str, Mapping[str, str]],
     *,
     region: str,
     profile: str | None,
@@ -169,8 +185,7 @@ def _node_instance_ids(
     instance_ids: list[str] = []
     private_ips: list[str] = []
     private_dns_names: list[str] = []
-    for node_name in node_names:
-        values = _parse_key_values(runner(["scontrol", "show", "node", "-o", node_name]))
+    for node_name, values in node_metadata.items():
         instance_id = values.get("InstanceId") or values.get("InstanceID")
         if instance_id:
             instance_ids.append(instance_id)
@@ -187,9 +202,7 @@ def _node_instance_ids(
     if instance_ids:
         return sorted(set(instance_ids))
     if not private_ips and not private_dns_names:
-        raise SpotPartitionError(
-            "scontrol node metadata did not expose InstanceId, NodeAddr, or NodeHostName"
-        )
+        return []
 
     ids = []
     ids.extend(
@@ -210,11 +223,168 @@ def _node_instance_ids(
             runner=runner,
         )
     )
-    if not ids:
-        raise SpotPartitionError(
-            "AWS describe-instances did not resolve Slurm node addresses to EC2 instances"
-        )
     return sorted(set(ids))
+
+
+def _parallelcluster_fleet_payload() -> Mapping[str, object]:
+    try:
+        payload = json.loads(PARALLELCLUSTER_FLEET_CONFIG.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise SpotPartitionError(
+            "Slurm nodes did not resolve to EC2 instances and ParallelCluster fleet "
+            f"config is missing: {PARALLELCLUSTER_FLEET_CONFIG}"
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise SpotPartitionError(
+            f"ParallelCluster fleet config is not valid JSON: {PARALLELCLUSTER_FLEET_CONFIG}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise SpotPartitionError(
+            f"ParallelCluster fleet config is not a JSON object: {PARALLELCLUSTER_FLEET_CONFIG}"
+        )
+    return payload
+
+
+def _node_feature_resources(
+    partition: str,
+    node_metadata: Mapping[str, Mapping[str, str]],
+    resource_names: set[str],
+) -> set[str]:
+    resources: set[str] = set()
+    unmapped: list[str] = []
+    ambiguous: list[str] = []
+    for node_name, values in node_metadata.items():
+        if partition not in str(values.get("Partitions") or "").split(","):
+            continue
+        feature_csv = (
+            values.get("AvailableFeatures")
+            or values.get("ActiveFeatures")
+            or values.get("Feature")
+            or ""
+        )
+        node_features = {feature.strip() for feature in feature_csv.split(",") if feature.strip()}
+        matches = sorted(node_features.intersection(resource_names))
+        if len(matches) == 1:
+            resources.add(matches[0])
+        elif matches:
+            ambiguous.append(f"{node_name}={','.join(matches)}")
+        else:
+            unmapped.append(f"{node_name}={feature_csv or '<empty>'}")
+    if ambiguous:
+        raise SpotPartitionError(
+            f"ParallelCluster node features map to multiple resources for {partition!r}: "
+            + "; ".join(ambiguous)
+        )
+    if unmapped:
+        raise SpotPartitionError(
+            f"ParallelCluster node features did not map to fleet resources for {partition!r}: "
+            + "; ".join(unmapped)
+        )
+    return resources
+
+
+def _subnet_availability_zones(
+    subnet_ids: Iterable[str],
+    *,
+    region: str,
+    profile: str | None,
+    runner: CommandRunner,
+) -> dict[str, str]:
+    ids = sorted(set(subnet_id for subnet_id in subnet_ids if subnet_id))
+    if not ids:
+        raise SpotPartitionError("ParallelCluster fleet config has no subnet IDs")
+    args = _aws_base(region, profile)
+    args.extend(["describe-subnets", "--subnet-ids", *ids, "--output", "json"])
+    payload = _json_from_command(args, runner=runner)
+    azs: dict[str, str] = {}
+    for subnet in payload.get("Subnets", []):
+        if not isinstance(subnet, dict):
+            continue
+        subnet_id = str(subnet.get("SubnetId") or "").strip()
+        az = str(subnet.get("AvailabilityZone") or "").strip()
+        if subnet_id and az:
+            azs[subnet_id] = az
+    missing = sorted(set(ids).difference(azs))
+    if missing:
+        raise SpotPartitionError("missing AWS subnet AZ metadata for: " + ", ".join(missing))
+    return azs
+
+
+def _parallelcluster_instance_metadata(
+    partition: str,
+    node_metadata: Mapping[str, Mapping[str, str]],
+    *,
+    region: str,
+    profile: str | None,
+    runner: CommandRunner,
+) -> dict[str, tuple[str, str]]:
+    payload = _parallelcluster_fleet_payload()
+    queue_payload = payload.get(partition)
+    if not isinstance(queue_payload, dict):
+        raise SpotPartitionError(
+            f"ParallelCluster fleet config has no queue for Slurm partition {partition!r}"
+        )
+
+    resource_names = {str(name) for name in queue_payload}
+    resources = _node_feature_resources(partition, node_metadata, resource_names)
+    if not resources:
+        raise SpotPartitionError(
+            f"Slurm node metadata did not expose ParallelCluster resources for {partition!r}"
+        )
+
+    subnet_ids: set[str] = set()
+    instance_types: set[str] = set()
+    for resource in sorted(resources):
+        resource_payload = queue_payload.get(resource)
+        if not isinstance(resource_payload, dict):
+            raise SpotPartitionError(
+                f"ParallelCluster fleet config resource is malformed: {partition}/{resource}"
+            )
+        networking = resource_payload.get("Networking")
+        if not isinstance(networking, dict):
+            raise SpotPartitionError(
+                f"ParallelCluster fleet config resource has no Networking block: "
+                f"{partition}/{resource}"
+            )
+        subnets = networking.get("SubnetIds")
+        if not isinstance(subnets, list) or not all(isinstance(item, str) for item in subnets):
+            raise SpotPartitionError(
+                f"ParallelCluster fleet config resource has malformed SubnetIds: "
+                f"{partition}/{resource}"
+            )
+        subnet_ids.update(subnets)
+
+        instances = resource_payload.get("Instances")
+        if not isinstance(instances, list) or not instances:
+            raise SpotPartitionError(
+                f"ParallelCluster fleet config resource has no Instances: {partition}/{resource}"
+            )
+        for instance in instances:
+            if not isinstance(instance, dict):
+                raise SpotPartitionError(
+                    f"ParallelCluster fleet config has malformed instance entry: "
+                    f"{partition}/{resource}"
+                )
+            instance_type = str(instance.get("InstanceType") or "").strip()
+            if not instance_type:
+                raise SpotPartitionError(
+                    f"ParallelCluster fleet config instance entry has no InstanceType: "
+                    f"{partition}/{resource}"
+                )
+            instance_types.add(instance_type)
+
+    subnet_azs = _subnet_availability_zones(
+        subnet_ids,
+        region=region,
+        profile=profile,
+        runner=runner,
+    )
+    azs = sorted(set(subnet_azs.values()))
+    if len(azs) != 1:
+        raise SpotPartitionError(
+            f"partition {partition!r} spans multiple subnet AZs; observed {', '.join(azs)}"
+        )
+    return {instance_type: (instance_type, azs[0]) for instance_type in sorted(instance_types)}
 
 
 def _instance_metadata(
@@ -321,18 +491,28 @@ def _calculate_partition_costs(
     created_iso = datetime.fromtimestamp(now, timezone.utc).isoformat()
     for partition in partitions:
         nodes = _nodes_for_partition(partition, runner=runner)
+        node_metadata = _node_metadata(nodes, runner=runner)
         instance_ids = _node_instance_ids(
-            nodes,
+            node_metadata,
             region=region,
             profile=profile,
             runner=runner,
         )
-        metadata = _instance_metadata(
-            instance_ids,
-            region=region,
-            profile=profile,
-            runner=runner,
-        )
+        if instance_ids:
+            metadata = _instance_metadata(
+                instance_ids,
+                region=region,
+                profile=profile,
+                runner=runner,
+            )
+        else:
+            metadata = _parallelcluster_instance_metadata(
+                partition,
+                node_metadata,
+                region=region,
+                profile=profile,
+                runner=runner,
+            )
         instance_types = sorted(metadata)
         azs = sorted({az for _, az in metadata.values()})
         if len(azs) != 1:
