@@ -239,6 +239,62 @@ def test_partition_order_uses_fresh_cache_without_live_commands(tmp_path: Path) 
     )
 
 
+def test_partition_order_accumulates_missing_partitions_into_fresh_cache(tmp_path: Path) -> None:
+    cache = tmp_path / "partition_costs.log"
+    _fresh_cache(cache, now=1000.0)
+    calls = []
+
+    def costly_only_runner(args):
+        calls.append(args)
+        if args[:5] == ["sinfo", "-h", "-p", "costly", "-N"]:
+            return "costly-node\n"
+        if args[:4] == ["scontrol", "show", "node", "-o"]:
+            assert args[4] == "costly-node"
+            return "NodeName=costly-node InstanceId=i-costly"
+        if "describe-instances" in args and "--instance-ids" in args:
+            return json.dumps(
+                {
+                    "Reservations": [
+                        {
+                            "Instances": [
+                                {
+                                    "InstanceId": "i-costly",
+                                    "InstanceType": "r8id.large",
+                                    "Placement": {"AvailabilityZone": "us-west-2a"},
+                                }
+                            ]
+                        }
+                    ]
+                }
+            )
+        if "describe-instance-types" in args:
+            return json.dumps(
+                {
+                    "InstanceTypes": [
+                        {"InstanceType": "r8id.large", "VCpuInfo": {"DefaultVCpus": 2}}
+                    ]
+                }
+            )
+        if "describe-spot-price-history" in args:
+            return json.dumps({"SpotPriceHistory": [{"SpotPrice": "0.50"}]})
+        raise AssertionError(args)
+
+    assert (
+        derive_partition_order(
+            "costly,cached",
+            env={"DAY_PROFILE": "slurm", "AWS_REGION": "us-west-2"},
+            now=1100.0,
+            cache_path=cache,
+            runner=costly_only_runner,
+        )
+        == "cached,costly"
+    )
+    text = cache.read_text(encoding="utf-8")
+    assert "\tcached\t" in text
+    assert "\tcostly\t" in text
+    assert not any("cached" in " ".join(call) for call in calls)
+
+
 def test_partition_order_lock_is_taken_during_refresh(tmp_path: Path, monkeypatch) -> None:
     cache = tmp_path / "partition_costs.log"
     calls = []

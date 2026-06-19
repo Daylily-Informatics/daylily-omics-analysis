@@ -726,21 +726,26 @@ def _refresh_cache(
     with lock_path.open("w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
         try:
+            cached: dict[str, PartitionCost] = {}
             try:
                 cached = _parse_cache(cache_path)
                 if _cache_is_fresh(cached, now=now) and set(partitions).issubset(cached):
                     return cached
+                if not _cache_is_fresh(cached, now=now):
+                    cached = {}
             except SpotPartitionError:
                 pass
-            costs = _calculate_partition_costs(
-                partitions,
+            missing_partitions = [partition for partition in partitions if partition not in cached]
+            refreshed = _calculate_partition_costs(
+                missing_partitions,
                 region=region,
                 profile=profile,
                 now=now,
                 runner=runner,
             )
-            _write_cache(cache_path, costs)
-            return {cost.partition: cost for cost in costs}
+            costs = {**cached, **{cost.partition: cost for cost in refreshed}}
+            _write_cache(cache_path, [costs[partition] for partition in sorted(costs)])
+            return costs
         finally:
             fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
 
