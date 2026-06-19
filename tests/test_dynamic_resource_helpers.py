@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 import pytest
+import yaml
 
 from daylily_omics_analysis.slurm import spot_partition_order as spo
 from daylily_omics_analysis.slurm.spot_partition_order import (
@@ -448,3 +449,24 @@ def test_common_rule_limits_missing_bam_placeholder_to_dry_run() -> None:
 
     assert 'arg in {"-n", "--dry-run", "--dryrun"}' in text
     assert "allow_missing_input=_is_dry_run()" in text
+
+
+def test_local_and_slurm_prep_input_resource_keys_match_rule_contract() -> None:
+    required = {
+        "constraint",
+        "distribution",
+        "exclude",
+        "include",
+        "exclusive",
+        "mem_mb",
+        "partition",
+        "threads",
+    }
+
+    for relpath in [
+        "config/day_profiles/local/templates/rule_config.yaml",
+        "config/day_profiles/slurm/templates/rule_config.yaml",
+    ]:
+        cfg = yaml.safe_load((REPO_ROOT / relpath).read_text(encoding="utf-8"))
+        missing = sorted(required.difference(cfg["prep_input_sample_files"]))
+        assert not missing, f"{relpath} missing keys: {', '.join(missing)}"

@@ -54,6 +54,11 @@ prep_input_sample_files:
     threads: 8
     use_threads: 8
     mem_mb: 50000
+    constraint: ""
+    distribution: block
+    exclude: ""
+    include: ""
+    exclusive: ""
     env_yaml: "../envs/prep_input_sample_files_v0.1.yaml"
 
 # ###### RULE CONFIG ----------------------------------------
