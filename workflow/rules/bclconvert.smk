@@ -793,7 +793,7 @@ if BCL_MERGE_LANE_FASTQS:
             vcpu=1,
             threads=1,
             mem_mb=50000,
-            tmpdir=BCL_TMPDIR,
+            tmpdir="/tmp",
         params:
             cluster_sample="run_bclconvert_merge_lanes",
             lanes=",".join(BCL_LANES),
@@ -833,7 +833,7 @@ else:
             vcpu=1,
             threads=1,
             mem_mb=50000,
-            tmpdir=BCL_TMPDIR,
+            tmpdir="/tmp",
         params:
             cluster_sample="run_bclconvert_lane_fastqs_ready",
             lanes=",".join(BCL_LANES),
@@ -991,7 +991,7 @@ rule bclconvert_demux_fastq_qc:
         vcpu=BCL_DEMUX_QC_THREADS,
         threads=BCL_DEMUX_QC_THREADS,
         mem_mb=BCL_DEMUX_QC_MEM_MB,
-        tmpdir=BCL_TMPDIR,
+        tmpdir="/tmp",
     params:
         cluster_sample="bclconvert_demux_fastq_qc",
         run_id=BCL_RUN_ID,

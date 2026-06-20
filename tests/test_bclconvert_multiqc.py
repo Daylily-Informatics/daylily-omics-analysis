@@ -75,6 +75,17 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "workflow/scripts/merge_bclconvert_tile_shards.py" in rule
     assert "run_bclconvert_lane_fastqs_ready" in rule
     assert "BCL_FASTQ_LIST_INPUT_FILES = BCL_LANE_FASTQ_LIST_FILES" in rule
+    lane_ready_marker = rule.index('cluster_sample="run_bclconvert_lane_fastqs_ready"')
+    lane_ready_block_start = rule.rfind("    rule run_bclconvert:", 0, lane_ready_marker)
+    lane_ready_block = rule[
+        lane_ready_block_start : rule.index("\n\n\nrule bclconvert_generate_units_tsv:", lane_ready_marker)
+    ]
+    assert 'tmpdir="/tmp"' in lane_ready_block
+    assert "tmpdir=BCL_TMPDIR" not in lane_ready_block
+    demux_qc_block = rule[rule.index("rule bclconvert_demux_fastq_qc:") :]
+    demux_qc_block = demux_qc_block.split("\n    params:", 1)[0]
+    assert 'tmpdir="/tmp"' in demux_qc_block
+    assert "tmpdir=BCL_TMPDIR" not in demux_qc_block
     lane_helper = _read("workflow/scripts/run_bclconvert_lane.sh")
     samplesheet_helper = _read("workflow/scripts/prepare_bclconvert_lane_samplesheet.py")
     assert "--bcl-only-lane" in lane_helper
