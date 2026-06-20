@@ -111,6 +111,9 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "bclconvert.scratch_output_root must be an absolute path" in lane_helper
     assert "BCL scratch output root free bytes below required minimum" in lane_helper
     assert 'rsync -a --remove-source-files --human-readable --stats "$run_output_dir/" "$final_output_dir/"' in lane_helper
+    assert "workflow/scripts/rewrite_bclconvert_fastq_list_paths.py" in lane_helper
+    assert '--from-root "$run_output_dir"' in lane_helper
+    assert '--to-root "$final_output_dir"' in lane_helper
     assert "ALLOWED_SETTINGS" in samplesheet_helper
     assert "BCL_LANE_ROOT = Path(BCL_RUN_DIR)" in rule
     assert "sample_sheet_settings_json=BCL_SAMPLE_SHEET_SETTINGS_JSON" in rule
@@ -128,6 +131,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert "scratch_available_bytes_min=BCL_SCRATCH_AVAILABLE_BYTES_MIN" in tile_shard_block
     assert "rule bclconvert_demux_fastq_qc:" in rule
     assert "workflow/scripts/prepare_bclconvert_demux_fastqc_inputs.py" in rule
+    assert "--allow-report-root-remap" in rule
     assert "BCL_DEMUX_FASTQC_MQC" in rule
     assert 'FASTQC_ENV = "../envs/fastqc_v0.1.yaml"' in rule
     assert "BCL_STAGING_MODE" not in rule
@@ -853,6 +857,104 @@ def test_prepare_bclconvert_demux_fastqc_inputs_makes_collision_safe_names(tmp_p
         assert Path(row["fastqc_input"]).is_symlink()
         assert Path(os.readlink(row["fastqc_input"])).exists()
     assert _read_tsv(mqc) == rows
+
+
+def test_rewrite_bclconvert_fastq_list_paths_maps_scratch_to_final_root(tmp_path: Path) -> None:
+    scratch_output = tmp_path / "scratch" / "dayoa_bclconvert_112" / "output"
+    final_output = tmp_path / "results" / "lane_fastqs" / "L003"
+    reports_dir = final_output / "Reports"
+    reports_dir.mkdir(parents=True)
+    for name in ("HG003_S1_L003_R1_001.fastq.gz", "HG003_S1_L003_R2_001.fastq.gz"):
+        (final_output / name).write_text("", encoding="utf-8")
+    fastq_list = reports_dir / "fastq_list.csv"
+    fastq_list.write_text(
+        "\n".join(
+            [
+                "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                (
+                    "RG001,HG003,HG003,3,"
+                    f"{scratch_output / 'HG003_S1_L003_R1_001.fastq.gz'},"
+                    f"{scratch_output / 'HG003_S1_L003_R2_001.fastq.gz'}"
+                ),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "rewrite_bclconvert_fastq_list_paths.py"),
+            "--fastq-list",
+            str(fastq_list),
+            "--from-root",
+            str(scratch_output),
+            "--to-root",
+            str(final_output),
+        ],
+        check=True,
+    )
+
+    with fastq_list.open("r", encoding="utf-8", newline="") as handle:
+        row = next(csv.DictReader(handle))
+    assert row["Read1File"] == str(final_output / "HG003_S1_L003_R1_001.fastq.gz")
+    assert row["Read2File"] == str(final_output / "HG003_S1_L003_R2_001.fastq.gz")
+
+
+def test_prepare_bclconvert_demux_fastqc_inputs_can_remap_moved_report_fastqs(tmp_path: Path) -> None:
+    scratch_output = tmp_path / "scratch" / "dayoa_bclconvert_112" / "output"
+    final_output = tmp_path / "results" / "lane_fastqs" / "L003"
+    reports_dir = final_output / "Reports"
+    reports_dir.mkdir(parents=True)
+    for name in ("HG003_S1_L003_R1_001.fastq.gz", "HG003_S1_L003_R2_001.fastq.gz"):
+        (final_output / name).write_text("", encoding="utf-8")
+    fastq_list = reports_dir / "fastq_list.csv"
+    fastq_list.write_text(
+        "\n".join(
+            [
+                "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                (
+                    "RG001,HG003,HG003,3,"
+                    f"{scratch_output / 'HG003_S1_L003_R1_001.fastq.gz'},"
+                    f"{scratch_output / 'HG003_S1_L003_R2_001.fastq.gz'}"
+                ),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    input_dir = tmp_path / "fastqc_inputs"
+    manifest = tmp_path / "demux_fastqc_inputs.tsv"
+    mqc = tmp_path / "bclconvert_demux_fastqc_manifest_mqc.tsv"
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_demux_fastqc_inputs.py"),
+            "--fastq-list",
+            str(fastq_list),
+            "--run-id",
+            "20260514_LH01106_0009_B23TVLGLT4",
+            "--input-dir",
+            str(input_dir),
+            "--manifest-out",
+            str(manifest),
+            "--multiqc-out",
+            str(mqc),
+            "--allow-report-root-remap",
+        ],
+        check=True,
+    )
+
+    rows = _read_tsv(manifest)
+    assert [row["source_fastq"] for row in rows] == [
+        str(final_output / "HG003_S1_L003_R1_001.fastq.gz"),
+        str(final_output / "HG003_S1_L003_R2_001.fastq.gz"),
+    ]
+    for row in rows:
+        assert Path(row["fastqc_input"]).is_symlink()
+        assert Path(os.readlink(row["fastqc_input"])).exists()
 
 
 def test_prepare_bclconvert_demux_fastqc_inputs_rejects_identifier_collision(tmp_path: Path) -> None:

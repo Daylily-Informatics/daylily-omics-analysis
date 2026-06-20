@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-dir", required=True)
     parser.add_argument("--manifest-out", required=True)
     parser.add_argument("--multiqc-out", required=True)
+    parser.add_argument("--allow-report-root-remap", action="store_true")
     return parser.parse_args()
 
 
@@ -61,13 +62,26 @@ def read_fastq_list(path: Path) -> list[dict[str, str]]:
     return rows
 
 
-def resolve_fastq(value: str, fastq_list: Path) -> Path:
+def report_root_remap(path: Path, fastq_list: Path) -> Path | None:
+    if not path.is_absolute() or fastq_list.parent.name != "Reports":
+        return None
+    candidate = fastq_list.parent.parent / path.name
+    if candidate.exists():
+        return candidate
+    return None
+
+
+def resolve_fastq(value: str, fastq_list: Path, *, allow_report_root_remap: bool = False) -> Path:
     text = str(value or "").strip()
     if not text:
         raise SystemExit("ERROR: fastq_list.csv contains a blank FASTQ path.")
     path = Path(text)
     if not path.is_absolute():
         path = (fastq_list.parent / path).resolve()
+    if not path.exists() and allow_report_root_remap:
+        remapped = report_root_remap(path, fastq_list)
+        if remapped is not None:
+            return remapped
     if not path.exists():
         raise SystemExit(f"ERROR: FASTQ listed by BCL Convert does not exist: {path}")
     return path
@@ -115,7 +129,11 @@ def main() -> int:
                 raise SystemExit(f"ERROR: fastq_list row is missing RGSM/SampleID: {row}")
 
             for read_name, fastq_key in (("R1", "Read1File"), ("R2", "Read2File")):
-                source = resolve_fastq(first_nonempty(row.get(fastq_key), row.get(fastq_key.upper())), fastq_list)
+                source = resolve_fastq(
+                    first_nonempty(row.get(fastq_key), row.get(fastq_key.upper())),
+                    fastq_list,
+                    allow_report_root_remap=args.allow_report_root_remap,
+                )
                 sample = ".".join([run_id, f"L{lane}", rgsm, rgid, read_name])
                 if sample in seen_samples:
                     raise SystemExit(

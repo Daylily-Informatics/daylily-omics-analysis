@@ -202,6 +202,11 @@ if [[ -n "$scratch_work_dir" ]]; then
   echo "moving BCL Convert output from scratch to final output directory: $(date -Is)" >> "$log_path"
   mkdir -p "$final_output_dir"
   rsync -a --remove-source-files --human-readable --stats "$run_output_dir/" "$final_output_dir/" >> "$log_path" 2>&1
+  python workflow/scripts/rewrite_bclconvert_fastq_list_paths.py \
+    --fastq-list "$fastq_list" \
+    --from-root "$run_output_dir" \
+    --to-root "$final_output_dir" \
+    >> "$log_path" 2>&1
   find "$run_output_dir" -depth -type d -empty -delete 2>/dev/null || true
   find "$scratch_work_dir" -depth -type d -empty -delete 2>/dev/null || true
 fi

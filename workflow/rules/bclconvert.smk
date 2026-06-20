@@ -1014,6 +1014,7 @@ rule bclconvert_demux_fastq_qc:
           --input-dir {params.input_dir:q} \
           --manifest-out {output.manifest:q} \
           --multiqc-out {output.mqc_manifest:q} \
+          --allow-report-root-remap \
           >> {log:q} 2>&1
         mapfile -t fastqc_inputs < <(awk -F '\t' 'NR > 1 {{ print $8 }}' {output.manifest:q})
         if [ "${{#fastqc_inputs[@]}}" -eq 0 ]; then
