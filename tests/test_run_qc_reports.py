@@ -152,10 +152,11 @@ def test_ont_mounted_run_qc_and_demux_contracts_use_rule_env_tools() -> None:
         "No sequencing_summary*.txt files found",
         "No demux FASTQ groups found",
         "pycoQC",
+        "run_pycoqc_compat.py",
         "NanoPlot",
         "NanoStat",
         "seqkit stats --tabular",
-        "nanoq",
+        "nanoq --stats --header",
         "ont_demux_fastq.multiqc.html",
         "Duplicate ONT demux FASTQ sample identifier",
     ):

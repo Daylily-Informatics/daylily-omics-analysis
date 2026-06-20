@@ -590,11 +590,11 @@ rule ont_run_qc_pycoqc:
         : > {log:q}
         command -v pycoQC >> {log:q} 2>&1
         mapfile -t summary_files < {input.summary_list:q}
-        pycoQC \
-          -f "${{summary_files[@]}}" \
-          -o {output.html:q} \
-          -j {output.json:q} \
-          --report_title {params.run_id:q} \
+        python workflow/scripts/run_pycoqc_compat.py \
+          --summary-file "${{summary_files[@]}}" \
+          --html-outfile {output.html:q} \
+          --json-outfile {output.json:q} \
+          --report-title {params.run_id:q} \
           >> {log:q} 2>&1
         test -s {output.html:q}
         test -s {output.json:q}
@@ -761,7 +761,8 @@ rule ont_demux_fastq_qc:
             seqkit stats --tabular "${{fastqs[@]}}" \
               > "$sample_out/$sample.seqkit_stats.tsv" \
               2>> {log:q}
-            nanoq "${{fastqs[@]}}" \
+            gzip -dc "${{fastqs[@]}}" \
+              | nanoq --stats --header \
               > "$sample_out/$sample.nanoq.txt" \
               2>> {log:q}
             NanoStat --fastq "${{fastqs[@]}}" \
