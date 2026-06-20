@@ -248,7 +248,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["conversion_threads"] == 2
     assert slurm_bcl["compression_threads"] == 24
     assert slurm_bcl["decompression_threads"] == 8
-    assert slurm_bcl["tile_shard_level"] == "16"
+    assert slurm_bcl["tile_shard_level"] == "lane"
     assert slurm_bcl["shared_thread_odirect_output"] is False
     assert slurm_bcl["demux_qc_threads"] == 32
     assert slurm_bcl["demux_qc_mem_mb"] == 64000

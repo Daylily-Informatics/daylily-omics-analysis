@@ -82,7 +82,7 @@ bclconvert:
   conversion_threads: 2
   compression_threads: 24
   decompression_threads: 8
-  tile_shard_level: '16'
+  tile_shard_level: lane
   tile_shard_lanes: ''
   tile_shard_tile_limit: 0
   tile_shard_tile_names: ''
