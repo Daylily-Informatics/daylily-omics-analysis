@@ -957,6 +957,62 @@ def test_prepare_bclconvert_demux_fastqc_inputs_can_remap_moved_report_fastqs(tm
         assert Path(os.readlink(row["fastqc_input"])).exists()
 
 
+def test_prepare_bclconvert_demux_fastqc_inputs_remap_with_relative_fastq_list(tmp_path: Path) -> None:
+    scratch_output = Path("/scratch/dayoa_bclconvert/dayoa_bclconvert_112/output")
+    final_output = tmp_path / "results" / "lane_fastqs" / "L003"
+    reports_dir = final_output / "Reports"
+    reports_dir.mkdir(parents=True)
+    for name in ("HG003_S1_L003_R1_001.fastq.gz", "HG003_S1_L003_R2_001.fastq.gz"):
+        (final_output / name).write_text("", encoding="utf-8")
+    fastq_list = reports_dir / "fastq_list.csv"
+    fastq_list.write_text(
+        "\n".join(
+            [
+                "RGID,RGSM,RGLB,Lane,Read1File,Read2File",
+                (
+                    "RG001,HG003,HG003,3,"
+                    f"{scratch_output / 'HG003_S1_L003_R1_001.fastq.gz'},"
+                    f"{scratch_output / 'HG003_S1_L003_R2_001.fastq.gz'}"
+                ),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    manifest = tmp_path / "demux_fastqc_inputs.tsv"
+
+    subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "workflow" / "scripts" / "prepare_bclconvert_demux_fastqc_inputs.py"),
+            "--fastq-list",
+            str(fastq_list.relative_to(tmp_path)),
+            "--run-id",
+            "run",
+            "--input-dir",
+            "inputs",
+            "--manifest-out",
+            str(manifest.relative_to(tmp_path)),
+            "--multiqc-out",
+            "mqc.tsv",
+            "--allow-report-root-remap",
+        ],
+        cwd=tmp_path,
+        check=True,
+    )
+
+    rows = _read_tsv(manifest)
+    assert [row["source_fastq"] for row in rows] == [
+        str(final_output / "HG003_S1_L003_R1_001.fastq.gz"),
+        str(final_output / "HG003_S1_L003_R2_001.fastq.gz"),
+    ]
+    for row in rows:
+        fastqc_input = tmp_path / row["fastqc_input"]
+        assert fastqc_input.is_symlink()
+        assert Path(os.readlink(fastqc_input)).is_absolute()
+        assert Path(os.readlink(fastqc_input)).exists()
+
+
 def test_prepare_bclconvert_demux_fastqc_inputs_rejects_identifier_collision(tmp_path: Path) -> None:
     fastq_dir = tmp_path / "fastqs"
     fastq_dir.mkdir()

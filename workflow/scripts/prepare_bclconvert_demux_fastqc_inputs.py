@@ -65,7 +65,7 @@ def read_fastq_list(path: Path) -> list[dict[str, str]]:
 def report_root_remap(path: Path, fastq_list: Path) -> Path | None:
     if not path.is_absolute() or fastq_list.parent.name != "Reports":
         return None
-    candidate = fastq_list.parent.parent / path.name
+    candidate = (fastq_list.parent.parent / path.name).resolve()
     if candidate.exists():
         return candidate
     return None
