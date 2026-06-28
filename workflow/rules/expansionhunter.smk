@@ -10,6 +10,8 @@ EXPANSIONHUNTER_ALIGNERS = {"sent", "sentcg", "ug"}
 EXPANSIONHUNTER_DEDUP_ALIGNERS = {"sent", "sentcg"}
 EXPANSIONHUNTER_CATALOG_KEY = "disease_loci_hg38_stranger_json"
 EXPANSIONHUNTER_SEX_GATE_WARNINGS = set()
+EXPANSIONHUNTER_DERIVED_SEX_SENTINEL = "__DAYOA_DERIVED_BIOLOGICAL_SEX__"
+EXPANSIONHUNTER_DERIVE_SEX_SCRIPT = "workflow/scripts/derive_biological_sex_from_idxstats.py"
 
 
 def _expansionhunter_selected_aligners():
@@ -62,11 +64,23 @@ def _expansionhunter_sample_sex_values(sample):
     return sex, raw_sex
 
 
+def _expansionhunter_should_derive_sample_sex(sample):
+    if is_control_sample(sample):
+        return False
+    sex, raw_sex = _expansionhunter_sample_sex_values(sample)
+    if sex in VALID_REQUIRED_SAMPLE_SEXES:
+        return False
+    raw_normalized = "" if raw_sex == "<empty>" else raw_sex.strip().lower()
+    return raw_normalized in {"", "na"}
+
+
 def _expansionhunter_missing_required_sex(sample):
     if is_control_sample(sample):
         return None
     sex, raw_sex = _expansionhunter_sample_sex_values(sample)
     if sex in VALID_REQUIRED_SAMPLE_SEXES:
+        return None
+    if _expansionhunter_should_derive_sample_sex(sample):
         return None
     return raw_sex
 
@@ -82,9 +96,11 @@ def _expansionhunter_warn_missing_required_sex(sample):
     print(
         "WARNING: ExpansionHunter skipped sample "
         f"{sample} while building optional report targets because "
-        "BIOLOGICAL_SEX must be male/female; observed "
-        f"biological_sex={raw_sex!r}. Set BIOLOGICAL_SEX=male/female "
-        "or mark true controls with is_negative_control=true or sample_type=NTC.",
+        "BIOLOGICAL_SEX must be male/female or explicitly derivable from "
+        "BIOLOGICAL_SEX=na/empty; observed "
+        f"biological_sex={raw_sex!r}. Set BIOLOGICAL_SEX=male/female, use "
+        "BIOLOGICAL_SEX=na for coverage-derived sex, or mark true controls "
+        "with is_negative_control=true or sample_type=NTC.",
         file=sys.stderr,
     )
 
@@ -94,9 +110,11 @@ def _expansionhunter_require_non_control_sample_sex(sample):
     if raw_sex is None:
         return "ok"
     raise WorkflowError(
-        "ExpansionHunter requires BIOLOGICAL_SEX=male/female before DAG "
-        f"construction for non-control sample {sample}; observed "
-        f"biological_sex={raw_sex!r}. Mark true NTC/negative controls with "
+        "ExpansionHunter requires BIOLOGICAL_SEX=male/female, or "
+        "BIOLOGICAL_SEX=na/empty so sex can be derived from chr1-22/chrX/chrY "
+        f"coverage proportions, before DAG construction for non-control sample "
+        f"{sample}; observed biological_sex={raw_sex!r}. BIOLOGICAL_SEX=unk "
+        "is intentionally not derived. Mark true NTC/negative controls with "
         "is_negative_control=true or sample_type=NTC to exclude them."
     )
 
@@ -186,8 +204,53 @@ def _expansionhunter_catalog_path(wildcards=None):
 
 
 def _expansionhunter_sample_sex(wildcards):
+    if _expansionhunter_should_derive_sample_sex(wildcards.sample):
+        return EXPANSIONHUNTER_DERIVED_SEX_SENTINEL
     _expansionhunter_require_non_control_sample_sex(wildcards.sample)
-    return sample_sex_for_required_tool(wildcards, "ExpansionHunter")
+    sex, _raw_sex = _expansionhunter_sample_sex_values(wildcards.sample)
+    if sex not in VALID_REQUIRED_SAMPLE_SEXES:
+        raise WorkflowError(
+            "ExpansionHunter strict sex resolution reached an invalid state for "
+            f"sample {wildcards.sample}; expected male/female after validation, "
+            f"observed biological_sex={sex!r}."
+        )
+    return sex
+
+
+def _expansionhunter_derived_sex_path(wildcards):
+    return (
+        MDIR
+        + f"{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/htd/expansionhunter/"
+        + f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.derived_biological_sex.tsv"
+    )
+
+
+def _expansionhunter_sex_resolution_inputs(wildcards):
+    if _expansionhunter_should_derive_sample_sex(wildcards.sample):
+        return [_expansionhunter_derived_sex_path(wildcards)]
+    return []
+
+
+def _expansionhunter_sex_resolution_path(wildcards):
+    if _expansionhunter_should_derive_sample_sex(wildcards.sample):
+        return _expansionhunter_derived_sex_path(wildcards)
+    return ""
+
+
+def _expansionhunter_sex_log(wildcards):
+    if _expansionhunter_should_derive_sample_sex(wildcards.sample):
+        _sex, raw_sex = _expansionhunter_sample_sex_values(wildcards.sample)
+        return (
+            "INFO: ExpansionHunter deriving biological_sex for sample "
+            f"{wildcards.sample} because BIOLOGICAL_SEX={raw_sex!r}; using "
+            "chr1-22, chrX, and chrY idxstats coverage proportions.\n"
+        )
+    _expansionhunter_require_non_control_sample_sex(wildcards.sample)
+    sex, _raw_sex = _expansionhunter_sample_sex_values(wildcards.sample)
+    return (
+        "INFO: ExpansionHunter using manifest biological_sex="
+        f"{sex} for sample {wildcards.sample}; no sex default or guessing is applied.\n"
+    )
 
 
 def _expansionhunter_validate_pair(wildcards):
@@ -208,10 +271,51 @@ def _expansionhunter_validate_pair(wildcards):
     return "ok"
 
 
+rule expansionhunter_derive_biological_sex:
+    input:
+        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
+        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        derive_sex_script=EXPANSIONHUNTER_DERIVE_SEX_SCRIPT,
+    output:
+        tsv=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.derived_biological_sex.tsv",
+    params:
+        pair_ok=_expansionhunter_validate_pair,
+        raw_biological_sex=lambda wildcards: _expansionhunter_sample_sex_values(wildcards.sample)[1],
+        cluster_sample=ret_sample,
+    threads: min(2, EXPANSIONHUNTER_CFG["threads"])
+    resources:
+        threads=min(2, EXPANSIONHUNTER_CFG["threads"]),
+        vcpu=min(2, EXPANSIONHUNTER_CFG["threads"]),
+        mem_mb=8000,
+        partition=EXPANSIONHUNTER_CFG["partition"],
+    benchmark:
+        MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.expansionhunter_derive_biological_sex.bench.tsv"
+    log:
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/logs/{sample}.{alnr}.{ddup}.derive_biological_sex.log"
+    conda:
+        config["samtools_markdups"]["env_yaml"]
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output.tsv:q}) $(dirname {log:q})
+        test {params.pair_ok:q} = ok
+        test -s {input.cram:q}
+        test -s {input.crai:q}
+        samtools idxstats -@ {threads} {input.cram:q} \
+          | python {input.derive_sex_script:q} \
+              --sample-id {wildcards.sample:q} \
+              --raw-biological-sex {params.raw_biological_sex:q} \
+              --output {output.tsv:q} \
+          > {log:q} 2>&1
+        test -s {output.tsv:q}
+        """
+
+
 rule expansionhunter_call:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        sex_resolution=_expansionhunter_sex_resolution_inputs,
     output:
         json=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh.json",
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh.vcf",
@@ -219,9 +323,8 @@ rule expansionhunter_call:
     params:
         pair_ok=_expansionhunter_validate_pair,
         sex=_expansionhunter_sample_sex,
-        sex_assumption_log=lambda wildcards: sample_sex_assumption_log(
-            wildcards, "ExpansionHunter"
-        ),
+        sex_resolution_path=_expansionhunter_sex_resolution_path,
+        sex_assumption_log=_expansionhunter_sex_log,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         variant_catalog=_expansionhunter_catalog_path,
         output_prefix=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh",
@@ -255,13 +358,26 @@ rule expansionhunter_call:
         test -s {input.crai:q}
         test -s {params.huref:q}
         test -s {params.variant_catalog:q}
+        sample_sex={params.sex:q}
+        if [ "$sample_sex" = {EXPANSIONHUNTER_DERIVED_SEX_SENTINEL:q} ]; then
+            test -s {params.sex_resolution_path:q}
+            sample_sex=$(awk -F '\t' 'NR == 1 {{for (i = 1; i <= NF; i++) if ($i == "derived_biological_sex") col = i; next}} NR == 2 {{print $col}}' {params.sex_resolution_path:q})
+            case "$sample_sex" in
+                male|female) ;;
+                *)
+                    echo "ERROR: invalid derived biological_sex '$sample_sex' in {params.sex_resolution_path:q}" >> {log:q}
+                    exit 1
+                    ;;
+            esac
+            printf 'INFO: ExpansionHunter using derived biological_sex=%s from %s\n' "$sample_sex" {params.sex_resolution_path:q} >> {log:q}
+        fi
         unset LD_PRELOAD
         ExpansionHunter \
           --reads {input.cram:q} \
           --reference {params.huref:q} \
           --variant-catalog {params.variant_catalog:q} \
           --output-prefix {params.output_prefix:q} \
-          --sex {params.sex:q} \
+          --sex "$sample_sex" \
           --threads {threads} \
           --region-extension-length {params.region_extension_length} \
           --analysis-mode {params.analysis_mode:q} \

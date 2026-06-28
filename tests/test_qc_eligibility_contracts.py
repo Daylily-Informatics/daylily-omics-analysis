@@ -37,7 +37,7 @@ def test_peddy_targets_exclude_ntc_controls_and_no_dedup_leaks() -> None:
 
     assert 'require_qc_eligible_sample(wildcards, "Peddy")' in peddy
     assert "for sample in QC_ELIGIBLE_SAMPLES" in peddy
-    assert "for ddup in qc_variant_dedupers()" in peddy
+    assert "valid_snv_alnr_ddup_tuples(" in peddy
     assert "for ddup in DDUP" not in peddy
 
 
@@ -49,8 +49,7 @@ def test_site_mix_targets_exclude_ntc_controls() -> None:
     assert "return qc_eligible_sample_ids(SSAMPS)" in site_mix
     assert 'require_qc_eligible_sample(\n            wildcards, "site_mix_contam"' in site_mix
     assert "sample_ids=_site_mix_qc_samples()" in site_mix
-    assert "sample=_site_mix_qc_samples()" in target
-    assert "ddup=qc_contamination_dedupers()" in target
+    assert "expand_qc_contamination(" in target
 
 
 def test_relatedness_uses_control_filtered_samples_and_declared_outputs() -> None:
@@ -72,7 +71,7 @@ def test_relatedness_uses_control_filtered_samples_and_declared_outputs() -> Non
         assert expected in relatedness
 
 
-def test_expansionhunter_filters_controls_warns_for_optional_reports_and_rejects_direct_na_sex() -> None:
+def test_expansionhunter_filters_controls_derives_direct_na_sex_and_rejects_unk() -> None:
     expansionhunter = _read("workflow/rules/expansionhunter.smk")
     multiqc = _read("workflow/rules/multiqc_final_wgs.smk")
 
@@ -80,7 +79,9 @@ def test_expansionhunter_filters_controls_warns_for_optional_reports_and_rejects
         "def _expansionhunter_target_samples():",
         "return qc_eligible_sample_ids(SSAMPS)",
         "for sample in _expansionhunter_target_samples():",
+        "def _expansionhunter_should_derive_sample_sex(sample):",
         "def _expansionhunter_warn_missing_required_sex(sample):",
+        "raw_normalized in {\"\", \"na\"}",
         "WARNING: ExpansionHunter skipped sample ",
         "while building optional report targets",
         "file=sys.stderr",
@@ -89,6 +90,10 @@ def test_expansionhunter_filters_controls_warns_for_optional_reports_and_rejects
         "_expansionhunter_require_non_control_sample_sex(wildcards.sample)",
         'require_qc_eligible_sample(wildcards, "ExpansionHunter")',
         "VALID_REQUIRED_SAMPLE_SEXES",
+        "BIOLOGICAL_SEX=na/empty",
+        "coverage proportions",
+        "BIOLOGICAL_SEX=unk ",
+        "is intentionally not derived",
         "before DAG ",
         "construction for non-control sample",
         "is_negative_control=true or sample_type=NTC",

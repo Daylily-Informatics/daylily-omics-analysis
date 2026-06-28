@@ -182,6 +182,16 @@ def test_doppelmark_memory_uses_configured_placeholder_for_explicit_dry_run(tmp_
     )
 
 
+def test_doppelmark_snakemake_wrapper_allows_generated_bam_inputs() -> None:
+    common = (REPO_ROOT / "workflow/rules/common.smk").read_text(encoding="utf-8")
+
+    wrapper_start = common.index("def derive_doppelmark_mem_mb(wildcards, input):")
+    wrapper_end = common.index("def _as_boolish(value):")
+    wrapper = common[wrapper_start:wrapper_end]
+
+    assert "allow_missing_input=True" in wrapper
+
+
 def test_partition_order_passes_through_for_local_or_partition_magic(tmp_path: Path) -> None:
     cache = tmp_path / "partition_costs.log"
     assert derive_partition_order("costly,cheap", env={"DAY_PROFILE": "local"}, cache_path=cache) == "costly,cheap"
@@ -587,11 +597,14 @@ def test_snakefile_adds_repo_root_to_import_path_before_rule_includes() -> None:
     assert text.index(path_insert) < text.index(include_common)
 
 
-def test_common_rule_limits_missing_bam_placeholder_to_dry_run() -> None:
+def test_common_rule_allows_missing_generated_bam_for_doppelmark_resources() -> None:
     text = (REPO_ROOT / "workflow/rules/common.smk").read_text(encoding="utf-8")
 
-    assert 'arg in {"-n", "--dry-run", "--dryrun"}' in text
-    assert "allow_missing_input=_is_dry_run()" in text
+    wrapper_start = text.index("def derive_doppelmark_mem_mb(wildcards, input):")
+    wrapper_end = text.index("def _as_boolish(value):")
+    wrapper = text[wrapper_start:wrapper_end]
+
+    assert "allow_missing_input=True" in wrapper
 
 
 def test_local_and_slurm_prep_input_resource_keys_match_rule_contract() -> None:

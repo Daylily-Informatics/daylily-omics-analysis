@@ -115,6 +115,7 @@ DayOA does not scan runtime-asset directories for license files and does not cho
 | `produce_multiqc_cram` | CRAM/alignment MultiQC. |
 | `produce_multiqc_snv`, `produce_multiqc_sv` | Variant-scope MultiQC. |
 | `produce_multiqc_all` | Canonical final routine MultiQC aggregation. |
+| `produce_multiqc_generic` | Generic existing-output MultiQC scan over the current `results/day/<build>/` tree. |
 | `produce_dayoa_evidence_manifest` | Deterministic post-MultiQC local evidence manifest. |
 | `produce_ont_run_qc` | Mounted ONT run QC plus demux FASTQ QC and focused MultiQC when demux FASTQs are present under `RUN_DIR`. |
 | `produce_ultima_run_qc` | Mounted Ultima run QC plus demux FastQC/SeqKit and focused MultiQC when demux FASTQs are present under `RUN_DIR`. |

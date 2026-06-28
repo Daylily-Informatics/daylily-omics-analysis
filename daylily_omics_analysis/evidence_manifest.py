@@ -42,6 +42,15 @@ GENERIC_NON_DISCOVERY_CLASSIFICATIONS = {
     "tsv_artifact",
     "unknown",
 }
+HEAVYWEIGHT_DISCOVERY_CLASSIFICATIONS = {
+    "alignment_bam",
+    "alignment_bam_index",
+    "alignment_cram",
+    "alignment_cram_index",
+    "csi_index",
+    "variant_vcf",
+    "variant_vcf_index",
+}
 DAY_RESULT_RESERVED_DIRS = {
     "benchmarks",
     "compiled_impute_results",
@@ -516,6 +525,7 @@ def discover_first_class_evidence_files(
     analysis_root: Path,
     *,
     output_manifest: Path | None = None,
+    include_heavyweight: bool = True,
 ) -> list[Path]:
     excluded: set[Path] = set()
     if output_manifest is not None:
@@ -535,6 +545,9 @@ def discover_first_class_evidence_files(
             if local_path in excluded:
                 continue
             rel_path = relative_to_root(path, analysis_root)
+            classification, _parser_relevant = file_classification(rel_path)
+            if not include_heavyweight and classification in HEAVYWEIGHT_DISCOVERY_CLASSIFICATIONS:
+                continue
             if include_discovered_evidence(rel_path):
                 discovered[rel_path] = local_path
     return [discovered[key] for key in sorted(discovered)]
@@ -595,6 +608,18 @@ def collect_inventory(
             record["tags"] = tags
         records.append(record)
     return records
+
+
+def without_heavyweight_files(analysis_root: Path, file_paths: list[Path]) -> list[Path]:
+    """Remove heavyweight alignment/variant files from report evidence hashing."""
+    kept: list[Path] = []
+    for path in file_paths:
+        rel_path = relative_to_root(path, analysis_root)
+        classification, _parser_relevant = file_classification(rel_path)
+        if classification in HEAVYWEIGHT_DISCOVERY_CLASSIFICATIONS:
+            continue
+        kept.append(path)
+    return kept
 
 
 def parse_stage_manifest_warnings(stage_manifest: Path) -> list[dict[str, Any]]:
@@ -754,11 +779,14 @@ def build_multiqc_final_evidence_manifest(
         multiqc_data_dir / name for name in MULTIQC_REQUIRED_DATA_FILES
     ]
     file_paths = (
-        [html_path, stage_manifest]
-        + parser_relevant_paths
+        without_heavyweight_files(
+            analysis_root,
+            [html_path, stage_manifest] + parser_relevant_paths,
+        )
         + discover_first_class_evidence_files(
             analysis_root,
             output_manifest=output_manifest,
+            include_heavyweight=False,
         )
     )
     return build_evidence_manifest(

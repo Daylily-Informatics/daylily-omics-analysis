@@ -351,12 +351,11 @@
         "longtr_all",
         "longtr_diseaser",
         "produce_metagenomics",
-        "produce_global_contam_check",
         "produce_multiqc_all",
         "produce_dayoa_evidence_manifest"
       ],
       "fixed_config": [
-        "multiqc_qc={\"enable_long_running\":true,\"enable_tools\":[\"vep\",\"contam_identity\",\"expansionhunter\",\"unmapped_metagenomics\",\"unmapped_metagenomics_ganon2\",\"unmapped_metagenomics_sourmash\",\"htd_calls\"]}"
+        "multiqc_qc={\"enable_long_running\":true,\"enable_tools\":[\"vep\",\"expansionhunter\",\"unmapped_metagenomics\",\"unmapped_metagenomics_ganon2\",\"unmapped_metagenomics_sourmash\",\"htd_calls\"]}"
       ],
       "options": [
         {

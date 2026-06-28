@@ -351,6 +351,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "rule produce_multiqc_sample_qc:",
         "rule produce_multiqc_variant_annotation:",
         "rule produce_multiqc_all:",
+        "rule produce_multiqc_generic:",
         "rule produce_multiqc_altair:",
         "rule produce_multiqc_ultima_reanalysis:",
         "rule produce_multiqc_seq_data:",
@@ -362,6 +363,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         assert rule_name in text
 
     assert 'MDIR + "reports/DAY_final_multiqc.html"' in text
+    assert 'MDIR + "reports/DAY_generic_multiqc.html"' in text
+    assert 'MDIR + "reports/DAY_generic_multiqc_sources.tsv"' in text
     assert 'MDIR + "reports/DAY_altair_multiqc.html"' in text
     assert 'MDIR + "reports/DAY_ultima_reanalysis_multiqc.html"' in text
     ultima_wrapper = _rule_block(text, "produce_multiqc_ultima_reanalysis")
@@ -377,6 +380,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert common.index("SAMPS = list(get_samp_ids())") < common.index("FASTQ_QC_SAMPS =")
     assert 'qc_tool_enabled("fastp")' not in text
     assert "seqqc/fastp" not in text
+
     assert "qc_tool_enabled(\"fastv\", long_running=True)" not in text
     assert "seqqc/fastv" not in text
     assert "qc_tool_enabled(\"kat\"" not in text
@@ -402,7 +406,7 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
     assert "qc_tool_enabled(\"snpeff\", long_running=True)" not in text
     assert "expansionhunter_report_targets_available()" in text
     assert "QC_CRAM_ALIGNERS" in text
-    assert "qc_alignment_dedupers()" in text
+    assert "expand_qc_alignment(" in text
     assert "qc_contamination_dedupers()" in text
     assert 'config.get("truvari_sv_benchmark", {}).get("truthsets")' in text
     assert '{"dysgu", "manta", "tiddit"}' in text
@@ -439,6 +443,8 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "rule write_dayoa_evidence_manifest:",
         "rule produce_dayoa_evidence_manifest:",
         "dayoa_evidence_manifest.json",
+        "logs/produce_dayoa_evidence_manifest.done",
+        "produce_dayoa_evidence_manifest inputs ready",
     ):
         assert expected in evidence
 
@@ -454,6 +460,21 @@ def test_staged_multiqc_targets_and_dependencies_exist() -> None:
         "write_dayoa_evidence_manifest",
         "produce_dayoa_evidence_manifest",
     }
+
+
+def test_generic_multiqc_target_scans_existing_outputs_without_upstream_tools() -> None:
+    text = _read("workflow/rules/multiqc_final_wgs.smk")
+    generic = _rule_block(text, "multiqc_generic_scan")
+    wrapper = _rule_block(text, "produce_multiqc_generic")
+
+    assert "workflow/scripts/discover_generic_multiqc_sources.py" in generic
+    assert "--root {params.scan_root:q}" in generic
+    assert "scan_root=MDIR" in generic
+    assert "--config {input.multiqc_config:q}" in generic
+    assert 'MDIR + "reports/DAY_generic_multiqc.html"' in wrapper
+    assert "stage_multiqc_inputs" not in generic
+    assert "_final_component_inputs" not in generic
+    assert "produce_alignstats" not in generic
 
 
 def test_sequence_qc_repairs_are_strict_and_multiqc_ready() -> None:
@@ -667,8 +688,8 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "contamination_mqc.tsv",
         "site_mix_contam_mqc.tsv",
         "site_mix_donor_mqc.tsv",
-        "QC_CRAM_ALIGNERS",
-        "qc_contamination_dedupers()",
+        "expand_qc_contamination(",
+        "qc_contamination_pairs()",
         "workflow/scripts/compile_contamination_mqc.py",
     ):
         assert expected in site_mix
@@ -727,12 +748,11 @@ def test_contamination_and_relatedness_aggregates_are_wired() -> None:
         "rule relatedness_batch_somalier_relate:",
         "rule relatedness_batch_report:",
         "rule relatedness_batch_gather:",
-        "rule produce_relatedness:",
-        "relatedness_mqc.tsv",
-        "QC_CRAM_ALIGNERS",
-        "qc_relatedness_dedupers()",
-    ):
-        assert expected in relatedness
+            "rule produce_relatedness:",
+            "relatedness_mqc.tsv",
+            "qc_relatedness_pairs()",
+        ):
+            assert expected in relatedness
 
     assert "PAIR_COLUMNS" in report_script
     assert "relationship\": \"no_pairs\"" in report_script
@@ -1127,7 +1147,7 @@ def test_custom_multiqc_sample_ids_follow_pipeline_depth() -> None:
 
     assert "def day_stage_sample_id(sample, *components)" in common
     assert "_stage_sample_id(sample, aligner, deduper)" in contamination_script
-    assert "qc_contamination_dedupers()" in contamination
+    assert "qc_contamination_pairs()" in contamination
     assert '"base_sample": sample' in contamination_script
     assert '"sample_id": sample,' in contamination_script
     assert "compile_contamination_mqc.py" in contamination
@@ -1151,7 +1171,7 @@ def test_contamination_rules_do_not_emit_per_sample_custom_content_tsvs() -> Non
     ]
     assert "workflow/rules/archived_qc/verifybamid2_contam.smk" in snakefile
     assert "qc_contamination_dedupers()" in verifybamid2
-    assert "qc_contamination_dedupers()" in gatk
+    assert "expand_qc_contamination(" in gatk
     assert "vb2_mqc.tsv" not in verifybamid2.split("output:", 1)[1].split("log:", 1)[0]
     assert "gatk_mqc.tsv" not in gatk.split("output:", 1)[1].split("log:", 1)[0]
     assert "{params.old_mqc}" in verifybamid2

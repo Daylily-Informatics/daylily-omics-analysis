@@ -11,14 +11,16 @@ localrules:
 
 rule produce_deduplicated_crams:  # TARGET : Generate CRAMs with all configured dedupers
     input:
-        expand(
+        expand_qc_pairs(
             MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
+            pairs=qc_aligner_deduper_pairs(DDUP),
         ),
     output:
-        expand(MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.ddupgen.complete",sample=SAMPS, alnr=QC_CRAM_ALIGNERS, ddup=DDUP)
+        expand_qc_pairs(
+            MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.ddupgen.complete",
+            sample_ids=SAMPS,
+            pairs=qc_aligner_deduper_pairs(DDUP),
+        )
     log:
         MDIR + "logs/produce_deduplicated_crams.log"
     benchmark:
@@ -33,10 +35,10 @@ rule dedup_doppelmark:  # DEPRECATED TARGET: use produce_dmd_dedup_cram
         expand(
             MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.cram",
             sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
+            alnr=OG_ALIGNERS,
         ),
     output:
-        expand(MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.ddupgen.complete", sample=SAMPS, alnr=QC_CRAM_ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/dmd/{sample}.{alnr}.dmd.ddupgen.complete", sample=SAMPS, alnr=OG_ALIGNERS)
     log:
         MDIR + "logs/dedup_doppelmark.log"
     benchmark:
@@ -51,10 +53,10 @@ rule dedup_sentieon:  # DEPRECATED TARGET: use produce_smd_dedup_cram
         expand(
             MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.cram",
             sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
+            alnr=OG_ALIGNERS,
         ),
     output:
-        expand(MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.ddupgen.complete", sample=SAMPS, alnr=QC_CRAM_ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/smd/{sample}.{alnr}.smd.ddupgen.complete", sample=SAMPS, alnr=OG_ALIGNERS)
     log:
         MDIR + "logs/dedup_sentieon.log"
     benchmark:
@@ -69,10 +71,10 @@ rule dedup_none:  # DEPRECATED TARGET: use produce_na_dedup_cram
         expand(
             MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.cram",
             sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
+            alnr=CRAM_ALIGNERS,
         ),
     output:
-        expand(MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.ddupgen.complete", sample=SAMPS, alnr=QC_CRAM_ALIGNERS)
+        expand(MDIR + "{sample}/align/{alnr}/na/{sample}.{alnr}.na.ddupgen.complete", sample=SAMPS, alnr=CRAM_ALIGNERS)
     log:
         MDIR + "logs/dedup_none.log"
     benchmark:

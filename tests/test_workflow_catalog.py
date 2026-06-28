@@ -23,7 +23,6 @@ KITCHEN_SINK_TARGETS = [
     "longtr_all",
     "longtr_diseaser",
     "produce_metagenomics",
-    "produce_global_contam_check",
     "produce_multiqc_all",
     "produce_dayoa_evidence_manifest",
 ]

@@ -11,12 +11,9 @@ localrules:
 
 rule alignstats_gather:
     input:
-        expand(
+        expand_qc_alignment(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_alignment_dedupers(),
+            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv"
         ),
     output:
         f"{MDIR}other_reports/alignstats_summary_gather.done",

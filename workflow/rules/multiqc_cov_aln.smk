@@ -4,11 +4,8 @@
 rule multiqc_cov_aln:  # TARGET : Run Alignment and Generate Alignment and Coverage Multiqc Report. No Variant Calling Happens, Progress Stops Here.
     input:
         f"{MDIR}other_reports/norm_cov_evenness_combo_mqc.tsv",
-        expand(
+        expand_qc_alignment(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
         ),
     output:
         html=f"{MDIRreportsd}ALNandSeqQC_{RU[0]}_{EX[0]}.multiqc.html",
@@ -38,45 +35,28 @@ localrules:
 
 rule cov_aln_qc:
     input:
-        expand(MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
-               sample=SSAMPS,
-               alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
+        expand_qc_alignment(
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete"
         ),
-        expand(
+        expand_qc_alignment(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
         ),
-        expand(
+        expand_qc_alignment(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.json",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
         ),
-        expand(
+        expand_qc_alignment(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
         ),
         f"{MDIR}other_reports/alignstats_bsummary.tsv",
-        expand(
+        expand_qc_alignment(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
         ),
-        expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=DDUP,
+        expand_qc_alignment(
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done"
         ),
 	#        expand(
         #    MDIR + "{sample}/align/{alnr}/alignqc/sentmetrics/sm/{sample}.{alnr}.mrkdup.metrics.complete",

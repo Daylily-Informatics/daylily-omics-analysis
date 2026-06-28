@@ -34,7 +34,7 @@ def derive_doppelmark_mem_mb(wildcards, input):
             input.bam,
             config["doppelmark"],
             day_profile=os.environ.get("DAY_PROFILE"),
-            allow_missing_input=_is_dry_run(),
+            allow_missing_input=True,
         )
     except ResourceConfigError as exc:
         raise WorkflowError(f"dynamic doppelmark memory sizing failed: {exc}") from exc
@@ -413,6 +413,67 @@ def qc_variant_dedupers():
 
 def qc_relatedness_dedupers():
     return sorted(set(DDUP))
+
+
+def qc_aligner_deduper_pairs(dedupers=None):
+    """Return only CRAM-producing aligner/deduper pairs for generic QC rules."""
+    if dedupers is None:
+        dedupers = DDUP
+    active_aligners = set(globals().get("QC_CRAM_ALIGNERS", []))
+    ordinary_aligners = set(globals().get("OG_ALIGNERS", []))
+    cram_aligners = set(globals().get("CRAM_ALIGNERS", []))
+    pairs = []
+    for ddup in sorted(set(dedupers)):
+        if ddup == "na":
+            candidates = active_aligners & cram_aligners
+        else:
+            candidates = active_aligners & ordinary_aligners
+        for alnr in sorted(candidates):
+            pairs.append((alnr, ddup))
+    return pairs
+
+
+def valid_alnr_ddup_pairs(all_aligners, ddups):
+    """Return valid aligner/deduper pairs without cross-product expansion."""
+    allowed_pairs = set(qc_aligner_deduper_pairs(ddups))
+    return [
+        (alnr, ddup)
+        for alnr in sorted(set(all_aligners))
+        for ddup in sorted(set(ddups))
+        if (alnr, ddup) in allowed_pairs
+    ]
+
+
+def qc_alignment_pairs():
+    return qc_aligner_deduper_pairs(qc_alignment_dedupers())
+
+
+def qc_contamination_pairs():
+    return qc_aligner_deduper_pairs(qc_contamination_dedupers())
+
+
+def qc_relatedness_pairs():
+    return qc_aligner_deduper_pairs(qc_relatedness_dedupers())
+
+
+def expand_qc_pairs(pattern, sample_ids=None, pairs=None):
+    if sample_ids is None:
+        sample_ids = globals().get("SSAMPS", [])
+    if pairs is None:
+        pairs = qc_alignment_pairs()
+    return [
+        pattern.format(sample=sample, alnr=alnr, ddup=ddup)
+        for sample in sample_ids
+        for alnr, ddup in pairs
+    ]
+
+
+def expand_qc_alignment(pattern, sample_ids=None):
+    return expand_qc_pairs(pattern, sample_ids=sample_ids, pairs=qc_alignment_pairs())
+
+
+def expand_qc_contamination(pattern, sample_ids=None):
+    return expand_qc_pairs(pattern, sample_ids=sample_ids, pairs=qc_contamination_pairs())
 
 
 BOOTSTRAP_UNIT_COLUMNS = [
@@ -1334,6 +1395,75 @@ if metadata["analysis_unit_uid"].duplicated().any():
     raise WorkflowError(
         f"Duplicate analysis unit identifiers detected: {sorted(set(dupes))}"
     )
+
+
+def _configured_ont_fastq_hour_window():
+    starting_hrs = config.get("use-fq_data-starting-hrs", None)
+    up_to_hrs = config.get("use-fq_data-up-to-hrs", None)
+    starting_missing = starting_hrs in [None, "", "None"]
+    up_to_missing = up_to_hrs in [None, "", "None"]
+
+    if starting_missing and up_to_missing:
+        return None
+    if starting_missing or up_to_missing:
+        raise WorkflowError(
+            "use-fq_data-starting-hrs and use-fq_data-up-to-hrs must be "
+            "specified together."
+        )
+
+    try:
+        return _fastq_path_lists.validate_fastq_hour_window(starting_hrs, up_to_hrs)
+    except ValueError as exc:
+        raise WorkflowError(str(exc)) from exc
+
+
+ONT_FASTQ_HOUR_WINDOW = _configured_ont_fastq_hour_window()
+
+
+def _filter_row_ont_fastqs_by_hour_window(row):
+    if ONT_FASTQ_HOUR_WINDOW is None:
+        return row
+    if not _is_ont_fastq_unit(row):
+        return row
+
+    original_paths = _split_fastq_path_list(row.get("ONT_R1_PATH", ""))
+    if not original_paths:
+        return row
+
+    try:
+        filtered_paths = _fastq_path_lists.filter_ont_fastq_paths_by_hour_window(
+            original_paths,
+            ONT_FASTQ_HOUR_WINDOW[0],
+            ONT_FASTQ_HOUR_WINDOW[1],
+            timestamp_source="chunk-hour",
+        )
+    except ValueError as exc:
+        raise WorkflowError(
+            f"analysis unit {row['analysis_unit_uid']} ONT_R1_PATH hour-window "
+            f"filter failed: {exc}"
+        ) from exc
+
+    if not filtered_paths:
+        raise WorkflowError(
+            f"analysis unit {row['analysis_unit_uid']} ONT_R1_PATH hour-window "
+            "filter kept zero FASTQs."
+        )
+
+    if len(filtered_paths) != len(original_paths):
+        print(
+            "ONT FASTQ hour-window filter for "
+            f"{row['analysis_unit_uid']} kept {len(filtered_paths)}/"
+            f"{len(original_paths)} FASTQs for elapsed hours "
+            f"[{ONT_FASTQ_HOUR_WINDOW[0]}, {ONT_FASTQ_HOUR_WINDOW[1]}).",
+            file=sys.stderr,
+        )
+
+    row["ONT_R1_PATH"] = ",".join(filtered_paths)
+    return row
+
+
+if ONT_FASTQ_HOUR_WINDOW is not None:
+    metadata = metadata.apply(_filter_row_ont_fastqs_by_hour_window, axis=1)
 
 metadata.apply(_validate_ont_fastq_unit, axis=1)
 
@@ -2676,15 +2806,25 @@ def valid_snv_alnr_pairs(all_aligners, callers):
     return pairs
 
 
+_SNV_CALLER_VALID_DEDUPERS = {
+    "sentdhiomr": ["na"],
+}
+
+
 def valid_snv_alnr_ddup_tuples(all_aligners, callers, ddups):
     """Return (aligner, deduper, caller) tuples for variant-output paths."""
     tuples = []
+    allowed_alnr_ddup = set(valid_alnr_ddup_pairs(all_aligners, ddups))
     for alnr, snv in valid_snv_alnr_pairs(all_aligners, callers):
         if snv in {"sentpg", "sentpgs"} and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:
             tuples.append((alnr, PANGENOME_SENTPG_DEDUPER, snv))
             continue
+        valid_ddups = _SNV_CALLER_VALID_DEDUPERS.get(snv, ddups)
         for ddup in ddups:
-            tuples.append((alnr, ddup, snv))
+            if ddup not in valid_ddups:
+                continue
+            if (alnr, ddup) in allowed_alnr_ddup:
+                tuples.append((alnr, ddup, snv))
     return tuples
 
 

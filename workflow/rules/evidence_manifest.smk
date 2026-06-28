@@ -91,7 +91,13 @@ rule write_dayoa_evidence_manifest:
 rule produce_dayoa_evidence_manifest:
     input:
         MDIR + "reports/dayoa_evidence_manifest.json",
+    output:
+        MDIR + "logs/produce_dayoa_evidence_manifest.done",
     log:
         MDIR + "logs/produce_dayoa_evidence_manifest.log"
     benchmark:
         "logs/benchmarks/produce_dayoa_evidence_manifest.bench.tsv"
+    shell:
+        "mkdir -p $(dirname {output:q}); "
+        "printf 'produce_dayoa_evidence_manifest inputs ready\\n' > {log:q}; "
+        "touch {output:q};"

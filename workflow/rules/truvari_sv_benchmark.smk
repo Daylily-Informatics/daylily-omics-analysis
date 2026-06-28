@@ -276,8 +276,10 @@ rule truvari_sv_benchmark_roi:
         set -euo pipefail
 
         outdir="$(dirname {output.summary:q})"
+        tmpdir="$(dirname "$outdir")/.truvari_tmp_$(basename "$outdir")"
         rm -rf "$outdir"
-        mkdir -p "$outdir" "$(dirname {log:q})"
+        mkdir -p "$(dirname "$outdir")" "$(dirname {log:q})" "$tmpdir"
+        export TMPDIR="$tmpdir"
 
         truvari bench \
           -b {input.truth_vcf:q} \

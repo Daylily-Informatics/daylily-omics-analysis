@@ -159,6 +159,14 @@ def test_multiqc_evidence_manifest_classifies_key_files_and_preserves_unknowns(
     tmp_path: Path,
 ) -> None:
     paths = _make_multiqc_fixture(tmp_path)
+    heavy_cram = _write(
+        tmp_path / "results/day/hg38/HG002/align/HG002.cram",
+        "large-cram-placeholder\n",
+    )
+    heavy_vcf = _write(
+        tmp_path / "results/day/hg38/HG002/calls/HG002.vcf.gz",
+        "large-vcf-placeholder\n",
+    )
     manifest = build_multiqc_final_evidence_manifest(
         analysis_root=tmp_path,
         html_path=paths["html"],
@@ -185,6 +193,8 @@ def test_multiqc_evidence_manifest_classifies_key_files_and_preserves_unknowns(
     assert by_path[custom_rel]["sha256"] == sha256_file(paths["custom"])
     assert by_path[data_extra_rel]["classification"] == "multiqc_data_artifact"
     assert by_path[data_extra_rel]["parser_relevant"] is False
+    assert str(heavy_cram.relative_to(tmp_path)) not in by_path
+    assert str(heavy_vcf.relative_to(tmp_path)) not in by_path
 
 
 def test_multiqc_evidence_manifest_allows_symlinked_paths_inside_root(

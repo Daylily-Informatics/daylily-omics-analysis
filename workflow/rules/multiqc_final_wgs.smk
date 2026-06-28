@@ -297,55 +297,37 @@ def _unmapped_metagenomics_sourmash_component_inputs(wildcards):
 
 def _alignment_qc_native_inputs(wildcards):
     paths = []
-    qddups = qc_alignment_dedupers()
-    contam_ddups = qc_contamination_dedupers()
-    alnrs = QC_CRAM_ALIGNERS
     paths.append(MDIR + "other_reports/alignstats_combo_mqc.tsv")
     paths.append(MDIR + "other_reports/norm_cov_evenness_combo_mqc.tsv")
     paths.extend(
-        expand(
+        expand_qc_alignment(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
+            + "{sample}/align/{alnr}/{ddup}/alignqc/samtmetrics/{sample}.{alnr}.{ddup}.complete"
         )
     )
     paths.append(MDIR + "other_reports/samtools_metrics_gather.done")
     paths.extend(
-        expand(
+        expand_qc_alignment(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
+            + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt"
         )
     )
     paths.extend(
-        expand(
-            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
+        expand_qc_alignment(
+            MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/goleft.done"
         )
     )
     paths.extend(
-        expand(
+        expand_qc_alignment(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md",
-            sample=SSAMPS,
-            alnr=alnrs,
-            ddup=qddups,
+            + "{sample}/align/{alnr}/{ddup}/alignqc/norm_cov_eveness/{sample}.{alnr}.{ddup}.md"
         )
     )
     if qc_tool_enabled("gatk_contam"):
         paths.extend(
-            expand(
+            expand_qc_contamination(
                 MDIR
-                + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
-                sample=SSAMPS,
-                alnr=alnrs,
-                ddup=contam_ddups,
+                + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv"
             )
         )
     return paths
@@ -353,24 +335,15 @@ def _alignment_qc_native_inputs(wildcards):
 
 def _relatedness_native_inputs(wildcards):
     paths = []
-    qddups = qc_relatedness_dedupers()
-    alnrs = QC_CRAM_ALIGNERS
-    paths.extend(
-        expand(
+    for alnr, ddup in qc_relatedness_pairs():
+        paths.append(
             MDIR
-            + "other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.samples.tsv",
-            alnr=alnrs,
-            ddup=qddups,
+            + f"other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.samples.tsv"
         )
-    )
-    paths.extend(
-        expand(
+        paths.append(
             MDIR
-            + "other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.pairs.tsv",
-            alnr=alnrs,
-            ddup=qddups,
+            + f"other_reports/relatedness/{alnr}/{ddup}/somalier/cohort.pairs.tsv"
         )
-    )
     return paths
 
 
@@ -502,6 +475,7 @@ localrules:
     produce_multiqc_sample_qc,
     produce_multiqc_variant_annotation,
     produce_multiqc_all,
+    produce_multiqc_generic,
     produce_multiqc_stage_final,
     produce_multiqc_altair,
     produce_multiqc_ultima_reanalysis,
@@ -910,6 +884,73 @@ report_header_info:
         """
 
 
+rule multiqc_generic_scan:  # TARGET: scan existing analysis outputs with all available MultiQC modules
+    input:
+        module_exclude_config="config/multiqc_module_exclude.txt",
+        multiqc_config="config/external_tools/multiqc_config.yaml",
+    output:
+        html=f"{MDIR}reports/DAY_generic_multiqc.html",
+        manifest=f"{MDIR}reports/DAY_generic_multiqc_sources.tsv",
+        data_json=MDIR + "reports/DAY_generic_multiqc_data/multiqc_data.json",
+        data_sources=MDIR + "reports/DAY_generic_multiqc_data/multiqc_sources.txt",
+        data_log=MDIR + "reports/DAY_generic_multiqc_data/multiqc.log",
+    benchmark:
+        f"{MDIR}benchmarks/DAY_all.generic_multiqc.bench.tsv"
+    threads: config["multiqc"]["threads"]
+    resources:
+        threads=config["multiqc"]["threads"],
+        partition=config["multiqc"]["partition"],
+        mem_mb=config["multiqc"].get("mem_mb", 50000),
+    params:
+        ghash=config["githash"],
+        gbranch=config["gitbranch"],
+        gtag=config["gittag"],
+        cluster_sample="multiqc_generic",
+        scan_root=MDIR,
+    log:
+        f"{MDIR}reports/logs/generic_multiqc.log",
+    conda:
+        "../envs/multiqc_v0.1.yaml"
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output.html:q}) $(dirname {log:q})
+        python workflow/scripts/multiqc_log_guard.py --log-dir {MDIR:q}other_reports/logs > {log:q} 2>&1
+        python workflow/scripts/discover_generic_multiqc_sources.py \
+          --root {params.scan_root:q} \
+          --output {output.manifest:q} \
+          --config {input.multiqc_config:q} >> {log:q} 2>&1
+        multiqc --version >> {log:q} 2>&1 || true
+        module_excludes="$(python workflow/scripts/multiqc_module_exclude_args.py {input.module_exclude_config:q})"
+        multiqc -f \
+          $module_excludes \
+          --config {input.multiqc_config:q} \
+          --custom-css-file ./config/external_tools/multiqc.css \
+          --ignore "*/.snakemake/*" \
+          --ignore "*/reports/multiqc_inputs/*" \
+          --ignore "*/reports/*_multiqc_data/*" \
+          --ignore "*/other_reports/logs/*" \
+          --ignore "other_reports/logs/*" \
+          --ignore "*_mqc.log" \
+          --ignore "*.bam" \
+          --ignore "*.bai" \
+          --ignore "*.cram" \
+          --ignore "*.crai" \
+          --ignore "*.fastq" \
+          --ignore "*.fastq.gz" \
+          --ignore "*.fq" \
+          --ignore "*.fq.gz" \
+          --ignore "*.simg" \
+          --ignore "*multiqc*.html" \
+          --template default \
+          --filename {output.html:q} \
+          -i 'Generic Existing Output MultiQC Report' \
+          -b 'https://github.com/lsmc-bio/daylily-omics-analysis (BRANCH:{params.gbranch}) (TAG:{params.gtag}) (HASH:{params.ghash})' \
+          {params.scan_root:q} >> {log:q} 2>&1
+        ls -lt {output.html:q} {output.manifest:q} >> {log:q} 2>&1
+        """
+
+
 rule multiqc_altair:  # TARGET: focused Altair validation QC MultiQC report
     input:
         stage_done=MDIR + "reports/multiqc_inputs/altair/.stage.done",
@@ -1076,6 +1117,21 @@ rule produce_multiqc_all:  # TARGET: canonical all-routine-QC report
         r"""
         set -euo pipefail
         echo "produce_multiqc_all inputs ready" > {log}
+        """
+rule produce_multiqc_generic:  # TARGET: generic existing-output MultiQC scan
+    input:
+        MDIR + "reports/DAY_generic_multiqc.html",
+        MDIR + "reports/DAY_generic_multiqc_sources.tsv",
+
+
+    log:
+        MDIR + "logs/produce_multiqc_generic.log"
+    benchmark:
+        "logs/benchmarks/produce_multiqc_generic.bench.tsv"
+    shell:
+        r"""
+        set -euo pipefail
+        echo "produce_multiqc_generic inputs ready" > {log}
         """
 rule produce_multiqc_altair:  # TARGET: focused Altair validation QC report
     input:

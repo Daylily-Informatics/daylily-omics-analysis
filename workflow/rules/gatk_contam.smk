@@ -75,13 +75,14 @@ localrules:
 
 rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estimates
     input:
-        expand(
+        expand_qc_contamination(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
-            sample=SSAMPS,
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_contamination_dedupers(),
         )
+    output:
+        done=MDIR + "logs/produce_gatk_contam_estimate.done"
     log:
         MDIR + "logs/produce_gatk_contam_estimate.log"
     benchmark:
         "logs/benchmarks/produce_gatk_contam_estimate.bench.tsv"
+    shell:
+        "mkdir -p $(dirname {output.done:q}) $(dirname {log:q}); touch {log:q}; touch {output.done:q}"

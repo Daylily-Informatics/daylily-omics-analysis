@@ -167,7 +167,6 @@ KITCHEN_SINK_TARGETS = (
     "longtr_all",
     "longtr_diseaser",
     "produce_metagenomics",
-    "produce_global_contam_check",
     "produce_multiqc_all",
     "produce_dayoa_evidence_manifest",
 )
@@ -194,9 +193,6 @@ def _kitchen_sink_inputs(wildcards):
         f"{MDIR}other_reports/site_mix_contam_mqc.tsv",
         f"{MDIR}other_reports/site_mix_donor_mqc.tsv",
         f"{MDIR}other_reports/peddy_sample_qc_mqc.tsv",
-        f"{MDIR}other_reports/contam_identity_mqc.tsv",
-        f"{MDIR}other_reports/haplocheck_mtdna_mqc.tsv",
-        f"{MDIR}other_reports/read_haps_mqc.tsv",
         f"{MDIR}reports/DAY_final_multiqc.html",
         f"{MDIR}reports/dayoa_evidence_manifest.json",
     ]

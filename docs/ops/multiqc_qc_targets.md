@@ -13,6 +13,7 @@
 | `produce_multiqc_sample_qc` | Sample-level QC such as contamination and relatedness. |
 | `produce_multiqc_variant_annotation` | Annotation QC when enabled. |
 | `produce_multiqc_all` | Canonical all-routine-QC final report. |
+| `produce_multiqc_generic` | Generic existing-output scan. Runs MultiQC over the current `results/day/<build>/` tree with configured custom sections and writes `DAY_generic_multiqc.html` plus `DAY_generic_multiqc_sources.tsv`; it does not require or launch upstream analytical tools. |
 | `produce_multiqc_altair` | Focused Altair validation report over concordance, relatedness, contamination, alignment, coverage, and variant-QC evidence. |
 | `produce_multiqc_ultima_reanalysis` | Focused Ultima reanalysis report over concordance if available, alignment, coverage, relatedness, contamination, Peddy, SV, variant-QC, and ExpansionHunter evidence when enabled. |
 | `produce_multiqc_seq_data` | Deprecated alias retained for now. |
@@ -36,6 +37,7 @@ Examples:
 
 ```bash
 dy-r produce_multiqc_all -p -j 20
+dy-r produce_multiqc_generic -p -j 1
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["metagenomics"]
 dy-r produce_multiqc_all -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentd"]
 dy-r produce_multiqc_altair -p -j 20 --config multiqc_qc.enable_tools=["contam_identity"] snv_callers=["sentd"]

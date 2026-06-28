@@ -186,7 +186,6 @@ def test_kitchen_sink_target_delegates_current_broad_evidence_targets() -> None:
         "longtr_all",
         "longtr_diseaser",
         "produce_metagenomics",
-        "produce_global_contam_check",
         "produce_multiqc_all",
         "produce_dayoa_evidence_manifest",
         "DAY_final_multiqc.html",

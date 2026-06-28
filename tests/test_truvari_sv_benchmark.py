@@ -51,6 +51,11 @@ def test_truvari_sv_rule_surface_is_shell_only_and_explicit_truth_config() -> No
     assert "-b {input.truth_vcf:q}" in text
     assert "-c {input.query_vcf:q}" in text
     assert "--includebed {input.truth_bed:q}" in text
+    assert 'rm -rf "$outdir"' in text
+    assert 'tmpdir="$(dirname "$outdir")/.truvari_tmp_$(basename "$outdir")"' in text
+    assert 'mkdir -p "$(dirname "$outdir")" "$(dirname {log:q})"' in text
+    assert 'export TMPDIR="$tmpdir"' in text
+    assert 'mkdir -p "$outdir"' not in text
     assert "workflow/scripts/parse_truvari_summary.py one" in text
     assert "workflow/scripts/parse_truvari_summary.py aggregate" in text
     assert 'config.get("truvari_sv_benchmark")' in text

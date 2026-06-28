@@ -79,6 +79,8 @@ def test_unmapped_metagenomics_rules_are_shell_only_and_included() -> None:
     assert "rule unmapped_metagenomics_sourmash_multiqc:" in rules
     assert "rule produce_unmapped_metagenomics_sourmash_gather:" in rules
     assert "rule produce_metagenomics:" in rules
+    assert 'MDIR + "logs/produce_metagenomics.done"' in rules
+    assert "touch {output:q}" in rules
     assert "\n    run:" not in rules
     assert "\n    script:" not in rules
 

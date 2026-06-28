@@ -99,6 +99,25 @@ def unmapped_metagenomics_selected_read_sets():
     return [unmapped_metagenomics_read_set()]
 
 
+def unmapped_metagenomics_pairs():
+    pairs = qc_contamination_pairs()
+    if not pairs:
+        raise WorkflowError(
+            "produce_metagenomics requires at least one valid aligner/deduper "
+            "pair from the active aligners and dedupers."
+        )
+    return pairs
+
+
+def expand_unmapped_metagenomics_pairs(pattern):
+    return [
+        pattern.format(sample=sample, alnr=alnr, ddup=ddup, read_set=read_set)
+        for sample in SSAMPS
+        for alnr, ddup in unmapped_metagenomics_pairs()
+        for read_set in unmapped_metagenomics_selected_read_sets()
+    ]
+
+
 def unmapped_metagenomics_permissive_mapq_lt(wildcards):
     value = _unmapped_metagenomics_positive_int("permissive_mapq_lt", minimum=1)
     if value > 60:
@@ -358,122 +377,50 @@ def unmapped_metagenomics_alignment_index(wildcards):
 
 
 def unmapped_metagenomics_stage_mqcs(wildcards):
-    aligners = QC_CRAM_ALIGNERS
-    dedupers = qc_contamination_dedupers()
-    if not aligners:
-        raise WorkflowError(
-            "produce_unmapped_metagenomics_quick requires at least one active "
-            "aligner via config aligners=[...] or a canonical aligner target."
-        )
-    if not dedupers:
-        raise WorkflowError(
-            "produce_unmapped_metagenomics_quick requires at least one active "
-            "deduper via config dedupers=[...] or a canonical deduper target."
-        )
-    return expand(
+    return expand_unmapped_metagenomics_pairs(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_mqc.tsv",
-        sample=SSAMPS,
-        alnr=aligners,
-        ddup=dedupers,
-        read_set=unmapped_metagenomics_selected_read_sets(),
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_mqc.tsv"
     )
 
 
 def unmapped_metagenomics_kraken_reports(wildcards):
-    aligners = QC_CRAM_ALIGNERS
-    dedupers = qc_contamination_dedupers()
-    if not aligners or not dedupers:
-        return []
-    return expand(
+    return expand_unmapped_metagenomics_pairs(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.{read_set}.kraken2.quick.report.txt",
-        sample=SSAMPS,
-        alnr=aligners,
-        ddup=dedupers,
-        read_set=unmapped_metagenomics_selected_read_sets(),
+        + "{sample}.{alnr}.{ddup}.{read_set}.kraken2.quick.report.txt"
     )
 
 
 def unmapped_metagenomics_ganon2_stage_mqcs(wildcards):
-    aligners = QC_CRAM_ALIGNERS
-    dedupers = qc_contamination_dedupers()
-    if not aligners:
-        raise WorkflowError(
-            "produce_unmapped_metagenomics_ganon2_quick requires at least one active "
-            "aligner via config aligners=[...] or a canonical aligner target."
-        )
-    if not dedupers:
-        raise WorkflowError(
-            "produce_unmapped_metagenomics_ganon2_quick requires at least one active "
-            "deduper via config dedupers=[...] or a canonical deduper target."
-        )
-    return expand(
+    return expand_unmapped_metagenomics_pairs(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_mqc.tsv",
-        sample=SSAMPS,
-        alnr=aligners,
-        ddup=dedupers,
-        read_set=unmapped_metagenomics_selected_read_sets(),
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_ganon2_mqc.tsv"
     )
 
 
 def unmapped_metagenomics_ganon2_reports(wildcards):
-    aligners = QC_CRAM_ALIGNERS
-    dedupers = qc_contamination_dedupers()
-    if not aligners or not dedupers:
-        return []
-    return expand(
+    return expand_unmapped_metagenomics_pairs(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick.tre",
-        sample=SSAMPS,
-        alnr=aligners,
-        ddup=dedupers,
-        read_set=unmapped_metagenomics_selected_read_sets(),
+        + "{sample}.{alnr}.{ddup}.{read_set}.ganon2.quick.tre"
     )
 
 
 def unmapped_metagenomics_sourmash_stage_mqcs(wildcards):
-    aligners = QC_CRAM_ALIGNERS
-    dedupers = qc_contamination_dedupers()
-    if not aligners:
-        raise WorkflowError(
-            "produce_unmapped_metagenomics_sourmash_gather requires at least one active "
-            "aligner via config aligners=[...] or a canonical aligner target."
-        )
-    if not dedupers:
-        raise WorkflowError(
-            "produce_unmapped_metagenomics_sourmash_gather requires at least one active "
-            "deduper via config dedupers=[...] or a canonical deduper target."
-        )
-    return expand(
+    return expand_unmapped_metagenomics_pairs(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_mqc.tsv",
-        sample=SSAMPS,
-        alnr=aligners,
-        ddup=dedupers,
-        read_set=unmapped_metagenomics_selected_read_sets(),
+        + "{sample}.{alnr}.{ddup}.{read_set}.unmapped_metagenomics_sourmash_mqc.tsv"
     )
 
 
 def unmapped_metagenomics_sourmash_gather_csvs(wildcards):
-    aligners = QC_CRAM_ALIGNERS
-    dedupers = qc_contamination_dedupers()
-    if not aligners or not dedupers:
-        return []
-    return expand(
+    return expand_unmapped_metagenomics_pairs(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/unmapped_metagenomics/"
-        + "{sample}.{alnr}.{ddup}.{read_set}.sourmash.gather.csv",
-        sample=SSAMPS,
-        alnr=aligners,
-        ddup=dedupers,
-        read_set=unmapped_metagenomics_selected_read_sets(),
+        + "{sample}.{alnr}.{ddup}.{read_set}.sourmash.gather.csv"
     )
 
 
@@ -1180,7 +1127,13 @@ rule produce_metagenomics:  # TARGET: run Kraken2, Ganon2, and sourmash gather m
         MDIR + "reports/unmapped_metagenomics.multiqc.html",
         MDIR + "reports/unmapped_metagenomics_ganon2.multiqc.html",
         MDIR + "reports/unmapped_metagenomics_sourmash.multiqc.html",
+    output:
+        MDIR + "logs/produce_metagenomics.done"
     log:
         MDIR + "logs/produce_metagenomics.log"
     benchmark:
         "logs/benchmarks/produce_metagenomics.bench.tsv"
+    shell:
+        "mkdir -p $(dirname {output:q}); "
+        "printf 'produce_metagenomics inputs ready\\n' > {log:q}; "
+        "touch {output:q};"

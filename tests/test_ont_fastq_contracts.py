@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.util
+import os
 from pathlib import Path
 
 import yaml
@@ -10,6 +12,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def _read(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
+
+
+def _fastq_path_lists_module():
+    helper_path = REPO_ROOT / "workflow" / "scripts" / "fastq_path_lists.py"
+    spec = importlib.util.spec_from_file_location("fastq_path_lists", helper_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _rule_config(profile: str) -> dict:
@@ -26,6 +36,135 @@ def test_ont_fastq_manifest_rows_route_to_sentmm2ont_cram_aligner() -> None:
     assert "metadata.apply(_validate_ont_fastq_unit, axis=1)" in common
     assert 'ont_r2_path not in {"", "na", "none"}' in common
     assert 'CRAM_ALIGNERS.append("sentmm2ont")' in common
+    assert '"use-fq_data-starting-hrs"' in common
+    assert '"use-fq_data-up-to-hrs"' in common
+    assert "filter_ont_fastq_paths_by_hour_window" in common
+    assert 'timestamp_source="chunk-hour"' in common
+
+
+def test_ont_fastq_hour_window_config_validation() -> None:
+    helper = _fastq_path_lists_module()
+
+    assert helper.validate_fastq_hour_window(1, 24) == (1, 24)
+    assert helper.validate_fastq_hour_window("2", "25") == (2, 25)
+
+    invalid_windows = [
+        (0, 24),
+        (24, 24),
+        (25, 24),
+        ("na", 24),
+        (True, 24),
+    ]
+    for starting_hrs, up_to_hrs in invalid_windows:
+        try:
+            helper.validate_fastq_hour_window(starting_hrs, up_to_hrs)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(
+                f"expected invalid ONT FASTQ window: {starting_hrs}, {up_to_hrs}"
+            )
+
+
+def test_ont_fastq_hour_window_filters_per_run_barcode_group() -> None:
+    helper = _fastq_path_lists_module()
+    set4_barcode14_0h = (
+        "/fsx/run_dir_mounts/20260615_ONT_Set4-FC1/20260615_ONT_Set4-FC1/"
+        "20260616_0048_3A_PBM08268_14b096e3/fastq_pass/barcode14/read0.fastq.gz"
+    )
+    set4_barcode14_1h = (
+        "/fsx/run_dir_mounts/20260615_ONT_Set4-FC1/20260615_ONT_Set4-FC1/"
+        "20260616_0148_3A_PBM08268_14b096e3/fastq_pass/barcode14/read1.fastq.gz"
+    )
+    set4_barcode14_24h = (
+        "/fsx/run_dir_mounts/20260615_ONT_Set4-FC1/20260615_ONT_Set4-FC1/"
+        "20260617_0048_3A_PBM08268_14b096e3/fastq_fail/barcode14/read24.fastq.gz"
+    )
+    set5_barcode15_1h = (
+        "/fsx/run_dir_mounts/20260615_ONT_Set5-FC1/20260615_ONT_Set5-FC1/"
+        "20260616_0715_3A_PBM08268_14b096e3/fastq_pass/barcode15/read1.fastq.gz"
+    )
+    set5_barcode15_0h = (
+        "/fsx/run_dir_mounts/20260615_ONT_Set5-FC1/20260615_ONT_Set5-FC1/"
+        "20260616_0615_3A_PBM08268_14b096e3/fastq_pass/barcode15/read0.fastq.gz"
+    )
+
+    filtered = helper.filter_ont_fastq_paths_by_hour_window(
+        [
+            set4_barcode14_0h,
+            set4_barcode14_1h,
+            set4_barcode14_24h,
+            set5_barcode15_1h,
+            set5_barcode15_0h,
+        ],
+        1,
+        24,
+    )
+
+    assert filtered == [set4_barcode14_1h, set5_barcode15_1h]
+    assert helper.ont_fastq_group_key(set4_barcode14_1h) == (
+        "20260615_ONT_Set4-FC1",
+        "barcode14",
+    )
+    assert helper.ont_fastq_acquisition_time(set4_barcode14_1h).strftime(
+        "%Y%m%d%H%M"
+    ) == "202606160148"
+
+
+def test_ont_fastq_hour_window_can_filter_by_file_mtime(tmp_path: Path) -> None:
+    helper = _fastq_path_lists_module()
+    base = (
+        tmp_path
+        / "20260615_ONT_Set4-FC1"
+        / "20260615_ONT_Set4-FC1"
+        / "20260616_0048_3A_PBM08268_14b096e3"
+        / "fastq_pass"
+        / "barcode14"
+    )
+    base.mkdir(parents=True)
+    paths = [
+        base / "read0.fastq.gz",
+        base / "read1.fastq.gz",
+        base / "read24.fastq.gz",
+    ]
+    for path in paths:
+        path.write_text("fastq\n", encoding="utf-8")
+
+    t0 = 1_782_500_000
+    os.utime(paths[0], (t0, t0))
+    os.utime(paths[1], (t0 + 3600, t0 + 3600))
+    os.utime(paths[2], (t0 + 86400, t0 + 86400))
+
+    filtered = helper.filter_ont_fastq_paths_by_hour_window(
+        [str(path) for path in paths],
+        1,
+        24,
+        timestamp_source="mtime",
+    )
+
+    assert filtered == [str(paths[1])]
+
+
+def test_ont_fastq_hour_window_can_filter_by_fastq_chunk_hour() -> None:
+    helper = _fastq_path_lists_module()
+    paths = [
+        (
+            "/fsx/run_dir_mounts/20260615_ONT_Set4-FC1/20260615_ONT_Set4-FC1/"
+            "20260616_0048_3A_PBM08268_14b096e3/fastq_pass/barcode14/"
+            f"PBM08268_pass_barcode14_14b096e3_0d51140a_{chunk}.fastq.gz"
+        )
+        for chunk in [0, 1, 24, 25]
+    ]
+
+    assert helper.ont_fastq_chunk_hour(paths[2]) == 24
+    filtered = helper.filter_ont_fastq_paths_by_hour_window(
+        paths,
+        1,
+        25,
+        timestamp_source="chunk-hour",
+    )
+
+    assert filtered == [paths[1], paths[2]]
 
 
 def test_sentmm2ont_consumes_single_end_ont_fastq_with_map_ont() -> None:
@@ -186,5 +325,12 @@ def test_sentdhiomr_transfer_matches_sentieon_cli_v163_merge_contract() -> None:
     assert 'ids.append(match.group(1) + ":sum")' in rule
     assert "--regions-file \"$subset_bed\"" in rule
     assert "-i \"$MERGE_RULES\"" in rule
+    assert 'merged_bcf="$TMPDIR/transfer_merged.{wildcards.tchrm}.bcf"' in rule
+    assert 'merged_vcf="$TMPDIR/transfer_merged.{wildcards.tchrm}.vcf"' in rule
+    assert 'trimmed_vcf="$TMPDIR/transfer_trimmed.{wildcards.tchrm}.vcf"' in rule
+    assert 'bin/dayoa_sentieon pyexec "$TRIM_SCRIPT" \\\n                < "$merged_vcf" > "$trimmed_vcf" 2>> {log}' in rule
+    assert 'bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \\\n                --regions-file "$subset_bed" \\\n                -i "$MERGE_RULES" \\\n                -O b -o "$merged_bcf"' in rule
+    assert "|| pipe_rc=$?" not in rule
+    assert "pipe_rc=$?" not in rule
     assert "Population VCF lacks contig {params.regions}; carrying raw annotations for this shard" in rule
     assert "bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf}" in rule

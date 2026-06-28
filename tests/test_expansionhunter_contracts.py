@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -16,6 +18,7 @@ CATALOG_NAME = "STRchive-disease-loci.hg38.stranger.json"
 EXPECTED_CATALOG_PATH = REPO_ROOT / "resources" / "strchive" / CATALOG_NAME
 EXPANSIONHUNTER_RULE = REPO_ROOT / "workflow" / "rules" / "expansionhunter.smk"
 PARSER_PATH = REPO_ROOT / "bin" / "util" / "parse_expansionhunter_json.py"
+DERIVED_SEX_SCRIPT = REPO_ROOT / "workflow" / "scripts" / "derive_biological_sex_from_idxstats.py"
 
 
 def _read_text(path: Path) -> str:
@@ -208,6 +211,7 @@ def test_expansionhunter_rule_declares_required_outputs_and_command_args() -> No
 
     for expected in (
         "rule expansionhunter_call:",
+        "rule expansionhunter_derive_biological_sex:",
         "rule expansionhunter_json_to_tsv:",
         "rule produce_expansion_hunter:",
         "rule produce_expansionhunter:",
@@ -220,12 +224,20 @@ def test_expansionhunter_rule_declares_required_outputs_and_command_args() -> No
         "--output-prefix",
         "--threads",
         "--analysis-mode",
+        "--raw-biological-sex",
+        "EXPANSIONHUNTER_DERIVE_SEX_SCRIPT",
+        "derive_sex_script=EXPANSIONHUNTER_DERIVE_SEX_SCRIPT",
+        "python {input.derive_sex_script:q}",
+        "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.derived_biological_sex.tsv",
         "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh.json",
         "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh.vcf",
         "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh.bam",
         "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh_realigned.bam",
         "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh.tsv",
         "other_reports/expansionhunter_mqc.tsv",
+        'sample_sex=$(awk -F \'\\t\'',
+        'NR == 1 {{for',
+        "--sex \"$sample_sex\"",
         "unset LD_PRELOAD",
     ):
         assert expected in rule_text
@@ -265,22 +277,122 @@ def test_expansionhunter_rule_routes_supported_short_read_platforms() -> None:
     assert not re.search(r"['\"]pb['\"]", rule_text)
 
 
-def test_expansionhunter_rule_defaults_invalid_sample_sex_to_male_and_logs() -> None:
+def test_expansionhunter_rule_derives_na_empty_sex_and_refuses_unk() -> None:
     rule_text = _read_text(EXPANSIONHUNTER_RULE)
-    common_text = _read_text(REPO_ROOT / "workflow" / "rules" / "common.smk")
     sex_section = rule_text.lower()
 
     assert "--sex" in rule_text
     assert "sample_sex" in sex_section or "sex" in sex_section
-    assert "sample_sex_for_required_tool(wildcards, \"ExpansionHunter\")" in rule_text
-    assert "sample_sex_assumption_log(" in rule_text
+    assert "EXPANSIONHUNTER_DERIVED_SEX_SENTINEL" in rule_text
+    assert "_expansionhunter_should_derive_sample_sex" in rule_text
+    assert 'raw_normalized in {"", "na"}' in rule_text
+    assert "BIOLOGICAL_SEX=unk " in rule_text
+    assert "is intentionally not derived" in rule_text
+    assert "derive_biological_sex_from_idxstats.py" in rule_text
+    assert "no sex default or guessing is applied" in rule_text
+    assert "sample_sex_for_required_tool(wildcards, \"ExpansionHunter\")" not in rule_text
+    assert "sample_sex_assumption_log(wildcards, \"ExpansionHunter\")" not in rule_text
+    assert "ExpansionHunter strict sex resolution reached an invalid state" in rule_text
     assert "printf '%s' {params.sex_assumption_log:q} >> {log:q}" in rule_text
-    assert "requires biological sex for sample" not in rule_text
-    assert "VALID_REQUIRED_SAMPLE_SEXES" in common_text
-    assert 'return "male"' in common_text
+    assert "coverage proportions" in rule_text
     assert "default=\"female\"" not in sex_section
     assert "get(\"sex\", \"female\")" not in sex_section
     assert "get('sex', 'female')" not in sex_section
+
+
+def test_derived_biological_sex_script_calls_male_and_female_from_idxstats() -> None:
+    module = _load_module(DERIVED_SEX_SCRIPT, "derive_biological_sex_from_idxstats_under_test")
+    female_records = module._read_idxstats(
+        io.StringIO(
+            "chr1\t1000\t10000\t0\n"
+            "chr2\t1000\t10000\t0\n"
+            "chrX\t1000\t19000\t0\n"
+            "chrY\t1000\t0\t0\n"
+        )
+    )
+    male_records = module._read_idxstats(
+        io.StringIO(
+            "chr1\t1000\t10000\t0\n"
+            "chr2\t1000\t10000\t0\n"
+            "chrX\t1000\t5000\t0\n"
+            "chrY\t1000\t8000\t0\n"
+        )
+    )
+    female_with_borderline_y_records = module._read_idxstats(
+        io.StringIO(
+            "chr1\t1000\t10000\t0\n"
+            "chr2\t1000\t10000\t0\n"
+            "chrX\t1000\t19400\t0\n"
+            "chrY\t1000\t999\t0\n"
+        )
+    )
+
+    female = module.derive_biological_sex(
+        female_records,
+        male_y_ratio_min=0.05,
+        male_x_ratio_max=0.65,
+        female_x_ratio_min=0.80,
+        female_y_ratio_max=0.03,
+    )
+    male = module.derive_biological_sex(
+        male_records,
+        male_y_ratio_min=0.05,
+        male_x_ratio_max=0.65,
+        female_x_ratio_min=0.80,
+        female_y_ratio_max=0.03,
+    )
+    female_with_borderline_y = module.derive_biological_sex(
+        female_with_borderline_y_records,
+        male_y_ratio_min=0.05,
+        male_x_ratio_max=0.65,
+        female_x_ratio_min=0.80,
+        female_y_ratio_max=0.03,
+    )
+
+    assert female["derived_biological_sex"] == "female"
+    assert male["derived_biological_sex"] == "male"
+    assert female_with_borderline_y["derived_biological_sex"] == "female"
+
+
+def test_derived_biological_sex_script_rejects_ambiguous_or_unk_inputs(tmp_path: Path) -> None:
+    module = _load_module(DERIVED_SEX_SCRIPT, "derive_biological_sex_from_idxstats_ambiguous")
+    records = module._read_idxstats(
+        io.StringIO(
+            "chr1\t1000\t10000\t0\n"
+            "chr2\t1000\t10000\t0\n"
+            "chrX\t1000\t7200\t0\n"
+            "chrY\t1000\t400\t0\n"
+        )
+    )
+    with pytest.raises(ValueError, match="ambiguous biological_sex"):
+        module.derive_biological_sex(
+            records,
+            male_y_ratio_min=0.05,
+            male_x_ratio_max=0.65,
+            female_x_ratio_min=0.80,
+            female_y_ratio_max=0.03,
+        )
+
+    output = tmp_path / "derived.tsv"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(DERIVED_SEX_SCRIPT),
+            "--sample-id",
+            "HG002",
+            "--raw-biological-sex",
+            "unk",
+            "--output",
+            str(output),
+        ],
+        input="chr1\t1000\t10000\t0\nchrX\t1000\t10000\t0\nchrY\t1000\t0\t0\n",
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert proc.returncode != 0
+    assert "Refusing to derive biological_sex" in proc.stderr
+    assert not output.exists()
 
 
 def test_parser_emits_interpreted_statuses_from_thresholds(tmp_path: Path) -> None:

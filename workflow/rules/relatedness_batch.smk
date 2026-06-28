@@ -178,8 +178,19 @@ rule relatedness_batch_somalier_relate:
             somalier relate {input:q} -o {params.prefix:q} > {log:q} 2>&1
         fi
         for expected_output in {output.pairs:q} {output.groups:q} {output.samples:q} {output.html:q}; do
+            for _attempt in $(seq 1 30); do
+                if [[ -s "$expected_output" ]]; then
+                    break
+                fi
+                sleep 2
+            done
+            if [[ "$expected_output" = {output.groups:q} && ! -s "$expected_output" ]]; then
+                printf 'WARNING: somalier relate produced no non-empty cohort groups file after wait; writing header-only groups table for this cohort.\n' >> {log:q}
+                printf "sample_id\tgroup\n" > "$expected_output"
+            fi
             if [[ ! -s "$expected_output" ]]; then
-                printf 'ERROR: somalier relate did not create declared cohort output: %s\n' "$expected_output" >> {log:q}
+                printf 'ERROR: somalier relate did not create declared cohort output after wait: %s\n' "$expected_output" >> {log:q}
+                ls -lh "$(dirname "$expected_output")" >> {log:q} 2>&1 || true
                 exit 1
             fi
         done
@@ -212,11 +223,10 @@ rule relatedness_batch_report:
 
 rule relatedness_batch_gather:
     input:
-        expand(
-            RELATEDNESS_REPORT_ROOT + "/{alnr}/{ddup}/relatedness_summary.tsv",
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_relatedness_dedupers(),
-        )
+        [
+            RELATEDNESS_REPORT_ROOT + f"/{alnr}/{ddup}/relatedness_summary.tsv"
+            for alnr, ddup in qc_relatedness_pairs()
+        ]
     output:
         MDIR + "other_reports/relatedness_mqc.tsv"
     log:

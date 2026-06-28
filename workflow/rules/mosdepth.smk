@@ -55,12 +55,12 @@ localrules:
 
 rule produce_mosdepth:  # TARGET:  jusg gen mosdepth
     input:
-        expand(MDIR
-        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
-        expand(MDIR
-        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.global.dist.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
-        expand(MDIR
-        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.region.dist.txt", sample=SSAMPS, alnr=QC_CRAM_ALIGNERS, ddup=qc_alignment_dedupers()),
+        expand_qc_alignment(MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.summary.txt"),
+        expand_qc_alignment(MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.global.dist.txt"),
+        expand_qc_alignment(MDIR
+        + "{sample}/align/{alnr}/{ddup}/alignqc/mosdepth/{sample}.{alnr}.{ddup}.mosdepth.region.dist.txt"),
     output:
         done=MDIR + "logs/produce_mosdepth.done",
     log:

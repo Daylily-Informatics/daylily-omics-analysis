@@ -117,8 +117,9 @@ rule peddy_sample_qc_gather:
         [
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
             for sample in QC_ELIGIBLE_SAMPLES
-            for ddup in qc_variant_dedupers()
-            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ],
     output:
         MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
@@ -180,8 +181,9 @@ rule produce_peddy:  # TARGET: just produce peddy results
         [
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/peddy/{sample}.{alnr}.{ddup}.{snv}.peddy.done"
             for sample in QC_ELIGIBLE_SAMPLES
-            for ddup in qc_variant_dedupers()
-            for alnr, snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS)
+            for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
+                ALL_ALIGNERS, snv_CALLERS, DDUP
+            )
         ],
         MDIR + "other_reports/peddy_sample_qc_mqc.tsv",
     output:

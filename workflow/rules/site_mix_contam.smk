@@ -14,15 +14,13 @@ def _site_mix_qc_samples():
 def _contam_qc_paths(tool, suffix, sample_ids=None):
     if sample_ids is None:
         sample_ids = SSAMPS
-    return expand(
+    return expand_qc_contamination(
         MDIR
         + "{sample}/align/{alnr}/{ddup}/alignqc/contam/"
         + tool
         + "/{sample}.{alnr}.{ddup}."
         + suffix,
-        sample=sample_ids,
-        alnr=QC_CRAM_ALIGNERS,
-        ddup=qc_contamination_dedupers(),
+        sample_ids=sample_ids,
     )
 
 
@@ -35,14 +33,13 @@ def _enabled_contam_qc_paths(enabled_tool, tool, suffix, sample_ids=None):
 def _parse_contam_path(path):
     name = os.path.basename(str(path))
     sample = aligner = deduper = None
-    for alnr in QC_CRAM_ALIGNERS:
-        for ddup in qc_contamination_dedupers():
-            marker = f".{alnr}.{ddup}."
-            if marker in name:
-                sample = name.split(marker, 1)[0]
-                aligner = alnr
-                deduper = ddup
-                break
+    for alnr, ddup in qc_contamination_pairs():
+        marker = f".{alnr}.{ddup}."
+        if marker in name:
+            sample = name.split(marker, 1)[0]
+            aligner = alnr
+            deduper = ddup
+            break
         if sample is not None:
             break
     if sample is None:
@@ -207,11 +204,9 @@ rule contamination_mqc_gather:
 
 rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix contamination estimates
     input:
-        expand(
+        expand_qc_contamination(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix.tsv",
-            sample=_site_mix_qc_samples(),
-            alnr=QC_CRAM_ALIGNERS,
-            ddup=qc_contamination_dedupers(),
+            sample_ids=_site_mix_qc_samples(),
         ),
         MDIR + "other_reports/site_mix_contam_mqc.tsv",
     log:

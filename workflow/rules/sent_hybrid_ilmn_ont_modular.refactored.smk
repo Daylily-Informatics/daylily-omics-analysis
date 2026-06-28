@@ -157,6 +157,18 @@ def _sentdhiomr_expand(pattern, **wildcards):
         outputs.extend(expand(pattern, **values))
     return outputs
 
+
+SENTDHIOMR_DDUP_REGEX = "na"
+
+def _sentdhiomr_dedupers():
+    ddups = [ddup for ddup in DDUP if ddup == "na"]
+    if not ddups:
+        raise WorkflowError(
+            "sentdhiomr requires deduper 'na' for the long-read hybrid output path. "
+            "Use produce_na_dedup_cram or --config dedupers=[na] with the sentdhiomr target."
+        )
+    return ddups
+
 # Base temp directory prefix for intermediate files
 def _dhiomr_tmp(wildcards):
     return f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/sentdhiomr/vcfs/{wildcards.dchrm}/tmp"
@@ -176,7 +188,8 @@ rule sentdhiomr_sr_align:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_aligned.bam",
         bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/tmp/sr_aligned.bam.bai",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_align.log",
     threads: config['sentdhiomr']['threads']
@@ -209,7 +222,7 @@ rule sentdhiomr_sr_align:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_sr_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_sr_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR" $(dirname {output.bam});
         if [ ! -d "$TMPDIR" ]; then
@@ -220,7 +233,7 @@ rule sentdhiomr_sr_align:
 
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /scratch >> {log} 2>&1;
+        df -h /tmp >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
@@ -309,7 +322,8 @@ rule sentdhiomr_pass1:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/initial.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.pass1.log",
     threads: config['sentdhiomr']['threads_snv']
@@ -322,6 +336,7 @@ rule sentdhiomr_pass1:
         threads=config['sentdhiomr']['threads_snv'],
         vcpu=config['sentdhiomr']['threads_snv'],
         mem_mb=config['sentdhiomr']['mem_mb_snv'],
+        time=config['sentdhiomr'].get('time_snv_long', 720),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
@@ -336,7 +351,7 @@ rule sentdhiomr_pass1:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_p1_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_p1_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         if [ ! -d "$TMPDIR" ]; then
@@ -345,7 +360,7 @@ rule sentdhiomr_pass1:
         fi
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /scratch >> {log} 2>&1;
+        df -h /tmp >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
@@ -549,7 +564,8 @@ rule sentdhiomr_hybrid_select:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/selected.bed",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.hybrid_select.log",
     threads: config['sentdhiomr']['threads_snv_light']
@@ -621,7 +637,8 @@ rule sentdhiomr_mapq0_bed:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.bed",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_bed.log",
     threads: config['sentdhiomr']['threads_snv_medium']
@@ -647,7 +664,7 @@ rule sentdhiomr_mapq0_bed:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_mq_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_mq_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -717,7 +734,8 @@ rule sentdhiomr_mapq0_slop:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_mapq0.ex1000.bed",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.mapq0_slop.log",
     benchmark:
@@ -754,7 +772,8 @@ rule sentdhiomr_merge_beds:
     output:
         bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/merged_diff.bed",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.merge_beds.log",
     benchmark:
@@ -796,7 +815,8 @@ rule sentdhiomr_stage1:
         ins_fa=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_ins.fa",
         ins_bed=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/stage1_ins.bed",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage1.log",
     threads: config['sentdhiomr']['threads_snv']
@@ -809,6 +829,7 @@ rule sentdhiomr_stage1:
         threads=config['sentdhiomr']['threads_snv'],
         vcpu=config['sentdhiomr']['threads_snv'],
         mem_mb=config['sentdhiomr']['mem_mb_snv'],
+        time=config['sentdhiomr'].get('time_snv_long', 720),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
@@ -822,7 +843,7 @@ rule sentdhiomr_stage1:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S)
-        export TMPDIR="/scratch/sentdhiomr_s1_${{timestamp}}_$$"
+        export TMPDIR="/tmp/sentdhiomr_s1_${{timestamp}}_$$"
         export SENTIEON_TMPDIR="$TMPDIR"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
@@ -997,7 +1018,8 @@ rule sentdhiomr_stage2:
         unmap_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_unmap.bam",
         alt_bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage2_alt.bam",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage2.log",
     threads: config['sentdhiomr']['threads_snv_medium']
@@ -1021,7 +1043,7 @@ rule sentdhiomr_stage2:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_s2_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_s2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1056,7 +1078,8 @@ rule sentdhiomr_stage3:
     output:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_stage3.bam",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.stage3.log",
     threads: config['sentdhiomr']['threads_snv']
@@ -1080,7 +1103,7 @@ rule sentdhiomr_stage3:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_s3_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_s3_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1187,7 +1210,8 @@ rule sentdhiomr_pass2:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/hybrid_pass2.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.pass2.log",
     threads: config['sentdhiomr']['threads_snv']
@@ -1213,7 +1237,7 @@ rule sentdhiomr_pass2:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_p2_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_p2_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1276,7 +1300,8 @@ rule sentdhiomr_subset:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/mix_subset.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.subset.log",
     benchmark:
@@ -1328,7 +1353,8 @@ rule sentdhiomr_concat_pass:
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp.vcf.gz",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.concat_pass.log",
     benchmark:
@@ -1364,7 +1390,8 @@ rule sentdhiomr_anno:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_anno.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.anno.log",
     benchmark:
@@ -1420,6 +1447,7 @@ rule sentdhiomr_transfer:
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/transfer_shards/transfer.{tchrm}.vcf.gz.tbi",
     wildcard_constraints:
         alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX,
         tchrm="|".join(SENTDHIOMR_CHRMS_TRANSFER),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer.{tchrm}.log",
@@ -1433,6 +1461,7 @@ rule sentdhiomr_transfer:
         threads=config['sentdhiomr']['threads_snv_light'],
         vcpu=config['sentdhiomr']['threads_snv_light'],
         mem_mb=config['sentdhiomr']['mem_mb_snv_light'],
+        time=config['sentdhiomr'].get('time_snv_transfer', 180),
     params:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -1448,12 +1477,18 @@ rule sentdhiomr_transfer:
         TMPDIR=$(dirname {output.vcf})
         mkdir -p "$TMPDIR"
 
-        # Reheader anno_vcf to use cluster_sample name (use old\tnew format)
+        # Reheader anno_vcf to use cluster_sample name only when required.
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
         echo "Anno VCF original sample: $anno_old_sample, target sample: {params.cluster_sample}" >> {log}
-        echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.{wildcards.tchrm}.txt"
-        bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.{wildcards.tchrm}.txt" -o "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {input.anno_vcf} >> {log} 2>&1
-        bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" >> {log} 2>&1
+        anno_transfer_vcf="{input.anno_vcf}"
+        if [[ "$anno_old_sample" != "{params.cluster_sample}" ]]; then
+            echo -e "${{anno_old_sample}}\t{params.cluster_sample}" > "$TMPDIR/anno_rename.{wildcards.tchrm}.txt"
+            bcftools reheader --threads {threads} -s "$TMPDIR/anno_rename.{wildcards.tchrm}.txt" -o "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {input.anno_vcf} >> {log} 2>&1
+            bcftools index --threads {threads} -t "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" >> {log} 2>&1
+            anno_transfer_vcf="$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz"
+        else
+            echo "Anno VCF sample already matches target; using existing indexed input without reheader" >> {log}
+        fi
 
         # pop_vcf is required for transfer
         if [ -z "{params.pop_vcf}" ] || [ ! -f "{params.pop_vcf}" ]; then
@@ -1485,18 +1520,39 @@ print(",".join(ids))
         echo "Transferring annotations from pop_vcf: {params.pop_vcf} for regions-file: $subset_bed" >> {log}
 
         if bcftools view -h {params.pop_vcf} 2>> {log} | grep -q "^##contig=<ID={params.regions}[,>]"; then
-            # Match sentieon-cli v1.6.1 transfer: regions-file + dynamic Number=A INFO merge rules.
+            # Keep merge, trimalt, and final compression as separate writes.
+            # A single long pipe can leave the final bcftools writer wedged on
+            # Lustre if an upstream stage exits early or stalls.
+            merged_bcf="$TMPDIR/transfer_merged.{wildcards.tchrm}.bcf"
+            merged_vcf="$TMPDIR/transfer_merged.{wildcards.tchrm}.vcf"
+            trimmed_vcf="$TMPDIR/transfer_trimmed.{wildcards.tchrm}.vcf"
+
+            echo "Transfer merge step started at $(date)" >> {log}
             bcftools merge --threads {threads} --no-version --regions-overlap pos -m all \
                 --regions-file "$subset_bed" \
                 -i "$MERGE_RULES" \
-                "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" {params.pop_vcf} 2>> {log} | \
-            bin/dayoa_sentieon pyexec "$TRIM_SCRIPT" 2>> {log} | \
-            bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf} - 2>> {log}
+                -O b -o "$merged_bcf" \
+                "$anno_transfer_vcf" {params.pop_vcf} >> {log} 2>&1
+            test -s "$merged_bcf"
+
+            echo "Transfer merge BCF to VCF step started at $(date)" >> {log}
+            bcftools view --threads {threads} --no-version \
+                -O v -o "$merged_vcf" "$merged_bcf" >> {log} 2>&1
+            test -s "$merged_vcf"
+
+            echo "Transfer trimalt step started at $(date)" >> {log}
+            bin/dayoa_sentieon pyexec "$TRIM_SCRIPT" \
+                < "$merged_vcf" > "$trimmed_vcf" 2>> {log}
+            test -s "$trimmed_vcf"
+
+            echo "Transfer final compression step started at $(date)" >> {log}
+            bcftools view --threads {threads} --no-version -W=tbi -O z \
+                -o {output.vcf} "$trimmed_vcf" >> {log} 2>&1
         else
             echo "Population VCF lacks contig {params.regions}; carrying raw annotations for this shard" >> {log}
             bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf} \
                 --regions-file "$subset_bed" \
-                "$TMPDIR/anno_reheadered.{wildcards.tchrm}.vcf.gz" >> {log} 2>&1
+                "$anno_transfer_vcf" >> {log} 2>&1
         fi
 
         test -s {output.vcf}
@@ -1531,7 +1587,8 @@ rule sentdhiomr_transfer_merge:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_tmp_transfer.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.transfer_merge.log",
     threads: config['sentdhiomr']['threads_snv_light']
@@ -1568,7 +1625,8 @@ rule sentdhiomr_model_apply:
     output:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/tmp/combined_apply.vcf.gz",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.model_apply.log",
     threads: config['sentdhiomr']['threads_snv_medium']
@@ -1594,7 +1652,7 @@ rule sentdhiomr_model_apply:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_ma_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_ma_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1631,7 +1689,8 @@ rule sentdhiomr_final_norm:
         vcf=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.snv.sort.vcf.gz",
         tbi=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/vcfs/{dchrm}/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.snv.sort.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.{dchrm}.final_norm.log",
     threads: config['sentdhiomr']['threads_snv_light']
@@ -1687,7 +1746,8 @@ rule sentdhiomr_concat_fofn:
             ),
         ),
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     priority: 44
     output:
         fin_fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn",
@@ -1719,7 +1779,8 @@ rule sentdhiomr_concat_index_chunks:
     input:
         fofn=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.concat.vcf.gz.fofn",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     output:
         vcfgz=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
         vcfgztemp=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.temp.vcf.gz",
@@ -1772,7 +1833,7 @@ rule clear_combined_sentdhiomr_vcf:  # TARGET: clear combined sentdhiomr vcf so 
     input:
         _sentdhiomr_expand(
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz",
-            ddup=DDUP,
+            ddup=_sentdhiomr_dedupers(),
         ),
     log:
         MDIR + "logs/clear_combined_sentdhiomr_vcf.log"
@@ -1796,7 +1857,7 @@ rule produce_sentdhiomr_vcf:  # TARGET: sentieon dnascope hybrid modular vcf
         _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.snv.sort.vcf.gz.tbi",
-            ddup=DDUP,
+            ddup=_sentdhiomr_dedupers(),
         ),
     output:
         "gatheredall.sentdhiomr",
@@ -1826,7 +1887,8 @@ rule sentdhiomr_call_svs:
         sv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz",
         sv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.sv.log",
     threads: config['sentdhiomr']['threads']
@@ -1851,7 +1913,7 @@ rule sentdhiomr_call_svs:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_sv_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_sv_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -1898,7 +1960,7 @@ rule produce_sentdhiomr_sv:  # TARGET: sentieon longreadsv hybrid ilmn+ont modul
         _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/sv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sv.vcf.gz.tbi",
-            ddup=DDUP,
+            ddup=_sentdhiomr_dedupers(),
         ),
     output:
         "gatheredall.sentdhiomr.sv",
@@ -1934,7 +1996,8 @@ rule sentdhiomr_call_cnvs:
         cnv_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz",
         cnv_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -1958,7 +2021,7 @@ rule sentdhiomr_call_cnvs:
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/scratch/sentdhiomr_cnv_${{timestamp}}_$$";
+        export TMPDIR="/tmp/sentdhiomr_cnv_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
@@ -2001,7 +2064,7 @@ rule produce_sentdhiomr_cnv:  # TARGET: sentieon cnv hybrid ilmn+ont modular cnv
         _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/cnv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.cnv.vcf.gz.tbi",
-            ddup=DDUP,
+            ddup=_sentdhiomr_dedupers(),
         ),
     output:
         "gatheredall.sentdhiomr.cnv",
@@ -2030,7 +2093,8 @@ rule sentdhiomr_export_sr_cram:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_dedup.cram",
         crai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_dedup.cram.crai",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_export.log",
     benchmark:
@@ -2078,7 +2142,8 @@ rule prep_sentdhiomr_chunkdirs:
             dchrm=SENTDHIOMR_CHRMS
         ),
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     threads: 1
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/logs/{sample}.{alnr}.{ddup}.chunkdirs.log",
@@ -2107,7 +2172,8 @@ rule sentdhiomr_merge_sr_bams:
         bam=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam",
         bai=MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.sr_merged.bam.bai",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/sentdhiomr/log/{sample}.{alnr}.{ddup}.sr_merge.log",
     threads: config['sentdhiomr']['threads_snv_medium']
@@ -2151,6 +2217,7 @@ rule sentdhiomr_call_segdup_gene:
         done=MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.done",
     wildcard_constraints:
         alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX,
         gene="|".join(SEGDUP_GENES),
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.{gene}.log",
@@ -2268,7 +2335,8 @@ rule sentdhiomr_call_segdup:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr_call_segdup.bench.tsv"
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     threads: 1
     shell:
         """
@@ -2286,7 +2354,7 @@ rule produce_sentdhiomr_segdup:  # TARGET: sentieon segdup hybrid ilmn+ont modul
         _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.done",
-            ddup=DDUP,
+            ddup=_sentdhiomr_dedupers(),
         ),
     output:
         "gatheredall.sentdhiomr.segdup",
@@ -2318,7 +2386,8 @@ rule sentdhiomr_mito_call:
         mito_vcf=MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz",
         mito_tbi=MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz.tbi",
     wildcard_constraints:
-        alnr=ALIGNERS_DHIOMR_REGEX
+        alnr=ALIGNERS_DHIOMR_REGEX,
+        ddup=SENTDHIOMR_DDUP_REGEX
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/log/{sample}.{alnr}.{ddup}.sentdhiomr.mito.log",
     threads: config['sentdhiomr']['threads_medium']
@@ -2331,6 +2400,7 @@ rule sentdhiomr_mito_call:
         threads=config['sentdhiomr']['threads_medium'],
         vcpu=config['sentdhiomr']['threads_medium'],
         mem_mb=config['sentdhiomr']['mem_mb_medium'],
+        time=config['sentdhiomr'].get('time_mito', 720),
     params:
         mt_fasta=config["sentdhiomr"]["mt_fasta"],
         mt_shifted_fasta=config["sentdhiomr"]["mt_shifted_fasta"],
@@ -2348,9 +2418,11 @@ rule sentdhiomr_mito_call:
         NT={threads}
 
         timestamp=$(date +%Y%m%d%H%M%S)
-        TMPDIR="/scratch/sentdhiomr_mito_${{timestamp}}_$$"
-        mkdir -p "$TMPDIR"
-        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+        tmp_parent="/tmp"
+        test -d "$tmp_parent"
+        test -w "$tmp_parent"
+        tmpdir=$(mktemp -d "${{tmp_parent%/}}/sentdhiomr_mito_${{timestamp}}_$$.XXXXXX")
+        trap 'rm -rf "$tmpdir" 2>/dev/null || true' EXIT
 
         echo "Starting mitochondrial pipeline at $(date)" >> {log}
 
@@ -2360,13 +2432,13 @@ rule sentdhiomr_mito_call:
         # "paired reads have different names" and output 0 aligned reads.
         samtools view -F 0x4 -F 0x8 -h {input.sr_bam} chrM 2>>{log} | \
             awk '$0~/^@/ || $7 == "=" {{print}}' | \
-            samtools collate -O - "$TMPDIR/collate_$$" 2>>{log} | \
+            samtools collate -O - "$tmpdir/collate_$$" 2>>{log} | \
             samtools fastq -N \
-                -1 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" \
-                -2 "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq" - 2>>{log}
+                -1 "$tmpdir/${{SAMPLE}}.chrM.R1.fastq" \
+                -2 "$tmpdir/${{SAMPLE}}.chrM.R2.fastq" - 2>>{log}
 
         # Validate that reads were actually extracted
-        R1_LINES=$(head -4 "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" | wc -l)
+        R1_LINES=$(head -4 "$tmpdir/${{SAMPLE}}.chrM.R1.fastq" | wc -l)
         if [ "$R1_LINES" -lt 4 ]; then
             echo "FATAL: No chrM paired reads extracted from {input.sr_bam}" >> {log}
             exit 1
@@ -2379,29 +2451,29 @@ rule sentdhiomr_mito_call:
             bin/dayoa_sentieon bwa mem \
                 -R "@RG\\tID:${{SAMPLE}}\\tSM:${{SAMPLE}}\\tPL:Illumina" \
                 -K 100000000 -v 3 -t $NT -Y "$ref" \
-                "$TMPDIR/${{SAMPLE}}.chrM.R1.fastq" \
-                "$TMPDIR/${{SAMPLE}}.chrM.R2.fastq" 2>>{log} | \
+                "$tmpdir/${{SAMPLE}}.chrM.R1.fastq" \
+                "$tmpdir/${{SAMPLE}}.chrM.R2.fastq" 2>>{log} | \
             bin/dayoa_sentieon util sort -t $NT -i - --sam2bam \
-                -o "$TMPDIR/${{prefix}}.sorted.bam" >> {log} 2>&1
+                -o "$tmpdir/${{prefix}}.sorted.bam" >> {log} 2>&1
 
             bin/dayoa_sentieon driver -t $NT \
-                -i "$TMPDIR/${{prefix}}.sorted.bam" \
+                -i "$tmpdir/${{prefix}}.sorted.bam" \
                 --algo LocusCollector --fun score_info \
-                "$TMPDIR/${{prefix}}.score.txt" >> {log} 2>&1
+                "$tmpdir/${{prefix}}.score.txt" >> {log} 2>&1
 
             bin/dayoa_sentieon driver -t $NT \
-                -i "$TMPDIR/${{prefix}}.sorted.bam" \
-                --algo Dedup --score_info "$TMPDIR/${{prefix}}.score.txt" \
-                --metrics "$TMPDIR/${{prefix}}.dedup_metrics.txt" \
-                "$TMPDIR/${{prefix}}.deduped.bam" >> {log} 2>&1
+                -i "$tmpdir/${{prefix}}.sorted.bam" \
+                --algo Dedup --score_info "$tmpdir/${{prefix}}.score.txt" \
+                --metrics "$tmpdir/${{prefix}}.dedup_metrics.txt" \
+                "$tmpdir/${{prefix}}.deduped.bam" >> {log} 2>&1
 
             bin/dayoa_sentieon driver -t $NT \
-                -i "$TMPDIR/${{prefix}}.deduped.bam" \
+                -i "$tmpdir/${{prefix}}.deduped.bam" \
                 -r "$ref" --interval "$interval" \
                 --algo TNscope --tumor_sample "$SAMPLE" \
                 --min_tumor_allele_frac 0.005 --prune_factor 20 \
                 --disable_detector sv --resample_depth 100000 \
-                "$TMPDIR/${{prefix}}.raw.tnscope.vcf.gz" >> {log} 2>&1
+                "$tmpdir/${{prefix}}.raw.tnscope.vcf.gz" >> {log} 2>&1
         }}
 
         # --- Step 2: Align+Call on standard and shifted refs in parallel ---
@@ -2420,7 +2492,7 @@ rule sentdhiomr_mito_call:
         echo "TNscope calling completed at $(date)" >> {log}
 
         # Verify expected VCF outputs exist before liftover
-        for VCF in "$TMPDIR/MT.raw.tnscope.vcf.gz" "$TMPDIR/ShiftedMT.raw.tnscope.vcf.gz"; do
+        for VCF in "$tmpdir/MT.raw.tnscope.vcf.gz" "$tmpdir/ShiftedMT.raw.tnscope.vcf.gz"; do
             if [ ! -f "$VCF" ]; then
                 echo "FATAL: Expected VCF not produced: $VCF" >> {log}
                 exit 1
@@ -2429,21 +2501,21 @@ rule sentdhiomr_mito_call:
 
         # --- Step 3: Liftover shifted VCF back to standard coords ---
         picard LiftoverVcf \
-            I="$TMPDIR/ShiftedMT.raw.tnscope.vcf.gz" \
-            O="$TMPDIR/ShiftedMT.shifted_back.vcf.gz" \
+            I="$tmpdir/ShiftedMT.raw.tnscope.vcf.gz" \
+            O="$tmpdir/ShiftedMT.shifted_back.vcf.gz" \
             R="{params.mt_fasta}" \
             CHAIN="{params.mt_shift_back_chain}" \
-            REJECT="$TMPDIR/ShiftedMT.rejected.vcf" >> {log} 2>&1
+            REJECT="$tmpdir/ShiftedMT.rejected.vcf" >> {log} 2>&1
 
         picard MergeVcfs \
-            I="$TMPDIR/ShiftedMT.shifted_back.vcf.gz" \
-            I="$TMPDIR/MT.raw.tnscope.vcf.gz" \
-            O="$TMPDIR/all.tnscope.vcf.gz" >> {log} 2>&1
+            I="$tmpdir/ShiftedMT.shifted_back.vcf.gz" \
+            I="$tmpdir/MT.raw.tnscope.vcf.gz" \
+            O="$tmpdir/all.tnscope.vcf.gz" >> {log} 2>&1
 
         echo "Liftover and merge completed at $(date)" >> {log}
 
         # --- Step 4: Blacklist filter + strand bias annotation ---
-        bcftools view -T ^{params.mt_blacklist_bed} "$TMPDIR/all.tnscope.vcf.gz" 2>>{log} | \
+        bcftools view -T ^{params.mt_blacklist_bed} "$tmpdir/all.tnscope.vcf.gz" 2>>{log} | \
             bcftools filter -s "Strand_bias" -e "INFO/SOR>=10" 2>>{log} | \
             bin/dayoa_sentieon util vcfconvert - {output.mito_vcf} >> {log} 2>&1
 
@@ -2462,7 +2534,7 @@ rule produce_sentdhiomr_mito:  # TARGET: sentieon mito hybrid ilmn+ont modular m
         _sentdhiomr_expand(
             MDIR
             + "{sample}/align/{alnr}/{ddup}/mito/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.mito.vcf.gz.tbi",
-            ddup=DDUP,
+            ddup=_sentdhiomr_dedupers(),
         ),
     output:
         "gatheredall.sentdhiomr.mito",
