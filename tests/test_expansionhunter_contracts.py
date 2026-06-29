@@ -268,8 +268,8 @@ def test_expansionhunter_rule_routes_supported_short_read_platforms() -> None:
     assert "wildcards.ddup != \"na\"" in rule_text
     assert "_expansionhunter_sample_supports_aligner" in rule_text
     assert "lambda wildcards: _expansionhunter_report_targets()" in rule_text
-    assert "_expansionhunter_target_paths(\"tsv\", require=False, warn_on_skip=True)" in rule_text
-    assert "WARNING: ExpansionHunter skipped sample " in rule_text
+    assert "_expansionhunter_target_paths(\"tsv\", require=True)" in rule_text
+    assert "WARNING: ExpansionHunter skipped sample " not in rule_text
     assert "SEQ_VENDOR" in rule_text
     assert "SEQ_PLATFORM" in rule_text
     assert "ULTIMA_CRAM_ALIGNER" in rule_text
@@ -277,7 +277,7 @@ def test_expansionhunter_rule_routes_supported_short_read_platforms() -> None:
     assert not re.search(r"['\"]pb['\"]", rule_text)
 
 
-def test_expansionhunter_rule_derives_na_empty_sex_and_refuses_unk() -> None:
+def test_expansionhunter_rule_requires_manifest_sex_and_refuses_guessing() -> None:
     rule_text = _read_text(EXPANSIONHUNTER_RULE)
     sex_section = rule_text.lower()
 
@@ -285,16 +285,16 @@ def test_expansionhunter_rule_derives_na_empty_sex_and_refuses_unk() -> None:
     assert "sample_sex" in sex_section or "sex" in sex_section
     assert "EXPANSIONHUNTER_DERIVED_SEX_SENTINEL" in rule_text
     assert "_expansionhunter_should_derive_sample_sex" in rule_text
-    assert 'raw_normalized in {"", "na"}' in rule_text
-    assert "BIOLOGICAL_SEX=unk " in rule_text
-    assert "is intentionally not derived" in rule_text
+    assert "return False" in rule_text
+    assert "BIOLOGICAL_SEX=male/female" in rule_text
+    assert "Missing, empty, na, and unk values" in rule_text
+    assert "not derived or guessed" in rule_text
     assert "derive_biological_sex_from_idxstats.py" in rule_text
     assert "no sex default or guessing is applied" in rule_text
     assert "sample_sex_for_required_tool(wildcards, \"ExpansionHunter\")" not in rule_text
     assert "sample_sex_assumption_log(wildcards, \"ExpansionHunter\")" not in rule_text
     assert "ExpansionHunter strict sex resolution reached an invalid state" in rule_text
     assert "printf '%s' {params.sex_assumption_log:q} >> {log:q}" in rule_text
-    assert "coverage proportions" in rule_text
     assert "default=\"female\"" not in sex_section
     assert "get(\"sex\", \"female\")" not in sex_section
     assert "get('sex', 'female')" not in sex_section

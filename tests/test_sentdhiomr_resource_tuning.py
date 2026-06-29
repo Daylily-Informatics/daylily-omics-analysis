@@ -38,6 +38,7 @@ def test_slurm_sentdhiomr_conservative_tuning_values() -> None:
 
     assert sentdhiomr["threads"] == 192
     assert sentdhiomr["mem_mb"] == 300000
+    assert sentdhiomr["stage3_tmp_parent"] == "/fsx/scratch"
 
 
 def test_local_sentdhiomr_declares_tuning_keys_for_parseability() -> None:
@@ -45,6 +46,7 @@ def test_local_sentdhiomr_declares_tuning_keys_for_parseability() -> None:
 
     missing = sorted(set(EXPECTED_SLURM_TUNING) - set(sentdhiomr))
     assert not missing
+    assert sentdhiomr["stage3_tmp_parent"] == "/tmp"
 
 
 def test_sentdhiomr_rules_use_tuned_resources_without_tuning_sr_align_or_sv() -> None:
@@ -78,3 +80,15 @@ def test_sentdhiomr_rules_use_tuned_resources_without_tuning_sr_align_or_sv() ->
     )[0]
     assert "threads: config['sentdhiomr']['segdup_threads']" in segdup_block
     assert "mem_mb=config['sentdhiomr']['segdup_mem_mb']" in segdup_block
+
+
+def test_sentdhiomr_stage3_uses_configured_tmp_parent() -> None:
+    text = SENTDHIOMR_RULES.read_text(encoding="utf-8")
+    stage3 = text.split("rule sentdhiomr_stage3:", 1)[1].split(
+        "rule sentdhiomr_pass2:", 1
+    )[0]
+
+    assert 'tmp_parent=config["sentdhiomr"]["stage3_tmp_parent"]' in stage3
+    assert 'tmp_parent="{params.tmp_parent}"' in stage3
+    assert 'test -w "$tmp_parent"' in stage3
+    assert 'sentdhiomr_s3_${{timestamp}}_$$' in stage3

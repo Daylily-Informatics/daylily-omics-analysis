@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import daylily_omics_analysis.evidence_manifest as evidence_manifest
 from daylily_omics_analysis.evidence_manifest import (
     EvidenceManifestError,
     EvidenceMetadata,
@@ -195,6 +196,38 @@ def test_multiqc_evidence_manifest_classifies_key_files_and_preserves_unknowns(
     assert by_path[data_extra_rel]["parser_relevant"] is False
     assert str(heavy_cram.relative_to(tmp_path)) not in by_path
     assert str(heavy_vcf.relative_to(tmp_path)) not in by_path
+
+
+def test_multiqc_evidence_manifest_skips_heavy_parser_relevant_inputs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    paths = _make_multiqc_fixture(tmp_path)
+    heavy_cram = _write(
+        tmp_path / "results/day/hg38/HG002/align/HG002.cram",
+        "large-cram-placeholder\n",
+    )
+    original_sha256_file = evidence_manifest.sha256_file
+
+    def guarded_sha256_file(path: Path) -> str:
+        if path == heavy_cram:
+            raise AssertionError("heavy parser-relevant CRAM was hashed")
+        return original_sha256_file(path)
+
+    monkeypatch.setattr(evidence_manifest, "sha256_file", guarded_sha256_file)
+    manifest = evidence_manifest.build_multiqc_final_evidence_manifest(
+        analysis_root=tmp_path,
+        html_path=paths["html"],
+        multiqc_data_dir=paths["data_dir"],
+        stage_manifest=paths["stage_manifest"],
+        parser_relevant_paths=[paths["custom"], heavy_cram],
+        output_manifest=tmp_path / "manifest.json",
+        metadata=_metadata(),
+        generated_at=FIXED_TIME,
+    )
+
+    by_path = {record["relative_path"]: record for record in manifest["files"]}
+    assert str(heavy_cram.relative_to(tmp_path)) not in by_path
 
 
 def test_multiqc_evidence_manifest_allows_symlinked_paths_inside_root(

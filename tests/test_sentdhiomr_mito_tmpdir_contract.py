@@ -16,4 +16,3 @@ def test_sentdhiomr_mito_uses_writable_tmp_root() -> None:
     assert 'test -w "$tmp_parent"' in rule_block
     assert "mktemp -d" in rule_block
     assert 'TMPDIR="/scratch' not in rule_text
-    assert "/scratch/sentdhiomr" not in rule_text

@@ -1,6 +1,5 @@
 import csv
 import os
-import sys
 
 from snakemake.exceptions import WorkflowError
 
@@ -9,7 +8,6 @@ EXPANSIONHUNTER_CFG = config["expansionhunter"]
 EXPANSIONHUNTER_ALIGNERS = {"sent", "sentcg", "ug"}
 EXPANSIONHUNTER_DEDUP_ALIGNERS = {"sent", "sentcg"}
 EXPANSIONHUNTER_CATALOG_KEY = "disease_loci_hg38_stranger_json"
-EXPANSIONHUNTER_SEX_GATE_WARNINGS = set()
 EXPANSIONHUNTER_DERIVED_SEX_SENTINEL = "__DAYOA_DERIVED_BIOLOGICAL_SEX__"
 EXPANSIONHUNTER_DERIVE_SEX_SCRIPT = "workflow/scripts/derive_biological_sex_from_idxstats.py"
 
@@ -65,13 +63,7 @@ def _expansionhunter_sample_sex_values(sample):
 
 
 def _expansionhunter_should_derive_sample_sex(sample):
-    if is_control_sample(sample):
-        return False
-    sex, raw_sex = _expansionhunter_sample_sex_values(sample)
-    if sex in VALID_REQUIRED_SAMPLE_SEXES:
-        return False
-    raw_normalized = "" if raw_sex == "<empty>" else raw_sex.strip().lower()
-    return raw_normalized in {"", "na"}
+    return False
 
 
 def _expansionhunter_missing_required_sex(sample):
@@ -85,41 +77,20 @@ def _expansionhunter_missing_required_sex(sample):
     return raw_sex
 
 
-def _expansionhunter_warn_missing_required_sex(sample):
-    raw_sex = _expansionhunter_missing_required_sex(sample)
-    if raw_sex is None:
-        return
-    key = (sample, raw_sex)
-    if key in EXPANSIONHUNTER_SEX_GATE_WARNINGS:
-        return
-    EXPANSIONHUNTER_SEX_GATE_WARNINGS.add(key)
-    print(
-        "WARNING: ExpansionHunter skipped sample "
-        f"{sample} while building optional report targets because "
-        "BIOLOGICAL_SEX must be male/female or explicitly derivable from "
-        "BIOLOGICAL_SEX=na/empty; observed "
-        f"biological_sex={raw_sex!r}. Set BIOLOGICAL_SEX=male/female, use "
-        "BIOLOGICAL_SEX=na for coverage-derived sex, or mark true controls "
-        "with is_negative_control=true or sample_type=NTC.",
-        file=sys.stderr,
-    )
-
-
 def _expansionhunter_require_non_control_sample_sex(sample):
     raw_sex = _expansionhunter_missing_required_sex(sample)
     if raw_sex is None:
         return "ok"
     raise WorkflowError(
-        "ExpansionHunter requires BIOLOGICAL_SEX=male/female, or "
-        "BIOLOGICAL_SEX=na/empty so sex can be derived from chr1-22/chrX/chrY "
-        f"coverage proportions, before DAG construction for non-control sample "
-        f"{sample}; observed biological_sex={raw_sex!r}. BIOLOGICAL_SEX=unk "
-        "is intentionally not derived. Mark true NTC/negative controls with "
+        "ExpansionHunter requires BIOLOGICAL_SEX=male/female before DAG "
+        f"construction for non-control sample {sample}; observed "
+        f"biological_sex={raw_sex!r}. Missing, empty, na, and unk values are "
+        "not derived or guessed. Mark true NTC/negative controls with "
         "is_negative_control=true or sample_type=NTC to exclude them."
     )
 
 
-def _expansionhunter_target_paths(suffix, require=True, warn_on_skip=False):
+def _expansionhunter_target_paths(suffix, require=True):
     selected = _expansionhunter_selected_aligners()
     if not selected:
         if require:
@@ -144,10 +115,6 @@ def _expansionhunter_target_paths(suffix, require=True, warn_on_skip=False):
                         continue
                     if require:
                         _expansionhunter_require_non_control_sample_sex(sample)
-                    elif _expansionhunter_missing_required_sex(sample) is not None:
-                        if warn_on_skip:
-                            _expansionhunter_warn_missing_required_sex(sample)
-                        continue
                     paths.extend(
                         expand(
                             MDIR
@@ -164,10 +131,6 @@ def _expansionhunter_target_paths(suffix, require=True, warn_on_skip=False):
                     continue
                 if require:
                     _expansionhunter_require_non_control_sample_sex(sample)
-                elif _expansionhunter_missing_required_sex(sample) is not None:
-                    if warn_on_skip:
-                        _expansionhunter_warn_missing_required_sex(sample)
-                    continue
                 paths.extend(
                     expand(
                         MDIR
@@ -186,7 +149,7 @@ def _expansionhunter_target_paths(suffix, require=True, warn_on_skip=False):
 
 
 def _expansionhunter_report_targets():
-    return _expansionhunter_target_paths("tsv", require=False, warn_on_skip=True)
+    return _expansionhunter_target_paths("tsv", require=True)
 
 
 def expansionhunter_report_targets_available():

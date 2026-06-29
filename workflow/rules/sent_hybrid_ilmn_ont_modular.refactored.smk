@@ -336,7 +336,7 @@ rule sentdhiomr_pass1:
         threads=config['sentdhiomr']['threads_snv'],
         vcpu=config['sentdhiomr']['threads_snv'],
         mem_mb=config['sentdhiomr']['mem_mb_snv'],
-        time=config['sentdhiomr'].get('time_snv_long', 720),
+        time=config['sentdhiomr'].get('time_snv_long', 240),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
@@ -829,7 +829,7 @@ rule sentdhiomr_stage1:
         threads=config['sentdhiomr']['threads_snv'],
         vcpu=config['sentdhiomr']['threads_snv'],
         mem_mb=config['sentdhiomr']['mem_mb_snv'],
-        time=config['sentdhiomr'].get('time_snv_long', 720),
+        time=config['sentdhiomr'].get('time_snv_long', 240),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],
@@ -1097,18 +1097,24 @@ rule sentdhiomr_stage3:
         model=config["sentdhiomr"]["dna_scope_snv_model"],
         use_threads=config["sentdhiomr"]["use_threads_snv"],
         cluster_sample=ret_sample,
+        tmp_parent=config["sentdhiomr"]["stage3_tmp_parent"],
     shell:
         """
         set -euo pipefail
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/tmp/sentdhiomr_s3_${{timestamp}}_$$";
+        tmp_parent="{params.tmp_parent}";
+        test -d "$tmp_parent";
+        test -w "$tmp_parent";
+        export TMPDIR="${{tmp_parent%/}}/sentdhiomr_s3_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 
         echo "Starting Stage 3 at $(date)" >> {log}
+        echo "Stage 3 TMPDIR: $TMPDIR" >> {log}
+        df -h "$tmp_parent" >> {log} 2>&1
 
         if [ ! -s {input.bed} ]; then
             echo "WARNING: hybrid_stage2.bed is empty - no Stage 3 realignment regions; creating empty BAM" >> {log}
@@ -1461,7 +1467,7 @@ rule sentdhiomr_transfer:
         threads=config['sentdhiomr']['threads_snv_light'],
         vcpu=config['sentdhiomr']['threads_snv_light'],
         mem_mb=config['sentdhiomr']['mem_mb_snv_light'],
-        time=config['sentdhiomr'].get('time_snv_transfer', 180),
+        time=config['sentdhiomr'].get('time_snv_transfer', 240),
     params:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
@@ -2400,7 +2406,7 @@ rule sentdhiomr_mito_call:
         threads=config['sentdhiomr']['threads_medium'],
         vcpu=config['sentdhiomr']['threads_medium'],
         mem_mb=config['sentdhiomr']['mem_mb_medium'],
-        time=config['sentdhiomr'].get('time_mito', 720),
+        time=config['sentdhiomr'].get('time_mito', 240),
     params:
         mt_fasta=config["sentdhiomr"]["mt_fasta"],
         mt_shifted_fasta=config["sentdhiomr"]["mt_shifted_fasta"],

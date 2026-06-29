@@ -130,19 +130,19 @@ def test_sentdhiomr_stage1_handles_empty_merged_diff_beds() -> None:
     )
 
 
-def test_sentdhiomr_long_running_rules_declare_walltime() -> None:
+def test_sentdhiomr_long_running_rules_use_four_hour_walltime_cap() -> None:
     path = WORKFLOW_ROOT / "rules" / "sent_hybrid_ilmn_ont_modular.refactored.smk"
     text = path.read_text(encoding="utf-8")
 
     required_fragments = [
-        "time=config['sentdhiomr'].get('time_snv_long', 720)",
-        "time=config['sentdhiomr'].get('time_snv_transfer', 180)",
-        "time=config['sentdhiomr'].get('time_mito', 720)",
+        "time=config['sentdhiomr'].get('time_snv_long', 240)",
+        "time=config['sentdhiomr'].get('time_snv_transfer', 240)",
+        "time=config['sentdhiomr'].get('time_mito', 240)",
     ]
     missing = [fragment for fragment in required_fragments if fragment not in text]
 
     assert not missing, (
-        "Long-running sentdhiomr rules must not inherit the default 240 minute Slurm limit:\n"
+        "Long-running sentdhiomr rules must keep the 240 minute Slurm time cap:\n"
         + "\n".join(missing)
     )
 

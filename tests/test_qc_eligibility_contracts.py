@@ -71,7 +71,7 @@ def test_relatedness_uses_control_filtered_samples_and_declared_outputs() -> Non
         assert expected in relatedness
 
 
-def test_expansionhunter_filters_controls_derives_direct_na_sex_and_rejects_unk() -> None:
+def test_expansionhunter_filters_controls_and_requires_manifest_sex() -> None:
     expansionhunter = _read("workflow/rules/expansionhunter.smk")
     multiqc = _read("workflow/rules/multiqc_final_wgs.smk")
 
@@ -80,20 +80,15 @@ def test_expansionhunter_filters_controls_derives_direct_na_sex_and_rejects_unk(
         "return qc_eligible_sample_ids(SSAMPS)",
         "for sample in _expansionhunter_target_samples():",
         "def _expansionhunter_should_derive_sample_sex(sample):",
-        "def _expansionhunter_warn_missing_required_sex(sample):",
-        "raw_normalized in {\"\", \"na\"}",
-        "WARNING: ExpansionHunter skipped sample ",
-        "while building optional report targets",
-        "file=sys.stderr",
-        "_expansionhunter_target_paths(\"tsv\", require=False, warn_on_skip=True)",
+        "return False",
+        "_expansionhunter_target_paths(\"tsv\", require=True)",
         "_expansionhunter_require_non_control_sample_sex(sample)",
         "_expansionhunter_require_non_control_sample_sex(wildcards.sample)",
         'require_qc_eligible_sample(wildcards, "ExpansionHunter")',
         "VALID_REQUIRED_SAMPLE_SEXES",
-        "BIOLOGICAL_SEX=na/empty",
-        "coverage proportions",
-        "BIOLOGICAL_SEX=unk ",
-        "is intentionally not derived",
+        "BIOLOGICAL_SEX=male/female",
+        "not derived or guessed",
+        "Missing, empty, na, and unk values",
         "before DAG ",
         "construction for non-control sample",
         "is_negative_control=true or sample_type=NTC",

@@ -559,6 +559,7 @@ def collect_inventory(
     file_paths: list[Path],
     directory_paths: list[Path] | None = None,
     required_paths: list[Path] | None = None,
+    include_heavyweight: bool = True,
 ) -> list[dict[str, Any]]:
     required_paths = required_paths or []
     required_rel = {relative_to_root(path, analysis_root) for path in required_paths}
@@ -587,6 +588,12 @@ def collect_inventory(
     tag_context = build_manifest_tag_context(analysis_root)
     for rel_path, abs_path in sorted(candidates.items()):
         classification, parser_relevant = file_classification(rel_path)
+        if (
+            not include_heavyweight
+            and rel_path not in required_rel
+            and classification in HEAVYWEIGHT_DISCOVERY_CLASSIFICATIONS
+        ):
+            continue
         record = {
             "relative_path": rel_path,
             "size_bytes": abs_path.stat().st_size,
@@ -677,6 +684,7 @@ def build_evidence_manifest(
     output_manifest: Path,
     metadata: EvidenceMetadata,
     manifest_kind: str = "dayoa.analysis_evidence",
+    include_heavyweight: bool = True,
     warnings: list[dict[str, Any]] | None = None,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
@@ -687,6 +695,7 @@ def build_evidence_manifest(
         file_paths=file_paths,
         directory_paths=directory_paths or [],
         required_paths=required_paths,
+        include_heavyweight=include_heavyweight,
     )
     manifest = add_manifest_checksum(
         {
@@ -797,6 +806,7 @@ def build_multiqc_final_evidence_manifest(
         output_manifest=output_manifest,
         metadata=metadata,
         manifest_kind="dayoa.multiqc_final_evidence",
+        include_heavyweight=False,
         warnings=parse_stage_manifest_warnings(stage_manifest),
         generated_at=generated_at,
     )
