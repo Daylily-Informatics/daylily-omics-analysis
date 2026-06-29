@@ -1476,6 +1476,7 @@ rule sentdhiomr_transfer:
         pop_vcf=config["supporting_files"]["files"]["popvcf"]["name"],
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         cluster_sample=ret_sample,
+        tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"],
         regions=lambda wildcards: get_dchrm_day(type('obj', (object,), {'dchrm': wildcards.tchrm})()),
     shell:
         """
@@ -1484,8 +1485,18 @@ rule sentdhiomr_transfer:
 
         echo "Starting annotation transfer shard {wildcards.tchrm} (regions: {params.regions}) at $(date)" >> {log}
 
-        TMPDIR=$(dirname {output.vcf})
+        output_dir=$(dirname {output.vcf})
+        mkdir -p "$output_dir"
+
+        tmp_parent="{params.tmp_parent}"
+        test -n "$tmp_parent"
+        mkdir -p "$tmp_parent"
+        test -w "$tmp_parent"
+
+        timestamp=$(date +%Y%m%d%H%M%S)
+        TMPDIR="$tmp_parent/sentdhiomr_transfer_{wildcards.dchrm}_{wildcards.tchrm}_${{timestamp}}_$$"
         mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
 
         # Reheader anno_vcf to use cluster_sample name only when required.
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)

@@ -827,6 +827,7 @@ sentdhiomr:
   sr_markdup_mem_mb: 64000
   sr_align_tmp_parent: /scratch
   stage3_tmp_parent: /fsx/scratch
+  transfer_tmp_parent: /scratch
   segdup_threads: 192
   segdup_mem_mb: 250000
   max_mem: 140G
