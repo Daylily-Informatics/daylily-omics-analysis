@@ -841,6 +841,9 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert "ERROR: VEP cache not found: {input.vep_cache_dir}" in vep
     assert "--fork {threads}" in vep
     assert "rule=vep_chromosome" in vep
+    input_rule = vep[vep.index("rule vep_chromosome_input:") : vep.index("rule vep_chromosome:")]
+    assert "bcftools index --nrecords {output.chunk_vcfgz} > {output.record_count}" in input_rule
+    assert "bcftools view -H {output.chunk_vcfgz} | wc -l" not in input_rule
     assert "threads: config[\"vep\"][\"threads\"]" in vep
     assert 'mem_mb=config["vep"].get("mem_mb", 50000)' in vep
     assert vep.count("cluster_sample=ret_sample") >= 3

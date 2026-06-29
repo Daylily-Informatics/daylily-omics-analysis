@@ -117,7 +117,7 @@ rule vep_chromosome_input:
             bcftools view -h {input.vcfgz} | bgzip -c > {output.chunk_vcfgz}
         fi
         tabix -f -p vcf {output.chunk_vcfgz} >> {log} 2>&1
-        bcftools view -H {output.chunk_vcfgz} | wc -l | awk '{{print $1}}' > {output.record_count}
+        bcftools index --nrecords {output.chunk_vcfgz} > {output.record_count}
         test -s {output.chunk_vcfgz}
         test -s {output.chunk_tbi}
         """
