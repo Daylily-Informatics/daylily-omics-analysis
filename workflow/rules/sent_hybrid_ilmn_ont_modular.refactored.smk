@@ -1624,13 +1624,37 @@ rule sentdhiomr_transfer_merge:
         mem_mb=config['sentdhiomr']['mem_mb_snv_light'],
     params:
         cluster_sample=ret_sample,
+        tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"],
     shell:
         """
         set -euo pipefail
         echo "Merging transfer shards at $(date)" >> {log}
 
-        bcftools concat --threads {threads} -a -d all -O z -o {output.vcf} {input.shards} >> {log} 2>&1
-        bcftools index --threads {threads} -t {output.vcf} >> {log} 2>&1
+        output_dir=$(dirname {output.vcf})
+        mkdir -p "$output_dir"
+
+        tmp_parent="{params.tmp_parent}"
+        test -n "$tmp_parent"
+        mkdir -p "$tmp_parent"
+        test -w "$tmp_parent"
+
+        timestamp=$(date +%Y%m%d%H%M%S)
+        TMPDIR="$tmp_parent/sentdhiomr_transfer_merge_{wildcards.dchrm}_${{timestamp}}_$$"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+
+        tmp_vcf="$TMPDIR/combined_tmp_transfer.vcf.gz"
+
+        echo "Transfer merge TMPDIR: $TMPDIR" >> {log}
+        bcftools concat --threads {threads} -a -d all -O z -o "$tmp_vcf" {input.shards} >> {log} 2>&1
+        bcftools index --threads {threads} -t "$tmp_vcf" >> {log} 2>&1
+
+        test -s "$tmp_vcf"
+        test -s "$tmp_vcf.tbi"
+        cp "$tmp_vcf" {output.vcf}
+        cp "$tmp_vcf.tbi" {output.tbi}
+        test -s {output.vcf}
+        test -s {output.tbi}
 
         echo "Transfer merge completed at $(date)" >> {log}
         """

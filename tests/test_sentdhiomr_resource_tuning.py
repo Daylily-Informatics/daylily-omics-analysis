@@ -122,3 +122,17 @@ def test_sentdhiomr_transfer_uses_configured_tmp_parent() -> None:
     assert 'test -w "$tmp_parent"' in transfer
     assert 'sentdhiomr_transfer_{wildcards.dchrm}_{wildcards.tchrm}_${{timestamp}}_$$' in transfer
     assert "TMPDIR=$(dirname {output.vcf})" not in transfer
+
+
+def test_sentdhiomr_transfer_merge_uses_configured_tmp_parent() -> None:
+    text = SENTDHIOMR_RULES.read_text(encoding="utf-8")
+    transfer_merge = text.split("rule sentdhiomr_transfer_merge:", 1)[1].split(
+        "rule sentdhiomr_model_apply:", 1
+    )[0]
+
+    assert 'tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"]' in transfer_merge
+    assert 'tmp_parent="{params.tmp_parent}"' in transfer_merge
+    assert 'test -w "$tmp_parent"' in transfer_merge
+    assert 'sentdhiomr_transfer_merge_{wildcards.dchrm}_${{timestamp}}_$$' in transfer_merge
+    assert 'bcftools concat --threads {threads} -a -d all -O z -o "$tmp_vcf"' in transfer_merge
+    assert "cp \"$tmp_vcf\" {output.vcf}" in transfer_merge
