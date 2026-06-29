@@ -925,6 +925,7 @@ sentdhiomr:
     mem_mb_snv_light: 50000
     sr_markdup_threads: 4
     sr_markdup_mem_mb: 50000
+    sr_align_tmp_parent: "/tmp"
     stage3_tmp_parent: "/tmp"
     segdup_threads: 2
     segdup_mem_mb: 50000

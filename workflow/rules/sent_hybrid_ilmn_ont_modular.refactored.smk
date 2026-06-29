@@ -216,13 +216,17 @@ rule sentdhiomr_sr_align:
         sort_threads=config['sentieon']['sort_threads'],
         cluster_sample=ret_sample,
         trim_head=get_ilmn_trim_head,
+        tmp_parent=config["sentdhiomr"]["sr_align_tmp_parent"],
     shell:
         """
         set -euo pipefail
         export PATH=$PATH:/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/
 
         timestamp=$(date +%Y%m%d%H%M%S);
-        export TMPDIR="/tmp/sentdhiomr_sr_${{timestamp}}_$$";
+        tmp_parent="{params.tmp_parent}";
+        test -d "$tmp_parent";
+        test -w "$tmp_parent";
+        export TMPDIR="${{tmp_parent%/}}/sentdhiomr_sr_${{timestamp}}_$$";
         export SENTIEON_TMPDIR="$TMPDIR";
         mkdir -p "$TMPDIR" $(dirname {output.bam});
         if [ ! -d "$TMPDIR" ]; then
@@ -233,7 +237,7 @@ rule sentdhiomr_sr_align:
 
         echo "TMPDIR created: $TMPDIR" >> {log} 2>&1;
         ls -ld "$TMPDIR" >> {log} 2>&1;
-        df -h /tmp >> {log} 2>&1;
+        df -h "$tmp_parent" >> {log} 2>&1;
         export APPTAINER_HOME="$TMPDIR";
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT;
 

@@ -38,6 +38,7 @@ def test_slurm_sentdhiomr_conservative_tuning_values() -> None:
 
     assert sentdhiomr["threads"] == 192
     assert sentdhiomr["mem_mb"] == 300000
+    assert sentdhiomr["sr_align_tmp_parent"] == "/scratch"
     assert sentdhiomr["stage3_tmp_parent"] == "/fsx/scratch"
 
 
@@ -46,6 +47,7 @@ def test_local_sentdhiomr_declares_tuning_keys_for_parseability() -> None:
 
     missing = sorted(set(EXPECTED_SLURM_TUNING) - set(sentdhiomr))
     assert not missing
+    assert sentdhiomr["sr_align_tmp_parent"] == "/tmp"
     assert sentdhiomr["stage3_tmp_parent"] == "/tmp"
 
 
@@ -92,3 +94,16 @@ def test_sentdhiomr_stage3_uses_configured_tmp_parent() -> None:
     assert 'tmp_parent="{params.tmp_parent}"' in stage3
     assert 'test -w "$tmp_parent"' in stage3
     assert 'sentdhiomr_s3_${{timestamp}}_$$' in stage3
+
+
+def test_sentdhiomr_sr_align_uses_configured_tmp_parent() -> None:
+    text = SENTDHIOMR_RULES.read_text(encoding="utf-8")
+    sr_align = text.split("rule sentdhiomr_sr_align:", 1)[1].split(
+        "rule sentdhiomr_pass1:", 1
+    )[0]
+
+    assert 'tmp_parent=config["sentdhiomr"]["sr_align_tmp_parent"]' in sr_align
+    assert 'tmp_parent="{params.tmp_parent}"' in sr_align
+    assert 'test -w "$tmp_parent"' in sr_align
+    assert 'sentdhiomr_sr_${{timestamp}}_$$' in sr_align
+    assert 'export TMPDIR="/tmp/sentdhiomr_sr_' not in sr_align
