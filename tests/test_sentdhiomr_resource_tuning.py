@@ -43,7 +43,7 @@ def test_slurm_sentdhiomr_conservative_tuning_values() -> None:
     assert sentdhiomr["mem_mb"] == 300000
     assert sentdhiomr["sr_align_tmp_parent"] == "/scratch"
     assert sentdhiomr["stage3_tmp_parent"] == "/fsx/scratch"
-    assert sentdhiomr["transfer_tmp_parent"] == "/scratch"
+    assert sentdhiomr["transfer_tmp_parent"] == "/tmp"
 
 
 def test_local_sentdhiomr_declares_tuning_keys_for_parseability() -> None:
