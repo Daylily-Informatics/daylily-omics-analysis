@@ -2283,6 +2283,12 @@ rule sentdhiomr_call_segdup_gene:
         lr_model=config["sentdhiomr"]["segdup_lr_model"],
         outdir=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}",
         caller_yaml=lambda wildcards: f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/segdup/sentdhiomr/results/{wildcards.gene}/{wildcards.sample}.yaml",
+        sample_sex=lambda wildcards: sample_sex_for_required_tool(
+            wildcards, "Sentieon HiOMR segdup"
+        ),
+        sex_assumption_log=lambda wildcards: sample_sex_assumption_log(
+            wildcards, "Sentieon HiOMR segdup"
+        ),
         cluster_sample=ret_sample,
     shell:
         """
@@ -2293,6 +2299,9 @@ rule sentdhiomr_call_segdup_gene:
         mkdir -p {params.outdir}
         rm -f {output.done} {output.vcf} {output.tbi} {output.yaml} {params.caller_yaml}
         echo "Starting segdup-caller for gene {wildcards.gene} at $(date)" >> {log}
+        if [ -n {params.sex_assumption_log:q} ]; then
+            printf '%s' {params.sex_assumption_log:q} >> {log}
+        fi
 
         if ! command -v segdup-caller &>/dev/null; then
             echo "ERROR: segdup-caller not found in pinned conda env" >> {log}
@@ -2346,6 +2355,7 @@ INNERPY
             --reference {params.huref} \
             --genes {wildcards.gene} \
             --sample_name "{params.cluster_sample}" \
+            --sex {params.sample_sex:q} \
             --outdir {params.outdir} \
             --keep_temp \
             --threads {threads} \
