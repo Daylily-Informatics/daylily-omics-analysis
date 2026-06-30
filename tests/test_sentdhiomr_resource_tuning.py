@@ -43,7 +43,7 @@ def test_slurm_sentdhiomr_conservative_tuning_values() -> None:
     assert sentdhiomr["mem_mb"] == 300000
     assert sentdhiomr["sr_align_tmp_parent"] == "/scratch"
     assert sentdhiomr["stage3_tmp_parent"] == "/fsx/scratch"
-    assert sentdhiomr["transfer_tmp_parent"] == "/tmp"
+    assert sentdhiomr["transfer_tmp_parent"] == "/fsx/scratch"
 
 
 def test_local_sentdhiomr_declares_tuning_keys_for_parseability() -> None:
@@ -87,6 +87,9 @@ def test_sentdhiomr_rules_use_tuned_resources_without_tuning_sr_align_or_sv() ->
     )[0]
     assert "threads: config['sentdhiomr']['segdup_threads']" in segdup_block
     assert "mem_mb=config['sentdhiomr']['segdup_mem_mb']" in segdup_block
+    assert "sample_sex_for_required_tool(" in segdup_block
+    assert "sample_sex_assumption_log(" in segdup_block
+    assert "--sex {params.sample_sex:q}" in segdup_block
 
 
 def test_sentdhiomr_stage3_uses_configured_tmp_parent() -> None:
