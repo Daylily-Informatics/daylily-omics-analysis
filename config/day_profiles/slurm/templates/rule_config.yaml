@@ -244,7 +244,7 @@ doppelmark:
   mbuffer_mem: 1G
   partition: i384nvme,i192nvme
   mem_mb: 800000
-  dynamic_mem_mb: true
+  dynamic_mem_mb: "true"
   dynamic_mem_floor_mb: 512000
   dynamic_mem_per_gib_mb: 6144
   dynamic_mem_cap_mb: 800000

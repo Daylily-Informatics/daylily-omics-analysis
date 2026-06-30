@@ -468,11 +468,11 @@ def expand_qc_pairs(pattern, sample_ids=None, pairs=None):
     ]
 
 
-def expand_qc_alignment(pattern, sample_ids=None):
+def expand_qc_alignment(pattern, sample_ids=None, **_contract_markers):
     return expand_qc_pairs(pattern, sample_ids=sample_ids, pairs=qc_alignment_pairs())
 
 
-def expand_qc_contamination(pattern, sample_ids=None):
+def expand_qc_contamination(pattern, sample_ids=None, **_contract_markers):
     return expand_qc_pairs(pattern, sample_ids=sample_ids, pairs=qc_contamination_pairs())
 
 

@@ -6,6 +6,8 @@ rule multiqc_cov_aln:  # TARGET : Run Alignment and Generate Alignment and Cover
         f"{MDIR}other_reports/norm_cov_evenness_combo_mqc.tsv",
         expand_qc_alignment(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/cov_calcs_complete.done",
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
         ),
     output:
         html=f"{MDIRreportsd}ALNandSeqQC_{RU[0]}_{EX[0]}.multiqc.html",

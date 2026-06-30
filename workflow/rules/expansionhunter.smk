@@ -249,7 +249,7 @@ rule expansionhunter_derive_biological_sex:
     resources:
         threads=min(2, EXPANSIONHUNTER_CFG["threads"]),
         vcpu=min(2, EXPANSIONHUNTER_CFG["threads"]),
-        mem_mb=8000,
+        mem_mb=50000,
         partition=EXPANSIONHUNTER_CFG["partition"],
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.expansionhunter_derive_biological_sex.bench.tsv"

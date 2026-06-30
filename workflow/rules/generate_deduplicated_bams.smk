@@ -11,23 +11,25 @@ localrules:
 
 rule produce_deduplicated_crams:  # TARGET : Generate CRAMs with all configured dedupers
     input:
+        # qc_aligner_deduper_pairs scopes generic CRAM QC work to QC_CRAM_ALIGNERS.
         expand_qc_pairs(
             MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
             pairs=qc_aligner_deduper_pairs(DDUP),
         ),
-    output:
         expand_qc_pairs(
             MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.ddupgen.complete",
             sample_ids=SAMPS,
             pairs=qc_aligner_deduper_pairs(DDUP),
         )
+    output:
+        done=MDIR + "logs/produce_deduplicated_crams.done"
     log:
         MDIR + "logs/produce_deduplicated_crams.log"
     benchmark:
         "logs/benchmarks/produce_deduplicated_crams.bench.tsv"
     threads: 1
     shell:
-        "touch {output};"
+        "mkdir -p $(dirname {output.done:q}); touch {output.done:q};"
 
 
 rule dedup_doppelmark:  # DEPRECATED TARGET: use produce_dmd_dedup_cram

@@ -319,7 +319,7 @@ doppelmark:
     partition: "i8"
     clip_padding: 600000
     mem_mb: 50000
-    dynamic_mem_mb: false
+    dynamic_mem_mb: "false"
     dynamic_mem_floor_mb: 512000
     dynamic_mem_per_gib_mb: 6144
     dynamic_mem_cap_mb: 800000

@@ -81,5 +81,9 @@ rule produce_gauchian:  # TARGET : Produce Gauchian results
         )
     output:
         "./logs/gauchian.done"
+    log:
+        "./logs/gauchian.log"
+    benchmark:
+        "logs/benchmarks/produce_gauchian.bench.tsv"
     shell:
-        "touch {output}"
+        "mkdir -p $(dirname {output:q}) $(dirname {log:q}); touch {log:q}; touch {output:q}"

@@ -207,6 +207,7 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
         expand_qc_contamination(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/site_mix/{sample}.{alnr}.{ddup}.site_mix.tsv",
             sample_ids=_site_mix_qc_samples(),
+            ddup=qc_contamination_dedupers(),
         ),
         MDIR + "other_reports/site_mix_contam_mqc.tsv",
     log:

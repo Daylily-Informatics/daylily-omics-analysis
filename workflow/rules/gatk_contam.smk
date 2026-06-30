@@ -77,6 +77,7 @@ rule produce_gatk_contam_estimate:  # TARGET : Produce GATK contamination estima
     input:
         expand_qc_contamination(
             MDIR + "{sample}/align/{alnr}/{ddup}/alignqc/contam/gatk/{sample}.{alnr}.{ddup}.gatk.tsv",
+            ddup=qc_contamination_dedupers(),
         )
     output:
         done=MDIR + "logs/produce_gatk_contam_estimate.done"

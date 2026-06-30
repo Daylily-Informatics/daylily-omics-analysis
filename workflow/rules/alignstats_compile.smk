@@ -13,7 +13,9 @@ rule alignstats_gather:
     input:
         expand_qc_alignment(
             MDIR
-            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv"
+            + "{sample}/align/{alnr}/{ddup}/alignqc/alignstats/{sample}.{alnr}.{ddup}.alignstats.tsv",
+            alnr=QC_CRAM_ALIGNERS,
+            ddup=qc_alignment_dedupers(),
         ),
     output:
         f"{MDIR}other_reports/alignstats_summary_gather.done",
