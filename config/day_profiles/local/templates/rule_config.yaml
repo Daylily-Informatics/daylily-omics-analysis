@@ -923,6 +923,9 @@ sentdhiomr:
     threads_snv_light: 1
     use_threads_snv_light: 1
     mem_mb_snv_light: 50000
+    time_snv_stage3: 240
+    time_snv_transfer: 240
+    time_snv_transfer_merge: 240
     sr_markdup_threads: 4
     sr_markdup_mem_mb: 50000
     sr_align_tmp_parent: "/tmp"

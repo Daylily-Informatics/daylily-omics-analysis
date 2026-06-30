@@ -1096,6 +1096,7 @@ rule sentdhiomr_stage3:
         threads=config['sentdhiomr']['threads_snv'],
         vcpu=config['sentdhiomr']['threads_snv'],
         mem_mb=config['sentdhiomr']['mem_mb_snv'],
+        time=config['sentdhiomr'].get('time_snv_stage3', 720),
     params:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         model=config["sentdhiomr"]["dna_scope_snv_model"],

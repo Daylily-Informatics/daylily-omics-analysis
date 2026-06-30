@@ -19,6 +19,9 @@ EXPECTED_SLURM_TUNING = {
     "threads_snv_light": 4,
     "use_threads_snv_light": 3,
     "mem_mb_snv_light": 50000,
+    "time_snv_stage3": 720,
+    "time_snv_transfer": 720,
+    "time_snv_transfer_merge": 720,
     "sr_markdup_threads": 64,
     "sr_markdup_mem_mb": 64000,
     "segdup_threads": 192,
@@ -93,6 +96,7 @@ def test_sentdhiomr_stage3_uses_configured_tmp_parent() -> None:
     )[0]
 
     assert 'tmp_parent=config["sentdhiomr"]["stage3_tmp_parent"]' in stage3
+    assert "time=config['sentdhiomr'].get('time_snv_stage3', 720)" in stage3
     assert 'tmp_parent="{params.tmp_parent}"' in stage3
     assert 'test -w "$tmp_parent"' in stage3
     assert 'sentdhiomr_s3_${{timestamp}}_$$' in stage3

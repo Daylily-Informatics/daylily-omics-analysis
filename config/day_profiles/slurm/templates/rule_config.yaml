@@ -823,6 +823,9 @@ sentdhiomr:
   threads_snv_light: 4
   use_threads_snv_light: 3
   mem_mb_snv_light: 50000
+  time_snv_stage3: 720
+  time_snv_transfer: 720
+  time_snv_transfer_merge: 720
   sr_markdup_threads: 64
   sr_markdup_mem_mb: 64000
   sr_align_tmp_parent: /scratch
