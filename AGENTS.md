@@ -36,6 +36,15 @@ Always `conda activate DAY-EC`, little is done in this repo from a mac, but most
   - RUN: `dy-r help` to see the available targets, and the init output should tell you how to run the common workflow. Important flags: -n for dry run, -p to print helpful info to stdout, -j for job limit (local should be 1 or 2, slurm can be 300-500), -k to keep going if a job fails... the dy-r cli command actually composes a complex snakemake command given these user command line specified ones. Run `dy-r --help` for all of them.
 - For future work on replacing the `dy-*` alias model with shell functions or executable entrypoints, read `docs/potential_future_improvements.md` first.
 
+# Analysis-Root Agent Locking
+
+- When this repo is running from `/fsx/analysis_results/**`, `dy-r` uses `dyec analysis` to coordinate between Codex and non-Codex agents.
+- Dry-runs and read/status checks log a visit and do not require write-lock ownership.
+- Live `dy-r` workflow execution requires the current agent to own `<analysis_root>/.dayoa_agent/write.lock/`.
+- `dy-r --unlock` requires the current agent to own a lock; do not run unlock through raw Snakemake.
+- Before live workflow work, set a stable `DAYOA_AGENT_ID`, `DAYOA_AGENT_KIND`, `DAYOA_HUMAN_REQUESTOR`, `DAYOA_TMUX_SESSION`, and `DAYOA_LEDGER_PATH` in the tmux pane, then acquire the lock with `dyec analysis lock acquire --analysis-root <root> --operation write --intent "<reason>"`.
+- Use `dyec analysis guard --analysis-root <root> --operation <write|unlock|delete|kill> -- <command...>` for protected file/job actions. Do not take over a foreign owner without the explicit token-based double-approval flow.
+
 ## Headnode Persistent tmux Pipeline Launch Spec
 Use this pattern when a user asks an agent to launch Daylily workflow commands on an AWS ParallelCluster headnode and leave the run inspectable after the agent disconnects.
 

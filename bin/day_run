@@ -95,6 +95,7 @@ _has_aligners_config=false
 _has_snv_callers_config=false
 _has_sv_callers_config=false
 _is_dry_run=false
+_is_unlock=false
 _sentieon_start_jitter=false
 _sentieon_start_jitter_jobs=""
 _isolated_conda_prefix=false
@@ -246,6 +247,9 @@ for _arg in "${_dy_forward_args[@]}"; do
     case "$_arg" in
         -n|--dry-run|--dryrun)  _is_dry_run=true  ;;
     esac
+    case "$_arg" in
+        --unlock)  _is_unlock=true  ;;
+    esac
 done
 
 # Export auto-detected config as environment variables for common.smk.
@@ -279,8 +283,47 @@ snakecmd_init=("snakemake" "--profile=$DAY_PROFILE_DIR" "${_dy_forward_args[@]}"
 
 snakecmd="${snakecmd_init[@]//\-\-keep-temp/\-\-notemp}"
 
+_dayoa_analysis_root="$DAY_ROOT"
+if [[ "$(basename "$DAY_ROOT")" == "daylily-omics-analysis" ]]; then
+    _dayoa_analysis_root="$(dirname "$DAY_ROOT")"
+fi
+
+_dayoa_guard_if_analysis_results() {
+    local _operation="$1"
+    local _intent="$2"
+    if [[ "$_dayoa_analysis_root" != *"/analysis_results/"* ]]; then
+        return 0
+    fi
+    if ! command -v dyec >/dev/null 2>&1; then
+        colr "ERROR: dy-r in analysis_results requires dyec analysis guard for agent lock enforcement." "$DY_WT0" "$DY_WB0" "$DY_WS1" 1>&2
+        exit 66
+    fi
+    if [[ "$_operation" == "read" ]]; then
+        dyec analysis visit \
+            --analysis-root "$_dayoa_analysis_root" \
+            --mode read \
+            --intent "$_intent" \
+            --note "dy-r read/dry-run visit"
+    else
+        dyec analysis guard \
+            --analysis-root "$_dayoa_analysis_root" \
+            --operation "$_operation" \
+            --intent "$_intent"
+    fi
+}
+
+if [[ "$_is_unlock" == "true" ]]; then
+    _dayoa_guard_if_analysis_results "unlock" "dy-r --unlock: ${snakecmd[*]}"
+elif [[ "$_is_dry_run" == "true" ]]; then
+    _dayoa_guard_if_analysis_results "read" "dy-r dry-run/status: ${snakecmd[*]}"
+else
+    _dayoa_guard_if_analysis_results "write" "dy-r live workflow: ${snakecmd[*]}"
+fi
+
 # This ensures the snakedir is unlocked after a crash or successful exit 0
-trap "(snakemake --unlock --profile $DAY_PROFILE_DIR  &>> ./unlock_fails.log & ) & " EXIT
+if [[ "$_is_dry_run" != "true" && "$_is_unlock" != "true" ]]; then
+    trap "(snakemake --unlock --profile $DAY_PROFILE_DIR  &>> ./unlock_fails.log & ) & " EXIT
+fi
 
 # Log the command
 cmd_log="$PWD/day_cmd.log"

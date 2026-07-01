@@ -142,6 +142,18 @@ def test_day_run_preserves_nonzero_workflow_exit_after_failure_marker() -> None:
     assert "exit $ret_code" in day_run
 
 
+def test_day_run_uses_analysis_root_agent_guard_for_protected_operations() -> None:
+    day_run = _read("bin/day_run")
+
+    assert "_is_unlock=false" in day_run
+    assert "--unlock)  _is_unlock=true" in day_run
+    assert "_dayoa_guard_if_analysis_results \"unlock\"" in day_run
+    assert "_dayoa_guard_if_analysis_results \"write\"" in day_run
+    assert "dyec analysis guard" in day_run
+    assert "dyec analysis visit" in day_run
+    assert 'if [[ "$_is_dry_run" != "true" && "$_is_unlock" != "true" ]]; then' in day_run
+
+
 def test_day_run_failed_snakemake_writes_marker_and_exits_nonzero(
     tmp_path: Path,
 ) -> None:
