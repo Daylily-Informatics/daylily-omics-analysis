@@ -157,7 +157,7 @@ rule lofreq2_sort_index_chunk_vcf:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.{lfqchrm}.lofreq2_sort_index_chunk_vcf.bench.tsv"
     resources:
-        vcpu=4,
+        vcpu=config['lofreq2']['threads'],
         threads=config['lofreq2']['threads'],
         partition=config['lofreq2']['partition'],
     params:

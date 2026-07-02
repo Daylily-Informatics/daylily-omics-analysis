@@ -1470,7 +1470,7 @@ rule sentdhiomr_transfer:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.transfer.{tchrm}.bench.tsv"
     resources:
-        partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128,i192mem'),
+        partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128'),
         threads=config['sentdhiomr']['threads_snv_light'],
         vcpu=config['sentdhiomr']['threads_snv_light'],
         mem_mb=config['sentdhiomr']['mem_mb_snv_light'],
@@ -1621,7 +1621,7 @@ rule sentdhiomr_transfer_merge:
     benchmark:
         MDIR + "{sample}/benchmarks/{sample}.{alnr}.{ddup}.sentdhiomr.{dchrm}.transfer_merge.bench.tsv"
     resources:
-        partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128,i192mem'),
+        partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128'),
         threads=config['sentdhiomr']['threads_snv_light'],
         vcpu=config['sentdhiomr']['threads_snv_light'],
         mem_mb=config['sentdhiomr']['mem_mb_snv_light'],

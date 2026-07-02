@@ -22,7 +22,7 @@ EXPECTED_SLURM_TUNING = {
     "time_snv_stage3": 720,
     "time_snv_transfer": 720,
     "time_snv_transfer_merge": 720,
-    "transfer_partition": "i192,i128,i192mem",
+    "transfer_partition": "i192,i128",
     "sr_markdup_threads": 64,
     "sr_markdup_mem_mb": 64000,
     "segdup_threads": 48,
@@ -127,7 +127,7 @@ def test_sentdhiomr_transfer_uses_configured_tmp_parent() -> None:
 
     assert 'tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"]' in transfer
     assert (
-        "partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128,i192mem')"
+        "partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128')"
         in transfer
     )
     assert 'tmp_parent="{params.tmp_parent}"' in transfer
@@ -144,7 +144,7 @@ def test_sentdhiomr_transfer_merge_uses_configured_tmp_parent() -> None:
 
     assert 'tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"]' in transfer_merge
     assert (
-        "partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128,i192mem')"
+        "partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128')"
         in transfer_merge
     )
     assert 'tmp_parent="{params.tmp_parent}"' in transfer_merge

@@ -826,7 +826,7 @@ sentdhiomr:
   time_snv_stage3: 720
   time_snv_transfer: 720
   time_snv_transfer_merge: 720
-  transfer_partition: i192,i128,i192mem
+  transfer_partition: i192,i128
   sr_markdup_threads: 64
   sr_markdup_mem_mb: 64000
   sr_align_tmp_parent: /scratch
@@ -1313,7 +1313,7 @@ gatk_contam:
   threads: 24
   mem_mb: 80000
   java_heap_mb: 64000
-  exclusive: --exclusive
+  exclusive: ''
   ld_preload: ' '
   partition: i192,i128
 site_mix_contam:

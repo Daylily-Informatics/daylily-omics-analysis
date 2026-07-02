@@ -72,6 +72,13 @@ def get_clair3_chrom(wildcards):
 
     return ret_mod_chrm(ret_str)
 
+
+def get_clair3_threads(wildcards):
+    if get_instrument(wildcards) in ["na", None, "None"]:
+        return config["clair3"]["threads"]
+    return config["clair3"]["ont_threads"]
+
+
 rule clair3:
     input:
         cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
@@ -82,13 +89,13 @@ rule clair3:
         + "{sample}/align/{alnr}/{ddup}/snv/clair3/vcfs/{clairchrm}/{sample}.{alnr}.{ddup}.clair3.{clairchrm}.snv.vcf.gz"
     log:
         MDIR + "{sample}/align/{alnr}/{ddup}/snv/clair3/log/{sample}.{alnr}.{ddup}.clair3.{clairchrm}.snv.log",
-    threads: config['clair3']['threads'] if get_instrument in ['na',None,'None'] else config['clair3']['ont_threads']
+    threads: get_clair3_threads
     container:
         "docker://hkubal/clair3:v1.1.0"
     priority: 45
     resources:
-        vcpu=config['clair3']['threads'],
-        threads=config['clair3']['threads'],
+        vcpu=get_clair3_threads,
+        threads=get_clair3_threads,
         partition=derive_partition_order(config['clair3']['partition']),
         mem_mb=config['clair3']['mem_mb'],
     benchmark:
@@ -106,7 +113,7 @@ rule clair3:
         samview_threads=config['clair3']['samview_threads'],
         mem_mb=config['clair3']['mem_mb'],
         numa=config['clair3']['numa'],
-        clair3_threads=config['clair3']['clair3_threads'],  
+        clair3_threads=get_clair3_threads,
         cpre="" if "b37" == config['genome_build'] else "chr",
         mito_code="MT" if "b37" == config['genome_build'] else "M",
         model_path=get_clair_model_path,

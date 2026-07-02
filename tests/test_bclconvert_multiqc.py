@@ -121,7 +121,7 @@ def test_bclconvert_rule_exports_metrics_to_genome_build_multiqc_dir() -> None:
     assert '"BarcodeMismatchesIndex2": "barcode_mismatches_index2"' in rule
     assert "BCL_OUTPUT_LEGACY_STATS" in rule
     assert "BCL_NUM_UNKNOWN_BARCODES_REPORTED" in rule
-    assert 'BCL_EXCLUSIVE = str(BCLCFG.get("exclusive", "--exclusive") or "")' in rule
+    assert 'BCL_EXCLUSIVE = str(BCLCFG.get("exclusive", "") or "")' in rule
     assert 'force_arg="-f" if BCL_FORCE else "__dayoa_no_force__"' in rule
     assert "{params.force_arg:q} {threads:q} {log:q}" in rule
     assert "{params.force:q} {threads:q} {log:q}" not in rule

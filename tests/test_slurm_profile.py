@@ -108,6 +108,61 @@ def test_slurm_profile_routes_job_stdout_and_stderr_to_logs() -> None:
     )
 
 
+def test_slurm_profile_logs_alert_when_rule_requests_exclusive() -> None:
+    profile = yaml.safe_load(
+        (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    resources = SimpleNamespace(
+        time=60,
+        partition="i192",
+        mem_mb=MEMORY_FLOOR_MB,
+        distribution="block",
+        constraint="",
+        exclude="",
+        include="",
+        exclusive="--exclusive",
+    )
+    params = SimpleNamespace(cluster_sample="HG002")
+
+    rendered = profile["cluster"].format(
+        rule="seqfu",
+        params=params,
+        resources=resources,
+        threads=4,
+        jobid=12345,
+    )
+
+    assert "ALERT WARNING: DayOA Slurm submission is using exclusive allocation" in rendered
+    assert "logs/slurm/seqfu/seqfu.HG002.12345.out" in rendered
+    assert "logs/slurm/seqfu/seqfu.HG002.12345.err" in rendered
+    assert "--exclusive" in rendered
+
+
+def test_active_rules_do_not_default_to_exclusive_allocation() -> None:
+    hits: list[str] = []
+    patterns = [
+        re.compile(r"\.get\(\s*['\"]exclusive['\"]\s*,\s*['\"]--exclusive['\"]"),
+        re.compile(r"exclusive\s*=\s*['\"]--exclusive['\"]"),
+        re.compile(r"exclusive:\s*--exclusive"),
+    ]
+
+    for path in sorted(ACTIVE_RULES_DIR.glob("*.smk")):
+        text = path.read_text(encoding="utf-8")
+        for line_no, line in enumerate(text.splitlines(), 1):
+            if any(pattern.search(line) for pattern in patterns):
+                hits.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {line.strip()}")
+
+    for path in (SLURM_RULE_CONFIG, LOCAL_RULE_CONFIG):
+        text = path.read_text(encoding="utf-8")
+        for line_no, line in enumerate(text.splitlines(), 1):
+            if re.search(r"exclusive:\s*--exclusive", line):
+                hits.append(f"{path.relative_to(REPO_ROOT)}:{line_no}: {line.strip()}")
+
+    assert not hits
+
+
 def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
     profile = yaml.safe_load(
         (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(
@@ -199,6 +254,59 @@ def test_active_rule_files_do_not_hardcode_retired_partitions() -> None:
         for retired in RETIRED_PARTITIONS:
             if retired in text:
                 hits.append(f"{path.name}: {retired}")
+
+    assert not hits
+
+
+def _strip_python_comment(value: str) -> str:
+    output: list[str] = []
+    quote: str | None = None
+    for index, char in enumerate(value):
+        if quote:
+            output.append(char)
+            if char == quote and (index == 0 or value[index - 1] != "\\"):
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            output.append(char)
+            continue
+        if char == "#":
+            break
+        output.append(char)
+    return "".join(output).strip().rstrip(",")
+
+
+def _normalized_rule_expression(value: str) -> str:
+    stripped = _strip_python_comment(value)
+    return re.sub(r"\s+", "", stripped.replace('"', "'"))
+
+
+def test_active_rules_keep_vcpu_resources_aligned_with_threads() -> None:
+    rule_re = re.compile(r"(?m)^rule\s+([A-Za-z0-9_]+)\s*:")
+    hits: list[str] = []
+
+    for path in sorted(ACTIVE_RULES_DIR.glob("*.smk")):
+        text = path.read_text(encoding="utf-8")
+        matches = list(rule_re.finditer(text))
+        for index, match in enumerate(matches):
+            block = text[
+                match.start() : matches[index + 1].start()
+                if index + 1 < len(matches)
+                else len(text)
+            ]
+            threads_match = re.search(r"(?m)^\s*threads:\s*(.+)$", block)
+            vcpu_match = re.search(r"(?m)^\s*vcpu\s*=\s*(.+?)(?:,\s*)?$", block)
+            if not threads_match or not vcpu_match:
+                continue
+            threads_expr = _normalized_rule_expression(threads_match.group(1))
+            vcpu_expr = _normalized_rule_expression(vcpu_match.group(1))
+            if threads_expr != vcpu_expr:
+                hits.append(
+                    f"{path.relative_to(REPO_ROOT)}:{match.group(1)} "
+                    f"threads={_strip_python_comment(threads_match.group(1))} "
+                    f"vcpu={_strip_python_comment(vcpu_match.group(1))}"
+                )
 
     assert not hits
 
