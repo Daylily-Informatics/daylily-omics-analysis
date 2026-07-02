@@ -319,6 +319,8 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
         "_smn_hiomr_aligners()",
         "sentdhiomr.sr_dedup.cram",
         "SMN short-read callers must not consume long-read-only or graph-only",
+        'SMN_SHORT_READ_NA_DEDUP_ALIGNERS = {"bwa2a", "sent"}',
+        'ddup != "na" or alnr in SMN_SHORT_READ_NA_DEDUP_ALIGNERS',
         "def smn_long_cram",
         "_sentdhiomr_lr_cram(wildcards)",
         "SMN long-read callers require ONT evidence",

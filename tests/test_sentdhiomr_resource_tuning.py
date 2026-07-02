@@ -22,6 +22,7 @@ EXPECTED_SLURM_TUNING = {
     "time_snv_stage3": 720,
     "time_snv_transfer": 720,
     "time_snv_transfer_merge": 720,
+    "transfer_partition": "i192,i128,i192mem",
     "sr_markdup_threads": 64,
     "sr_markdup_mem_mb": 64000,
     "segdup_threads": 48,
@@ -125,6 +126,10 @@ def test_sentdhiomr_transfer_uses_configured_tmp_parent() -> None:
     )[0]
 
     assert 'tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"]' in transfer
+    assert (
+        "partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128,i192mem')"
+        in transfer
+    )
     assert 'tmp_parent="{params.tmp_parent}"' in transfer
     assert 'test -w "$tmp_parent"' in transfer
     assert 'sentdhiomr_transfer_{wildcards.dchrm}_{wildcards.tchrm}_${{timestamp}}_$$' in transfer
@@ -138,6 +143,10 @@ def test_sentdhiomr_transfer_merge_uses_configured_tmp_parent() -> None:
     )[0]
 
     assert 'tmp_parent=config["sentdhiomr"]["transfer_tmp_parent"]' in transfer_merge
+    assert (
+        "partition=config['sentdhiomr'].get('transfer_partition', 'i192,i128,i192mem')"
+        in transfer_merge
+    )
     assert 'tmp_parent="{params.tmp_parent}"' in transfer_merge
     assert 'test -w "$tmp_parent"' in transfer_merge
     assert 'sentdhiomr_transfer_merge_{wildcards.dchrm}_${{timestamp}}_$$' in transfer_merge
