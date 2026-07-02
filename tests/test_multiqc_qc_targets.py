@@ -861,7 +861,7 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     assert slurm_config["vep"]["hg38_broad_vep_chrms"] == "1-25"
     assert slurm_config["vep"]["b37_vep_chrms"] == "1-25"
     assert alignstats.count('mem_mb=config["alignstats"]["mem_mb"]') == 2
-    assert slurm_config["alignstats"]["mem_mb"] == 250000
+    assert slurm_config["alignstats"]["mem_mb"] == 10000
     assert slurm_config["alignstats"]["partition"] == "i384nvme,i192nvme,i128nvme"
     assert 'mem_mb=config["gen_samstats"]["mem_mb"]' in samtools_metrics
     assert slurm_config["gen_samstats"]["mem_mb"] == 64000

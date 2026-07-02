@@ -3,10 +3,8 @@
 
 def smn12_orthogonal_call_outputs(wildcards=None):
     outputs = []
-    short_alnrs = smn_short_read_aligners()
-    long_alnrs = smn_long_read_aligners()
     outputs.extend(
-        expand(
+        expand_smn_alnr_ddup_pairs(
             [
                 MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
                 MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
@@ -16,40 +14,34 @@ def smn12_orthogonal_call_outputs(wildcards=None):
                 MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.json",
                 MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.done",
             ],
-            sample=SSAMPS,
-            alnr=short_alnrs,
-            ddup=DDUP,
+            pairs=smn_short_read_alnr_ddup_pairs(),
         )
     )
     outputs.extend(
-        expand(
+        expand_smn_alnr_ddup_pairs(
             [
                 MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.summary.tsv",
                 MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done",
             ],
-            sample=SSAMPS,
-            alnr=long_alnrs,
-            ddup=DDUP,
+            pairs=smn_long_read_alnr_ddup_pairs(),
         )
     )
-    hiomr_alnrs = sorted(_smn_hiomr_aligners())
-    if hiomr_alnrs:
+    hiomr_pairs = smn_hiomr_alnr_ddup_pairs()
+    if hiomr_pairs:
         if "SMN1" not in globals().get("SEGDUP_GENES", []):
             raise WorkflowError(
                 "produce_smn12_orthogonal_calls requires Sentieon HiOMR segdup_genes "
                 "to include SMN1 when HiOMR aligners are configured."
             )
         outputs.extend(
-            expand(
+            expand_smn_alnr_ddup_pairs(
                 [
                     MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/SMN1/{sample}.SMN1.result.vcf.gz",
                     MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/SMN1/{sample}.SMN1.result.vcf.gz.tbi",
                     MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/results/SMN1/{sample}.SMN1.yaml",
                     MDIR + "{sample}/align/{alnr}/{ddup}/segdup/sentdhiomr/{sample}.{alnr}.{ddup}.sentdhiomr.segdup.SMN1.done",
                 ],
-                sample=SSAMPS,
-                alnr=hiomr_alnrs,
-                ddup=DDUP,
+                pairs=hiomr_pairs,
             )
         )
     return outputs

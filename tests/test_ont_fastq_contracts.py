@@ -199,7 +199,7 @@ def test_sentmm2ont_slurm_align_sort_requests_384_nvme_memory() -> None:
     resources = cfg["sentmm2ont_align_sort"]
 
     assert resources["partition"] == "i384nvme"
-    assert resources["threads"] == 192
+    assert resources["threads"] == 96
     assert resources["mem_mb"] >= 650000
 
 

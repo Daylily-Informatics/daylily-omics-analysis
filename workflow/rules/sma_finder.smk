@@ -107,11 +107,9 @@ localrules: produce_sma_finder
 
 rule produce_sma_finder:  # TARGET : Produce Broad sma-finder results
     input:
-        expand(
+        expand_smn_alnr_ddup_pairs(
             MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.done",
-            sample=SSAMPS,
-            alnr=smn_short_read_aligners(),
-            ddup=DDUP,
+            pairs=smn_short_read_alnr_ddup_pairs(),
         )
     output:
         "./logs/sma_finder.done"

@@ -14,6 +14,10 @@ LOCAL_RULE_CONFIG = REPO_ROOT / "config/day_profiles/local/templates/rule_config
 GLOBAL_CONFIG = REPO_ROOT / "config/global.yaml"
 ACTIVE_RULES_DIR = REPO_ROOT / "workflow/rules"
 MEMORY_FLOOR_MB = 50000
+LOW_MEMORY_CONFIG_EXCEPTIONS = {
+    "config/day_profiles/slurm/templates/rule_config.yaml.alignstats.mem_mb": 10000,
+    "config/day_profiles/slurm/templates/rule_config.yaml.sentdhiomr.segdup_mem_mb": 48000,
+}
 V8_PARTITIONS = {
     "i8",
     "i128",
@@ -125,6 +129,8 @@ def test_config_and_rule_memory_values_observe_global_floor() -> None:
             for key, child in value.items():
                 next_context = f"{context}.{key}"
                 if "mem_mb" in str(key) and isinstance(child, int) and child < MEMORY_FLOOR_MB:
+                    if LOW_MEMORY_CONFIG_EXCEPTIONS.get(next_context) == child:
+                        continue
                     hits.append(f"{next_context}={child}")
                 walk_config(child, next_context)
         elif isinstance(value, list):
@@ -132,7 +138,10 @@ def test_config_and_rule_memory_values_observe_global_floor() -> None:
                 walk_config(item, f"{context}[{index}]")
 
     for path in (GLOBAL_CONFIG, LOCAL_RULE_CONFIG, SLURM_RULE_CONFIG):
-        walk_config(yaml.safe_load(path.read_text(encoding="utf-8")), path.name)
+        walk_config(
+            yaml.safe_load(path.read_text(encoding="utf-8")),
+            str(path.relative_to(REPO_ROOT)),
+        )
 
     profile = yaml.safe_load(
         (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(

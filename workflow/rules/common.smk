@@ -2702,6 +2702,69 @@ def smn_long_read_aligners():
     return sorted(long_alnrs)
 
 
+def smn_short_read_alnr_ddup_pairs():
+    pairs = []
+    hiomr_alnrs = _smn_hiomr_aligners()
+    for alnr in smn_short_read_aligners():
+        if alnr in hiomr_alnrs:
+            if "na" in DDUP:
+                pairs.append((alnr, "na"))
+            continue
+        if alnr in SMN_SHORT_READ_EXCLUDED_ALIGNERS:
+            continue
+        for ddup in DDUP:
+            if ddup != "na":
+                pairs.append((alnr, ddup))
+    pairs = sorted(set(pairs))
+    if not pairs:
+        raise WorkflowError(
+            "SMN short-read callers require a valid short-read aligner/deduper "
+            "pair, such as sent/dmd, or a HiOMR SR evidence pair such as "
+            "sentmm2ont/na."
+        )
+    return pairs
+
+
+def smn_long_read_alnr_ddup_pairs():
+    pairs = []
+    for alnr in smn_long_read_aligners():
+        if "na" in DDUP:
+            pairs.append((alnr, "na"))
+    pairs = sorted(set(pairs))
+    if not pairs:
+        raise WorkflowError(
+            "SMN long-read callers require a valid long-read aligner/no-dedup "
+            "pair, such as sentmm2ont/na."
+        )
+    return pairs
+
+
+def smn_hiomr_alnr_ddup_pairs():
+    hiomr_alnrs = sorted(_smn_hiomr_aligners())
+    if not hiomr_alnrs:
+        return []
+    if "na" not in DDUP:
+        raise WorkflowError(
+            "Sentieon HiOMR SMN segdup evidence requires deduper 'na'."
+        )
+    return [(alnr, "na") for alnr in hiomr_alnrs]
+
+
+def expand_smn_alnr_ddup_pairs(patterns, sample_ids=None, pairs=None):
+    if sample_ids is None:
+        sample_ids = SSAMPS
+    if pairs is None:
+        pairs = smn_short_read_alnr_ddup_pairs()
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    return [
+        pattern.format(sample=sample, alnr=alnr, ddup=ddup)
+        for sample in sample_ids
+        for alnr, ddup in pairs
+        for pattern in patterns
+    ]
+
+
 def smn_short_cram(wildcards):
     if wildcards.alnr in _smn_hiomr_aligners():
         return (

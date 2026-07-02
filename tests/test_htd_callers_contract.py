@@ -62,8 +62,8 @@ def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
         "minimap_index",
     ):
         assert key in config["hapsma"]
-    assert config["sentdhiomr"]["segdup_threads"] == 192
-    assert config["sentdhiomr"]["segdup_mem_mb"] == 250000
+    assert config["sentdhiomr"]["segdup_threads"] == 48
+    assert config["sentdhiomr"]["segdup_mem_mb"] == 48000
     assert config["sentdhiomr"]["segdup_lr_model"].endswith("/DNAscopeONT2.3.bundle")
 
 
@@ -228,8 +228,9 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "sma_finder.done",
         "hapsma.summary.tsv",
         "hapsma.done",
-        "smn_short_read_aligners()",
-        "smn_long_read_aligners()",
+        "smn_short_read_alnr_ddup_pairs()",
+        "smn_long_read_alnr_ddup_pairs()",
+        "expand_smn_alnr_ddup_pairs(",
     ):
         assert expected in htd
     assert "parascopy.done" not in htd
@@ -277,10 +278,12 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     for text in (smn12, smaca, sma_finder):
         assert "smn_short_cram" in text
         assert "smn_short_crai" in text
-        assert "smn_short_read_aligners()" in text
+        assert "smn_short_read_alnr_ddup_pairs()" in text
+        assert "expand_smn_alnr_ddup_pairs(" in text
     assert "smn_long_cram" in hapsma
     assert "smn_long_crai" in hapsma
-    assert "smn_long_read_aligners()" in hapsma
+    assert "smn_long_read_alnr_ddup_pairs()" in hapsma
+    assert "expand_smn_alnr_ddup_pairs(" in hapsma
     assert "def genetocn_cram" in genetocn
     assert "def genetocn_inputs" not in genetocn
     assert "cram=genetocn_cram" in genetocn

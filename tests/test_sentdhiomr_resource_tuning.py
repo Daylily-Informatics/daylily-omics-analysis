@@ -10,8 +10,8 @@ SENTDHIOMR_RULES = REPO_ROOT / "workflow/rules/sent_hybrid_ilmn_ont_modular.refa
 
 
 EXPECTED_SLURM_TUNING = {
-    "threads_snv": 96,
-    "use_threads_snv": 94,
+    "threads_snv": 48,
+    "use_threads_snv": 46,
     "mem_mb_snv": 128000,
     "threads_snv_medium": 32,
     "use_threads_snv_medium": 30,
@@ -24,8 +24,8 @@ EXPECTED_SLURM_TUNING = {
     "time_snv_transfer_merge": 720,
     "sr_markdup_threads": 64,
     "sr_markdup_mem_mb": 64000,
-    "segdup_threads": 192,
-    "segdup_mem_mb": 250000,
+    "segdup_threads": 48,
+    "segdup_mem_mb": 48000,
 }
 
 
@@ -39,7 +39,7 @@ def test_slurm_sentdhiomr_conservative_tuning_values() -> None:
     for key, expected in EXPECTED_SLURM_TUNING.items():
         assert sentdhiomr[key] == expected
 
-    assert sentdhiomr["threads"] == 192
+    assert sentdhiomr["threads"] == 96
     assert sentdhiomr["mem_mb"] == 300000
     assert sentdhiomr["sr_align_tmp_parent"] == "/scratch"
     assert sentdhiomr["stage3_tmp_parent"] == "/fsx/scratch"

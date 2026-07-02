@@ -161,6 +161,8 @@ def _sentdhiomr_expand(pattern, **wildcards):
 SENTDHIOMR_DDUP_REGEX = "na"
 
 def _sentdhiomr_dedupers():
+    if not SENTDHIOMR_SAMPLE_ALIGNER_PAIRS:
+        return []
     ddups = [ddup for ddup in DDUP if ddup == "na"]
     if not ddups:
         raise WorkflowError(

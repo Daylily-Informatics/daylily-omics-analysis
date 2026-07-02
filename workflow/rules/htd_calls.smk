@@ -6,8 +6,8 @@ def htd_call_outputs(*, require_non_empty=False):
     outputs = []
     alnrs = QC_CRAM_ALIGNERS
     ddups = DDUP
-    smn_short_alnrs = smn_short_read_aligners()
-    smn_long_alnrs = smn_long_read_aligners()
+    smn_short_pairs = smn_short_read_alnr_ddup_pairs()
+    smn_long_pairs = smn_long_read_alnr_ddup_pairs()
 
     if "gauchian" in callers:
         outputs.extend(
@@ -35,51 +35,43 @@ def htd_call_outputs(*, require_non_empty=False):
         )
     if "smn12" in callers:
         outputs.extend(
-            expand(
+            expand_smn_alnr_ddup_pairs(
                 [
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
                 ],
-                sample=SSAMPS,
-                alnr=smn_short_alnrs,
-                ddup=ddups,
+                pairs=smn_short_pairs,
             )
         )
     if "smaca" in callers:
         outputs.extend(
-            expand(
+            expand_smn_alnr_ddup_pairs(
                 [
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.summary.tsv",
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",
                 ],
-                sample=SSAMPS,
-                alnr=smn_short_alnrs,
-                ddup=ddups,
+                pairs=smn_short_pairs,
             )
         )
     if "sma_finder" in callers:
         outputs.extend(
-            expand(
+            expand_smn_alnr_ddup_pairs(
                 [
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.tsv",
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.json",
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.done",
                 ],
-                sample=SSAMPS,
-                alnr=smn_short_alnrs,
-                ddup=ddups,
+                pairs=smn_short_pairs,
             )
         )
     if "hapsma" in callers:
         outputs.extend(
-            expand(
+            expand_smn_alnr_ddup_pairs(
                 [
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.summary.tsv",
                     MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done",
                 ],
-                sample=SSAMPS,
-                alnr=smn_long_alnrs,
-                ddup=ddups,
+                pairs=smn_long_pairs,
             )
         )
     return outputs

@@ -448,11 +448,9 @@ localrules: produce_hapsma
 
 rule produce_hapsma:  # TARGET : Produce native HapSMA exploratory ONT SMN results
     input:
-        expand(
+        expand_smn_alnr_ddup_pairs(
             MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done",
-            sample=SSAMPS,
-            alnr=smn_long_read_aligners(),
-            ddup=DDUP,
+            pairs=smn_long_read_alnr_ddup_pairs(),
         )
     output:
         "./logs/hapsma.done"
