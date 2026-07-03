@@ -11,6 +11,7 @@ rule sma_finder:  # TARGET : Run Broad sma-finder affected-status screen.
     input:
         cram=smn_short_cram,
         crai=smn_short_crai,
+        preflight=smn12_input_qc_done,
     output:
         tsv=MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.tsv",
         json=MDIR + "{sample}/align/{alnr}/{ddup}/htd/sma_finder/{sample}.{alnr}.{ddup}.sma_finder.summary.json",

@@ -8,7 +8,7 @@
 
 # CRITICAL - HEADNODE ACCESS (READ FIRST)
 **SSM is the only supported access model for AWS ParallelCluster headnodes.**
-- Use the supported `daylily-ec headnode connect` / AWS Systems Manager path for headnode access.
+- Use the supported `dyec headnode connect --profile <profile> --region <region> --cluster <cluster>` / AWS Systems Manager path for headnode access. Activate DYEC locally first with `cd /Users/jmajor/projects/lsmc/daylily-ephemeral-cluster && source ./activate`.
 - Do not use direct SSH, PEM files, or `pcluster ssh` for this repo's headnodes.
 - Commands run through SSM must still use a login bash shell when they depend on PATH, conda, aliases, functions, Slurm, or Daylily shell setup.
 - **PATTERN (MANDATORY)**: run `bash -l -c 'your command here'` inside the SSM session or SSM command invocation.
@@ -39,6 +39,7 @@ Always `conda activate DAY-EC`, little is done in this repo from a mac, but most
 # Analysis-Root Agent Locking
 
 - When this repo is running from `/fsx/analysis_results/**`, `dy-r` uses `dyec analysis` to coordinate between Codex and non-Codex agents.
+- Headnode DYEC must expose `dyec analysis visit`, `dyec analysis guard`, and `dyec analysis lock`. If the headnode reports `No such command 'analysis'`, run `dyec headnode configure --profile <profile> --region <region> --cluster <cluster>` from the activated local `daylily-ephemeral-cluster` checkout before any workflow write.
 - Dry-runs and read/status checks log a visit and do not require write-lock ownership.
 - Live `dy-r` workflow execution requires the current agent to own `<analysis_root>/.dayoa_agent/write.lock/`.
 - `dy-r --unlock` requires the current agent to own a lock; do not run unlock through raw Snakemake.
@@ -51,7 +52,7 @@ Use this pattern when a user asks an agent to launch Daylily workflow commands o
 ### Required launch inputs
 - AWS profile, region, and cluster name. Do not use the default AWS profile; ask the user when it is not specified.
 - Workset code for `day-clone -d`, such as `take1` or `agbt_ug`.
-- Git ref for `day-clone -t`, usually `main` unless the user gives another ref.
+- Explicit DayOA version/ref for `day-clone -t`. Use the most recent released DayOA tag unless the user explicitly requests another branch or ref. Never rely on the `day-clone` default, and do not use `main` implicitly.
 - S3 paths for `config/samples.tsv` and `config/units.tsv`.
 - Genome build for `dy-a`, usually `hg38_broad` for Ultima and hybrid examples here.
 - `dy-r` targets and flags.
@@ -64,10 +65,12 @@ From a Mac terminal, activate `DAY-EC` first:
 eval "$(conda shell.zsh hook)" && conda activate DAY-EC
 ```
 
-Connect with the requested profile through SSM/daylily-ec:
+Connect with the requested profile through SSM/DYEC:
 
 ```bash
-AWS_PROFILE=<profile> daylily-ec headnode connect --profile <profile> --region <region> --cluster <cluster>
+cd /Users/jmajor/projects/lsmc/daylily-ephemeral-cluster
+source ./activate
+dyec headnode connect --profile <profile> --region <region> --cluster <cluster>
 ```
 
 The resulting SSM shell must be the `ubuntu` user running a bash login shell. Verify with `id -un` and `echo "$0"`; if the shell is not a login bash shell, run `exec bash -l` before `day-clone`, `tmux`, `source dyoainit`, `dy-a`, or `dy-r`.
@@ -96,7 +99,7 @@ test "$pane_count" -eq 1
 ```bash
 tmux new-session -d -s <session_name>
 tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu' Enter
-tmux send-keys -t <session_name> 'day-clone -t <git_ref> -d <workset_code>' Enter
+tmux send-keys -t <session_name> 'day-clone -t <dayoa_version> -d <workset_code>' Enter
 tmux send-keys -t <session_name> 'cd /fsx/analysis_results/ubuntu/<workset_code>/daylily-omics-analysis' Enter
 ```
 
@@ -145,7 +148,7 @@ Hybrid ILMN+ONT `take1`:
 ```bash
 tmux new-session -d -s take1_hiom_rerun_20260422
 tmux send-keys -t take1_hiom_rerun_20260422 'cd /fsx/analysis_results/ubuntu' Enter
-tmux send-keys -t take1_hiom_rerun_20260422 'day-clone -t main -d take1' Enter
+tmux send-keys -t take1_hiom_rerun_20260422 'day-clone -t <dayoa_version> -d take1' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'cd /fsx/analysis_results/ubuntu/take1/daylily-omics-analysis' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'mkdir -p ./config' Enter
 tmux send-keys -t take1_hiom_rerun_20260422 'aws s3 cp <verified_samples_s3_uri> ./config/samples.tsv' Enter
@@ -162,7 +165,7 @@ Solo Ultima `agbt_ug`:
 ```bash
 tmux new-session -d -s agbt_ug_ultima_rerun_20260422
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'cd /fsx/analysis_results/ubuntu' Enter
-tmux send-keys -t agbt_ug_ultima_rerun_20260422 'day-clone -t main -d agbt_ug' Enter
+tmux send-keys -t agbt_ug_ultima_rerun_20260422 'day-clone -t <dayoa_version> -d agbt_ug' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'cd /fsx/analysis_results/ubuntu/agbt_ug/daylily-omics-analysis' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'mkdir -p ./config' Enter
 tmux send-keys -t agbt_ug_ultima_rerun_20260422 'aws s3 cp <verified_samples_s3_uri> ./config/samples.tsv' Enter
@@ -201,11 +204,11 @@ source bin/augment_setup_and_run_dayoa.bash slurm hg38 \
 **Important**: This script must be `source`d (not executed) because `dyoainit` uses `return`. Use `bash bin/day_run` internally (not `source bin/day_run`) so that `exit` in day_run stays in a subprocess.
 
 # Debugging From MAC
-If given an AWS_PROFILE, region, cluster name, optional path to analysis, and potentially a tmux session analysis is running in, activate `DAY-EC` first. Use `pcluster describe-cluster -n <name> --region <region>` only for read-only cluster metadata such as instance ID, private IP, and public IP. Use SSM/daylily-ec for all headnode access.
+If given an AWS_PROFILE, region, cluster name, optional path to analysis, and potentially a tmux session analysis is running in, activate `DAY-EC` first from `/Users/jmajor/projects/lsmc/daylily-ephemeral-cluster` with `source ./activate`. Use `pcluster describe-cluster -n <name> --region <region>` only for read-only cluster metadata such as instance ID, private IP, and public IP. Use SSM/DYEC for all headnode access.
 
 ## SSM Commands
 **CRITICAL REQUIREMENTS**:
-1. Use SSM/daylily-ec as the only supported access model for headnode commands and shells.
+1. Use SSM/DYEC as the only supported access model for headnode commands and shells, with `dyec headnode connect --profile <profile> --region <region> --cluster <cluster>`.
 2. Always use login shells for remote commands that need the configured headnode environment. Use `bash -l -c 'your command here'` inside the SSM session or command invocation to ensure the full shell environment (including PATH and conda) is available.
 3. **`squeue` must be on PATH** — if it is not available, the command must fail loudly with an error. Do NOT report zero exit code or silently skip SLURM status checks.
 4. **Always use an interactive bash shell as the `ubuntu` user for headnode workflow work.** `dy-a`, `dy-r`, `dy-m`, and related `dy-*` commands are aliases from `dyoainit`, not standalone executables. Bash does not expand aliases in non-interactive scripts by default, and `bin/day_activate` also expects an initialized interactive shell/conda context. For workflow launches, use an interactive ubuntu tmux/login pane and send separate commands: `source dyoainit`, then `dy-a slurm <genome_build>`, then `dy-r ...`. Do not assume `dy-a` or `dy-r` will work inside an SSM `send-command` script.

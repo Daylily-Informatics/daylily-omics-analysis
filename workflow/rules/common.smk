@@ -2684,7 +2684,7 @@ SMN_LONG_READ_ALIGNERS = {"ont", "sentmm2ont"}
 SMN_SHORT_READ_EXCLUDED_ALIGNERS = (
     SMN_LONG_READ_ALIGNERS | {"sentmm2", "pb"} | GRAPH_ONLY_PANGENOME_ALIGNERS
 )
-SMN_SHORT_READ_NA_DEDUP_ALIGNERS = {"bwa2a", "sent"}
+SMN_SHORT_READ_NA_DEDUP_ALIGNERS = {"bwa2a", "sent", "strobe"}
 
 
 def _smn_hiomr_aligners():

@@ -74,6 +74,8 @@ rule smn12_orthogonal_calls_mqc:
 
 rule produce_smn12_orthogonal_calls:  # TARGET : Produce orthogonal SMN1/SMN2 caller evidence
     input:
+        preflight=smn12_input_qc_outputs,
+        preflight_mqc=MDIR + "other_reports/smn12_preflight_mqc.tsv",
         calls=smn12_orthogonal_call_outputs,
         mqc=MDIR + "other_reports/smn12_orthogonal_calls_mqc.tsv",
     output:

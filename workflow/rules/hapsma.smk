@@ -446,12 +446,19 @@ PY
 
 localrules: produce_hapsma
 
+
+def hapsma_outputs(wildcards=None):
+    if "produce_hapsma" not in _requested_targets():
+        return []
+    return expand_smn_alnr_ddup_pairs(
+        MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done",
+        pairs=smn_long_read_alnr_ddup_pairs(),
+    )
+
+
 rule produce_hapsma:  # TARGET : Produce native HapSMA exploratory ONT SMN results
     input:
-        expand_smn_alnr_ddup_pairs(
-            MDIR + "{sample}/align/{alnr}/{ddup}/htd/hapsma/{sample}.{alnr}.{ddup}.hapsma.done",
-            pairs=smn_long_read_alnr_ddup_pairs(),
-        )
+        hapsma_outputs
     output:
         "./logs/hapsma.done"
     log:

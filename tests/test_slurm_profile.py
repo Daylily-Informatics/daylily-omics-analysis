@@ -108,6 +108,37 @@ def test_slurm_profile_routes_job_stdout_and_stderr_to_logs() -> None:
     )
 
 
+def test_slurm_profile_keeps_sbatch_flags_in_single_shell_command() -> None:
+    profile = yaml.safe_load(
+        (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    resources = SimpleNamespace(
+        time=60,
+        partition="i192",
+        mem_mb=MEMORY_FLOOR_MB,
+        distribution="block",
+        constraint="",
+        exclude="",
+        include="",
+        exclusive="",
+    )
+    params = SimpleNamespace(cluster_sample="HG002")
+
+    rendered = profile["cluster"].format(
+        rule="seqfu",
+        params=params,
+        resources=resources,
+        threads=4,
+        jobid=12345,
+    )
+
+    assert "sbatch --parsable --cpus-per-task=4" in rendered
+    assert "\n    --parsable" not in rendered
+    assert "\n    --cpus-per-task" not in rendered
+
+
 def test_slurm_profile_logs_alert_when_rule_requests_exclusive() -> None:
     profile = yaml.safe_load(
         (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(

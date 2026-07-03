@@ -107,9 +107,10 @@ def test_active_and_disabled_htd_rule_includes_are_explicit() -> None:
     assert 'include: "rules/smaca.smk"' in active_includes
     assert 'include: "rules/sma_finder.smk"' in active_includes
     assert 'include: "rules/hapsma.smk"' in active_includes
+    assert 'include: "rules/smn12_input_qc.smk"' in active_includes
     assert 'include: "rules/smn12_orthogonal_calls.smk"' in active_includes
     assert 'include: "rules/smn_copynumbercaller.smk"' in active_includes
-    assert "SMN12 is enabled for pinned SMNCopyNumberCaller execution and the orthogonal" in snakefile
+    assert "strict short-read" in snakefile
     assert 'include: "rules/genetocn.smk"' not in active_includes
     assert '# include: "rules/genetocn.smk"' in snakefile
     assert "GeneToCN is disabled until its upstream package/install surface" in snakefile
@@ -221,6 +222,8 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "cyrius.json",
         "smn12.summary.json",
         "smn12.done",
+        "htd_smn12_preflight_needed",
+        "smn12_preflight_mqc.tsv",
         "smaca.summary.tsv",
         "smaca.done",
         "sma_finder.summary.tsv",
@@ -272,14 +275,18 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     hapsma = _read("workflow/rules/hapsma.smk")
     genetocn = _read("workflow/rules/genetocn.smk")
     htd_calls = _read("workflow/rules/htd_calls.smk")
+    smn12_qc = _read("workflow/rules/smn12_input_qc.smk")
 
     for text in (gauchian, parascopy, genetocn):
         assert "QC_CRAM_ALIGNERS" in text
     for text in (smn12, smaca, sma_finder):
         assert "smn_short_cram" in text
         assert "smn_short_crai" in text
+        assert "preflight=smn12_input_qc_done" in text
         assert "smn_short_read_alnr_ddup_pairs()" in text
         assert "expand_smn_alnr_ddup_pairs(" in text
+    assert "rule smn12_input_qc:" in smn12_qc
+    assert "whole-genome BAM/CRAM" in smn12_qc
     assert "smn_long_cram" in hapsma
     assert "smn_long_crai" in hapsma
     assert "smn_long_read_alnr_ddup_pairs()" in hapsma
@@ -319,7 +326,7 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
         "_smn_hiomr_aligners()",
         "sentdhiomr.sr_dedup.cram",
         "SMN short-read callers must not consume long-read-only or graph-only",
-        'SMN_SHORT_READ_NA_DEDUP_ALIGNERS = {"bwa2a", "sent"}',
+        'SMN_SHORT_READ_NA_DEDUP_ALIGNERS = {"bwa2a", "sent", "strobe"}',
         'ddup != "na" or alnr in SMN_SHORT_READ_NA_DEDUP_ALIGNERS',
         "def smn_long_cram",
         "_sentdhiomr_lr_cram(wildcards)",
@@ -330,6 +337,7 @@ def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:
         "def smn12_cram",
         "return smn_short_cram(wildcards)",
         "return smn_short_crai(wildcards)",
+        "preflight=smn12_input_qc_done",
         "done=MDIR",
         "rm -f {output.summary} {output.done}",
         "smn_caller.py",
@@ -361,6 +369,7 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "rule smaca:",
         "cram=smn_short_cram",
         "crai=smn_short_crai",
+        "preflight=smn12_input_qc_done",
         "--reference",
         "--ncpus",
         "SMAca command was not found on PATH",
@@ -373,6 +382,7 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "rule sma_finder:",
         "cram=smn_short_cram",
         "crai=smn_short_crai",
+        "preflight=smn12_input_qc_done",
         "--hg38-reference-fasta",
         "affected_status_only",
         "sma-finder command was not found on PATH",
@@ -435,16 +445,66 @@ def test_smn12_resource_bundle_contains_required_files() -> None:
     assert (data_dir / "SMN_gmm.txt").is_file()
 
 
+def test_smn12_input_qc_contract_is_strict_and_multiqc_ready() -> None:
+    rule = _read("workflow/rules/smn12_input_qc.smk")
+    script = _read("workflow/scripts/smn12_input_qc.py")
+    config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
+
+    for expected in (
+        "rule smn12_input_qc:",
+        "rule smn12_input_qc_mqc:",
+        "rule produce_smn12_input_qc:",
+        "SMN_region_{params.genome}.bed",
+        "SMN_SNP_{params.genome}.txt",
+        "SMN_target_variant_{params.genome}.txt",
+        "smn12_input_qc.tsv",
+        "smn12_region_depth.tsv",
+        "smn12_required_regions_status.tsv",
+        "smn12_alignment_flags.tsv",
+        "smn12_preflight_mqc.tsv",
+        '"../envs/smn12_v0.1.yaml"',
+    ):
+        assert expected in rule
+
+    for expected in (
+        "FIELDNAMES_INPUT_QC",
+        "FIELDNAMES_REGION_DEPTH",
+        "FIELDNAMES_FLAGS",
+        "FIELDNAMES_REQUIRED",
+        "FIELDNAMES_MQC",
+        "whole_genome_wgs_bam_cram",
+        "diagnostic_bamlet_or_cramlet",
+        "SMN12 input preflight failed required checks",
+        "production_eligible",
+        "exon16",
+        "exon78",
+        "normalization_bins",
+        "selected_snp_sites",
+        "target_variant_sites",
+        "pct_secondary",
+        "pct_supplementary",
+        "pct_clipped",
+    ):
+        assert expected in script
+    assert config["smn12_input_qc"]["threads"] == 8
+    assert config["smn12_input_qc"]["mem_mb"] == 50000
+    assert config["smn12_input_qc"]["min_norm_bin_present_fraction"] == 0.95
+
+
 def test_final_multiqc_and_multiqc_config_include_htd_when_selected() -> None:
     final = _read("workflow/rules/multiqc_final_wgs.smk")
     multiqc = _yaml("config/external_tools/multiqc_config.yaml")
 
     assert "if HTD_CALLERS:" in final
     assert "htd_calls_mqc.tsv" in final
+    assert "produce_smn12_input_qc" in final
+    assert "smn12_preflight_mqc.tsv" in final
     assert "produce_smn12_orthogonal_calls" in final
     assert "smn12_orthogonal_calls_mqc.tsv" in final
     assert "htd_calls" in multiqc["custom_data"]
     assert multiqc["sp"]["htd_calls"]["fn"] == "other_reports/htd_calls_mqc.tsv"
+    assert "smn12_preflight" in multiqc["custom_data"]
+    assert multiqc["sp"]["smn12_preflight"]["fn"] == "other_reports/smn12_preflight_mqc.tsv"
     assert "smn12_orthogonal_calls" in multiqc["custom_data"]
     assert (
         multiqc["sp"]["smn12_orthogonal_calls"]["fn"]
@@ -458,6 +518,8 @@ def test_smn12_orthogonal_target_includes_caller_evidence_sources() -> None:
 
     for expected in (
         "rule produce_smn12_orthogonal_calls:",
+        "preflight=smn12_input_qc_outputs",
+        "smn12_preflight_mqc.tsv",
         "smn12.summary.json",
         "smaca.summary.tsv",
         "sma_finder.summary.tsv",

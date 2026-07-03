@@ -109,6 +109,7 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     assert 'include: "rules/hapsma.smk"' in active_includes
     assert 'include: "rules/sma_finder.smk"' in active_includes
     assert 'include: "rules/smaca.smk"' in active_includes
+    assert 'include: "rules/smn12_input_qc.smk"' in active_includes
     assert 'include: "rules/smn12_orthogonal_calls.smk"' in active_includes
     assert 'include: "rules/smn_copynumbercaller.smk"' in active_includes
     assert 'include: "rules/genetocn.smk"' not in active_includes
@@ -923,6 +924,7 @@ def test_multiqc_config_custom_content_entries() -> None:
         "tiddit_sv",
         "peddy_sample_qc",
         "vep_annotation",
+        "smn12_preflight",
         "htd_calls",
         "smn12_orthogonal_calls",
         "expansionhunter",

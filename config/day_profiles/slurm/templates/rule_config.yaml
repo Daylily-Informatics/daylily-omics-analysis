@@ -354,6 +354,13 @@ smn12:
   mem_mb: 250000
   partition: i192hugenvme,i192nvme,i384nvme
 
+smn12_input_qc:
+  threads: 8
+  mem_mb: 50000
+  partition: i192hugenvme,i192nvme,i192,i128
+  max_sample_records: 200000
+  min_norm_bin_present_fraction: 0.95
+
 hapsma:
   dev_exploratory: true
   ploidy: ''

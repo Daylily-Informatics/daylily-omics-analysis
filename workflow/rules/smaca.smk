@@ -9,6 +9,7 @@ rule smaca:  # TARGET : Run SMAca copy-number estimation for SMN genes.
     input:
         cram=smn_short_cram,
         crai=smn_short_crai,
+        preflight=smn12_input_qc_done,
     output:
         summary=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.summary.tsv",
         done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",

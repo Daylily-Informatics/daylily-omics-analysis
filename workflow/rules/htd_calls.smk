@@ -1,13 +1,17 @@
 """Aggregate selected hard-to-detect-region callers."""
 
 
+def htd_smn12_preflight_needed(*, require_non_empty=False):
+    callers = htd_callers_selected(require_non_empty=require_non_empty)
+    return bool({"smn12", "smaca", "sma_finder"} & set(callers))
+
+
 def htd_call_outputs(*, require_non_empty=False):
     callers = htd_callers_selected(require_non_empty=require_non_empty)
     outputs = []
     alnrs = QC_CRAM_ALIGNERS
     ddups = DDUP
     smn_short_pairs = smn_short_read_alnr_ddup_pairs()
-    smn_long_pairs = smn_long_read_alnr_ddup_pairs()
 
     if "gauchian" in callers:
         outputs.extend(
@@ -65,6 +69,7 @@ def htd_call_outputs(*, require_non_empty=False):
             )
         )
     if "hapsma" in callers:
+        smn_long_pairs = smn_long_read_alnr_ddup_pairs()
         outputs.extend(
             expand_smn_alnr_ddup_pairs(
                 [
@@ -113,6 +118,11 @@ rule htd_calls_mqc:
 rule produce_htd_calls:  # TARGET : Produce selected HTD caller outputs
     input:
         calls=required_htd_call_outputs,
+        smn12_preflight=lambda wildcards: (
+            MDIR + "other_reports/smn12_preflight_mqc.tsv"
+            if htd_smn12_preflight_needed(require_non_empty=True)
+            else []
+        ),
         mqc=MDIR + "other_reports/htd_calls_mqc.tsv",
     output:
         "logs/htd_calls.done"

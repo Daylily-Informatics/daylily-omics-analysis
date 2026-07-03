@@ -37,11 +37,15 @@ Missing config, manifests, references, licenses, or runtime assets are errors. D
 
 ## Headnode Pattern
 
-On a headnode, connect only through `daylily-ec`/SSM and use an interactive login bash shell before invoking `source dyoainit`, `dy-a`, `dy-r`, or `day-monitor`. Long workflow work should run inside a persistent, meaningfully named `tmux` session as `ubuntu`.
+On a headnode, connect only through `dyec`/SSM and use an interactive login bash shell before invoking `source dyoainit`, `dy-a`, `dy-r`, or `day-monitor`. From the Mac, activate DYEC with `cd /Users/jmajor/projects/lsmc/daylily-ephemeral-cluster && source ./activate`, then connect with `dyec headnode connect --profile <profile> --region <region> --cluster <cluster>`. New workflow work must start from an explicitly pinned DayOA checkout, using `day-clone -t <dayoa_version> -d <analysis_id>` manually or DYEC `--git-tag <dayoa_version>`. Long workflow work should run inside a persistent, meaningfully named `tmux` session as `ubuntu`.
+
+Before workflow writes, `dyec analysis --help` must work on the headnode. If it does not, refresh the headnode from the activated local DYEC checkout with `dyec headnode configure --profile <profile> --region <region> --cluster <cluster>`.
 
 ```bash
 exec bash -l
 tmux new -s hg003_5x_snv_benchmark
+cd /fsx/analysis_results/ubuntu
+day-clone -t <dayoa_version> -d <workset>
 cd /fsx/analysis_results/ubuntu/<workset>/daylily-omics-analysis
 source dyoainit
 dy-a slurm hg38
@@ -64,9 +68,11 @@ BarcodeMismatchesIndex2,0
 When validating this behavior manually on a headnode, use a workset name that records the policy:
 
 ```bash
-day-clone -t <git_ref> -d bclconvert_0_mm
+day-clone -t <dayoa_version> -d bclconvert_0_mm
 cd /fsx/analysis_results/ubuntu/bclconvert_0_mm/daylily-omics-analysis
 source dyoainit
 dy-a slurm hg38_broad
 dy-r produce_bclconvert_fastqs_and_metrics -p -j 20 -k --config run_context_file=config/runs.tsv bootstrap_bclconvert=true
 ```
+
+Use the most recent released DayOA tag unless the user explicitly asks for another ref. Never rely on the `day-clone` default ref for new analyses.

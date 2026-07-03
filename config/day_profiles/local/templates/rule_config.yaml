@@ -434,6 +434,13 @@ smn12:
     mem_mb: 50000
     partition: "i8"
 
+smn12_input_qc:
+    threads: 2
+    mem_mb: 50000
+    partition: "i8"
+    max_sample_records: 200000
+    min_norm_bin_present_fraction: 0.95
+
 hapsma:
     dev_exploratory: true
     ploidy: ""

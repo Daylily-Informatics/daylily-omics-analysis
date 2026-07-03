@@ -29,7 +29,7 @@ Inside the tmux session:
 
 ```bash
 cd /fsx/analysis_results/ubuntu
-day-clone -t <git_ref> -d <workset_code>
+day-clone -t <dayoa_version> -d <workset_code>
 cd /fsx/analysis_results/ubuntu/<workset_code>/daylily-omics-analysis
 source dyoainit
 dy-a slurm hg38

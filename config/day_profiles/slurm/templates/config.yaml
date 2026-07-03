@@ -2,20 +2,7 @@
 # Adapted from
 # # https://github.com/cbrueffer/snakemake-aws-parallelcluster-slurm 
 cluster: >-
-  mkdir -p logs/slurm/{rule}/ &&
-  if [ -n "{resources.exclusive}" ]; then printf '%s\n' 'ALERT WARNING: DayOA Slurm submission is using exclusive allocation for rule={rule} sample={params.cluster_sample} jobid={jobid} exclusive={resources.exclusive}. Exclusive allocation must never be a default; verify this rule explicitly requested it.' | tee -a "logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out" "logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err" >&2; fi &&
-  sbatch
-    --parsable
-    --cpus-per-task={threads}
-    --time={resources.time}
-    --job-name="{rule}-{params.cluster_sample}"
-    --output="logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out"
-    --error="logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err"
-    --partition={resources.partition}
-    --chdir=$PWD
-    --mem={resources.mem_mb}
-    --comment "$DAY_PROJECT"
-    --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include} {resources.exclusive} 
+  mkdir -p logs/slurm/{rule}/ && if [ -n "{resources.exclusive}" ]; then printf '%s\n' 'ALERT WARNING: DayOA Slurm submission is using exclusive allocation for rule={rule} sample={params.cluster_sample} jobid={jobid} exclusive={resources.exclusive}. Exclusive allocation must never be a default; verify this rule explicitly requested it.' | tee -a "logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out" "logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err" >&2; fi && sbatch --parsable --cpus-per-task={threads} --time={resources.time} --job-name="{rule}-{params.cluster_sample}" --output="logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out" --error="logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err" --partition={resources.partition} --chdir=$PWD --mem={resources.mem_mb} --comment "$DAY_PROJECT" --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include} {resources.exclusive}
 default-resources:  
   - disk_mb=1000
   - mem_mb=100000 # This should be total for the job, and the amount avail will be 0.95*published mem for instance type.

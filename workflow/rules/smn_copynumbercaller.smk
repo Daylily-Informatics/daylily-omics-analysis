@@ -17,6 +17,7 @@ rule smn_copynumbercaller:
     input:
         cram=smn12_cram,
         crai=smn12_crai,
+        preflight=smn12_input_qc_done,
     output:
         summary=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.summary.json",
         done=MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",

@@ -55,6 +55,12 @@ smn12:
   mem_mb: 50000
   partition: "i192"
 
+smn12_input_qc:
+  threads: 4
+  mem_mb: 50000
+  partition: "i192"
+  max_sample_records: 200000
+  min_norm_bin_present_fraction: 0.95
 
 logs:
     operational:

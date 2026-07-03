@@ -365,7 +365,12 @@ def _variant_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/vep_annotation_mqc.tsv")
     if HTD_CALLERS:
         paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
+    if "produce_smn12_input_qc" in _requested_targets() or (
+        "htd_smn12_preflight_needed" in globals() and htd_smn12_preflight_needed()
+    ):
+        paths.append(MDIR + "other_reports/smn12_preflight_mqc.tsv")
     if "produce_smn12_orthogonal_calls" in _requested_targets():
+        paths.append(MDIR + "other_reports/smn12_preflight_mqc.tsv")
         paths.append(MDIR + "other_reports/smn12_orthogonal_calls_mqc.tsv")
     if len(CONCORDANCE_SAMPLES.keys()) > 0 and pairs:
         paths.append(MDIR + "other_reports/giab_concordance_mqc.tsv")
@@ -425,7 +430,12 @@ def _ultima_reanalysis_component_inputs(wildcards):
         paths.append(MDIR + "other_reports/expansionhunter_mqc.tsv")
     if HTD_CALLERS:
         paths.append(MDIR + "other_reports/htd_calls_mqc.tsv")
+    if "produce_smn12_input_qc" in _requested_targets() or (
+        "htd_smn12_preflight_needed" in globals() and htd_smn12_preflight_needed()
+    ):
+        paths.append(MDIR + "other_reports/smn12_preflight_mqc.tsv")
     if "produce_smn12_orthogonal_calls" in _requested_targets():
+        paths.append(MDIR + "other_reports/smn12_preflight_mqc.tsv")
         paths.append(MDIR + "other_reports/smn12_orthogonal_calls_mqc.tsv")
     return sorted(set(paths))
 

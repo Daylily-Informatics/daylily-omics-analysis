@@ -133,7 +133,7 @@ Other BCL Convert sample-sheet settings are implemented in `workflow/scripts/pre
 For a manual zero-mismatch validation run, make the workset name explicit:
 
 ```bash
-day-clone -t <git_ref> -d bclconvert_0_mm
+day-clone -t <dayoa_version> -d bclconvert_0_mm
 cd /fsx/analysis_results/ubuntu/bclconvert_0_mm/daylily-omics-analysis
 source dyoainit
 dy-a slurm hg38_broad

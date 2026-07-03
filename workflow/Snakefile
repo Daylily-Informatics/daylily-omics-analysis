@@ -339,9 +339,10 @@ include: "rules/site_mix_contam.smk"
 include: "rules/contam_identity.smk"
 include: "rules/sma_finder.smk"
 include: "rules/smaca.smk"
+include: "rules/smn12_input_qc.smk"
 include: "rules/smn12_orthogonal_calls.smk"
-# SMN12 is enabled for pinned SMNCopyNumberCaller execution and the orthogonal
-# SMN12 aggregate target.
+# SMN12 is enabled for pinned SMNCopyNumberCaller execution, strict short-read
+# input preflight QC, and the orthogonal SMN12 aggregate target.
 include: "rules/smn_copynumbercaller.smk"
 # SnpEff is unavailable until annotation integration is revalidated.
 # include: "rules/snpeff.smk"

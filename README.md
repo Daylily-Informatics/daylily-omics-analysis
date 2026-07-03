@@ -17,7 +17,7 @@ DayOA produces local evidence and workflow provenance. External orchestration ha
 | `docs/` | Current operator, workflow, evidence, and tool documentation. |
 | `quarantine/legacy-docs/` | Historical documentation preserved for provenance, not active guidance. |
 
-DayOA expects references under `/fsx/references` on a configured headnode. Cluster lifecycle, FSx mounts, reference staging, data staging, and production manifest creation belong to `daylily-ephemeral-cluster` and the `daylily-ec` CLI.
+DayOA expects references under `/fsx/references` on a configured headnode. Cluster lifecycle, FSx mounts, reference staging, data staging, and production manifest creation belong to `daylily-ephemeral-cluster` and the `dyec` CLI.
 
 ## Design Philosophy
 
@@ -67,23 +67,25 @@ dy-a local hg38
 dy-r produce_alignstats -n -p -j 1
 ```
 
-The Mac smoke path validates command wiring and small fixtures. Routine workflows run on a prepared ParallelCluster headnode through SSM and `daylily-ec`.
+The Mac smoke path validates command wiring and small fixtures. Routine workflows run on a prepared ParallelCluster headnode through SSM and `dyec`.
 
 ## Headnode Launch Pattern
 
-Do not use direct SSH, PEM files, or `pcluster ssh` for DayOA headnodes. Use `daylily-ec`/SSM and a login bash shell.
+Do not use direct SSH, PEM files, or `pcluster ssh` for DayOA headnodes. Use `dyec`/SSM and a login bash shell.
 
 ```bash
-eval "$(conda shell.zsh hook)" && conda activate DAY-EC
-AWS_PROFILE=<profile> daylily-ec headnode connect --profile <profile> --region <region> --cluster <cluster>
+cd /Users/jmajor/projects/lsmc/daylily-ephemeral-cluster
+source ./activate
+dyec headnode connect --profile <profile> --region <region> --cluster <cluster>
 exec bash -l
 id -un
 command -v day-clone
 command -v tmux
 command -v squeue
+dyec analysis --help
 ```
 
-Launch long workflow work in one persistent tmux session and send `source dyoainit`, `dy-a`, and `dy-r` as separate commands.
+Launch long workflow work from an explicitly pinned DayOA checkout. Use `day-clone -t <dayoa_version> -d <analysis_id>` manually, or pass `--git-tag <dayoa_version>` through DYEC launch commands. Do not rely on default refs. Send `source dyoainit`, `dy-a`, and `dy-r` as separate commands in one persistent tmux session.
 
 ## Sentieon License Configuration
 
@@ -138,7 +140,7 @@ After demultiplexing, DayOA prepares collision-safe FastQC input links for every
 
 The Slurm profile is tuned for solo 192-vCPU BCL runs on `i192`: 24 parallel tiles, 4 conversion threads per tile, 64 compression threads, 32 decompression threads, gzip level 1, shared O_DIRECT output threads enabled, and legacy stats output enabled. Tile-shard jobs default to 48 vCPU, 180 GB memory, 8 parallel tiles, 2 conversion threads, 24 compression threads, and 8 decompression threads. The lane sample sheet is generated from the normalized sample sheet and injects `BarcodeMismatchesIndex1,0` and `BarcodeMismatchesIndex2,0` by default. Other BCL Convert sample-sheet settings are wired through config but remain unset unless explicitly configured and tested.
 
-For live validation of the zero-mismatch BCL path, use a `day-clone -d bclconvert_0_mm` workset name so the analysis directory itself records the matching policy.
+For live validation of the zero-mismatch BCL path, use a `day-clone -t <dayoa_version> -d bclconvert_0_mm` workset name so the analysis directory itself records the matching policy and the checkout is version-pinned.
 
 ## Mounted ONT And Ultima Run QC
 
@@ -198,4 +200,4 @@ python -m coverage run -m pytest -q tests
 python -m coverage report
 ```
 
-Cluster examples are valid only after a working headnode is available through `daylily-ec`/SSM with an explicit non-default AWS profile.
+Cluster examples are valid only after a working headnode is available through `dyec`/SSM with an explicit non-default AWS profile.

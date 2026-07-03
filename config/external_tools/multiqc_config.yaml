@@ -103,6 +103,7 @@ module_order:
   - peddy_sample_qc
   - vep
   - vep_annotation
+  - smn12_preflight
   - htd_calls
   - smn12_orthogonal_calls
   - giab_concordance
@@ -714,6 +715,16 @@ custom_data:
     plot_type: 'table'
     pconfig:
       id: 'htd_calls'
+  smn12_preflight:
+    id: 'smn12_preflight'
+    section_name: 'SMN12 Input Preflight'
+    parent_id: 'dayoa_variant_benchmark_annotation'
+    parent_name: 'Variant, genotype, benchmark, annotation'
+    description: 'Whole-genome BAM/CRAM input validity, SMN-region depth, and alignment-flag evidence required before SMN12 callers run'
+    file_format: 'tsv'
+    plot_type: 'table'
+    pconfig:
+      id: 'smn12_preflight'
   smn12_orthogonal_calls:
     id: 'smn12_orthogonal_calls'
     section_name: 'SMN12 Orthogonal Caller Outputs'
@@ -835,6 +846,8 @@ sp:
     fn: "other_reports/vep_annotation_mqc.tsv"
   htd_calls:
     fn: "other_reports/htd_calls_mqc.tsv"
+  smn12_preflight:
+    fn: "other_reports/smn12_preflight_mqc.tsv"
   smn12_orthogonal_calls:
     fn: "other_reports/smn12_orthogonal_calls_mqc.tsv"
   alignstats_gs:
