@@ -213,13 +213,13 @@ rule paraphase_ont_exploratory:
           --json-path "$json_path" \
           --output {output.summary_tsv:q} \
           >> {log:q} 2>&1
-        {
+        {{
           printf 'path\tsha256\n'
           sha256sum {input.alignment:q}
           sha256sum {input.index:q}
           sha256sum "$reference"
           sha256sum "$json_path"
-        } | awk 'NR == 1 {print; next} {print $2 "\t" $1}' > {output.checksum_tsv:q}
+        }} | awk 'NR == 1 {{print; next}} {{print $2 "\t" $1}}' > {output.checksum_tsv:q}
         touch {output.done:q}
         """
 

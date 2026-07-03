@@ -271,7 +271,7 @@ rule smncopynumbercaller_contract_validation:
           --output {output.summary_tsv:q} \
           >> {log:q} 2>&1
 
-        {
+        {{
           printf 'path\tsha256\n'
           sha256sum {input.alignment:q}
           sha256sum {input.index:q}
@@ -280,7 +280,7 @@ rule smncopynumbercaller_contract_validation:
           sha256sum "$resource_dir/SMN_SNP_{params.genome}.txt"
           sha256sum "$resource_dir/SMN_target_variant_{params.genome}.txt"
           sha256sum "$resource_dir/SMN_gmm.txt"
-        } | awk 'NR == 1 {print; next} {print $2 "\t" $1}' > {output.checksum_tsv:q}
+        }} | awk 'NR == 1 {{print; next}} {{print $2 "\t" $1}}' > {output.checksum_tsv:q}
         touch {output.done:q}
         """
 
