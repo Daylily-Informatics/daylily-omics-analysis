@@ -139,7 +139,7 @@ def test_slurm_profile_keeps_sbatch_flags_in_single_shell_command() -> None:
     assert "\n    --cpus-per-task" not in rendered
 
 
-def test_slurm_profile_logs_alert_when_rule_requests_exclusive() -> None:
+def test_slurm_profile_strips_exclusive_allocation_requests() -> None:
     profile = yaml.safe_load(
         (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(
             encoding="utf-8"
@@ -164,11 +164,13 @@ def test_slurm_profile_logs_alert_when_rule_requests_exclusive() -> None:
         threads=4,
         jobid=12345,
     )
+    args = shlex.split(rendered)
+    sbatch_args = args[args.index("sbatch") + 1 :]
 
-    assert "ALERT WARNING: DayOA Slurm submission is using exclusive allocation" in rendered
+    assert "ALERT WARNING: DayOA Slurm submission stripped exclusive allocation" in rendered
     assert "logs/slurm/seqfu/seqfu.HG002.12345.out" in rendered
     assert "logs/slurm/seqfu/seqfu.HG002.12345.err" in rendered
-    assert "--exclusive" in rendered
+    assert "--exclusive" not in sbatch_args
 
 
 def test_active_rules_do_not_default_to_exclusive_allocation() -> None:
