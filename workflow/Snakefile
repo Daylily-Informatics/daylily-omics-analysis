@@ -337,9 +337,9 @@ include: "rules/sentmm2ont_align_sort.smk"
 include: "rules/seqfu.smk"
 include: "rules/site_mix_contam.smk"
 include: "rules/contam_identity.smk"
+include: "rules/smn12_input_qc.smk"
 include: "rules/sma_finder.smk"
 include: "rules/smaca.smk"
-include: "rules/smn12_input_qc.smk"
 include: "rules/smn12_orthogonal_calls.smk"
 # SMN12 is enabled for pinned SMNCopyNumberCaller execution, strict short-read
 # input preflight QC, and the orthogonal SMN12 aggregate target.
