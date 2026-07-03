@@ -33,6 +33,8 @@ CommandRunner = Callable[[Sequence[str]], str]
 
 PARTITION_COST_LOG = Path.home() / ".config/dayoa/partition_costs.log"
 CACHE_TTL_SECONDS = 1800
+PARTITION_COST_COMPARATOR_ENV = "DAYOA_PARTITION_COST_COMPARATOR"
+PARTITION_COST_COMPARATORS = ("median", "mean", "min", "max", "btm-qrtile")
 CACHE_HEADER = (
     "created_at_epoch",
     "created_at_iso",
@@ -672,6 +674,42 @@ def _cache_is_fresh(costs: Mapping[str, PartitionCost], *, now: float) -> bool:
     return 0 <= now - newest < CACHE_TTL_SECONDS
 
 
+def _comparator_from_env(env: Mapping[str, str]) -> str:
+    comparator = str(env.get(PARTITION_COST_COMPARATOR_ENV) or "median").strip().lower()
+    if not comparator:
+        comparator = "median"
+    if comparator not in PARTITION_COST_COMPARATORS:
+        raise SpotPartitionError(
+            f"{PARTITION_COST_COMPARATOR_ENV} must be one of: "
+            + ", ".join(PARTITION_COST_COMPARATORS)
+        )
+    return comparator
+
+
+def _bottom_quartile(values: Sequence[float]) -> float:
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    return statistics.quantiles(ordered, n=4, method="inclusive")[0]
+
+
+def _partition_cost_metric(cost: PartitionCost, comparator: str) -> float:
+    prices = [price for _, price in cost.price_samples]
+    if not prices:
+        raise SpotPartitionError(f"partition {cost.partition!r} has no price samples")
+    if comparator == "median":
+        return statistics.median(prices)
+    if comparator == "mean":
+        return statistics.mean(prices)
+    if comparator == "min":
+        return min(prices)
+    if comparator == "max":
+        return max(prices)
+    if comparator == "btm-qrtile":
+        return _bottom_quartile(prices)
+    raise SpotPartitionError(f"unsupported partition cost comparator: {comparator}")
+
+
 def _write_cache(path: Path, costs: Sequence[PartitionCost]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
@@ -788,7 +826,7 @@ def derive_partition_order(
     cache_path: Path | None = None,
     runner: CommandRunner = _run_command,
 ) -> str:
-    """Return requested partitions ordered by live median Spot cost per vCPU."""
+    """Return requested partitions ordered by the configured live Spot cost metric per vCPU."""
     parts = _split_partition_csv(partition_csv)
     env_map = os.environ if env is None else env
     if (
@@ -798,6 +836,7 @@ def derive_partition_order(
     ):
         return ",".join(parts)
     effective_now = time.time() if now is None else now
+    comparator = _comparator_from_env(env_map)
     costs = _costs_for_partitions(
         parts,
         cache_path=PARTITION_COST_LOG if cache_path is None else cache_path,
@@ -807,7 +846,7 @@ def derive_partition_order(
     )
     ordered = sorted(
         enumerate(parts),
-        key=lambda item: (costs[item[1]].median_usd_per_vcpu_hr, item[0]),
+        key=lambda item: (_partition_cost_metric(costs[item[1]], comparator), item[0]),
     )
     return ",".join(part for _, part in ordered)
 
@@ -825,19 +864,12 @@ def _format_prices(costs: Iterable[PartitionCost]) -> str:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    partitions = _split_partition_csv(",".join(argv or sys.argv[1:]))
     try:
-        costs = _refresh_cache(
-            partitions,
-            cache_path=PARTITION_COST_LOG,
-            env=os.environ,
-            now=time.time(),
-            runner=_run_command,
-        )
+        ordered_csv = derive_partition_order(",".join(argv or sys.argv[1:]))
     except SpotPartitionError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    print(_format_prices(costs[partition] for partition in partitions), file=sys.stderr)
+    print(ordered_csv)
     return 0
 
 

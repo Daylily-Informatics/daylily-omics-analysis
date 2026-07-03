@@ -139,6 +139,41 @@ def test_slurm_profile_keeps_sbatch_flags_in_single_shell_command() -> None:
     assert "\n    --cpus-per-task" not in rendered
 
 
+def test_slurm_profile_orders_partitions_at_submission_time_by_default() -> None:
+    profile = yaml.safe_load(
+        (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    resources = SimpleNamespace(
+        time=60,
+        partition="i384nvme,i192",
+        mem_mb=MEMORY_FLOOR_MB,
+        distribution="block",
+        constraint="",
+        exclude="",
+        include="",
+        exclusive="",
+    )
+    params = SimpleNamespace(cluster_sample="HG002")
+
+    rendered = profile["cluster"].format(
+        rule="seqfu",
+        params=params,
+        resources=resources,
+        threads=4,
+        jobid=12345,
+    )
+
+    assert (
+        'dy_partition=$(DAY_PROFILE=slurm python -m daylily_omics_analysis.slurm.spot_partition_order "i384nvme,i192")'
+        in rendered
+    )
+    assert '--partition="$dy_partition"' in rendered
+    assert "--partition={resources.partition}" not in profile["cluster"]
+    assert rendered.index("dy_partition=$(") < rendered.index("sbatch")
+
+
 def test_slurm_profile_strips_exclusive_allocation_requests() -> None:
     profile = yaml.safe_load(
         (REPO_ROOT / "config/day_profiles/slurm/templates/config.yaml").read_text(

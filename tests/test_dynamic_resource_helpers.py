@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import statistics
 import time
 from pathlib import Path
 
@@ -123,6 +124,31 @@ def _fresh_cache(path: Path, now: float) -> None:
     )
 
 
+def _metric_cache(path: Path, now: float, rows: dict[str, list[float]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines = ["\t".join(CACHE_HEADER)]
+    for partition, prices in rows.items():
+        samples = [
+            {"instance_type": f"{partition}-{index}", "usd_per_vcpu_hr": price}
+            for index, price in enumerate(prices, 1)
+        ]
+        lines.append(
+            "\t".join(
+                [
+                    f"{now:.6f}",
+                    "2026-06-19T00:00:00+00:00",
+                    "us-west-2",
+                    "us-west-2a",
+                    partition,
+                    f"{statistics.median(prices):.12f}",
+                    ",".join(item["instance_type"] for item in samples),
+                    json.dumps(samples, sort_keys=True),
+                ]
+            )
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _rule_block(text: str, rule_name: str) -> str:
     start = text.index(f"rule {rule_name}:")
     next_rule = text.find("\nrule ", start + 1)
@@ -228,6 +254,101 @@ def test_partition_order_refreshes_stale_cache_and_sorts_by_vcpu_cost(tmp_path: 
     assert ordered == "cheap,costly"
     assert "cheap" in cache.read_text(encoding="utf-8")
     assert (tmp_path / "partition_costs.log.lock").exists()
+
+
+@pytest.mark.parametrize(
+    ("comparator", "rows", "expected"),
+    [
+        ("median", {"left": [0.10, 0.90, 0.90], "right": [0.50, 0.50, 0.50]}, "right,left"),
+        ("mean", {"left": [0.10, 0.10, 0.90], "right": [0.40, 0.40, 0.40]}, "left,right"),
+        ("min", {"left": [0.01, 0.90, 0.90], "right": [0.10, 0.10, 0.10]}, "left,right"),
+        ("max", {"left": [0.10, 0.10, 0.10], "right": [0.01, 0.01, 0.90]}, "left,right"),
+        (
+            "btm-qrtile",
+            {"left": [0.01, 0.01, 0.90, 0.90], "right": [0.20, 0.20, 0.20, 0.20]},
+            "left,right",
+        ),
+    ],
+)
+def test_partition_order_comparator_env_uses_cached_price_samples(
+    tmp_path: Path,
+    comparator: str,
+    rows: dict[str, list[float]],
+    expected: str,
+) -> None:
+    cache = tmp_path / "partition_costs.log"
+    _metric_cache(cache, now=1000.0, rows=rows)
+
+    def fail_runner(args):
+        raise AssertionError(args)
+
+    assert (
+        spo.derive_partition_order(
+            "left,right",
+            env={
+                "DAY_PROFILE": "slurm",
+                "DAYOA_PARTITION_COST_COMPARATOR": comparator,
+            },
+            now=1100.0,
+            cache_path=cache,
+            runner=fail_runner,
+        )
+        == expected
+    )
+
+
+def test_partition_order_defaults_to_median_comparator(tmp_path: Path) -> None:
+    cache = tmp_path / "partition_costs.log"
+    _metric_cache(
+        cache,
+        now=1000.0,
+        rows={"left": [0.10, 0.90, 0.90], "right": [0.50, 0.50, 0.50]},
+    )
+
+    assert (
+        spo.derive_partition_order(
+            "left,right",
+            env={"DAY_PROFILE": "slurm"},
+            now=1100.0,
+            cache_path=cache,
+            runner=lambda args: (_ for _ in ()).throw(AssertionError(args)),
+        )
+        == "right,left"
+    )
+
+
+def test_partition_order_rejects_unknown_comparator(tmp_path: Path) -> None:
+    cache = tmp_path / "partition_costs.log"
+    _fresh_cache(cache, now=1000.0)
+
+    with pytest.raises(SpotPartitionError, match="DAYOA_PARTITION_COST_COMPARATOR"):
+        spo.derive_partition_order(
+            "cached",
+            env={"DAY_PROFILE": "slurm", "DAYOA_PARTITION_COST_COMPARATOR": "avg"},
+            now=1100.0,
+            cache_path=cache,
+        )
+
+
+def test_partition_order_cli_prints_ordered_csv_from_env(
+    tmp_path: Path,
+    monkeypatch,
+    capsys,
+) -> None:
+    cache = tmp_path / "partition_costs.log"
+    _metric_cache(
+        cache,
+        now=time.time(),
+        rows={"left": [0.10, 0.10, 0.10], "right": [0.01, 0.01, 0.90]},
+    )
+    monkeypatch.setenv("DAY_PROFILE", "slurm")
+    monkeypatch.setenv("DAYOA_PARTITION_COST_COMPARATOR", "max")
+    monkeypatch.setattr(spo, "PARTITION_COST_LOG", cache)
+
+    assert spo.main(["left,right"]) == 0
+    captured = capsys.readouterr()
+    assert captured.out == "left,right\n"
+    assert captured.err == ""
 
 
 def test_partition_order_uses_fresh_cache_without_live_commands(tmp_path: Path) -> None:
