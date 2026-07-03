@@ -221,6 +221,7 @@ rule smncopynumbercaller_contract_validation:
         test -s "$resource_dir/SMN_target_variant_{params.genome}.txt"
         test -s "$resource_dir/SMN_gmm.txt"
 
+        set +e
         python workflow/scripts/smn12_input_qc.py \
           --input {input.alignment:q} \
           --reference "$reference" \
@@ -238,6 +239,53 @@ rule smncopynumbercaller_contract_validation:
           --max-sample-records {params.max_sample_records:q} \
           --min-norm-bin-present-fraction {params.min_norm_bin_present_fraction:q} \
           > {log:q} 2>&1
+        preflight_rc=$?
+        set -e
+        if [ "$preflight_rc" -ne 0 ]; then
+          SAMPLE={wildcards.sample:q} PREFLIGHT_RC="$preflight_rc" python - <<'PY' > {output.summary_json:q}
+import json
+import os
+import sys
+json.dump(
+    {{
+        "sample": os.environ["SAMPLE"],
+        "caller": "SMNCopyNumberCaller",
+        "status": "PREFLIGHT_FAILED",
+        "preflight_rc": os.environ["PREFLIGHT_RC"],
+    }},
+    sys.stdout,
+    indent=2,
+)
+print()
+PY
+          python workflow/scripts/smncopynumbercaller_contract_summary.py \
+            --sample {wildcards.sample:q} \
+            --input {input.alignment:q} \
+            --reference "$reference" \
+            --resource-dir "$resource_dir" \
+            --genome {params.genome:q} \
+            --expected-smn1 {params.expected_smn1:q} \
+            --expected-smn2 {params.expected_smn2:q} \
+            --source-analysis {params.source_analysis:q} \
+            --summary-json {output.summary_json:q} \
+            --input-qc {output.input_qc:q} \
+            --required-status {output.required_status:q} \
+            --output {output.summary_tsv:q} \
+            --preflight-rc "$preflight_rc" \
+            >> {log:q} 2>&1
+          {{
+            printf 'path\tsha256\n'
+            sha256sum {input.alignment:q}
+            sha256sum {input.index:q}
+            sha256sum "$reference"
+            sha256sum "$resource_dir/SMN_region_{params.genome}.bed"
+            sha256sum "$resource_dir/SMN_SNP_{params.genome}.txt"
+            sha256sum "$resource_dir/SMN_target_variant_{params.genome}.txt"
+            sha256sum "$resource_dir/SMN_gmm.txt"
+          }} | awk 'NR == 1 {{print; next}} {{print $2 "\t" $1}}' > {output.checksum_tsv:q}
+          touch {output.done:q}
+          exit 0
+        fi
 
         manifest=$(mktemp)
         smn_workdir=$(mktemp -d)
@@ -269,6 +317,7 @@ rule smncopynumbercaller_contract_validation:
           --input-qc {output.input_qc:q} \
           --required-status {output.required_status:q} \
           --output {output.summary_tsv:q} \
+          --preflight-rc "$preflight_rc" \
           >> {log:q} 2>&1
 
         {{

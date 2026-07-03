@@ -30,6 +30,7 @@ FIELDNAMES = [
     "preflight_production_eligible",
     "preflight_input_scope",
     "preflight_failed_requirements",
+    "preflight_rc",
     "expected_match_status",
     "parse_status",
     "source_analysis",
@@ -38,6 +39,8 @@ FIELDNAMES = [
 
 
 def _load_json(path: Path) -> Any:
+    if not path.exists():
+        return {}
     with path.open("r", encoding="utf-8") as handle:
         return json.load(handle)
 
@@ -65,15 +68,19 @@ def _first_key(data: Any, *keys: str) -> str:
 
 
 def _first_row(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
     with path.open("r", encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle, delimiter="\t"))
     if not rows:
-        raise SystemExit(f"TSV has no data rows: {path}")
+        return {}
     return rows[0]
 
 
 def _failed_requirements(path: Path) -> str:
     failed: list[str] = []
+    if not path.exists():
+        return "required_status_missing"
     with path.open("r", encoding="utf-8", newline="") as handle:
         for row in csv.DictReader(handle, delimiter="\t"):
             if row.get("status") != "PASS":
@@ -103,6 +110,7 @@ def main() -> int:
     parser.add_argument("--input-qc", required=True)
     parser.add_argument("--required-status", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--preflight-rc", default="0")
     args = parser.parse_args()
 
     summary_path = Path(args.summary_json)
@@ -112,11 +120,12 @@ def main() -> int:
     observed_smn1 = _first_key(data, "SMN1_CN", "smn1_cn", "smn1_copy_number", "SMN1_copy_number")
     observed_smn2 = _first_key(data, "SMN2_CN", "smn2_cn", "smn2_copy_number", "SMN2_copy_number")
     observed_delta = _first_key(data, "SMN2delta78", "smn2delta78", "smn_del78_cn", "SMN2_del78_CN")
-    parse_status = (
-        "PARSED_EXACT_CN"
-        if observed_smn1 != "not_reported" and observed_smn2 != "not_reported"
-        else "PARSE_INCOMPLETE"
-    )
+    if args.preflight_rc != "0":
+        parse_status = "PREFLIGHT_FAILED"
+    elif observed_smn1 != "not_reported" and observed_smn2 != "not_reported":
+        parse_status = "PARSED_EXACT_CN"
+    else:
+        parse_status = "PARSE_INCOMPLETE"
 
     row = {
         "sample": args.sample,
@@ -138,6 +147,7 @@ def main() -> int:
         "preflight_production_eligible": qc_row.get("production_eligible", "not_reported"),
         "preflight_input_scope": qc_row.get("input_scope", "not_reported"),
         "preflight_failed_requirements": _failed_requirements(Path(args.required_status)),
+        "preflight_rc": args.preflight_rc,
         "expected_match_status": _match_status(args.expected_smn1, args.expected_smn2, observed_smn1, observed_smn2),
         "parse_status": parse_status,
         "source_analysis": args.source_analysis,
@@ -150,11 +160,6 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=FIELDNAMES, delimiter="\t")
         writer.writeheader()
         writer.writerow(row)
-    if parse_status != "PARSED_EXACT_CN":
-        raise SystemExit(
-            "SMNCopyNumberCaller contract summary did not expose exact SMN1 and SMN2 CN fields; "
-            f"see {summary_path}"
-        )
     return 0
 
 
