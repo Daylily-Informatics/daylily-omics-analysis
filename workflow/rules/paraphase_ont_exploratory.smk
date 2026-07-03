@@ -116,14 +116,14 @@ def paraphase_ont_reference(wildcards):
     return paraphase_ont_row(wildcards)["reference_fasta"]
 
 
-def paraphase_ont_sample_tsvs():
+def paraphase_ont_sample_tsvs(wildcards=None):
     return expand(
         PARAPHASE_ONT_DIR + "{sample}/{sample}.paraphase_ont_exploratory.summary.tsv",
         sample=paraphase_ont_samples(),
     )
 
 
-def paraphase_ont_sample_dones():
+def paraphase_ont_sample_dones(wildcards=None):
     return expand(
         PARAPHASE_ONT_DIR + "{sample}/{sample}.paraphase_ont_exploratory.done",
         sample=paraphase_ont_samples(),

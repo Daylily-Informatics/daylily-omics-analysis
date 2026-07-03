@@ -139,14 +139,14 @@ def smncopy_contract_resource_files(wildcards):
     ]
 
 
-def smncopy_contract_sample_tsvs():
+def smncopy_contract_sample_tsvs(wildcards=None):
     return expand(
         SMNCOPY_CONTRACT_DIR + "{sample}/{sample}.smncopynumbercaller_contract.summary.tsv",
         sample=smncopy_contract_samples(),
     )
 
 
-def smncopy_contract_sample_dones():
+def smncopy_contract_sample_dones(wildcards=None):
     return expand(
         SMNCOPY_CONTRACT_DIR + "{sample}/{sample}.smncopynumbercaller_contract.done",
         sample=smncopy_contract_samples(),
