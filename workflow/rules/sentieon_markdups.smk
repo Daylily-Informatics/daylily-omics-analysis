@@ -77,7 +77,8 @@ rule sent_dedup:
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
         main_bashpid=${{BASHPID:-}};
-        tmp_root=$(dirname {log})/../tmp;
+        tmp_root="{params.tmp_base}";
+        tmp_root="${{tmp_root%/}}/sentieon_markdups";
         mkdir -p "$tmp_root";
         export TMPDIR="$tmp_root";
         work_tmp=$TMPDIR/smd_meta_tmp_$timestamp;
