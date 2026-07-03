@@ -47,7 +47,14 @@ def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
     assert config["cyrius"]["threads"] == 128
     assert config["cyrius"]["mem_mb"] == 128000
     assert config["cyrius"]["partition"] == "i192hugenvme,i192nvme,i384nvme"
-    for caller in ("smn12", "smaca", "sma_finder", "hapsma"):
+    for caller in (
+        "smn12",
+        "smncopynumbercaller_contract_validation",
+        "smaca",
+        "sma_finder",
+        "hapsma",
+        "paraphase_ont_exploratory",
+    ):
         assert config[caller]["threads"] == 192
         assert config[caller]["mem_mb"] == 250000
         assert config[caller]["partition"] == "i192hugenvme,i192nvme,i384nvme"
@@ -110,6 +117,8 @@ def test_active_and_disabled_htd_rule_includes_are_explicit() -> None:
     assert 'include: "rules/smn12_input_qc.smk"' in active_includes
     assert 'include: "rules/smn12_orthogonal_calls.smk"' in active_includes
     assert 'include: "rules/smn_copynumbercaller.smk"' in active_includes
+    assert 'include: "rules/smncopynumbercaller_contract_validation.smk"' in active_includes
+    assert 'include: "rules/paraphase_ont_exploratory.smk"' in active_includes
     assert "strict short-read" in snakefile
     assert 'include: "rules/genetocn.smk"' not in active_includes
     assert '# include: "rules/genetocn.smk"' in snakefile
@@ -443,6 +452,77 @@ def test_smn12_resource_bundle_contains_required_files() -> None:
         assert (data_dir / f"SMN_SNP_{genome}.txt").is_file()
         assert (data_dir / f"SMN_target_variant_{genome}.txt").is_file()
     assert (data_dir / "SMN_gmm.txt").is_file()
+
+
+def test_smncopy_contract_target_is_manifest_driven_whole_genome_only() -> None:
+    rule = _read("workflow/rules/smncopynumbercaller_contract_validation.smk")
+    script = _read("workflow/scripts/smncopynumbercaller_contract_summary.py")
+
+    for expected in (
+        "rule smncopynumbercaller_contract_validation:",
+        "rule produce_smncopynumbercaller_contract_validation:",
+        "smncopynumbercaller_contract_manifest",
+        "SMNCOPY_CONTRACT_REQUIRED_COLUMNS",
+        "input_cram_or_bam",
+        "input_index",
+        "reference_fasta",
+        "resource_dir",
+        "source_analysis",
+        "whole_genome_wgs_bam_cram",
+        "workflow/scripts/smn12_input_qc.py",
+        "--aligner smncopy_contract",
+        "--deduper whole_genome_input",
+        "SMN12 input preflight failed required checks",
+        "smn_caller.py",
+        "--manifest \"$manifest\"",
+        "smncopy_contract_results.tsv",
+        '"../envs/smn12_v0.1.yaml"',
+    ):
+        assert expected in rule
+    for expected in (
+        "FIELDNAMES",
+        "PARSE_INCOMPLETE",
+        "SMNCopyNumberCaller",
+        "whole_genome_wgs_bam_cram",
+        "preflight_failed_requirements",
+        "NO_EXACT_CN",
+        "DISCORDANT",
+        "MATCH",
+    ):
+        assert expected in script
+
+
+def test_paraphase_ont_target_is_exploratory_and_not_production_htd() -> None:
+    rule = _read("workflow/rules/paraphase_ont_exploratory.smk")
+    script = _read("workflow/scripts/paraphase_ont_exploratory_summary.py")
+    env = _read("workflow/envs/paraphase_v3.5.yaml")
+    htd = _read("workflow/rules/htd_calls.smk")
+
+    for expected in (
+        "rule paraphase_ont_exploratory:",
+        "rule produce_paraphase_ont_exploratory:",
+        "paraphase_ont_manifest",
+        "PARAPHASE_ONT_REQUIRED_COLUMNS",
+        "ont_input_cram_or_bam",
+        "EXPLORATORY_ONT_PARAPHASE",
+        "ONT_CRAM_CONVERTED_TO_BAM_FOR_PARAPHASE",
+        "paraphase \\",
+        "-g smn1",
+        "--genome 38",
+        "paraphase_ont_results.tsv",
+        '"../envs/paraphase_v3.5.yaml"',
+    ):
+        assert expected in rule
+    for expected in (
+        "EXPLORATORY_ONT_PARAPHASE",
+        "PARSED_EXACT_CN_EXPLORATORY",
+        "DISCORDANT_EXPLORATORY",
+        "MATCH_EXPLORATORY",
+    ):
+        assert expected in script
+    assert "paraphase==3.5.0" in env
+    assert "samtools>=1.23" in env
+    assert "paraphase_ont_exploratory" not in htd
 
 
 def test_smn12_input_qc_contract_is_strict_and_multiqc_ready() -> None:

@@ -434,6 +434,11 @@ smn12:
     mem_mb: 50000
     partition: "i8"
 
+smncopynumbercaller_contract_validation:
+    threads: 2
+    mem_mb: 50000
+    partition: "i8"
+
 smn12_input_qc:
     threads: 2
     mem_mb: 50000
@@ -457,6 +462,13 @@ hapsma:
     minimap_param: "-y -ax map-ont"
     fastq_tags: "RG,Mm,Ml,MM,ML"
     min_read_length: 1000
+    threads: 2
+    mem_mb: 50000
+    partition: "i8"
+
+paraphase_ont_exploratory:
+    dev_exploratory: true
+    version: "3.5.0"
     threads: 2
     mem_mb: 50000
     partition: "i8"

@@ -107,6 +107,7 @@ rule smn12_input_qc:
         threads=config["smn12_input_qc"]["threads"],
         vcpu=config["smn12_input_qc"]["threads"],
         mem_mb=config["smn12_input_qc"]["mem_mb"],
+    container: None
     conda:
         "../envs/smn12_v0.1.yaml"
     shell:

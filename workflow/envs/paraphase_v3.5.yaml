@@ -1,0 +1,12 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - samtools>=1.23
+  - minimap2>=2.28
+  - pysam
+  - pyyaml
+  - pip
+  - pip:
+      - paraphase==3.5.0
