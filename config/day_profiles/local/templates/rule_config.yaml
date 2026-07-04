@@ -445,20 +445,27 @@ smn12_input_qc:
     partition: "i8"
     max_sample_records: 200000
     min_norm_bin_present_fraction: 0.95
+    allow_failed_required_checks: false
 
 hapsma:
     dev_exploratory: true
-    ploidy: ""
+    ploidy: "4"
     start: "bam_single_remap"
-    smn_region: ""
+    smn_region: "chr5:69949533-71054170"
     min_smn_region_mean_coverage: 4
-    calling_target_bed: ""
-    calling_target_region: ""
-    phaseset_region: ""
-    homopolymer_bed: ""
-    clair3model: ""
+    calling_target_bed:
+        hg38: "/fsx/references/runtime_assets/tool_specific_resources/hapsma/hg38/SMN_region_38.smn_only.bed"
+        hg38_broad: "/fsx/references/runtime_assets/tool_specific_resources/hapsma/hg38_broad/SMN_region_38.smn_only.bed"
+    calling_target_region: "chr5:70049522-70954173"
+    phaseset_region: "chr5:69949533-71054170"
+    homopolymer_bed:
+        hg38: "/fsx/references/runtime_assets/tool_specific_resources/hapsma/hg38/hg38_smn_100kb_pad_homopolymer_run3.bed"
+        hg38_broad: "/fsx/references/runtime_assets/tool_specific_resources/hapsma/hg38_broad/hg38_broad_smn_100kb_pad_homopolymer_run3.bed"
+    clair3model: "/fsx/references/runtime_assets/tool_specific_resources/clair3/models/r1041_e82_400bps_sup_v500"
     clair3_optional: "--haploid_sensitive --platform=ont --enable_long_indel"
-    minimap_index: ""
+    minimap_index:
+        hg38: "/fsx/references/genomic_data/organism_references/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
+        hg38_broad: "/fsx/references/genomic_data/organism_references/H_sapiens/hg38_broad/Homo_sapiens_assembly38.map-ont.mmi"
     minimap_param: "-y -ax map-ont"
     fastq_tags: "RG,Mm,Ml,MM,ML"
     min_read_length: 1000

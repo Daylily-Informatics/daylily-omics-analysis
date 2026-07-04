@@ -79,6 +79,17 @@ def htd_call_outputs(*, require_non_empty=False):
                 pairs=smn_long_pairs,
             )
         )
+    if "parascopy" in callers:
+        outputs.extend(
+            expand(
+                [
+                    MDIR + "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done",
+                ],
+                sample=SSAMPS,
+                alnr=alnrs,
+                ddup=ddups,
+            )
+        )
     return outputs
 
 

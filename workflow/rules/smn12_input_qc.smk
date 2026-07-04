@@ -95,6 +95,11 @@ rule smn12_input_qc:
         min_norm_bin_present_fraction=lambda wildcards: config.get(
             "smn12_input_qc", {}
         ).get("min_norm_bin_present_fraction", 0.95),
+        allow_failed_required_checks=lambda wildcards: (
+            "--allow-failed-required-checks"
+            if config.get("smn12_input_qc", {}).get("allow_failed_required_checks", False)
+            else ""
+        ),
     log:
         MDIR
         + "{sample}/align/{alnr}/{ddup}/htd/smn12_input_qc/logs/"
@@ -132,6 +137,7 @@ rule smn12_input_qc:
           --mqc {output.mqc:q} \
           --max-sample-records {params.max_sample_records:q} \
           --min-norm-bin-present-fraction {params.min_norm_bin_present_fraction:q} \
+          {params.allow_failed_required_checks} \
           > {log:q} 2>&1
         touch {output.done:q}
         """

@@ -104,8 +104,7 @@ def test_snakefile_includes_repaired_qc_rules() -> None:
     assert '# include: "rules/qualimap.smk"' in snakefile
     assert 'include: "rules/gauchian.smk"' in active_includes
     assert "Historical alternate GBA integration" in snakefile
-    assert 'include: "rules/parascopy.smk"' not in active_includes
-    assert '# include: "rules/parascopy.smk"' in snakefile
+    assert 'include: "rules/parascopy.smk"' in active_includes
     assert 'include: "rules/hapsma.smk"' in active_includes
     assert 'include: "rules/sma_finder.smk"' in active_includes
     assert 'include: "rules/smaca.smk"' in active_includes
@@ -142,6 +141,9 @@ def test_snakefile_active_rule_includes_are_ordered_with_dependency_exceptions()
     dependency_exceptions = {
         "rules/contam_identity.smk",
         "rules/legacy_cram_compat_bam.smk",
+        "rules/sma_finder.smk",
+        "rules/smaca.smk",
+        "rules/smn12_input_qc.smk",
         "rules/site_mix_contam.smk",
     }
     assert active_includes.index("rules/legacy_cram_compat_bam.smk") < active_includes.index(

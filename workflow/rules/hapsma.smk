@@ -5,8 +5,26 @@ def _hapsma_cfg():
     return config.get("hapsma", {})
 
 
-def _hapsma_required(key):
+def _hapsma_value(key):
     value = _hapsma_cfg().get(key, "")
+    if isinstance(value, dict):
+        genome_build = str(config.get("genome_build", "")).strip()
+        if not genome_build:
+            raise WorkflowError(
+                f"HapSMA is dev_exploratory and requires config.genome_build "
+                f"to resolve config.hapsma.{key}."
+            )
+        if genome_build not in value or not _filled(value.get(genome_build)):
+            raise WorkflowError(
+                f"HapSMA is dev_exploratory and requires config.hapsma.{key} "
+                f"for genome_build={genome_build}."
+            )
+        return value[genome_build]
+    return value
+
+
+def _hapsma_required(key):
+    value = _hapsma_value(key)
     if not _filled(value):
         raise WorkflowError(
             f"HapSMA is dev_exploratory and requires config.hapsma.{key}."

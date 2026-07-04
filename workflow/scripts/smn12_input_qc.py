@@ -660,7 +660,7 @@ def run(args: argparse.Namespace) -> int:
         _write_tsv(Path(args.alignment_flags), FIELDNAMES_FLAGS, flag_rows)
         _write_tsv(Path(args.mqc), FIELDNAMES_MQC, [mqc_row])
 
-        if production_eligible != "true":
+        if production_eligible != "true" and not args.allow_failed_required_checks:
             failed = ", ".join(row["requirement"] for row in required_rows if row["status"] != "PASS")
             raise SystemExit(f"SMN12 input preflight failed required checks: {failed}")
     finally:
@@ -685,6 +685,15 @@ def main() -> int:
     parser.add_argument("--mqc", required=True)
     parser.add_argument("--max-sample-records", type=int, default=200000)
     parser.add_argument("--min-norm-bin-present-fraction", type=float, default=0.95)
+    parser.add_argument(
+        "--allow-failed-required-checks",
+        action="store_true",
+        help=(
+            "Write QC outputs and return success even when required SMN12 depth/site "
+            "checks fail. This is for exploratory caller runs only; production_eligible "
+            "remains false in the emitted QC tables."
+        ),
+    )
     return run(parser.parse_args())
 
 

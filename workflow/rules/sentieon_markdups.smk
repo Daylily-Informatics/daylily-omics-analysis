@@ -87,23 +87,36 @@ rule sent_dedup:
         export APPTAINER_HOME=$work_tmp/apptainer_home;
         mkdir -p "$SENTIEON_TMPDIR" "$APPTAINER_HOME";
 
-        score_out={params.score_out};
-        metrics_out={params.metrics_out};
-        score_tmp=$score_out;
-        metrics_tmp=$metrics_out;
-        rm -f "$score_out" "$metrics_out";
-        trap 'status=$?; if [ "${{BASHPID:-}}" != "$main_bashpid" ]; then exit "$status"; fi; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp status=$status" >> {log} 2>&1; df -h "$TMPDIR" >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" "$(dirname "$score_out")" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; if [ "$status" -eq 0 ]; then rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; else echo "Preserving scratch after failure under $TMPDIR" >> {log} 2>&1; fi; trap - EXIT; exit "$status"' EXIT;
+        score_out={params.score_out:q};
+        metrics_out={params.metrics_out:q};
+        cram_out={output.cram:q};
+        crai_out={output.crai:q};
+        score_tmp="$work_tmp/$(basename "$score_out")";
+        metrics_tmp="$work_tmp/$(basename "$metrics_out")";
+        cram_tmp="$driver_tmp/$(basename "$cram_out")";
+        crai_tmp="$driver_tmp/$(basename "$crai_out")";
+        score_copy_tmp="${{score_out}}.copy_tmp_$timestamp";
+        metrics_copy_tmp="${{metrics_out}}.copy_tmp_$timestamp";
+        cram_copy_tmp="${{cram_out}}.copy_tmp_$timestamp";
+        crai_copy_tmp="${{crai_out}}.copy_tmp_$timestamp";
+        rm -f "$score_out" "$metrics_out" "$cram_out" "$crai_out" \
+              "$score_copy_tmp" "$metrics_copy_tmp" "$cram_copy_tmp" "$crai_copy_tmp";
+        trap 'status=$?; if [ "${{BASHPID:-}}" != "$main_bashpid" ]; then exit "$status"; fi; echo "Cleanup TMPDIR_BASE=$TMPDIR work_tmp=$work_tmp driver_tmp=$driver_tmp SENTIEON_TMPDIR=$SENTIEON_TMPDIR APPTAINER_HOME=$APPTAINER_HOME score_tmp=$score_tmp metrics_tmp=$metrics_tmp cram_tmp=$cram_tmp status=$status" >> {log} 2>&1; df -h "$TMPDIR" >> {log} 2>&1 || true; ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" "$(dirname "$score_out")" >> {log} 2>&1 || true; ls -l "$score_tmp" "$metrics_tmp" "$cram_tmp" "$crai_tmp" >> {log} 2>&1 || true; find "$work_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; find "$driver_tmp" -maxdepth 3 -type f -ls 2>/dev/null | head -200 >> {log} 2>&1 || true; rm -f "$score_copy_tmp" "$metrics_copy_tmp" "$cram_copy_tmp" "$crai_copy_tmp" 2>/dev/null || true; if [ "$status" -eq 0 ]; then rm -rf "$work_tmp" "$driver_tmp" 2>/dev/null || true; else echo "Preserving scratch after failure under $TMPDIR" >> {log} 2>&1; fi; trap - EXIT; exit "$status"' EXIT;
 
         df -h {params.tmp_base} >> {log} 2>&1;
         ls -ld "$TMPDIR" "$work_tmp" "$driver_tmp" "$SENTIEON_TMPDIR" "$APPTAINER_HOME" >> {log} 2>&1;
-        mkdir -p "$(dirname "$score_out")" "$(dirname "$metrics_out")";
+        mkdir -p "$(dirname "$score_out")" "$(dirname "$metrics_out")" "$(dirname "$cram_out")";
         echo "TMPDIR_BASE: $TMPDIR" >> {log};
         echo "WORK_TMP: $work_tmp" >> {log};
         echo "DRIVER_TMP: $driver_tmp" >> {log};
         echo "SCORE_TMP: $score_tmp" >> {log};
         echo "METRICS_TMP: $metrics_tmp" >> {log};
+        echo "CRAM_TMP: $cram_tmp" >> {log};
+        echo "CRAI_TMP: $crai_tmp" >> {log};
         echo "SCORE_OUT: $score_out" >> {log};
         echo "METRICS_OUT: $metrics_out" >> {log};
+        echo "CRAM_OUT: $cram_out" >> {log};
+        echo "CRAI_OUT: $crai_out" >> {log};
 
         read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
 
@@ -137,7 +150,7 @@ rule sent_dedup:
             --score_info "$score_tmp" \
             --metrics "$metrics_tmp" \
             {params.cram_opts} \
-            {output.cram} >> {log} 2>&1;
+            "$cram_tmp" >> {log} 2>&1;
 
         if [ ! -s "$metrics_tmp" ]; then
             echo "Dedup did not create a non-empty metrics file: $metrics_tmp" >> {log} 2>&1;
@@ -145,7 +158,27 @@ rule sent_dedup:
             exit 7;
         fi;
 
-        samtools index -@ {params.index_threads} {output.cram} {output.crai} >> {log} 2>&1;
+        if [ ! -s "$cram_tmp" ]; then
+            echo "Dedup did not create a non-empty scratch CRAM: $cram_tmp" >> {log} 2>&1;
+            ls -l "$cram_tmp" >> {log} 2>&1 || true;
+            exit 8;
+        fi;
+
+        samtools index -@ {params.index_threads} "$cram_tmp" "$crai_tmp" >> {log} 2>&1;
+        if [ ! -s "$crai_tmp" ]; then
+            echo "samtools index did not create a non-empty scratch CRAI: $crai_tmp" >> {log} 2>&1;
+            ls -l "$crai_tmp" >> {log} 2>&1 || true;
+            exit 9;
+        fi;
+
+        cp -f "$score_tmp" "$score_copy_tmp";
+        cp -f "$metrics_tmp" "$metrics_copy_tmp";
+        cp -f "$cram_tmp" "$cram_copy_tmp";
+        cp -f "$crai_tmp" "$crai_copy_tmp";
+        mv -f "$score_copy_tmp" "$score_out";
+        mv -f "$metrics_copy_tmp" "$metrics_out";
+        mv -f "$cram_copy_tmp" "$cram_out";
+        mv -f "$crai_copy_tmp" "$crai_out";
 
         end_time=$(date +%s);
         elapsed_time=$((($end_time - $start_time) / 60));

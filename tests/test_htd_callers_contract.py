@@ -60,6 +60,22 @@ def test_slurm_htd_callers_use_explicit_resource_blocks() -> None:
         assert config[caller]["partition"] == "i192hugenvme,i192nvme,i384nvme"
     assert config["hapsma"]["min_smn_region_mean_coverage"] == 4
     assert config["hapsma"]["start"] == "bam_single_remap"
+    assert config["hapsma"]["ploidy"] == "4"
+    assert config["hapsma"]["smn_region"] == "chr5:69949533-71054170"
+    assert config["hapsma"]["calling_target_region"] == "chr5:70049522-70954173"
+    assert config["hapsma"]["phaseset_region"] == "chr5:69949533-71054170"
+    assert config["hapsma"]["calling_target_bed"]["hg38"].endswith(
+        "/runtime_assets/tool_specific_resources/hapsma/hg38/SMN_region_38.smn_only.bed"
+    )
+    assert config["hapsma"]["homopolymer_bed"]["hg38"].endswith(
+        "/runtime_assets/tool_specific_resources/hapsma/hg38/hg38_smn_100kb_pad_homopolymer_run3.bed"
+    )
+    assert config["hapsma"]["clair3model"].endswith(
+        "/runtime_assets/tool_specific_resources/clair3/models/r1041_e82_400bps_sup_v500"
+    )
+    assert config["hapsma"]["minimap_index"]["hg38"].endswith(
+        "/H_sapiens/hg38/fasta_fai_minalt/GRCh38_no_alt_analysis_set.fasta"
+    )
     for key in (
         "calling_target_bed",
         "calling_target_region",
@@ -108,9 +124,7 @@ def test_active_and_disabled_htd_rule_includes_are_explicit() -> None:
     assert 'include: "rules/htd_calls.smk"' in snakefile
     assert 'include: "rules/gauchian.smk"' in active_includes
     assert "Historical alternate GBA integration" in snakefile
-    assert 'include: "rules/parascopy.smk"' not in active_includes
-    assert '# include: "rules/parascopy.smk"' in snakefile
-    assert "Parascopy is disabled until locus configuration assets" in snakefile
+    assert 'include: "rules/parascopy.smk"' in active_includes
     assert 'include: "rules/smaca.smk"' in active_includes
     assert 'include: "rules/sma_finder.smk"' in active_includes
     assert 'include: "rules/hapsma.smk"' in active_includes
@@ -240,12 +254,13 @@ def test_htd_selector_maps_supported_callers_to_outputs() -> None:
         "sma_finder.done",
         "hapsma.summary.tsv",
         "hapsma.done",
+        "htd/parascopy",
+        "parascopy.done",
         "smn_short_read_alnr_ddup_pairs()",
         "smn_long_read_alnr_ddup_pairs()",
         "expand_smn_alnr_ddup_pairs(",
     ):
         assert expected in htd
-    assert "parascopy.done" not in htd
     assert "genetocn.done" not in htd
 
 
@@ -306,8 +321,10 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "htd/gauchian" in htd_calls
     assert "gauchian.done" in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/parascopy/{sample}.{alnr}.{ddup}.parascopy.done" in parascopy
-    assert "htd/parascopy" not in htd_calls
-    assert "parascopy.done" not in htd_calls
+    assert "threads: _parascopy_threads()" in parascopy
+    assert "--threads {threads}" in parascopy
+    assert "htd/parascopy" in htd_calls
+    assert "parascopy.done" in htd_calls
     assert "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done" in smaca
     assert "htd/smaca" in htd_calls
     assert "smaca.done" in htd_calls
@@ -405,6 +422,9 @@ def test_smaca_sma_finder_and_hapsma_runtime_contracts() -> None:
         "crai=smn_long_crai",
         "HapSMA is dev_exploratory",
         "requires config.hapsma.",
+        "_hapsma_value",
+        "genome_build",
+        "for genome_build={genome_build}.",
         "samtools depth -r",
         "no_call_low_coverage",
         "HapSMA no-call low coverage",
