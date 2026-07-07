@@ -1081,7 +1081,11 @@ rule sentdhupmr_final_norm:
 
         bcftools view --threads {threads} -a -e 'GT="0/0"' {input.vcf} 2>> {log} | \
         bcftools norm --threads {threads} -f {params.huref} 2>> {log} | \
-        bin/dayoa_sentieon util vcfconvert -t {threads} - {output.vcf} >> {log} 2>&1
+        bcftools view --threads {threads} -O z -o {output.vcf} >> {log} 2>&1
+
+        tabix -f -p vcf -@ {threads} {output.vcf} >> {log} 2>&1
+        test -s {output.vcf}
+        test -s {output.tbi}
 
         echo "Final normalization completed at $(date)" >> {log}
         """

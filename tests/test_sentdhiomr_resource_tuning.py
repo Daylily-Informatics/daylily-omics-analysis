@@ -7,6 +7,16 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 SLURM_RULE_CONFIG = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
 LOCAL_RULE_CONFIG = REPO_ROOT / "config/day_profiles/local/templates/rule_config.yaml"
 SENTDHIOMR_RULES = REPO_ROOT / "workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk"
+HYBRID_FINAL_NORM_RULES = {
+    "sentdhiomr_final_norm": REPO_ROOT
+    / "workflow/rules/sent_hybrid_ilmn_ont_modular.refactored.smk",
+    "sentdhuomr_final_norm": REPO_ROOT
+    / "workflow/rules/sent_hybrid_ug_ont_modular.refactored.smk",
+    "sentdhipmr_final_norm": REPO_ROOT
+    / "workflow/rules/sent_hybrid_ilmn_pb_modular.refactored.smk",
+    "sentdhupmr_final_norm": REPO_ROOT
+    / "workflow/rules/sent_hybrid_ug_pb_modular.refactored.smk",
+}
 
 
 EXPECTED_SLURM_TUNING = {
@@ -152,3 +162,16 @@ def test_sentdhiomr_transfer_merge_uses_configured_tmp_parent() -> None:
     assert 'sentdhiomr_transfer_merge_{wildcards.dchrm}_${{timestamp}}_$$' in transfer_merge
     assert 'bcftools concat --threads {threads} -a -d all -O z -o "$tmp_vcf"' in transfer_merge
     assert "cp \"$tmp_vcf\" {output.vcf}" in transfer_merge
+
+
+def test_hybrid_final_norm_avoids_licensed_vcfconvert() -> None:
+    for rule_name, path in HYBRID_FINAL_NORM_RULES.items():
+        text = path.read_text(encoding="utf-8")
+        block = text.split(f"rule {rule_name}:", 1)[1].split("localrules:", 1)[0]
+
+        assert "bin/dayoa_sentieon util vcfconvert" not in block
+        assert "bcftools norm --threads {threads} -f {params.huref}" in block
+        assert "bcftools view --threads {threads} -O z -o {output.vcf}" in block
+        assert "tabix -f -p vcf -@ {threads} {output.vcf}" in block
+        assert "test -s {output.vcf}" in block
+        assert "test -s {output.tbi}" in block
