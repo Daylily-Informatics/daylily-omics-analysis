@@ -186,7 +186,8 @@ def test_ultima_mounted_run_qc_and_demux_contracts_use_fastqc_tools() -> None:
         '"produce_ultima_run_qc_and_demux_multiqc"',
         'RUNQC_UG_ROOT = _runqc_root(RUNQC_UG_CONTEXT, "ultima")',
         'RUNQC_UG_RUN_DIR = _runqc_mounted_run_dir(',
-        'RUNQC_UG_TARGET_INPUTS.append(RUNQC_UG_DEMUX_MULTIQC_HTML)',
+        'RUNQC_UG_TARGET_INPUTS = list(RUNQC_UG_REPORT_INPUTS)',
+        'RUNQC_UG_DEMUX_TARGET_INPUTS.append(RUNQC_UG_DEMUX_MULTIQC_HTML)',
         "config/runs.tsv with PLATFORM=ULTIMA and RUN_DIR is required for Ultima demux FASTQ QC",
         "No demux FASTQ groups found",
         "Duplicate Ultima demux FASTQ sample identifier",
@@ -204,6 +205,15 @@ def test_ultima_mounted_run_qc_and_demux_contracts_use_fastqc_tools() -> None:
     assert "RUNQC_FASTQC_ENV" in rules
     assert "fastqc=0.11.9" in fastqc_env
     assert "seqkit" in fastqc_env
+    run_target = rules.split("rule produce_ultima_run_qc:", 1)[1].split(
+        "rule produce_ultima_demux_fastq_qc:", 1
+    )[0]
+    assert "RUNQC_UG_TARGET_INPUTS" in run_target
+    assert "RUNQC_UG_DEMUX_TARGET_INPUTS" not in run_target
+    demux_target = rules.split("rule produce_ultima_run_qc_and_demux_multiqc:", 1)[1].split(
+        "rule produce_read_fate_river:", 1
+    )[0]
+    assert "RUNQC_UG_DEMUX_TARGET_INPUTS" in demux_target
 
 
 def test_read_fate_river_is_generalized_and_explicit() -> None:

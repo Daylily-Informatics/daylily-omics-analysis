@@ -171,9 +171,11 @@ RUNQC_UG_DEMUX_ROOT = RUNQC_UG_ROOT + "/demux_fastq_qc"
 RUNQC_UG_DEMUX_GROUP_LIST = RUNQC_UG_DEMUX_ROOT + "/fastq_group_dirs.txt"
 RUNQC_UG_DEMUX_DONE = RUNQC_UG_DEMUX_ROOT + "/ultima_demux_fastq_qc.done"
 RUNQC_UG_DEMUX_MULTIQC_HTML = RUNQC_UG_ROOT + "/ultima_demux_fastq.multiqc.html"
-RUNQC_UG_TARGET_INPUTS = [RUNQC_UG_LOG_DIR + "/ultima_run_qc_report.done"]
+RUNQC_UG_REPORT_INPUTS = [RUNQC_UG_LOG_DIR + "/ultima_run_qc_report.done"]
+RUNQC_UG_TARGET_INPUTS = list(RUNQC_UG_REPORT_INPUTS)
+RUNQC_UG_DEMUX_TARGET_INPUTS = list(RUNQC_UG_REPORT_INPUTS)
 if RUNQC_UG_CONTEXT is not None:
-    RUNQC_UG_TARGET_INPUTS.append(RUNQC_UG_DEMUX_MULTIQC_HTML)
+    RUNQC_UG_DEMUX_TARGET_INPUTS.append(RUNQC_UG_DEMUX_MULTIQC_HTML)
 
 
 localrules:
@@ -1072,7 +1074,7 @@ rule produce_ont_run_qc_and_demux_multiqc:  # TARGET: mounted ONT run QC plus de
         mkdir -p logs/benchmarks $(dirname {log:q})
         : > {log:q}
         """
-rule produce_ultima_run_qc:  # TARGET: mounted Ultima run-level QC plus demux FASTQ QC
+rule produce_ultima_run_qc:  # TARGET: mounted Ultima run-level QC report
     input:
         RUNQC_UG_TARGET_INPUTS,
 
@@ -1104,7 +1106,7 @@ rule produce_ultima_demux_fastq_qc:  # TARGET: mounted Ultima demux FASTQ QC and
         """
 rule produce_ultima_run_qc_and_demux_multiqc:  # TARGET: mounted Ultima run QC plus demux FASTQ MultiQC
     input:
-        RUNQC_UG_TARGET_INPUTS,
+        RUNQC_UG_DEMUX_TARGET_INPUTS,
 
 
     log:
