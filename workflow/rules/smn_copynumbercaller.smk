@@ -71,9 +71,8 @@ localrules: produce_smn12
 
 rule produce_smn12:  # TARGET : Produce SMN1/SMN2 copy-number results
     input:
-        expand_smn_alnr_ddup_pairs(
-            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done",
-            pairs=smn_short_read_alnr_ddup_pairs(),
+        smn_short_read_alnr_ddup_inputs(
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smn12/{sample}.{alnr}.{ddup}.smn12.done"
         )
     output:
         "./logs/smn12.done"

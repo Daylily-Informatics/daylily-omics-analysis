@@ -94,9 +94,8 @@ localrules: produce_smaca
 
 rule produce_smaca:  # TARGET : Produce SMAca results
     input:
-        expand_smn_alnr_ddup_pairs(
-            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done",
-            pairs=smn_short_read_alnr_ddup_pairs(),
+        smn_short_read_alnr_ddup_inputs(
+            MDIR + "{sample}/align/{alnr}/{ddup}/htd/smaca/{sample}.{alnr}.{ddup}.smaca.done"
         )
     output:
         "./logs/smaca.done"

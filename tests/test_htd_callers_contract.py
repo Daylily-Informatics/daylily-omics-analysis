@@ -307,8 +307,7 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
         assert "smn_short_cram" in text
         assert "smn_short_crai" in text
         assert "preflight=smn12_input_qc_done" in text
-        assert "smn_short_read_alnr_ddup_pairs()" in text
-        assert "expand_smn_alnr_ddup_pairs(" in text
+        assert "smn_short_read_alnr_ddup_inputs(" in text
     assert "rule smn12_input_qc:" in smn12_qc
     assert "whole-genome BAM/CRAM" in smn12_qc
     assert "smn_long_cram" in hapsma
@@ -341,6 +340,29 @@ def test_selector_facing_aggregate_paths_include_deduper() -> None:
     assert "{sample}/align/{alnr}/{ddup}/htd/genetocn/{sample}.{alnr}.{ddup}.genetocn.done" in genetocn
     assert "htd/genetocn" not in htd_calls
     assert "genetocn.done" not in htd_calls
+
+
+def test_standalone_smn_targets_expand_pairs_lazily() -> None:
+    common = _read("workflow/rules/common.smk")
+    htd_calls = _read("workflow/rules/htd_calls.smk")
+
+    assert "def smn_short_read_alnr_ddup_inputs(patterns):" in common
+    assert "return expand_smn_alnr_ddup_pairs(" in common
+    assert "smn_short_pairs = None" in htd_calls
+    assert 'if "smn12" in callers:' in htd_calls
+    assert 'if "smaca" in callers:' in htd_calls
+    assert 'if "sma_finder" in callers:' in htd_calls
+
+    for path, rule_name in (
+        ("workflow/rules/smn_copynumbercaller.smk", "produce_smn12"),
+        ("workflow/rules/smaca.smk", "produce_smaca"),
+        ("workflow/rules/sma_finder.smk", "produce_sma_finder"),
+    ):
+        text = _read(path)
+        block = text[text.index(f"rule {rule_name}:") :]
+        block = block.split("\nrule ", 1)[0]
+        assert "smn_short_read_alnr_ddup_inputs(" in block
+        assert "smn_short_read_alnr_ddup_pairs()" not in block
 
 
 def test_smn12_uses_hybrid_sr_cram_and_hard_validates_summary() -> None:

@@ -11,7 +11,7 @@ def htd_call_outputs(*, require_non_empty=False):
     outputs = []
     alnrs = QC_CRAM_ALIGNERS
     ddups = DDUP
-    smn_short_pairs = smn_short_read_alnr_ddup_pairs()
+    smn_short_pairs = None
 
     if "gauchian" in callers:
         outputs.extend(
@@ -38,6 +38,8 @@ def htd_call_outputs(*, require_non_empty=False):
             )
         )
     if "smn12" in callers:
+        if smn_short_pairs is None:
+            smn_short_pairs = smn_short_read_alnr_ddup_pairs()
         outputs.extend(
             expand_smn_alnr_ddup_pairs(
                 [
@@ -48,6 +50,8 @@ def htd_call_outputs(*, require_non_empty=False):
             )
         )
     if "smaca" in callers:
+        if smn_short_pairs is None:
+            smn_short_pairs = smn_short_read_alnr_ddup_pairs()
         outputs.extend(
             expand_smn_alnr_ddup_pairs(
                 [
@@ -58,6 +62,8 @@ def htd_call_outputs(*, require_non_empty=False):
             )
         )
     if "sma_finder" in callers:
+        if smn_short_pairs is None:
+            smn_short_pairs = smn_short_read_alnr_ddup_pairs()
         outputs.extend(
             expand_smn_alnr_ddup_pairs(
                 [

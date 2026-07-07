@@ -2766,6 +2766,16 @@ def expand_smn_alnr_ddup_pairs(patterns, sample_ids=None, pairs=None):
     ]
 
 
+def smn_short_read_alnr_ddup_inputs(patterns):
+    def _inputs(wildcards):
+        return expand_smn_alnr_ddup_pairs(
+            patterns,
+            pairs=smn_short_read_alnr_ddup_pairs(),
+        )
+
+    return _inputs
+
+
 def smn_short_cram(wildcards):
     if wildcards.alnr in _smn_hiomr_aligners():
         return (
