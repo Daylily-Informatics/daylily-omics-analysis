@@ -167,6 +167,8 @@ def test_cyrius_rule_uses_documented_interface_and_outputs() -> None:
         '"$CONDA_PREFIX/bin/python" {params.runtime_dir}/star_caller.py',
         "cyrius_rc=$?",
         'grep -q "ZeroDivisionError: division by zero" {log}',
+        "{{",
+        "}} > {output.tsv}",
         "no_call_zero_support",
         "Cyrius zero support counts in CYP2D6 exon9 caller",
         'exit "$cyrius_rc"',

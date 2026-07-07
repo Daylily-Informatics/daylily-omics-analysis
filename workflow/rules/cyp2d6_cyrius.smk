@@ -63,10 +63,10 @@ rule cyrius:
         if [ "$cyrius_rc" -ne 0 ]; then
             if grep -q "ZeroDivisionError: division by zero" {log}; then
                 input_bam=$(cat {output.manifest})
-                {
+                {{
                     printf "Sample\tGenotype\tFilter\tReason\n"
                     printf "%s\tNA\tno_call_zero_support\tCyrius zero support counts in CYP2D6 exon9 caller\n" "{wildcards.sample}"
-                } > {output.tsv}
+                }} > {output.tsv}
                 printf '{{"sample":"%s","caller":"cyrius","status":"no_call_zero_support","reason":"Cyrius zero support counts in CYP2D6 exon9 caller","input_bam":"%s"}}\n' \
                     "{wildcards.sample}" "$input_bam" > {output.json}
                 echo "Cyrius no-call zero support for {wildcards.sample}; original exit=$cyrius_rc." >> {log}
