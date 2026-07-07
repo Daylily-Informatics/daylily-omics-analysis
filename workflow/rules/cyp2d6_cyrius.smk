@@ -4,8 +4,8 @@
 rule cyrius:
     """Call CYP2D6 star alleles using Cyrius."""
     input:
-        cram=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram",
-        crai=MDIR + "{sample}/align/{alnr}/{ddup}/{sample}.{alnr}.{ddup}.cram.crai",
+        bam=rules.legacy_cram_compat_bam.output.bam,
+        bai=rules.legacy_cram_compat_bam.output.bai,
     output:
         manifest=MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyrius/{sample}.{alnr}.{ddup}.cyrius.manifest",
         tsv=MDIR + "{sample}/align/{alnr}/{ddup}/htd/cyrius/{sample}.{alnr}.{ddup}.cyrius.tsv",
@@ -36,7 +36,7 @@ rule cyrius:
         set -euo pipefail
         mkdir -p {params.out_dir} $(dirname {log})
         rm -f {output.tsv} {output.json} {output.done}
-        realpath {input.cram} > {output.manifest}
+        realpath {input.bam} > {output.manifest}
 
         if [ ! -s {params.resource_data}/star_table.txt ]; then
             echo "Cyrius resource data missing at {params.resource_data}" > {log}

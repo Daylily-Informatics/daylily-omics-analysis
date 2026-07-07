@@ -50,6 +50,8 @@ def test_site_mix_targets_exclude_ntc_controls() -> None:
     assert 'require_qc_eligible_sample(\n            wildcards, "site_mix_contam"' in site_mix
     assert "sample_ids=_site_mix_qc_samples()" in site_mix
     assert "expand_qc_contamination(" in target
+    assert '"logs/site_mix_contam_estimate.done"' in target
+    assert "touch {output:q}" in target
 
 
 def test_relatedness_uses_control_filtered_samples_and_declared_outputs() -> None:

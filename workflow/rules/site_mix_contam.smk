@@ -210,7 +210,16 @@ rule produce_site_mix_contam_estimate:  # TARGET: Produce genotype-free site-mix
             ddup=qc_contamination_dedupers(),
         ),
         MDIR + "other_reports/site_mix_contam_mqc.tsv",
+    output:
+        "logs/site_mix_contam_estimate.done",
     log:
         MDIR + "logs/produce_site_mix_contam_estimate.log"
     benchmark:
         "logs/benchmarks/produce_site_mix_contam_estimate.bench.tsv"
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        : > {log:q}
+        touch {output:q}
+        """
