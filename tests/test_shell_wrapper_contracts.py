@@ -555,6 +555,112 @@ def test_dayoa_sentieon_wrapper_executes_configured_binary(tmp_path: Path) -> No
     assert capture.read_text(encoding="utf-8").splitlines() == ["driver", "-t", "2"]
 
 
+def test_dayoa_sentieon_wrapper_starts_local_license_server(
+    tmp_path: Path,
+) -> None:
+    fake_root = tmp_path / "sentieon-root"
+    fake_bin = fake_root / "bin"
+    fake_libexec = fake_root / "libexec"
+    fake_bin.mkdir(parents=True)
+    fake_libexec.mkdir()
+    fake_sentieon = fake_bin / "sentieon"
+    fake_licsrvr = fake_libexec / "licsrvr"
+    capture = tmp_path / "events.txt"
+    license_file = tmp_path / "license.lic"
+    license_file.write_text("localhost\n8990\n", encoding="utf-8")
+    fake_sentieon.write_text(
+        f"#!/usr/bin/env bash\nprintf 'sentieon %s\\n' \"$*\" >> {str(capture)!r}\n",
+        encoding="utf-8",
+    )
+    fake_sentieon.chmod(0o755)
+    fake_licsrvr.write_text(
+        f"""#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "--ping" ]]; then
+  if [[ -f {str(tmp_path / "started")!r} ]]; then
+    printf 'ping-ok\\n' >> {str(capture)!r}
+    exit 0
+  fi
+  printf 'ping-fail\\n' >> {str(capture)!r}
+  exit 9
+fi
+if [[ "$1" == "--start" ]]; then
+  touch {str(tmp_path / "started")!r}
+  printf 'start %s\\n' "$*" >> {str(capture)!r}
+  exit 0
+fi
+exit 64
+""",
+        encoding="utf-8",
+    )
+    fake_licsrvr.chmod(0o755)
+
+    env = {
+        **os.environ,
+        "DAYOA_SENTIEON_BIN": str(fake_sentieon),
+        "DAYOA_SENTIEON_START_JITTER_MAX_SECONDS": "0",
+        "SENTIEON_LICENSE": str(license_file),
+    }
+    result = subprocess.run(
+        [str(REPO_ROOT / "bin/dayoa_sentieon"), "driver", "-t", "2"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    events = capture.read_text(encoding="utf-8").splitlines()
+    assert events[0] == "ping-fail"
+    assert events[1].startswith("start --start --linger 3600 -l ")
+    assert events[2] == "ping-ok"
+    assert events[3] == "sentieon driver -t 2"
+
+
+def test_dayoa_sentieon_wrapper_skips_licsrvr_for_nonlocal_license(
+    tmp_path: Path,
+) -> None:
+    fake_root = tmp_path / "sentieon-root"
+    fake_bin = fake_root / "bin"
+    fake_libexec = fake_root / "libexec"
+    fake_bin.mkdir(parents=True)
+    fake_libexec.mkdir()
+    fake_sentieon = fake_bin / "sentieon"
+    fake_licsrvr = fake_libexec / "licsrvr"
+    capture = tmp_path / "events.txt"
+    license_file = tmp_path / "license.lic"
+    license_file.write_text("counted license file\n", encoding="utf-8")
+    fake_sentieon.write_text(
+        f"#!/usr/bin/env bash\nprintf 'sentieon %s\\n' \"$*\" >> {str(capture)!r}\n",
+        encoding="utf-8",
+    )
+    fake_sentieon.chmod(0o755)
+    fake_licsrvr.write_text(
+        "#!/usr/bin/env bash\nexit 99\n",
+        encoding="utf-8",
+    )
+    fake_licsrvr.chmod(0o755)
+
+    env = {
+        **os.environ,
+        "DAYOA_SENTIEON_BIN": str(fake_sentieon),
+        "DAYOA_SENTIEON_START_JITTER_MAX_SECONDS": "0",
+        "SENTIEON_LICENSE": str(license_file),
+    }
+    result = subprocess.run(
+        [str(REPO_ROOT / "bin/dayoa_sentieon"), "driver"],
+        cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert capture.read_text(encoding="utf-8").splitlines() == ["sentieon driver"]
+
+
 def test_dyoainit_budget_and_optional_variable_contracts() -> None:
     dyoainit = _read("dyoainit")
 

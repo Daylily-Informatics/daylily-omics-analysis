@@ -6,5 +6,41 @@ source "$script_dir/day_sentieon_jitter.bash"
 
 sentieon_bin="${DAYOA_SENTIEON_BIN:-/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bin/sentieon}"
 dayoa_require_executable "$sentieon_bin"
+
+dayoa_sentieon_ensure_local_license_server() {
+    local license="${SENTIEON_LICENSE:-}"
+    if [[ -z "$license" || ! -f "$license" ]]; then
+        return 0
+    fi
+    if ! grep -aq "localhost" "$license" || ! grep -aq "8990" "$license"; then
+        return 0
+    fi
+
+    local sentieon_root
+    sentieon_root="$(cd "$(dirname "$sentieon_bin")/.." && pwd)"
+    local licsrvr="${sentieon_root}/libexec/licsrvr"
+    dayoa_require_executable "$licsrvr"
+
+    if "$licsrvr" --ping "$license" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local log_file="${DAYOA_SENTIEON_LICSRVR_LOG:-/tmp/dayoa-sentieon-licsrvr-${USER:-unknown}.log}"
+    local linger="${DAYOA_SENTIEON_LICSRVR_LINGER_SECONDS:-3600}"
+    "$licsrvr" --start --linger "$linger" -l "$log_file" "$license" >/dev/null 2>&1 || true
+
+    local attempt
+    for attempt in 1 2 3 4 5 6 7 8 9 10; do
+        if "$licsrvr" --ping "$license" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 1
+    done
+
+    echo "ERROR: Sentieon local license server did not respond after start; log: $log_file" >&2
+    return 70
+}
+
+dayoa_sentieon_ensure_local_license_server
 dayoa_sentieon_start_jitter "$sentieon_bin $*"
 "$sentieon_bin" "$@"
