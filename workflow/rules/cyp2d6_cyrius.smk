@@ -49,6 +49,7 @@ rule cyrius:
         ln -s "$cyrius_script" {params.runtime_dir}/star_caller.py
         ln -s "$PWD/{params.resource_data}" {params.runtime_dir}/data
 
+        set +e
         "$CONDA_PREFIX/bin/python" {params.runtime_dir}/star_caller.py \
             --manifest {output.manifest} \
             --genome {params.genome} \
@@ -57,6 +58,23 @@ rule cyrius:
             --outDir {params.out_dir} \
             --threads {threads} \
             > {log} 2>&1
+        cyrius_rc=$?
+        set -e
+        if [ "$cyrius_rc" -ne 0 ]; then
+            if grep -q "ZeroDivisionError: division by zero" {log}; then
+                input_bam=$(cat {output.manifest})
+                {
+                    printf "Sample\tGenotype\tFilter\tReason\n"
+                    printf "%s\tNA\tno_call_zero_support\tCyrius zero support counts in CYP2D6 exon9 caller\n" "{wildcards.sample}"
+                } > {output.tsv}
+                printf '{{"sample":"%s","caller":"cyrius","status":"no_call_zero_support","reason":"Cyrius zero support counts in CYP2D6 exon9 caller","input_bam":"%s"}}\n' \
+                    "{wildcards.sample}" "$input_bam" > {output.json}
+                echo "Cyrius no-call zero support for {wildcards.sample}; original exit=$cyrius_rc." >> {log}
+                touch {output.done}
+                exit 0
+            fi
+            exit "$cyrius_rc"
+        fi
         test -s {output.tsv}
         test -s {output.json}
         touch {output.done}

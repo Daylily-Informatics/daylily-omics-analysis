@@ -165,6 +165,11 @@ def test_cyrius_rule_uses_documented_interface_and_outputs() -> None:
         "star_table.txt",
         "runtime_dir",
         '"$CONDA_PREFIX/bin/python" {params.runtime_dir}/star_caller.py',
+        "cyrius_rc=$?",
+        'grep -q "ZeroDivisionError: division by zero" {log}',
+        "no_call_zero_support",
+        "Cyrius zero support counts in CYP2D6 exon9 caller",
+        'exit "$cyrius_rc"',
         '"../envs/cyrius_v0.1.yaml"',
     ):
         assert expected in cyrius
