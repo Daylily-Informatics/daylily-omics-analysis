@@ -10,6 +10,7 @@ From the repository root:
 bash tests/test_cli_commands.sh
 bash tests/test_bclconvert_bootstrap.sh
 python -m pytest tests/test_complete_genomics_sentieon.py tests/test_workflow_catalog.py
+python -m pytest tests/test_rule_log_benchmark_contracts.py tests/test_snakemake_parser_contracts.py tests/test_shell_wrapper_contracts.py
 ```
 
 On macOS, activate `DAY-EC` first:
@@ -27,6 +28,9 @@ conda activate DAY-EC
 | `test_bclconvert_bootstrap.sh` | BCL Convert bootstrap scripts, fixtures, generated units table behavior, and report expectations. |
 | `test_complete_genomics_sentieon.py` | MGI bundle paths, `DNBSEQ` platform, and canonical/deprecated `cgt7p` routing to `sentcg/cgt7p`. |
 | `test_workflow_catalog.py` | `load_workflow_catalog()` and `render_workflow_command()` behavior. |
+| `test_rule_log_benchmark_contracts.py` | Active Snakemake rules expose log and benchmark evidence contracts. |
+| `test_snakemake_parser_contracts.py` | Active rule files avoid parser and runtime command-shape regressions. |
+| `test_shell_wrapper_contracts.py` | `dyoainit`, `day_run`, and shell wrapper contracts remain explicit. |
 
 ## Notes
 

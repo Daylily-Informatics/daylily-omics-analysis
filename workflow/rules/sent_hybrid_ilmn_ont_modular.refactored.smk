@@ -514,7 +514,17 @@ rule sentdhiomr_sr_markdup:
         ulimit -n 65536 || echo "ulimit mod failed" >> {log} 2>&1;
 
         timestamp=$(date +%Y%m%d%H%M%S)_$$;
-        export TMPDIR={params.tmp_base}/smd_sentieon_$timestamp;
+        tmp_base="{params.tmp_base}";
+        test -n "$tmp_base";
+        case "$tmp_base" in
+            /fsx|/fsx/*)
+                echo "ERROR: sentdhiomr_sr_markdup tmp_base must be local scratch, not FSx: $tmp_base" >> {log} 2>&1;
+                exit 2;
+                ;;
+        esac;
+        test -d "$tmp_base";
+        test -w "$tmp_base";
+        export TMPDIR="$tmp_base/smd_sentieon_$timestamp";
         mkdir -p "$TMPDIR";
         export SENTIEON_TMPDIR=$TMPDIR;
         export APPTAINER_HOME=$TMPDIR;
@@ -522,6 +532,8 @@ rule sentdhiomr_sr_markdup:
 
         score_file=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.score.txt;
         metrics_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.metrics.txt;
+        dedup_bam_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sr_dedup.bam;
+        dedup_bai_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sr_dedup.bam.bai;
 
         read_name=$(samtools view {input.bam} | head -n 1 | cut -f1 || true);
 
@@ -547,9 +559,15 @@ rule sentdhiomr_sr_markdup:
         --algo Dedup \
         --score_info "$score_file" \
         --metrics "$metrics_tmp" \
-        {output.bam} >> {log} 2>&1;
+        "$dedup_bam_tmp" >> {log} 2>&1;
 
-        samtools index -@ {threads} {output.bam} {output.bai} >> {log} 2>&1;
+        samtools index -@ {threads} "$dedup_bam_tmp" "$dedup_bai_tmp" >> {log} 2>&1;
+        test -s "$dedup_bam_tmp";
+        test -s "$dedup_bai_tmp";
+        cp "$dedup_bam_tmp" {output.bam};
+        cp "$dedup_bai_tmp" {output.bai};
+        test -s {output.bam};
+        test -s {output.bai};
         """
 
 # ---------------------------------------------------------------------------
@@ -1493,13 +1511,20 @@ rule sentdhiomr_transfer:
 
         tmp_parent="{params.tmp_parent}"
         test -n "$tmp_parent"
-        mkdir -p "$tmp_parent"
+        case "$tmp_parent" in
+            /fsx|/fsx/*)
+                echo "ERROR: sentdhiomr_transfer tmp_parent must be local scratch, not FSx: $tmp_parent" >> {log}
+                exit 2
+                ;;
+        esac
+        test -d "$tmp_parent"
         test -w "$tmp_parent"
 
         timestamp=$(date +%Y%m%d%H%M%S)
         TMPDIR="$tmp_parent/sentdhiomr_transfer_{wildcards.dchrm}_{wildcards.tchrm}_${{timestamp}}_$$"
         mkdir -p "$TMPDIR"
         trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+        final_vcf="$TMPDIR/transfer.{wildcards.tchrm}.vcf.gz"
 
         # Reheader anno_vcf to use cluster_sample name only when required.
         anno_old_sample=$(bcftools query -l {input.anno_vcf} | head -n1)
@@ -1571,14 +1596,18 @@ print(",".join(ids))
 
             echo "Transfer final compression step started at $(date)" >> {log}
             bcftools view --threads {threads} --no-version -W=tbi -O z \
-                -o {output.vcf} "$trimmed_vcf" >> {log} 2>&1
+                -o "$final_vcf" "$trimmed_vcf" >> {log} 2>&1
         else
             echo "Population VCF lacks contig {params.regions}; carrying raw annotations for this shard" >> {log}
-            bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf} \
+            bcftools view --threads {threads} --no-version -W=tbi -O z -o "$final_vcf" \
                 --regions-file "$subset_bed" \
                 "$anno_transfer_vcf" >> {log} 2>&1
         fi
 
+        test -s "$final_vcf"
+        test -s "$final_vcf.tbi"
+        cp "$final_vcf" {output.vcf}
+        cp "$final_vcf.tbi" {output.tbi}
         test -s {output.vcf}
         test -s {output.tbi}
 
@@ -1638,7 +1667,13 @@ rule sentdhiomr_transfer_merge:
 
         tmp_parent="{params.tmp_parent}"
         test -n "$tmp_parent"
-        mkdir -p "$tmp_parent"
+        case "$tmp_parent" in
+            /fsx|/fsx/*)
+                echo "ERROR: sentdhiomr_transfer_merge tmp_parent must be local scratch, not FSx: $tmp_parent" >> {log}
+                exit 2
+                ;;
+        esac
+        test -d "$tmp_parent"
         test -w "$tmp_parent"
 
         timestamp=$(date +%Y%m%d%H%M%S)

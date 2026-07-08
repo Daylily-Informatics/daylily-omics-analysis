@@ -333,4 +333,7 @@ def test_sentdhiomr_transfer_matches_sentieon_cli_v163_merge_contract() -> None:
     assert "|| pipe_rc=$?" not in rule
     assert "pipe_rc=$?" not in rule
     assert "Population VCF lacks contig {params.regions}; carrying raw annotations for this shard" in rule
-    assert "bcftools view --threads {threads} --no-version -W=tbi -O z -o {output.vcf}" in rule
+    assert 'final_vcf="$TMPDIR/transfer.{wildcards.tchrm}.vcf.gz"' in rule
+    assert 'bcftools view --threads {threads} --no-version -W=tbi -O z \\\n                -o "$final_vcf"' in rule
+    assert 'cp "$final_vcf" {output.vcf}' in rule
+    assert 'cp "$final_vcf.tbi" {output.tbi}' in rule

@@ -45,8 +45,22 @@ rule bcftools_vcfstat:
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
     shell:
         """
-        bcftools stats --threads {threads} {input.snv_vcf} -F {params.huref} > {output};
-        ls {output};
+        set -euo pipefail
+        mkdir -p $(dirname {output:q}) $(dirname {log:q})
+        : > {log:q}
+        tmp_parent="/scratch"
+        test -d "$tmp_parent"
+        test -w "$tmp_parent"
+        timestamp=$(date +%Y%m%d%H%M%S)_$$
+        export TMPDIR="$tmp_parent/bcftools_vcfstat_$timestamp"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+        tmp_stats="$TMPDIR/bcftools_vcfstat.tsv"
+        bcftools stats --threads {threads} {input.snv_vcf:q} -F {params.huref:q} > "$tmp_stats" 2>> {log:q}
+        test -s "$tmp_stats"
+        cp "$tmp_stats" {output:q}
+        test -s {output:q}
+        ls {output:q} >> {log:q} 2>&1
         """
 
 

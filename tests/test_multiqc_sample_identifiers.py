@@ -1027,6 +1027,9 @@ def test_manta_converts_cram_to_bam_before_calling() -> None:
     assert "bai=temp(" in compat_rule
     assert "samtools view" in compat_rule
     assert "samtools index" in compat_rule
+    assert 'export TMPDIR="$tmp_parent/legacy_cram_compat_bam_$timestamp"' in compat_rule
+    assert 'tmp_bam="$TMPDIR/legacy_compat.bam"' in compat_rule
+    assert 'cp "$tmp_bam" {output.bam:q}' in compat_rule
     assert "bam=rules.legacy_cram_compat_bam.output.bam" in manta_rule
     assert "bam = rules.legacy_cram_compat_bam.output.bam" in gatk_rule
     assert "gatk_cram_compat.sh" not in gatk_rule

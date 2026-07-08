@@ -195,9 +195,13 @@ Focused local checks:
 
 ```bash
 eval "$(conda shell.zsh hook)" && conda activate DAY-EC
+bash tests/test_cli_commands.sh
+bash tests/test_bclconvert_bootstrap.sh
 python -m pytest -q tests/test_multiqc_qc_targets.py tests/test_multiqc_staging_contracts.py tests/test_multiqc_sample_identifiers.py tests/test_evidence_manifest.py
 python -m coverage run -m pytest -q tests
 python -m coverage report
 ```
+
+The shell checks are developer contract tests for wrappers and BCL Convert bootstrap logic. They do not replace pinned headnode workflow validation through `dyec`, `source dyoainit`, `dy-a`, and `dy-r`.
 
 Cluster examples are valid only after a working headnode is available through `dyec`/SSM with an explicit non-default AWS profile.

@@ -54,7 +54,7 @@ def test_slurm_sentdhiomr_conservative_tuning_values() -> None:
     assert sentdhiomr["mem_mb"] == 300000
     assert sentdhiomr["sr_align_tmp_parent"] == "/scratch"
     assert sentdhiomr["stage3_tmp_parent"] == "/fsx/scratch"
-    assert sentdhiomr["transfer_tmp_parent"] == "/fsx/scratch"
+    assert sentdhiomr["transfer_tmp_parent"] == "/scratch"
 
 
 def test_local_sentdhiomr_declares_tuning_keys_for_parseability() -> None:
@@ -84,6 +84,9 @@ def test_sentdhiomr_rules_use_tuned_resources_without_tuning_sr_align_or_sv() ->
     assert snv_block.count("mem_mb=config['sentdhiomr']['mem_mb_snv']") >= 4
     assert "threads: config['sentdhiomr']['sr_markdup_threads']" in snv_block
     assert "mem_mb=config['sentdhiomr']['sr_markdup_mem_mb']" in snv_block
+    assert "sentdhiomr_sr_markdup tmp_base must be local scratch, not FSx" in snv_block
+    assert 'dedup_bam_tmp=$TMPDIR/{wildcards.sample}.{wildcards.alnr}.sr_dedup.bam;' in snv_block
+    assert 'cp "$dedup_bam_tmp" {output.bam};' in snv_block
     assert "threads: config['sentdhiomr']['threads_snv_medium']" in snv_block
     assert "threads: config['sentdhiomr']['threads_snv_light']" in snv_block
 
@@ -141,8 +144,12 @@ def test_sentdhiomr_transfer_uses_configured_tmp_parent() -> None:
         in transfer
     )
     assert 'tmp_parent="{params.tmp_parent}"' in transfer
+    assert "sentdhiomr_transfer tmp_parent must be local scratch, not FSx" in transfer
     assert 'test -w "$tmp_parent"' in transfer
     assert 'sentdhiomr_transfer_{wildcards.dchrm}_{wildcards.tchrm}_${{timestamp}}_$$' in transfer
+    assert 'final_vcf="$TMPDIR/transfer.{wildcards.tchrm}.vcf.gz"' in transfer
+    assert 'cp "$final_vcf" {output.vcf}' in transfer
+    assert 'cp "$final_vcf.tbi" {output.tbi}' in transfer
     assert "TMPDIR=$(dirname {output.vcf})" not in transfer
 
 
@@ -158,6 +165,7 @@ def test_sentdhiomr_transfer_merge_uses_configured_tmp_parent() -> None:
         in transfer_merge
     )
     assert 'tmp_parent="{params.tmp_parent}"' in transfer_merge
+    assert "sentdhiomr_transfer_merge tmp_parent must be local scratch, not FSx" in transfer_merge
     assert 'test -w "$tmp_parent"' in transfer_merge
     assert 'sentdhiomr_transfer_merge_{wildcards.dchrm}_${{timestamp}}_$$' in transfer_merge
     assert 'bcftools concat --threads {threads} -a -d all -O z -o "$tmp_vcf"' in transfer_merge

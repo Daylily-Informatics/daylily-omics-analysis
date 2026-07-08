@@ -123,5 +123,9 @@ rule produce_parascopy:  # TARGET : Produce Parascopy results
         )
     output:
         "./logs/parascopy.done"
+    benchmark:
+        "./benchmarks/parascopy.benchmark.tsv"
+    log:
+        "./logs/parascopy.log"
     shell:
-        "touch {output}"
+        "mkdir -p $(dirname {output}) $(dirname {benchmark}) $(dirname {log}); touch {output} > {log} 2>&1"

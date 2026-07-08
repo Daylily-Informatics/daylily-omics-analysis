@@ -80,7 +80,7 @@ def test_readme_declares_cluster_and_manifest_contract() -> None:
 
     assert "daylily-ephemeral-cluster" in readme
     assert "/fsx/references" in readme
-    assert "daylily-ec" in readme
+    assert "dyec headnode connect" in readme
     assert "samples.tsv" in readme
     assert "units.tsv" in readme
 

@@ -290,11 +290,9 @@ rule expansionhunter_call:
         sex_assumption_log=_expansionhunter_sex_log,
         huref=config["supporting_files"]["files"]["huref"]["fasta"]["name"],
         variant_catalog=_expansionhunter_catalog_path,
-        output_prefix=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh",
         analysis_mode=EXPANSIONHUNTER_CFG["analysis_mode"],
         region_extension_length=EXPANSIONHUNTER_CFG["region_extension_length"],
         extra_args=EXPANSIONHUNTER_CFG.get("extra_args", ""),
-        realigned_bam=MDIR + "{sample}/align/{alnr}/{ddup}/htd/expansionhunter/{sample}.{alnr}.{ddup}.eh_realigned.bam",
         cluster_sample=ret_sample,
     threads: EXPANSIONHUNTER_CFG["threads"]
     resources:
@@ -335,19 +333,32 @@ rule expansionhunter_call:
             printf 'INFO: ExpansionHunter using derived biological_sex=%s from %s\n' "$sample_sex" {params.sex_resolution_path:q} >> {log:q}
         fi
         unset LD_PRELOAD
+        tmp_parent="/scratch"
+        test -d "$tmp_parent"
+        test -w "$tmp_parent"
+        timestamp=$(date +%Y%m%d%H%M%S)_$$
+        export TMPDIR="$tmp_parent/expansionhunter_{wildcards.sample}_{wildcards.alnr}_{wildcards.ddup}_$timestamp"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+        tmp_prefix="$TMPDIR/{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.eh"
+        tmp_realigned_bam="${{tmp_prefix}}_realigned.bam"
         ExpansionHunter \
           --reads {input.cram:q} \
           --reference {params.huref:q} \
           --variant-catalog {params.variant_catalog:q} \
-          --output-prefix {params.output_prefix:q} \
+          --output-prefix "$tmp_prefix" \
           --sex "$sample_sex" \
           --threads {threads} \
           --region-extension-length {params.region_extension_length} \
           --analysis-mode {params.analysis_mode:q} \
           {params.extra_args} \
           >> {log:q} 2>&1
-        test -s {params.realigned_bam:q}
-        mv {params.realigned_bam:q} {output.bam:q}
+        test -s "$tmp_prefix.json"
+        test -s "$tmp_prefix.vcf"
+        test -s "$tmp_realigned_bam"
+        cp "$tmp_prefix.json" {output.json:q}
+        cp "$tmp_prefix.vcf" {output.vcf:q}
+        cp "$tmp_realigned_bam" {output.bam:q}
         test -s {output.json:q}
         test -s {output.vcf:q}
         test -s {output.bam:q}

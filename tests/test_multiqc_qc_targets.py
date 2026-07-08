@@ -808,6 +808,8 @@ def test_variant_qc_and_annotation_summaries_are_wired() -> None:
     slurm_config = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")
 
     assert "rule bcftools_variant_stats_gather:" in bcftools
+    assert 'export TMPDIR="$tmp_parent/bcftools_vcfstat_$timestamp"' in bcftools
+    assert 'cp "$tmp_stats" {output:q}' in bcftools
     assert "bcftools_variant_stats_mqc.tsv" in bcftools
     assert "rule rtg_vcfstats_gather:" in rtg
     assert "rtg_vcfstats_mqc.tsv" in rtg

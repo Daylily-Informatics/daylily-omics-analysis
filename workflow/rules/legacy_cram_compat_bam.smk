@@ -30,9 +30,23 @@ rule legacy_cram_compat_bam:
     shell:
         """
         set -euo pipefail
-        mkdir -p $(dirname {output.bam}) $(dirname {log})
-        samtools view -@ {threads} -b -T {input.ref_fa} -o {output.bam} {input.cram} > {log} 2>&1
-        samtools index -@ {threads} {output.bam} {output.bai} >> {log} 2>&1
-        samtools quickcheck {output.bam} >> {log} 2>&1
-        test -s {output.bai}
+        mkdir -p $(dirname {output.bam:q}) $(dirname {log:q})
+        tmp_parent="/scratch"
+        test -d "$tmp_parent"
+        test -w "$tmp_parent"
+        timestamp=$(date +%Y%m%d%H%M%S)_$$
+        export TMPDIR="$tmp_parent/legacy_cram_compat_bam_$timestamp"
+        mkdir -p "$TMPDIR"
+        trap 'rm -rf "$TMPDIR" 2>/dev/null || true' EXIT
+        tmp_bam="$TMPDIR/legacy_compat.bam"
+        tmp_bai="$TMPDIR/legacy_compat.bam.bai"
+        samtools view -@ {threads} -b -T {input.ref_fa:q} -o "$tmp_bam" {input.cram:q} > {log:q} 2>&1
+        samtools index -@ {threads} "$tmp_bam" "$tmp_bai" >> {log:q} 2>&1
+        samtools quickcheck "$tmp_bam" >> {log:q} 2>&1
+        test -s "$tmp_bam"
+        test -s "$tmp_bai"
+        cp "$tmp_bam" {output.bam:q}
+        cp "$tmp_bai" {output.bai:q}
+        test -s {output.bam:q}
+        test -s {output.bai:q}
         """

@@ -251,7 +251,7 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
         assert "scratch_size_multiplier" not in profile["bclconvert"]
 
     slurm_bcl = _yaml("config/day_profiles/slurm/templates/rule_config.yaml")["bclconvert"]
-    assert slurm_bcl["threads"] == 48
+    assert slurm_bcl["threads"] == 96
     assert slurm_bcl["mem_mb"] == 500000
     assert slurm_bcl["partition"] == "i192hugenvme"
     assert slurm_bcl["constraint"] == ""
@@ -260,19 +260,19 @@ def test_bclconvert_custom_data_is_registered_for_multiqc() -> None:
     assert slurm_bcl["scratch_output_root"] == "/scratch/dayoa_bclconvert"
     assert slurm_bcl["scratch_available_bytes_min"] == 100000000000
     assert slurm_bcl["parallel_tiles"] == 8
-    assert slurm_bcl["conversion_threads"] == 2
-    assert slurm_bcl["compression_threads"] == 24
-    assert slurm_bcl["decompression_threads"] == 8
+    assert slurm_bcl["conversion_threads"] == 4
+    assert slurm_bcl["compression_threads"] == 48
+    assert slurm_bcl["decompression_threads"] == 16
     assert slurm_bcl["tile_shard_level"] == "lane"
     assert slurm_bcl["shared_thread_odirect_output"] is False
     assert slurm_bcl["demux_qc_threads"] == 32
     assert slurm_bcl["demux_qc_mem_mb"] == 64000
-    assert slurm_bcl["tile_shard_threads"] == 48
+    assert slurm_bcl["tile_shard_threads"] == 96
     assert slurm_bcl["tile_shard_mem_mb"] == 500000
     assert slurm_bcl["tile_parallel_tiles"] == 8
-    assert slurm_bcl["tile_conversion_threads"] == 2
-    assert slurm_bcl["tile_compression_threads"] == 24
-    assert slurm_bcl["tile_decompression_threads"] == 8
+    assert slurm_bcl["tile_conversion_threads"] == 4
+    assert slurm_bcl["tile_compression_threads"] == 48
+    assert slurm_bcl["tile_decompression_threads"] == 16
 
 
 def _tile_shard_merge_fixture(tmp_path: Path) -> tuple[Path, str, tuple[str, ...], Path, Path, Path]:
