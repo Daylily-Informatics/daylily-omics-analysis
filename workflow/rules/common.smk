@@ -18,6 +18,9 @@ from daylily_omics_analysis.workflow_resources import (
 
 
 def derive_partition_order(partition_csv):
+    forced_partition = str(config.get("force_partition", "") or "").strip()
+    if forced_partition:
+        return forced_partition
     try:
         return _derive_partition_order(partition_csv)
     except SpotPartitionError as exc:
