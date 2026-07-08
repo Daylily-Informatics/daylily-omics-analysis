@@ -85,6 +85,29 @@ def test_all_targets_expand_complete_registered_sets() -> None:
     assert "if row[\"code\"] == \"all\":" in common
     assert "codes.update(_current_alias_codes(kind))" in common
     assert "sentpgs" not in {row["code"] for row in _rows("snv_caller", "current")}
+    assert "drgpg" not in {row["code"] for row in _rows("snv_caller", "current")}
+
+
+def test_explicit_dragen_selector_is_not_part_of_all_snv() -> None:
+    selector_rules = _read("workflow/rules/workflow_target_aliases.smk")
+    rows = _registry()
+
+    assert {
+        (row["target"], row["kind"], row["code"], row["status"], row["delegates_to"])
+        for row in rows
+        if row["target"] == "produce_drgpg_snv_vcf"
+    } == {
+        (
+            "produce_drgpg_snv_vcf",
+            "snv_caller",
+            "drgpg",
+            "explicit",
+            "produce_drgpg_vcf",
+        )
+    }
+    assert "rule produce_drgpg_snv_vcf:" in selector_rules
+    assert 'row["status"] in {"current", "explicit"}' in selector_rules
+    assert "DRAGEN_COMBINED_ALIGNERS" in selector_rules
 
 
 def test_selector_targets_handle_aggregate_delegates_with_explicit_inputs() -> None:

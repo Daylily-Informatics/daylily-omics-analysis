@@ -72,21 +72,27 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         assert "dragen_threads" in cfg["sent_aln_sort_snv"]
         assert cfg["sent_aln_sort_snv"]["model"] == PANGENOME_ILMN
         assert cfg["sent_aln_sort_snv"]["prior_model"] == PANGENOME_ILMN_PRIOR
+        assert cfg["dragen_pangenome"]["model_mode"] == "current"
+        assert cfg["dragen_pangenome"]["model"] == PANGENOME_ILMN
+        assert cfg["dragen_pangenome"]["prior_model"] == PANGENOME_ILMN_PRIOR
         assert cfg["sentieon_pangenome_sr"]["model_mode"] == "current"
         assert cfg["sentieon_pangenome_sr"]["model"] == PANGENOME_ILMN
         assert cfg["sentieon_pangenome_sr"]["prior_model"] == PANGENOME_ILMN_PRIOR
         assert cfg["sentieon_pangenome_ug"]["model"] == PANGENOME_ULTIMA
         for section in (
             "sent_aln_sort_snv",
+            "dragen_pangenome",
             "sentieon_pangenome_sr",
             "sentieon_pangenome_ug",
         ):
             assert cfg[section]["hapl"] == PANGENOME_HAPL
             assert cfg[section]["gbz"] == PANGENOME_GBZ
         assert cfg["sent_aln_sort_snv"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
+        assert cfg["dragen_pangenome"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
         assert cfg["sentieon_pangenome_sr"]["pop_vcf"] == PANGENOME_ILMN_POP_VCF
         assert cfg["sentieon_pangenome_ug"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
         assert cfg["sent_aln_sort_snv"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
+        assert cfg["dragen_pangenome"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
         assert cfg["sentieon_pangenome_sr"]["prior_pop_vcf"] == PANGENOME_ILMN_PRIOR_POP_VCF
         for section in ("sentdhip", "sentdhipm"):
             if section in cfg:
@@ -97,10 +103,12 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         assert "pcr_free" not in cfg["sentieon_pangenome_ug"]
         assert Path(cfg["sentdont"]["env_yaml"]).name == "sentieon_v0.3.yaml"
         assert Path(cfg["sent_aln_sort_snv"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"
+        assert Path(cfg["dragen_pangenome"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"
         assert Path(cfg["sentieon_pangenome_sr"]["env_yaml"]).name == "sent_pangenome_v0.1.yaml"
         assert Path(cfg["sentieon_pangenome_ug"]["env_yaml"]).name == "pangenome_ultima_v0.1.yaml"
         _assert_sentieon_cli_env(cfg["sentdont"]["env_yaml"], hiomr_cli)
         _assert_sentieon_cli_env(cfg["sent_aln_sort_snv"]["env_yaml"], hiomr_cli)
+        _assert_sentieon_cli_env(cfg["dragen_pangenome"]["env_yaml"], hiomr_cli)
         _assert_sentieon_cli_env(cfg["sentieon_pangenome_sr"]["env_yaml"], hiomr_cli)
         _assert_sentieon_cli_env(cfg["sentieon_pangenome_ug"]["env_yaml"], hiomr_cli)
 

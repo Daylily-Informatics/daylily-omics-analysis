@@ -1255,7 +1255,6 @@ rtg_vcfeval:
     ld_preload: " "
     partition: "i8"
     partition_other: "i192,i128,i8"
-    enable_sentpg_dragen_concordance: false
 
 run_concordance:
     threads: 7
@@ -1330,6 +1329,29 @@ sentieon_cgt7p:
 sent_aln_sort_snv:
     threads: 7
     dragen_threads: 7
+    benchmark_runs: 0
+    env_yaml: "../envs/sent_pangenome_v0.1.yaml"
+    mem_mb: 50000
+    partition: "i8"
+    constraint: ""
+    distribution: "block"
+    exclude: ""
+    include: ""
+    exclusive: ""
+    bench_repeat: 0
+    hapl: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.hapl"
+    gbz: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hprc-v2.0-mc-grch38.gbz"
+    model_mode: "current"
+    model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaPangenomeRealignWGS1.2.bundle"
+    prior_model: "/fsx/references/runtime_assets/cached_envs/sentieon-genomics-202503.03/bundles/SentieonIlluminaPangenomeRealignWGS1.0.bundle/SentieonIlluminaPangenomeRealignWGS1.0.bundle"
+    pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20-20260528.vcf.gz"
+    prior_pop_vcf: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/pop-v20g41-20251216.vcf.gz"
+    canonical_bed: "/fsx/references/genomic_data/organism_references/H_sapiens/panhg38/hg38_canonical.bed"
+    dbsnp: "/fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz"
+    pcr_free: "true"
+
+dragen_pangenome:
+    threads: 7
     benchmark_runs: 0
     env_yaml: "../envs/sent_pangenome_v0.1.yaml"
     mem_mb: 50000

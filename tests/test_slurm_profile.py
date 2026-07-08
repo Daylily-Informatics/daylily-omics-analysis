@@ -59,6 +59,7 @@ ALIGN_DEDUP_RULE_FILES = {
 }
 PANGENOME_SLURM_RESOURCE_SECTIONS = {
     "sent_aln_sort_snv": "sent_aln_sort_snv.smk",
+    "dragen_pangenome": "sent_aln_sort_snv.smk",
     "sentieon_pangenome_sr": "sentieon_pangenome_shortreads.smk",
     "sentieon_pangenome_ug": "sentieon_pangenome_ug.smk",
 }
@@ -245,7 +246,7 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
     assert 'tmpdir="/tmp"' in profile["default-resources"]
 
 
-def test_slurm_rhel_profile_routes_dragen_concordance_to_dragen_partition() -> None:
+def test_slurm_rhel_profile_routes_dragen_drgpg_to_dragen_partition() -> None:
     profile = yaml.safe_load(
         (REPO_ROOT / "config/day_profiles/slurm_rhel/templates/config.yaml").read_text(
             encoding="utf-8"
@@ -264,8 +265,8 @@ def test_slurm_rhel_profile_routes_dragen_concordance_to_dragen_partition() -> N
     )
     assert "partition=dragen" in profile["default-resources"]
 
-    assert slurm_rule_config["rtg_vcfeval"]["enable_sentpg_dragen_concordance"] is False
-    assert rule_config["rtg_vcfeval"]["enable_sentpg_dragen_concordance"] is True
+    assert "enable_sentpg_dragen_concordance" not in slurm_rule_config["rtg_vcfeval"]
+    assert "enable_sentpg_dragen_concordance" not in rule_config["rtg_vcfeval"]
     assert rule_config["rtg_vcfeval"]["threads"] == 24
     assert rule_config["rtg_vcfeval"]["sub_threads"] == 24
     assert rule_config["rtg_vcfeval"]["mem_mb"] == 200000
@@ -275,6 +276,8 @@ def test_slurm_rhel_profile_routes_dragen_concordance_to_dragen_partition() -> N
     assert rule_config["sent_aln_sort_snv"]["threads"] == 24
     assert rule_config["sent_aln_sort_snv"]["dragen_threads"] == 24
     assert rule_config["sent_aln_sort_snv"]["partition"] == "dragen"
+    assert rule_config["dragen_pangenome"]["threads"] == 24
+    assert rule_config["dragen_pangenome"]["partition"] == "dragen"
 
     for section in ("sentieon_pangenome_sr", "sentieon_pangenome_ug"):
         assert rule_config[section]["threads"] == 24

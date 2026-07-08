@@ -46,6 +46,7 @@ CALLER_SECTIONS = {
     "sentieon_dnascope": ("partition",),
     "sentieon_pangenome_sr": ("partition",),
     "sentieon_pangenome_ug": ("partition",),
+    "dragen_pangenome": ("partition",),
     "sentieon_gatk": ("partition", "partition_other"),
     "tiddit": ("partition",),
     "surveyor": ("partition",),
