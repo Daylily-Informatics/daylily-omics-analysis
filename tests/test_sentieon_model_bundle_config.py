@@ -69,6 +69,7 @@ def test_sentieon_profile_templates_use_current_model_bundles() -> None:
         assert cfg["sentdont"]["dna_scope_apply_model"] == DNASCOPE_ONT
         assert cfg["sentdont"]["pop_vcf"] == PANGENOME_ULTIMA_POP_VCF
         assert cfg["sent_aln_sort_snv"]["model_mode"] == "current"
+        assert "dragen_threads" in cfg["sent_aln_sort_snv"]
         assert cfg["sent_aln_sort_snv"]["model"] == PANGENOME_ILMN
         assert cfg["sent_aln_sort_snv"]["prior_model"] == PANGENOME_ILMN_PRIOR
         assert cfg["sentieon_pangenome_sr"]["model_mode"] == "current"
@@ -134,7 +135,7 @@ def test_pangenome_rules_use_documented_sentieon_cli_shapes() -> None:
         assert '--readgroup "@RG' in rule
         assert '-b "{params.canonical_bed}"' in rule
         assert '--dbsnp "{params.dbsnp}"' in rule
-        assert 'cli_threads=min(int(config["' in rule
+        assert 'cli_threads=min(int(config["' in rule or "cli_threads=lambda wildcards: min(_sent_aln_sort_snv_threads(wildcards), 128)" in rule
         assert "-t {params.cli_threads}" in rule
         assert "$pcr_flag" in rule
 

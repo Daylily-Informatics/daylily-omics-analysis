@@ -1328,6 +1328,7 @@ sentieon_cgt7p:
 
 sent_aln_sort_snv:
     threads: 7
+    dragen_threads: 7
     benchmark_runs: 0
     env_yaml: "../envs/sent_pangenome_v0.1.yaml"
     mem_mb: 50000

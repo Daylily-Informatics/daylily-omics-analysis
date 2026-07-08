@@ -28,6 +28,13 @@ def _sent_aln_sort_snv_pop_vcf(wildcards):
     raise ValueError(f"{section}_model_mode must be 'current' or 'prior', got {mode!r}")
 
 
+def _sent_aln_sort_snv_threads(wildcards):
+    section = "sent_aln_sort_snv"
+    if str(config.get("force_partition", "") or "").strip() == "dragen":
+        return int(config[section]["dragen_threads"])
+    return int(config[section]["threads"])
+
+
 rule sent_aln_sort_snv:
     """Sentieon pangenome: align + sort + variant call (Illumina PE FASTQ → VCF)."""
     input:
@@ -42,7 +49,7 @@ rule sent_aln_sort_snv:
     log:
         MDIR
         + "{sample}/align/sent/snv/sentpg/log/{sample}.sent.sentpg.snv.log",
-    threads: config["sent_aln_sort_snv"]["threads"]
+    threads: _sent_aln_sort_snv_threads
     conda:
         config["sent_aln_sort_snv"]["env_yaml"]
     priority: 5
@@ -56,8 +63,8 @@ rule sent_aln_sort_snv:
     resources:
         attempt_n=lambda wildcards, attempt: (attempt + 0),
         partition=derive_partition_order(config["sent_aln_sort_snv"]["partition"]),
-        threads=config["sent_aln_sort_snv"]["threads"],
-        vcpu=config["sent_aln_sort_snv"]["threads"],
+        threads=_sent_aln_sort_snv_threads,
+        vcpu=_sent_aln_sort_snv_threads,
         mem_mb=config["sent_aln_sort_snv"]["mem_mb"],
         constraint=config["sent_aln_sort_snv"]["constraint"],
         distribution=config["sent_aln_sort_snv"]["distribution"],
@@ -73,7 +80,7 @@ rule sent_aln_sort_snv:
         canonical_bed=config["sent_aln_sort_snv"]["canonical_bed"],
         dbsnp=config["sent_aln_sort_snv"]["dbsnp"],
         pcr_free=config["sent_aln_sort_snv"]["pcr_free"],
-        cli_threads=min(int(config["sent_aln_sort_snv"]["threads"]), 128),
+        cli_threads=lambda wildcards: min(_sent_aln_sort_snv_threads(wildcards), 128),
         cluster_sample=ret_sample,
         rgpl="ILLUMINA",
         rgpu="presumedCombinedLanes",
