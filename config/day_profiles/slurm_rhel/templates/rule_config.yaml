@@ -4,7 +4,7 @@ hg38_broad_samples_table: .test_data/data/0.01xwgs_HG002_hg38.samples.tsv
 hg38_broad_units_table: .test_data/data/0.01xwgs_HG002_hg38.units.tsv
 b37_samples_table: .test_data/data/0.01xwgs_HG002_b37.samples.tsv
 b37_units_table: .test_data/data/0.01xwgs_HG002_b37.units.tsv
-profile_name: slurm
+profile_name: slurm_rhel
 valid_biome: AWSPC
 prep_input_sample_files:
   source_read_method: ' ln -s  '
@@ -1069,7 +1069,7 @@ peddy:
   mem_mb: 50000
 prep_for_concordance_check:
   threads: 4
-  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
+  partition: dragen
   mem_mb: 50000
 picard:
   threads: 32
@@ -1085,20 +1085,20 @@ qualimap:
   numactl: none
   partition: i192,i128
 rtg_vcfeval:
-  threads: 16
-  sub_threads: 16
-  mem_mb: 650000
-  parse_mem_mb: 128000
+  threads: 24
+  sub_threads: 24
+  mem_mb: 200000
+  parse_mem_mb: 64000
   env_yaml: ../envs/rtgtools_v0.1.yaml
   ld_preload: ' '
-  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
-  partition_other: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
+  partition: dragen
+  partition_other: dragen
   rtg_region: ' '
-  enable_sentpg_dragen_concordance: false
+  enable_sentpg_dragen_concordance: true
 run_concordance:
   threads: 8
   env_yaml: ../envs/rtgtools_v0.1.yaml
-  partition: i384nvme,i192hugenvme,i192nvme,i192,i128nvme,i128
+  partition: dragen
   mem_mb: 50000
 sentieon_haplocaller:
   threads: 192
@@ -1173,12 +1173,12 @@ sentieon_cgt7p:
   read_group_platform: DNBSEQ
   constraint: ''
 sent_aln_sort_snv:
-  threads: 128
+  threads: 24
   dragen_threads: 24
   benchmark_runs: 0
   env_yaml: ../envs/sent_pangenome_v0.1.yaml
   mem_mb: 200000
-  partition: i384nvme,i192nvme,i128nvme
+  partition: dragen
   constraint: ''
   distribution: block
   exclude: ''
@@ -1196,10 +1196,10 @@ sent_aln_sort_snv:
   dbsnp: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz
   pcr_free: 'true'
 sentieon_pangenome_sr:
-  threads: 128
+  threads: 24
   env_yaml: ../envs/sent_pangenome_v0.1.yaml
   mem_mb: 200000
-  partition: i384nvme,i192nvme,i128nvme
+  partition: dragen
   constraint: ''
   distribution: block
   exclude: ''
@@ -1217,10 +1217,10 @@ sentieon_pangenome_sr:
   dbsnp: /fsx/references/genomic_data/organism_annotations/H_sapiens/hg38/gatk/Homo_sapiens_assembly38.dbsnp138.vcf.gz
   pcr_free: 'true'
 sentieon_pangenome_ug:
-  threads: 128
+  threads: 24
   env_yaml: ../envs/pangenome_ultima_v0.1.yaml
-  mem_mb: 500000
-  partition: i384nvme,i192nvme,i128nvme
+  mem_mb: 200000
+  partition: dragen
   constraint: ''
   distribution: block
   exclude: ''
@@ -1236,12 +1236,12 @@ sentieon_pangenome_ug:
   hg38_sentpgs_chrms: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17-19,20-25
   hg38_broad_sentpgs_chrms: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17-19,20-25
   b37_sentpgs_chrms: 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17-19,20-25
-  shard_threads: 128
+  shard_threads: 24
   shard_mem_mb: 200000
-  shard_partition: i384nvme,i192nvme,i128nvme
+  shard_partition: dragen
   concat_threads: 8
   concat_mem_mb: 50000
-  concat_partition: i384nvme,i192nvme,i128nvme
+  concat_partition: dragen
 sentieon_gatk:
   threads: 192
   bwa_threads: 192

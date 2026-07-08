@@ -43,6 +43,20 @@ def test_variant_qc_targets_use_aligner_deduper_caller_tuples() -> None:
         assert "valid_snv_alnr_ddup_tuples(" in rule, path
 
 
+def test_dragen_sentpg_concordance_is_explicit_and_profile_gated() -> None:
+    concordance = _read("workflow/rules/rtg_vcfeval.smk")
+
+    assert "def concordance_snv_alnr_ddup_tuples():" in concordance
+    assert 'sentpg_tuple = ("sent", PANGENOME_SENTPG_DEDUPER, "sentpg")' in concordance
+    assert (
+        '_strict_config_bool("rtg_vcfeval", "enable_sentpg_dragen_concordance")'
+        in concordance
+    )
+    assert "for alnr, ddup, snv in concordance_snv_alnr_ddup_tuples():" in concordance
+    assert "DAYLILY_DRAGEN symlink mode is not supported" in concordance
+    assert "ln -sf" not in concordance
+
+
 def test_cram_qc_targets_use_cram_qc_aligners_not_all_aligners() -> None:
     expected_files = (
         "workflow/rules/generate_deduplicated_bams.smk",

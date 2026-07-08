@@ -44,6 +44,51 @@ def _norm_path(p):
     return s.rstrip("/")
 
 
+def _strict_config_bool(section, key):
+    raw = config[section][key]
+    if isinstance(raw, bool):
+        return raw
+    value = str(raw).strip().lower()
+    if value == "true":
+        return True
+    if value == "false":
+        return False
+    raise WorkflowError(f"config['{section}']['{key}'] must be true or false; got {raw!r}")
+
+
+def _sentpg_dragen_concordance_enabled():
+    return _strict_config_bool("rtg_vcfeval", "enable_sentpg_dragen_concordance")
+
+
+def _is_sentpg_dragen_concordance(wildcards):
+    return (
+        _sentpg_dragen_concordance_enabled()
+        and wildcards.alnr == "sent"
+        and wildcards.ddup == PANGENOME_SENTPG_DEDUPER
+        and wildcards.snv == "sentpg"
+    )
+
+
+def _check_removed_daylily_dragen_env():
+    value = os.environ.get("DAYLILY_DRAGEN", "").strip().lower()
+    if value and value != "false":
+        raise WorkflowError(
+            "DAYLILY_DRAGEN symlink mode is not supported. Use the explicit "
+            "slurm_rhel profile with rtg_vcfeval.enable_sentpg_dragen_concordance=true."
+        )
+
+
+def sentpg_dragen_vcf(wildcards):
+    return (
+        f"{MDIR}{wildcards.sample}/align/sent/snv/sentpg/"
+        f"{wildcards.sample}.sent.sentpg.snv.sort.vcf.gz"
+    )
+
+
+def sentpg_dragen_tbi(wildcards):
+    return sentpg_dragen_vcf(wildcards) + ".tbi"
+
+
 def get_concordance_footprints(wildcards):
     """
     Truthset directory can have 0..many ROI subdirectories.
@@ -79,23 +124,13 @@ def get_truth_bed(wildcards):
 
 
 # -----------------------------------------------------------------------------
-# Input VCF (callset) compatibility layer
+# Input VCF (callset) paths
 # -----------------------------------------------------------------------------
-# NOTE: This preserves the existing DAYLILY_DRAGEN symlink behavior, but makes it
-# safer under parallelism (ln -sf, no sleeps).
-# A later cleanup would turn this into a proper rule to avoid side effects in
-# input functions.
 
 def get_in_rtg_vcf(wildcards):
-    if os.environ.get("DAYLILY_DRAGEN", "false") == "true":
-        r1 = get_raw_R1s(wildcards)[0]
-        dvcfgz = (
-            f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
-            f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
-        )
-        os.system(f"mkdir -p {os.path.dirname(dvcfgz)}")
-        os.system(f"ln -sf {r1} {dvcfgz}")
-        return dvcfgz
+    _check_removed_daylily_dragen_env()
+    if _is_sentpg_dragen_concordance(wildcards):
+        return sentpg_dragen_vcf(wildcards)
     return (
         f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
         f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz"
@@ -103,19 +138,22 @@ def get_in_rtg_vcf(wildcards):
 
 
 def get_in_rtg_tbi(wildcards):
-    if os.environ.get("DAYLILY_DRAGEN", "false") == "true":
-        r2 = get_raw_R2s(wildcards)[0]
-        dvcfgztbi = (
-            f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
-            f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
-        )
-        os.system(f"mkdir -p {os.path.dirname(dvcfgztbi)}")
-        os.system(f"ln -sf {r2} {dvcfgztbi}")
-        return dvcfgztbi
+    _check_removed_daylily_dragen_env()
+    if _is_sentpg_dragen_concordance(wildcards):
+        return sentpg_dragen_tbi(wildcards)
     return (
         f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/{wildcards.ddup}/snv/{wildcards.snv}/"
         f"{wildcards.sample}.{wildcards.alnr}.{wildcards.ddup}.{wildcards.snv}.snv.sort.vcf.gz.tbi"
     )
+
+
+def concordance_snv_alnr_ddup_tuples():
+    tuples = list(valid_snv_alnr_ddup_tuples(ALL_ALIGNERS, snv_CALLERS, DDUP))
+    if _sentpg_dragen_concordance_enabled() and "sentpg" in snv_CALLERS:
+        sentpg_tuple = ("sent", PANGENOME_SENTPG_DEDUPER, "sentpg")
+        if sentpg_tuple not in tuples:
+            tuples.append(sentpg_tuple)
+    return tuples
 
 
 def concordance_mqc_outputs(wildcards):
@@ -142,9 +180,7 @@ def all_concordance_mqc_outputs():
     """
     paths = []
     for sample in SSAMPS:
-        for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
-            ALL_ALIGNERS, snv_CALLERS, DDUP
-        ):
+        for alnr, ddup, snv in concordance_snv_alnr_ddup_tuples():
             wildcards = type(
                 "ConcordanceWildcards",
                 (),
@@ -353,7 +389,7 @@ else:
 
     rule no_concordance_data:
         input:
-            MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/{sample}.{alnr}.{ddup}.{snv}.snv.sort.vcf.gz.tbi",
+            get_in_rtg_tbi,
         output:
             MDIR + "{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done",
         threads: 1
@@ -367,9 +403,7 @@ rule produce_snv_concordances:  # TARGET:  produce snv concordances
         dones=[
             MDIR + f"{sample}/align/{alnr}/{ddup}/snv/{snv}/concordance/concordance.done"
             for sample in SSAMPS
-            for alnr, ddup, snv in valid_snv_alnr_ddup_tuples(
-                ALL_ALIGNERS, snv_CALLERS, DDUP
-            )
+            for alnr, ddup, snv in concordance_snv_alnr_ddup_tuples()
         ],
         mqcs=all_concordance_mqc_outputs(),
     priority: 48

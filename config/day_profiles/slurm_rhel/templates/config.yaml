@@ -1,0 +1,39 @@
+---
+# Adapted from
+# # https://github.com/cbrueffer/snakemake-aws-parallelcluster-slurm 
+cluster: >-
+  mkdir -p logs/slurm/{rule}/ && if [ -n "{resources.exclusive}" ]; then printf '%s\n' 'ALERT WARNING: DayOA Slurm submission stripped exclusive allocation for rule={rule} sample={params.cluster_sample} jobid={jobid} requested_exclusive={resources.exclusive}. Exclusive allocation is disabled globally; fix the rule/profile instead of relying on exclusive nodes.' | tee -a "logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out" "logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err" >&2; fi && dy_partition=$(DAY_PROFILE=slurm_rhel python -m daylily_omics_analysis.slurm.spot_partition_order "{resources.partition}") && sbatch --parsable --cpus-per-task={threads} --time={resources.time} --job-name="{rule}-{params.cluster_sample}" --output="logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.out" --error="logs/slurm/{rule}/{rule}.{params.cluster_sample}.{jobid}.err" --partition="$dy_partition" --chdir=$PWD --mem={resources.mem_mb} --comment "$DAY_PROJECT" --distribution={resources.distribution} {resources.constraint} {resources.exclude} {resources.include}
+default-resources:  
+  - disk_mb=1000
+  - mem_mb=100000 # This should be total for the job, and the amount avail will be 0.95*published mem for instance type.
+  - threads=1
+  - time=240
+  - partition=dragen
+  - tmpdir="/tmp"
+  - vcpu=1
+  - distribution=block
+  - exclusive=''
+  - constraint=''
+  - exclude=''
+  - include=''
+jobs: 300
+cores: 14608  # SET TO AWS QUOTA LIMIT minus HEADNODE and other running ec2 spot instances
+latency-wait: 100
+local-cores: 8
+restart-times: 0
+max-jobs-per-second: 7
+keep-going: True
+keep-remote: True
+rerun-incomplete: True
+scheduler: greedy
+use-conda: True
+conda-frontend: conda
+conda-prefix: "/fsx/resources/environments/conda/USER_REGSUB/HOSTNAME"
+cluster-status: config/day_profiles/slurm/templates/status-scontrols.sh
+cluster-cancel: scancel
+max-status-checks-per-second: 20
+force-use-threads: True
+stats: "day_pipe_stats.json"
+use-singularity: True
+singularity-prefix: "/fsx/resources/environments/containers/USER_REGSUB/HOSTNAME"
+singularity-args: "  -B /fsx:/fsx -B /scratch:/scratch -B /tmp:/tmp -B $PWD/:$PWD   -B /dev/fd:/dev/fd  -B /dev/shm:$PWD/resources/dev/shm -B /dev/shm:/dev/shm "

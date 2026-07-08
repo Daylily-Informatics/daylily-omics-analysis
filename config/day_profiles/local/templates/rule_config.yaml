@@ -1255,6 +1255,7 @@ rtg_vcfeval:
     ld_preload: " "
     partition: "i8"
     partition_other: "i192,i128,i8"
+    enable_sentpg_dragen_concordance: false
 
 run_concordance:
     threads: 7
