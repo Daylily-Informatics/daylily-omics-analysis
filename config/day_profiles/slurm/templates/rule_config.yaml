@@ -1173,7 +1173,7 @@ sentieon_cgt7p:
   constraint: ''
 sent_aln_sort_snv:
   threads: 128
-  dragen_threads: 48
+  dragen_threads: 24
   benchmark_runs: 0
   env_yaml: ../envs/sent_pangenome_v0.1.yaml
   mem_mb: 200000
