@@ -10,6 +10,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SLURM_RULE_CONFIG = REPO_ROOT / "config/day_profiles/slurm/templates/rule_config.yaml"
+SLURM_RHEL_RULE_CONFIG = REPO_ROOT / "config/day_profiles/slurm_rhel/templates/rule_config.yaml"
 LOCAL_RULE_CONFIG = REPO_ROOT / "config/day_profiles/local/templates/rule_config.yaml"
 GLOBAL_CONFIG = REPO_ROOT / "config/global.yaml"
 ACTIVE_RULES_DIR = REPO_ROOT / "workflow/rules"
@@ -58,6 +59,7 @@ ALIGN_DEDUP_RULE_FILES = {
 }
 PANGENOME_SLURM_RESOURCE_SECTIONS = {
     "sent_aln_sort_snv": "sent_aln_sort_snv.smk",
+    "dragen_pangenome": "sent_aln_sort_snv.smk",
     "sentieon_pangenome_sr": "sentieon_pangenome_shortreads.smk",
     "sentieon_pangenome_ug": "sentieon_pangenome_ug.smk",
 }
@@ -242,6 +244,44 @@ def test_slurm_profile_default_partition_includes_384_vcpu_queue() -> None:
     assert "mem_mb=100000" in profile["default-resources"]
     assert "time=240" in profile["default-resources"]
     assert 'tmpdir="/tmp"' in profile["default-resources"]
+
+
+def test_slurm_rhel_profile_routes_dragen_drgpg_to_dragen_partition() -> None:
+    profile = yaml.safe_load(
+        (REPO_ROOT / "config/day_profiles/slurm_rhel/templates/config.yaml").read_text(
+            encoding="utf-8"
+        )
+    )
+    profile_info = (
+        REPO_ROOT / "config/day_profiles/slurm_rhel/templates/profile.info"
+    ).read_text(encoding="utf-8")
+    rule_config = yaml.safe_load(SLURM_RHEL_RULE_CONFIG.read_text(encoding="utf-8"))
+    slurm_rule_config = yaml.safe_load(SLURM_RULE_CONFIG.read_text(encoding="utf-8"))
+
+    assert "env_var_val:slurm_rhel" in profile_info
+    assert (
+        'dy_partition=$(DAY_PROFILE=slurm_rhel python -m daylily_omics_analysis.slurm.spot_partition_order "{resources.partition}")'
+        in profile["cluster"]
+    )
+    assert "partition=dragen" in profile["default-resources"]
+
+    assert "enable_sentpg_dragen_concordance" not in slurm_rule_config["rtg_vcfeval"]
+    assert "enable_sentpg_dragen_concordance" not in rule_config["rtg_vcfeval"]
+    assert rule_config["rtg_vcfeval"]["threads"] == 24
+    assert rule_config["rtg_vcfeval"]["sub_threads"] == 24
+    assert rule_config["rtg_vcfeval"]["mem_mb"] == 200000
+    assert rule_config["rtg_vcfeval"]["parse_mem_mb"] == 64000
+    assert rule_config["rtg_vcfeval"]["partition"] == "dragen"
+    assert rule_config["rtg_vcfeval"]["partition_other"] == "dragen"
+    assert rule_config["sent_aln_sort_snv"]["threads"] == 24
+    assert rule_config["sent_aln_sort_snv"]["dragen_threads"] == 24
+    assert rule_config["sent_aln_sort_snv"]["partition"] == "dragen"
+    assert rule_config["dragen_pangenome"]["threads"] == 24
+    assert rule_config["dragen_pangenome"]["partition"] == "dragen"
+
+    for section in ("sentieon_pangenome_sr", "sentieon_pangenome_ug"):
+        assert rule_config[section]["threads"] == 24
+        assert rule_config[section]["partition"] == "dragen"
 
 
 def test_config_and_rule_memory_values_observe_global_floor() -> None:

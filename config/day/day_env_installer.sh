@@ -68,7 +68,11 @@ install_miniconda() {
 
 # Detect or install conda
 if command -v conda &> /dev/null; then
-    CONDA_DIR="$(dirname "$(dirname "$(which conda)")")"
+    CONDA_DIR="$(conda info --base)"
+    if [[ -z "$CONDA_DIR" || ! -f "$CONDA_DIR/etc/profile.d/conda.sh" ]]; then
+        echo "Error: conda is available but its base directory could not be resolved with 'conda info --base'." >&2
+        return 3
+    fi
     echo "Conda detected at $CONDA_DIR"
 else
     CONDA_DIR="$HOME/miniconda3"

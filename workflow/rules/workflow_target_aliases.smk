@@ -10,7 +10,7 @@ def _workflow_target_alias_rows(kind, target):
     return [
         row
         for row in TARGET_ALIAS_BY_KIND.get(kind, [])
-        if row["target"] == target and row["status"] == "current"
+        if row["target"] == target and row["status"] in {"current", "explicit"}
     ]
 
 
@@ -71,7 +71,7 @@ def _workflow_target_alias_inputs(kind, target):
 def _workflow_na_dedup_aligners():
     aligners = set(QC_CRAM_ALIGNERS) | set(BAM_ALIGNERS)
     for alnr, _snv in valid_snv_alnr_pairs(ALL_ALIGNERS, snv_CALLERS):
-        if alnr not in GRAPH_ONLY_PANGENOME_ALIGNERS:
+        if alnr not in GRAPH_ONLY_PANGENOME_ALIGNERS and alnr not in DRAGEN_COMBINED_ALIGNERS:
             aligners.add(alnr)
     return sorted(aligners)
 
@@ -131,6 +131,7 @@ localrules:
     produce_sentdhuomr_snv_vcf,
     produce_sentdhupmr_snv_vcf,
     produce_sentpg_snv_vcf,
+    produce_drgpg_snv_vcf,
     produce_gatk_snv_vcf,
     produce_deep19_snv_vcf,
     produce_deep19r_snv_vcf,
@@ -477,6 +478,19 @@ rule produce_sentpg_snv_vcf:  # TARGET: canonical Sentieon pangenome SNV selecto
         MDIR + "logs/produce_sentpg_snv_vcf.log"
     benchmark:
         "logs/benchmarks/produce_sentpg_snv_vcf.bench.tsv"
+    shell:
+        "mkdir -p $(dirname {output:q}); touch {output:q};"
+
+
+rule produce_drgpg_snv_vcf:  # TARGET: explicit DRAGEN pangenome SNV selector
+    input:
+        lambda wildcards: _workflow_target_alias_inputs("snv_caller", "produce_drgpg_snv_vcf")
+    output:
+        _workflow_target_alias_marker("produce_drgpg_snv_vcf")
+    log:
+        MDIR + "logs/produce_drgpg_snv_vcf.log"
+    benchmark:
+        "logs/benchmarks/produce_drgpg_snv_vcf.bench.tsv"
     shell:
         "mkdir -p $(dirname {output:q}); touch {output:q};"
 

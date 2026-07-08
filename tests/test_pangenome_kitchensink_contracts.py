@@ -14,9 +14,11 @@ def test_graph_pangenome_aligners_are_not_cram_qc_aligners() -> None:
     common = _read("workflow/rules/common.smk")
 
     assert 'GRAPH_ONLY_PANGENOME_ALIGNERS = {"pangenome_sr", "pangenome_ug"}' in common
+    assert 'DRAGEN_PANGENOME_ALIGNER = "drbwa"' in common
+    assert 'DRAGEN_COMBINED_ALIGNERS = {DRAGEN_PANGENOME_ALIGNER}' in common
     assert '_KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb"}' in common
     assert (
-        "QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS)-GRAPH_ONLY_PANGENOME_ALIGNERS)"
+        "DRAGEN_COMBINED_ALIGNERS"
         in common
     )
 
@@ -43,6 +45,23 @@ def test_variant_qc_targets_use_aligner_deduper_caller_tuples() -> None:
         assert "valid_snv_alnr_ddup_tuples(" in rule, path
 
 
+def test_dragen_drgpg_concordance_uses_drbwa_coded_paths() -> None:
+    concordance = _read("workflow/rules/rtg_vcfeval.smk")
+    common = _read("workflow/rules/common.smk")
+    dragen_rule = _read("workflow/rules/sent_aln_sort_snv.smk")
+
+    assert '"drgpg":     [DRAGEN_PANGENOME_ALIGNER]' in common
+    assert "if snv in DRAGEN_COMBINED_SNV_CALLERS and alnr in DRAGEN_COMBINED_ALIGNERS:" in common
+    assert "def concordance_snv_alnr_ddup_tuples():" in concordance
+    assert "def dragen_snv_vcf(wildcards):" in concordance
+    assert 'f"{MDIR}{wildcards.sample}/align/{wildcards.alnr}/snv/{wildcards.snv}/"' in concordance
+    assert "_is_dragen_snv_callset(wildcards)" in concordance
+    assert "for alnr, ddup, snv in concordance_snv_alnr_ddup_tuples():" in concordance
+    assert "DAYLILY_DRAGEN symlink mode is not supported" in concordance
+    assert "ln -sf" not in concordance
+    assert "{sample}/align/drbwa/snv/drgpg/{sample}.drbwa.drgpg.snv.sort.vcf.gz" in dragen_rule
+
+
 def test_cram_qc_targets_use_cram_qc_aligners_not_all_aligners() -> None:
     expected_files = (
         "workflow/rules/generate_deduplicated_bams.smk",
@@ -62,7 +81,7 @@ def test_target_alias_na_dedup_excludes_graph_only_pangenome_aligners() -> None:
     aliases = _read("workflow/rules/workflow_target_aliases.smk")
 
     assert "aligners = set(QC_CRAM_ALIGNERS) | set(BAM_ALIGNERS)" in aliases
-    assert "if alnr not in GRAPH_ONLY_PANGENOME_ALIGNERS:" in aliases
+    assert "if alnr not in GRAPH_ONLY_PANGENOME_ALIGNERS and alnr not in DRAGEN_COMBINED_ALIGNERS:" in aliases
 
 
 def test_metagenomics_kitchensink_uses_cram_qc_aligners() -> None:

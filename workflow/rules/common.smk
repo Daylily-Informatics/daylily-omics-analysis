@@ -18,6 +18,9 @@ from daylily_omics_analysis.workflow_resources import (
 
 
 def derive_partition_order(partition_csv):
+    forced_partition = str(config.get("force_partition", "") or "").strip()
+    if forced_partition:
+        return forced_partition
     try:
         return _derive_partition_order(partition_csv)
     except SpotPartitionError as exc:
@@ -2660,6 +2663,10 @@ def instrument(wildcards):
 # through the BAM-based no_dedup / markdup rules.
 GRAPH_ONLY_PANGENOME_ALIGNERS = {"pangenome_sr", "pangenome_ug"}
 PANGENOME_SENTPG_DEDUPER = "spmd"
+DRAGEN_PANGENOME_ALIGNER = "drbwa"
+DRAGEN_COMBINED_ALIGNERS = {DRAGEN_PANGENOME_ALIGNER}
+DRAGEN_COMBINED_SNV_CALLERS = {"drgpg"}
+DRAGEN_COMBINED_DEDUPER = "na"
 _KNOWN_CRAM_ALIGNERS = {"sentmm2", "sentmm2ont", "ug", "ont", "pb"}
 for _a in ALIGNERS:
     if _a in _KNOWN_CRAM_ALIGNERS and _a not in CRAM_ALIGNERS:
@@ -2674,7 +2681,12 @@ BAM_ALIGNERS = sorted(set(BAM_ALIGNERS))
 
 OG_ALIGNERS=list(set(ALIGNERS)-set(CRAM_ALIGNERS)-set(BAM_ALIGNERS))
 ALL_ALIGNERS=list(set(ALIGNERS+CRAM_ALIGNERS+BAM_ALIGNERS))
-QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS)-GRAPH_ONLY_PANGENOME_ALIGNERS)
+QC_CRAM_ALIGNERS=sorted(
+    set(ALL_ALIGNERS)
+    - set(BAM_ALIGNERS)
+    - GRAPH_ONLY_PANGENOME_ALIGNERS
+    - DRAGEN_COMBINED_ALIGNERS
+)
 
 
 # SMN orthogonal callers need stricter routing than generic CRAM QC.  The
@@ -2682,7 +2694,10 @@ QC_CRAM_ALIGNERS=sorted(set(ALL_ALIGNERS)-set(BAM_ALIGNERS)-GRAPH_ONLY_PANGENOME
 # must consume the HiOMR SR dedup CRAM produced by sentdhiomr.
 SMN_LONG_READ_ALIGNERS = {"ont", "sentmm2ont"}
 SMN_SHORT_READ_EXCLUDED_ALIGNERS = (
-    SMN_LONG_READ_ALIGNERS | {"sentmm2", "pb"} | GRAPH_ONLY_PANGENOME_ALIGNERS
+    SMN_LONG_READ_ALIGNERS
+    | {"sentmm2", "pb"}
+    | GRAPH_ONLY_PANGENOME_ALIGNERS
+    | DRAGEN_COMBINED_ALIGNERS
 )
 SMN_SHORT_READ_NA_DEDUP_ALIGNERS = {"bwa2a", "sent", "strobe"}
 
@@ -2861,6 +2876,8 @@ _SNV_CALLER_VALID_ALIGNERS = {
     # Pangenome callers
     "sentpg":    ["pangenome_sr", "pangenome_ug"],  # Sentieon pangenome → emits alnr=pangenome_sr or pangenome_ug
     "sentpgs":   ["pangenome_ug"],                   # Sharded Sentieon Ultima pangenome → emits alnr=pangenome_ug
+    # DRAGEN-coded combined align+call outputs
+    "drgpg":     [DRAGEN_PANGENOME_ALIGNER],         # DRAGEN pangenome → emits alnr=drbwa
 }
 
 
@@ -2875,7 +2892,7 @@ def valid_snv_alnr_pairs(all_aligners, callers):
     for snv in callers:
         valid_alnrs = _SNV_CALLER_VALID_ALIGNERS.get(snv, all_aligners)
         for a in valid_alnrs:
-            if a in all_aligners:
+            if a in all_aligners or snv in DRAGEN_COMBINED_SNV_CALLERS:
                 pairs.append((a, snv))
     return pairs
 
@@ -2890,6 +2907,9 @@ def valid_snv_alnr_ddup_tuples(all_aligners, callers, ddups):
     tuples = []
     allowed_alnr_ddup = set(valid_alnr_ddup_pairs(all_aligners, ddups))
     for alnr, snv in valid_snv_alnr_pairs(all_aligners, callers):
+        if snv in DRAGEN_COMBINED_SNV_CALLERS and alnr in DRAGEN_COMBINED_ALIGNERS:
+            tuples.append((alnr, DRAGEN_COMBINED_DEDUPER, snv))
+            continue
         if snv in {"sentpg", "sentpgs"} and alnr in GRAPH_ONLY_PANGENOME_ALIGNERS:
             tuples.append((alnr, PANGENOME_SENTPG_DEDUPER, snv))
             continue

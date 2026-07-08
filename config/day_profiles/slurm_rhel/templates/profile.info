@@ -1,0 +1,5 @@
+#DAY.COMPUTEenv.ANALYTIStunedFOR
+terminal_abbreviation:\[\e[36;1m\][Dslr]\[\e[0m\]
+env_var_val:slurm_rhel
+active:true
+env_script:config/day_profiles/slurm/templates/profile_env.bash
